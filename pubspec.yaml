@@ -1,0 +1,21 @@
+name: fresh_home_workspace
+publish_to: none
+environment:
+  sdk: ^3.9.0
+
+
+# workspace:
+#   - packages/shared
+#   - packages/shared_features
+
+
+scripts:
+  analyze:
+    run: flutter analyze
+
+  test:
+    run: flutter test
+
+  format:
+    run: dart format .
+

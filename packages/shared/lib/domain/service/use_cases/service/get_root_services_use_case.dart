@@ -1,0 +1,14 @@
+import 'package:fpdart/fpdart.dart';
+import 'package:shared/domain/service/entities/service_entity.dart';
+import 'package:shared/domain/service/repositories/service_repository.dart';
+import 'package:shared/core/error/failures.dart';
+
+class GetRootServicesUseCase {
+  final ServiceRepository repository;
+
+  GetRootServicesUseCase({required this.repository});
+
+  Future<Either<Failure, List<ServiceEntity>>> call({bool forceRefresh = false}) {
+    return repository.getRootServices(forceRefresh: forceRefresh);
+  }
+}

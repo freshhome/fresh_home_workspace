@@ -1,0 +1,106 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:shared/shared.dart';
+import 'package:shared_features/shared_features.dart';
+import '../../features/technician_orders/domain/use_cases/get_all_orders.dart';
+import '../../features/technician_orders/presentation/cubit/technician_orders_cubit.dart';
+import '../../features/technician_orders/presentation/routes/technician_orders_routes.dart';
+import '../../features/technician_orders/presentation/pages/technician_orders_screen.dart';
+import '../../features/home/di/home_di.dart';
+import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/home/presentation/cubit/home_cubit.dart';
+import '../../features/home/presentation/routes/home_routes.dart';
+import '../../features/technician_schedule/presentation/routes/technician_schedule_routes.dart';
+import '../../features/technician_schedule/presentation/cubit/smart_schedule_cubit.dart';
+
+final getIt = GetIt.instance;
+
+Future<void> initAppDI() async {
+  // Initialize shared features DI with navigation config
+  await initSharedFeaturesDI(
+    getIt,
+    appRole: UserRole.technician,
+    googleRedirectUrl: 'com.freshhome.staff://login-callback',
+    extraRoutes: [
+      ...TechnicianOrdersRoutes.routes,
+      ...HomeRoutes.routes,
+      ...TechnicianScheduleRoutes.routes,
+    ],
+    navigationConfig: NavigationConfig(
+      items: [
+        // Home
+        NavigationItem(
+          labelKey: 'nav_home',
+          icon: Icons.home_outlined,
+          activeIcon: Icons.home,
+          pageBuilder: (context) => BlocProvider(
+            create: (_) => GetIt.instance<HomeCubit>(),
+            child: const HomePage(),
+          ),
+          path: AppRoutes.tabHome,
+        ),
+        // Technician Orders
+        NavigationItem(
+          labelKey: 'technician_orders_title',
+          icon: Icons.work_outline,
+          activeIcon: Icons.work,
+          pageBuilder: (context) => BlocProvider(
+            create: (_) => GetIt.instance<TechnicianOrdersCubit>()..loadOrders(),
+            child: const TechnicianOrdersScreen(),
+          ),
+          path: AppRoutes.technicianOrders, // Using technicianOrders to match existing routes
+        ),
+        // Profile
+        NavigationItem(
+          labelKey: 'profile_title',
+          icon: Icons.person_outline,
+          activeIcon: Icons.person,
+          pageBuilder: (context) => const ProfileDetailScreen(),
+          path: AppRoutes.tabProfile,
+        ),
+        // Settings
+        NavigationItem(
+          labelKey: 'settings_title',
+          icon: Icons.settings_outlined,
+          activeIcon: Icons.settings,
+          pageBuilder: (context) => BlocProvider(
+            create: (_) => GetIt.instance<SignOutCubit>(),
+            child: const SettingsScreen(),
+          ),
+          path: AppRoutes.tabSettings,
+        ),
+      ],
+    ),
+  );
+
+  // --------------------------------------------------------------------------
+  // APP-SPECIFIC FEATURES
+  // --------------------------------------------------------------------------
+
+  // Technician Orders Feature
+  getIt.registerFactory<TechnicianOrdersCubit>(
+    () => TechnicianOrdersCubit(
+      getAllOrders: getIt<GetAllOrders>(),
+      transitionBooking: getIt<TransitionBookingUseCase>(),
+      updateBooking: getIt<UpdateBookingUseCase>(),
+      calculatePrice: getIt<CalculatePriceUseCase>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<TransitionBookingUseCase>(
+    () => TransitionBookingUseCase(repository: getIt()),
+  );
+
+  getIt.registerLazySingleton<GetAllOrders>(
+    () => GetAllOrders(getIt()),
+  );
+
+  // Technician Schedule Feature
+  getIt.registerFactory<SmartScheduleCubit>(
+    () => SmartScheduleCubit(getIt()),
+  );
+
+  // Register local home feature
+  await initHomeDI(getIt);
+}

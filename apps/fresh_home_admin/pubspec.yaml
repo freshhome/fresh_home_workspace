@@ -1,0 +1,80 @@
+name: fresh_home_admin
+description: "A new Flutter project."
+publish_to: 'none' 
+
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.0
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ---------------------------------------------------------
+  # الحزم المحلية (Local Packages)
+  # ---------------------------------------------------------
+  shared:
+    path: ../../packages/shared
+  shared_features:
+    path: ../../packages/shared_features
+  # ---------------------------------------------------------
+  # تم إضافة equatable لحل مشاكل التبعيات
+  # ---------------------------------------------------------
+  equatable: ^2.0.8
+
+  # ---------------------------------------------------------
+  # الملاحة وإدارة الحالة (Navigation & DI)
+  # ---------------------------------------------------------
+  flutter_bloc: ^9.1.1
+  go_router: ^17.1.0
+  get_it: ^9.2.0
+  intl: ^0.20.2
+  fpdart: ^1.2.0
+  uuid: ^4.5.1
+  supabase_flutter: ^2.6.0
+
+  # ---------------------------------------------------------
+  # فيربيز وخدمات الإشعارات (Firebase & FCM)
+  # ---------------------------------------------------------
+  firebase_core: ^3.10.1
+  firebase_messaging: ^15.2.1
+  flutter_local_notifications: ^17.2.0
+
+  cupertino_icons: ^1.0.8
+  url_launcher: ^6.3.1
+  flutter_localizations:
+    sdk: flutter
+  image_picker: ^1.2.1
+  cached_network_image: ^3.4.1
+  image: ^4.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.2
+
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+
+# ---------------------------------------------------------
+# أيقونات التطبيق (Launcher Icons)
+# ---------------------------------------------------------
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "../../packages/shared/assets/core/images/app_icon_admin.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "../../packages/shared/assets/core/images/app_icon_admin.png"
+

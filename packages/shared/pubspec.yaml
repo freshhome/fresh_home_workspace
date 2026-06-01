@@ -1,0 +1,79 @@
+name: shared
+description: "الطبقة البرمجية المشتركة - تحتوي على النماذج، الخدمات الأساسية، والأدوات العامة"
+version: 0.0.1
+publish_to: none
+
+
+environment:
+  sdk: ^3.10.3
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ---------------------------------------------------------
+  # فيربيز وتقنيات السحاب (Cloud & Infrastructure)
+  # ---------------------------------------------------------
+  supabase_flutter: ^2.8.1
+
+  # ---------------------------------------------------------
+  # قواعد البيانات المحلية (Local Storage)
+  # ---------------------------------------------------------
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # ---------------------------------------------------------
+  # الهوية والخدمات (Identity & Services)
+  # ---------------------------------------------------------
+  google_sign_in: ^7.2.0
+
+  # ---------------------------------------------------------
+  # إدارة البيانات والبرمجة الوظيفية (Data & Logic)
+  # ---------------------------------------------------------
+  equatable: ^2.0.8
+  fpdart: ^1.2.0
+  json_annotation: ^4.9.0
+  get_it: ^9.2.0
+  flutter_bloc: ^9.1.1
+
+  # ---------------------------------------------------------
+  # المرافق العامة (General Utilities)
+  # ---------------------------------------------------------
+  intl: ^0.20.2
+  internet_connection_checker: ^3.0.1
+  go_router: ^17.1.0
+  device_info_plus: ^11.1.1
+
+  # ---------------------------------------------------------
+  # واجهة المستخدم والتوطين (UI & Localization)
+  # ---------------------------------------------------------
+  flutter_localization: ^0.3.3
+  flutter_svg: ^2.2.3
+  awesome_dialog: ^3.3.0
+  shared_preferences: ^2.5.4
+  cached_network_image: ^3.4.1
+  image: ^4.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  
+  # أدوات توليد الكود (Code Generation Tools)
+  build_runner: ^2.4.13
+  hive_generator: ^2.0.1
+  json_serializable: ^6.7.1
+
+flutter:
+  generate: true
+  assets:
+    - assets/core/images/
+    - assets/core/icons/
+    - assets/core/animations/
+    - assets/features/splash/animations/
+    - assets/features/splash/icons/
+    - assets/features/onboarding/images/
+    - assets/features/authentication/images/
+    - assets/features/authentication/icons/
+    - assets/features/authentication/animations/

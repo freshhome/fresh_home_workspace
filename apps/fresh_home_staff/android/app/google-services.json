@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "83566326948",
+    "project_id": "fresh-home-v2-82736",
+    "storage_bucket": "fresh-home-v2-82736.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:83566326948:android:6396bb794e2069ea142231",
+        "android_client_info": {
+          "package_name": "com.example.fresh_home_customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0buYH1hLaOuUSXyzV9AoPbapBnaQXooA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:83566326948:android:608d471a15381275142231",
+        "android_client_info": {
+          "package_name": "com.example.fresh_home_staff"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0buYH1hLaOuUSXyzV9AoPbapBnaQXooA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
