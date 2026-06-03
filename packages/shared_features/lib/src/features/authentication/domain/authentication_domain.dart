@@ -7,3 +7,4 @@ export 'use_cases/sign_up_user.dart';
 export 'use_cases/sign_in_with_google.dart';
 export 'use_cases/ensure_role.dart';
 export 'use_cases/verify_role.dart';
+export 'use_cases/update_password.dart';

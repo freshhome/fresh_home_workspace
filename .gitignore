@@ -1,3 +1,26 @@
+# Standard Flutter/VS Code ignores
 .dart_tool/
 .vscode/
 build/
+
+# Supabase local tooling state
+supabase/.temp/
+
+# Temporary and local debugging scripts
+tools/debug/
+tmp/
+scratch/
+
+# Environment configurations
+*.env
+*.env.development
+*.env.staging
+*.env.production
+.env*
+
+# Local properties & keystores
+*.keystore
+*.jks
+*.properties
+local.properties
+key.properties

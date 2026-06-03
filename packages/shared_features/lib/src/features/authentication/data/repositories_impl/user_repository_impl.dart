@@ -251,6 +251,18 @@ class UserRepositoryImpl implements UserRepositories {
   }
 
   @override
+  Future<Either<Failure, void>> updatePassword(String newPassword) async {
+    try {
+      await authDataSource.updatePassword(newPassword);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(ErrorMapper.mapExternalServiceError(e));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<User?> getCurrentUser() async {
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;

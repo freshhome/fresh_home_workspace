@@ -15,6 +15,7 @@ final class SignInSuccess extends AuthState {}
 final class ResendVerificationSuccess extends AuthState {}
 
 final class ResetPasswordSuccess extends AuthState {}
+final class UpdatePasswordSuccess extends AuthState {}
 final class AuthPendingRoleState extends AuthState {}
 
 final class AuthErrorState extends AuthState {

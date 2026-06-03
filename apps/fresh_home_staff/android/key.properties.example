@@ -1,0 +1,8 @@
+# Android Keystore Signing Configuration Example
+# Copy this file to 'key.properties' in the same directory and customize the values.
+# NEVER commit the final 'key.properties' or keystore files to version control.
+
+keyAlias=yourKeyAlias
+keyPassword=yourKeyPasswordOfAlias
+storeFile=your-release-key.jks
+storePassword=yourKeystorePassword

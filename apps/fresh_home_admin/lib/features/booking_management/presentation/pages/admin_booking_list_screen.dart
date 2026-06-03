@@ -568,7 +568,7 @@ class _OrderCard extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      '${booking.price.total} ريال',
+                      '${booking.price.total} ج.م',
                       style: const TextStyle(
                         fontFamily: 'Cairo',
                         fontWeight: FontWeight.w900,

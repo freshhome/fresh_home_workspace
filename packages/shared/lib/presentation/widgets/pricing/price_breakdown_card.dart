@@ -88,7 +88,7 @@ class PriceBreakdownCard extends StatelessWidget {
               const SizedBox(height: 12),
               ...options.map((opt) {
                 final key = opt['key'] as String? ?? 'خيار إضافي';
-                final priceVal = (opt['price'] as num? ?? 0).toDouble();
+                final priceVal = (opt['price'] as num? ?? opt['value'] as num? ?? 0).toDouble();
                 final displayKey = _translateOptionKey(key);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 6),
@@ -136,13 +136,12 @@ class PriceBreakdownCard extends StatelessWidget {
                 children: discounts.map((disc) {
                   final name = disc['name'] as String? ?? 'خصم ترويجي';
                   final code = disc['code'] as String?;
-                  final val = (disc['value'] as num? ?? disc['discount_value'] as num? ?? 0).toDouble();
-                  final valType = disc['value_type'] as String? ?? disc['discount_type'] as String? ?? 'flat';
+                  final val = (disc['amount'] as num? ?? disc['value'] as num? ?? disc['discount_value'] as num? ?? 0).toDouble();
                   return CouponChip(
                     label: name,
                     code: code,
                     discountAmount: val,
-                    isPercentage: valType == 'percent' || valType == 'percentage',
+                    isPercentage: false,
                   );
                 }).toList(),
               ),

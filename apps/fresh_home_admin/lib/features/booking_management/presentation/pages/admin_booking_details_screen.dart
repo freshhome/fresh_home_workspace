@@ -264,7 +264,7 @@ class _AdminBookingDetailsContent extends StatelessWidget {
           ),
           _InfoRow(
             label: 'السعر الإجمالي',
-            value: '${booking.price.total} ريال',
+            value: '${booking.price.total} ج.م',
             isLast: true,
             isPrice: true,
           ),

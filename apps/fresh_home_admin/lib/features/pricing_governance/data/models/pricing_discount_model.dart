@@ -3,6 +3,7 @@ import '../../domain/entities/pricing_discount_entity.dart';
 class PricingDiscountModel extends PricingDiscountEntity {
   const PricingDiscountModel({
     required super.id,
+    super.subServiceId,
     required super.name,
     required super.code,
     required super.campaignType,
@@ -20,6 +21,7 @@ class PricingDiscountModel extends PricingDiscountEntity {
   factory PricingDiscountModel.fromJson(Map<String, dynamic> json) {
     return PricingDiscountModel(
       id: json['id'] as String? ?? '',
+      subServiceId: json['sub_service_id'] as String?,
       name: json['name'] as String? ?? '', // اسم الحملة
       code: json['code'] as String? ?? '',
       campaignType: json['type'] as String? ?? 'coupon', // DB column: type
@@ -38,6 +40,7 @@ class PricingDiscountModel extends PricingDiscountEntity {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'sub_service_id': subServiceId,
       'name': name,
       'code': code,
       'type': campaignType, // DB column: type

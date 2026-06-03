@@ -6,6 +6,8 @@ import '../../domain/use_cases/upsert_pricing_rule_usecase.dart';
 import '../../domain/use_cases/toggle_pricing_rule_usecase.dart';
 import '../../domain/use_cases/get_pricing_discounts_usecase.dart';
 import '../../domain/use_cases/upsert_pricing_discount_usecase.dart';
+import '../../domain/use_cases/toggle_pricing_discount_usecase.dart';
+import '../../domain/use_cases/delete_pricing_discount_usecase.dart';
 import '../../domain/use_cases/get_pricing_versions_usecase.dart';
 import '../../domain/use_cases/get_governance_audit_logs_usecase.dart';
 import '../../domain/use_cases/replay_booking_pricing_usecase.dart';
@@ -19,6 +21,8 @@ class PricingGovernanceCubit extends Cubit<PricingGovernanceState> {
   final TogglePricingRuleUseCase _toggleRule;
   final GetPricingDiscountsUseCase _getDiscounts;
   final UpsertPricingDiscountUseCase _upsertDiscount;
+  final TogglePricingDiscountUseCase _toggleDiscount;
+  final DeletePricingDiscountUseCase _deleteDiscount;
   final GetPricingVersionsUseCase _getVersions;
   final GetGovernanceAuditLogsUseCase _getAuditLogs;
   final ReplayBookingPricingUseCase _replayBooking;
@@ -30,6 +34,8 @@ class PricingGovernanceCubit extends Cubit<PricingGovernanceState> {
     required TogglePricingRuleUseCase toggleRule,
     required GetPricingDiscountsUseCase getDiscounts,
     required UpsertPricingDiscountUseCase upsertDiscount,
+    required TogglePricingDiscountUseCase toggleDiscount,
+    required DeletePricingDiscountUseCase deleteDiscount,
     required GetPricingVersionsUseCase getVersions,
     required GetGovernanceAuditLogsUseCase getAuditLogs,
     required ReplayBookingPricingUseCase replayBooking,
@@ -39,6 +45,8 @@ class PricingGovernanceCubit extends Cubit<PricingGovernanceState> {
         _toggleRule = toggleRule,
         _getDiscounts = getDiscounts,
         _upsertDiscount = upsertDiscount,
+        _toggleDiscount = toggleDiscount,
+        _deleteDiscount = deleteDiscount,
         _getVersions = getVersions,
         _getAuditLogs = getAuditLogs,
         _replayBooking = replayBooking,
@@ -99,6 +107,24 @@ class PricingGovernanceCubit extends Cubit<PricingGovernanceState> {
       await loadPricingGovernanceData(subServiceId);
     } catch (e) {
       emit(PricingGovernanceFailure('فشل حفظ حملة الخصومات: $e'));
+    }
+  }
+
+  Future<void> toggleDiscountActive(String discountId, String subServiceId, bool isActive) async {
+    try {
+      await _toggleDiscount(discountId, isActive);
+      await loadPricingGovernanceData(subServiceId);
+    } catch (e) {
+      emit(PricingGovernanceFailure('فشل تعديل حالة تفعيل الخصم: $e'));
+    }
+  }
+
+  Future<void> deleteDiscount(String discountId, String subServiceId) async {
+    try {
+      await _deleteDiscount(discountId);
+      await loadPricingGovernanceData(subServiceId);
+    } catch (e) {
+      emit(PricingGovernanceFailure('فشل حذف حملة الخصومات: $e'));
     }
   }
 

@@ -228,6 +228,10 @@ class _PricingGovernanceDashboardState extends State<PricingGovernanceDashboard>
 
   // ── Tab 2: Discounts List ──────────────────────────────────────────────────
   Widget _buildDiscountsTab(List<PricingDiscountEntity> discounts) {
+    final filteredDiscounts = discounts
+        .where((d) => d.subServiceId == null || d.subServiceId == widget.subServiceId)
+        .toList();
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
@@ -245,13 +249,13 @@ class _PricingGovernanceDashboardState extends State<PricingGovernanceDashboard>
         icon: const Icon(Icons.add_rounded),
         label: const Text('حملة خصم جديدة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
       ),
-      body: discounts.isEmpty
+      body: filteredDiscounts.isEmpty
           ? _buildEmptyState(Icons.local_offer_rounded, 'لا توجد حملات ترويجية أو أكواد خصم متاحة حالياً.\nقم بإنشاء كود خصم جديد لتطبيقه على سلة المشتريات.')
           : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: discounts.length,
+              itemCount: filteredDiscounts.length,
               itemBuilder: (context, index) {
-                final discount = discounts[index];
+                final discount = filteredDiscounts[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

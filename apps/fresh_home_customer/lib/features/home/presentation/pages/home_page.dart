@@ -273,7 +273,7 @@ class _PopularServices2 extends StatelessWidget {
           final service = services[index];
           final hasPrice = service.price != null;
           final priceStr = hasPrice
-              ? '${service.price!.value.toInt()} ريال'
+              ? '${service.price!.value.toInt()} ج.م'
               : (isArabic ? 'حسب الطلب' : 'On Demand');
 
           return GestureDetector(

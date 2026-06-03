@@ -13,6 +13,7 @@ abstract class AuthRemoteDataSource {
   Future<void> sendPasswordResetEmail(String email, {required String redirectTo});
   Future<void> signInWithGoogle({required String redirectTo});
   Future<void> assignRole(String roleName);
+  Future<UserResponse> updatePassword(String newPassword);
 }
 
 class SupabaseAuthDataSourceImpl implements AuthRemoteDataSource {
@@ -218,6 +219,23 @@ class SupabaseAuthDataSourceImpl implements AuthRemoteDataSource {
       throw SupabaseExceptionApp(e.message, code: e.code);
     } catch (e) {
       throw SupabaseExceptionApp(e.toString(), code: 'supabase_error');
+    }
+  }
+
+  @override
+  Future<UserResponse> updatePassword(String newPassword) async {
+    try {
+      debugPrint('================ AUTH DEBUG ================');
+      debugPrint('STARTING PASSWORD UPDATE');
+      debugPrint('============================================');
+      final response = await _supabase.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+      return response;
+    } on AuthException catch (e) {
+      throw SupabaseExceptionApp(e.message, code: e.code);
+    } catch (e) {
+      throw SupabaseExceptionApp(e.toString(), code: 'auth_error');
     }
   }
 }

@@ -46,6 +46,7 @@ Future<void> initAuthDI(
   getIt.registerLazySingleton(() => SignInWithGoogleUseCase(getIt()));
   getIt.registerLazySingleton(() => EnsureRoleUseCase(getIt()));
   getIt.registerLazySingleton(() => VerifyRoleUseCase(getIt()));
+  getIt.registerLazySingleton(() => UpdatePasswordUseCase(getIt()));
 
   // Cubit
   getIt.registerLazySingleton(
@@ -54,6 +55,7 @@ Future<void> initAuthDI(
       getIt(), // SignUpUseCase
       getIt(), // ResendVerificationCodeUseCase
       getIt(), // ResetPasswordUseCase
+      getIt(), // UpdatePasswordUseCase
       getIt(), // SignInWithGoogleUseCase
       getIt(), // SignOutUseCase
       getIt(), // StopRealtimeSyncUseCase

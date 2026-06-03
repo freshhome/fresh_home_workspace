@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/domain/service/enums/pricing_method.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/booking_components.dart';
+import 'package:shared/domain/service/entities/sub_entities/service_price.dart';
 import 'package:shared/presentation/presentation.dart';
 import '../cubit/booking_flow_cubit.dart';
 import '../cubit/booking_flow_state.dart';
@@ -18,10 +19,12 @@ class PricingPage extends StatefulWidget {
 class _PricingPageState extends State<PricingPage> {
   final TextEditingController _areaController = TextEditingController();
   final TextEditingController _totalLinearController = TextEditingController();
+  final TextEditingController _couponController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final Map<int, TextEditingController> _widthControllers = {};
   final Map<int, TextEditingController> _heightControllers = {};
   final Map<int, TextEditingController> _quantityControllers = {};
+  bool _isCouponFieldExpanded = false;
 
   @override
   void initState() {
@@ -33,6 +36,11 @@ class _PricingPageState extends State<PricingPage> {
     if (cubit.state.totalLinearMeters != null) {
       _totalLinearController.text =
           cubit.state.totalLinearMeters!.toStringAsFixed(1).replaceAll('.0', '');
+    }
+    final coupon = cubit.state.dynamicInputs['coupon_code'] as String?;
+    if (coupon != null) {
+      _couponController.text = coupon;
+      _isCouponFieldExpanded = true;
     }
     for (int i = 0; i < cubit.state.windows.length; i++) {
       _initWindowControllers(i, cubit.state.windows[i]);
@@ -66,6 +74,7 @@ class _PricingPageState extends State<PricingPage> {
   void dispose() {
     _areaController.dispose();
     _totalLinearController.dispose();
+    _couponController.dispose();
     _scrollController.dispose();
     for (var c in _widthControllers.values) {
       c.dispose();
@@ -137,6 +146,8 @@ class _PricingPageState extends State<PricingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildServiceHeader(state.service, priceEntity, themeText, themeColor),
+                const SizedBox(height: 12),
                 if (isDynamic)
                   DynamicFormRenderer(
                     fields: filteredFields,
@@ -151,7 +162,7 @@ class _PricingPageState extends State<PricingPage> {
                   )
                 else ...[
                   if (isAreaRequired)
-                    _buildAreaInput(l10n, themeText, themeColor)
+                    _buildAreaInput(l10n, themeText, themeColor, state)
                   else if (isLinearRequired)
                     _buildLinearPricingSection(state, themeText, themeColor)
                   else
@@ -185,6 +196,8 @@ class _PricingPageState extends State<PricingPage> {
                   const SizedBox(height: 24),
                 ],
                 if (state.isPriceCalculated && state.price != null) ...[
+                  _buildCouponInput(themeText, themeColor, state),
+                  const SizedBox(height: 24),
                   PriceBreakdownCard(pricing: state.price!, showHeader: true),
                 ],
               ],
@@ -195,37 +208,293 @@ class _PricingPageState extends State<PricingPage> {
     );
   }
 
+  // ── Service Header ─────────────────────────────────────────────────────────
+
+  Widget _buildServiceHeader(
+    BookedService? service,
+    PriceEntity? priceEntity,
+    AppTextThemeExtension themeText,
+    ThemeColorExtension themeColor,
+  ) {
+    if (service == null) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
+    
+    String pricingMethodText = l10n.pricing_method_custom;
+    IconData pricingIcon = Icons.payments_outlined;
+    if (priceEntity != null) {
+      switch (priceEntity.type) {
+        case PricingMethod.fixed:
+          pricingMethodText = l10n.pricing_method_fixed;
+          pricingIcon = Icons.bookmark_added_rounded;
+          break;
+        case PricingMethod.perSquareMeter:
+          pricingMethodText = l10n.pricing_method_square_meter;
+          pricingIcon = Icons.square_foot_rounded;
+          break;
+        case PricingMethod.perLinearMeter:
+          pricingMethodText = l10n.pricing_method_linear_meter;
+          pricingIcon = Icons.linear_scale_rounded;
+          break;
+        case PricingMethod.perIssue:
+          pricingMethodText = l10n.pricing_method_issue;
+          pricingIcon = Icons.report_problem_rounded;
+          break;
+        case PricingMethod.unknown:
+          pricingMethodText = l10n.pricing_method_custom;
+          pricingIcon = Icons.payments_outlined;
+          break;
+        case PricingMethod.inspection:
+          pricingMethodText = l10n.pricing_method_custom;
+          pricingIcon = Icons.payments_outlined;
+          break;
+      }
+    }
+
+    final localeName = service.name[Localizations.localeOf(context).languageCode] ??
+        service.name['ar'] ??
+        service.name['en'] ??
+        '';
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            themeColor.primary.withValues(alpha: 0.1),
+            themeColor.primary.withValues(alpha: 0.02),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: themeColor.primary.withValues(alpha: 0.15),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: themeColor.primary.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              pricingIcon,
+              color: themeColor.primary,
+              size: 26,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  localeName,
+                  style: themeText.textBodyPrimary.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: themeColor.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  pricingMethodText,
+                  style: themeText.textCaption.copyWith(
+                    color: themeColor.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Area Input ─────────────────────────────────────────────────────────────
 
   Widget _buildAreaInput(
     AppLocalizations l10n,
     AppTextThemeExtension themeText,
     ThemeColorExtension themeColor,
+    BookingFlowState state,
   ) {
+    final currentArea = state.area ?? 100.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.pricing_area_label,
-          style: themeText.titleSectionSmall.copyWith(
-            color: const Color(0xFF333333),
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              l10n.pricing_area_label,
+              style: themeText.titleSectionSmall.copyWith(
+                color: themeColor.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: themeColor.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '${currentArea.toStringAsFixed(0)} ${l10n.pricing_area_unit}',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: themeColor.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Interactive Stepper Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: themeColor.cardBackground,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.fromBorderSide(themeColor.cardBorder),
+            boxShadow: [themeColor.cardShadow],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: currentArea > 50
+                        ? () {
+                            final newVal = (currentArea - 10).clamp(50, 1000).toDouble();
+                            _areaController.text = newVal.toStringAsFixed(0);
+                            context.read<BookingFlowCubit>().updateArea(newVal);
+                          }
+                        : null,
+                    icon: const Icon(Icons.remove, size: 20),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        currentArea.toStringAsFixed(0),
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: themeColor.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        l10n.pricing_area_unit,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          color: themeColor.secondaryText,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton.filledTonal(
+                    onPressed: () {
+                      final newVal = (currentArea + 10).clamp(50, 1000).toDouble();
+                      _areaController.text = newVal.toStringAsFixed(0);
+                      context.read<BookingFlowCubit>().updateArea(newVal);
+                    },
+                    icon: const Icon(Icons.add, size: 20),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Slider(
+                value: currentArea.clamp(50, 500).toDouble(),
+                min: 50,
+                max: 500,
+                divisions: 45,
+                activeColor: themeColor.primary,
+                inactiveColor: themeColor.primary.withValues(alpha: 0.15),
+                onChanged: (val) {
+                  setState(() {
+                    _areaController.text = val.toStringAsFixed(0);
+                  });
+                  context.read<BookingFlowCubit>().updateArea(val.roundToDouble());
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Preset Chips
+        SizedBox(
+          height: 38,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [100, 150, 200, 250, 300, 400].map((preset) {
+              final isSelected = currentArea.round() == preset;
+              return Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: ChoiceChip(
+                  label: Text('$preset ${l10n.pricing_unit_meter_short}²'),
+                  labelStyle: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? Colors.white : themeColor.secondaryText,
+                  ),
+                  selected: isSelected,
+                  selectedColor: themeColor.primary,
+                  backgroundColor: themeColor.nestedCardBackground,
+                  onSelected: (selected) {
+                    if (selected) {
+                      _areaController.text = preset.toString();
+                      context.read<BookingFlowCubit>().updateArea(preset.toDouble());
+                    }
+                  },
+                ),
+              );
+            }).toList(),
           ),
         ),
         const SizedBox(height: 12),
-        _buildInputField(
-          controller: _areaController,
-          unit: l10n.pricing_area_unit,
-          onChanged: (val) {
-            if (val.isEmpty) {
-              context.read<BookingFlowCubit>().updateArea(null);
-            } else {
-              context.read<BookingFlowCubit>().updateArea(double.tryParse(val));
-            }
-          },
-          themeText: themeText,
-          themeColor: themeColor,
+        ExpansionTile(
+          title: Text(
+            l10n.pricing_manual_area_override,
+            style: themeText.textCaption.copyWith(color: themeColor.secondaryText, fontSize: 12),
+          ),
+          childrenPadding: EdgeInsets.zero,
+          tilePadding: EdgeInsets.zero,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: _buildInputField(
+                controller: _areaController,
+                unit: l10n.pricing_area_unit,
+                onChanged: (val) {
+                  if (val.isEmpty) {
+                    context.read<BookingFlowCubit>().updateArea(null);
+                  } else {
+                    context.read<BookingFlowCubit>().updateArea(double.tryParse(val));
+                  }
+                },
+                themeText: themeText,
+                themeColor: themeColor,
+              ),
+            ),
+          ],
         ),
         Padding(
           padding: const EdgeInsets.only(top: 12),
@@ -238,7 +507,7 @@ class _PricingPageState extends State<PricingPage> {
               ),
               const SizedBox(width: 8),
               Text(
-                'الحد الأدنى للمحاسبة هو 100 متر مربع',
+                l10n.pricing_min_billing_notice,
                 style: themeText.textCaption.copyWith(
                   color: themeColor.primary.withValues(alpha: 0.7),
                   fontStyle: FontStyle.italic,
@@ -258,6 +527,7 @@ class _PricingPageState extends State<PricingPage> {
     AppTextThemeExtension themeText,
     ThemeColorExtension themeColor,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -265,9 +535,9 @@ class _PricingPageState extends State<PricingPage> {
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+            color: themeColor.nestedCardBackground,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
           ),
           child: Row(
             children: [
@@ -287,11 +557,11 @@ class _PricingPageState extends State<PricingPage> {
                     ),
                     child: Center(
                       child: Text(
-                        'حساب من أبعاد الشبابيك',
+                        l10n.pricing_calc_from_windows,
                         style: themeText.textCaption.copyWith(
                           color: state.useWindowsCalculator
                               ? Colors.white
-                              : const Color(0xFF666666),
+                              : themeColor.secondaryText,
                           fontWeight: state.useWindowsCalculator
                               ? FontWeight.bold
                               : FontWeight.normal,
@@ -318,11 +588,11 @@ class _PricingPageState extends State<PricingPage> {
                     ),
                     child: Center(
                       child: Text(
-                        'إدخال إجمالي الأمتار',
+                        l10n.pricing_direct_linear_meters,
                         style: themeText.textCaption.copyWith(
                           color: !state.useWindowsCalculator
                               ? Colors.white
-                              : const Color(0xFF666666),
+                              : themeColor.secondaryText,
                           fontWeight: !state.useWindowsCalculator
                               ? FontWeight.bold
                               : FontWeight.normal,
@@ -340,60 +610,210 @@ class _PricingPageState extends State<PricingPage> {
         if (state.useWindowsCalculator)
           _buildWindowsList(state, themeText, themeColor)
         else
-          _buildDirectLinearMetersInput(themeText, themeColor),
+          _buildDirectLinearMetersInput(l10n, themeText, themeColor, state),
       ],
     );
   }
 
   Widget _buildDirectLinearMetersInput(
+    AppLocalizations l10n,
     AppTextThemeExtension themeText,
     ThemeColorExtension themeColor,
+    BookingFlowState state,
   ) {
+    final currentLinear = state.totalLinearMeters ?? 10.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'إجمالي الأمتار الطولية',
-          style: themeText.textBodyPrimary.copyWith(
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF333333),
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildInputField(
-          controller: _totalLinearController,
-          unit: 'متر طولي',
-          onChanged: (val) {
-            if (val.isEmpty) {
-              context.read<BookingFlowCubit>().updateTotalLinearMeters(null);
-            } else {
-              context
-                  .read<BookingFlowCubit>()
-                  .updateTotalLinearMeters(double.tryParse(val));
-            }
-          },
-          themeText: themeText,
-          themeColor: themeColor,
-        ),
-        const SizedBox(height: 12),
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(
-              Icons.info_outline,
-              size: 16,
-              color: themeColor.primary.withValues(alpha: 0.6),
+            Text(
+              l10n.pricing_linear_meters_title,
+              style: themeText.titleSectionSmall.copyWith(
+                color: themeColor.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
-            const SizedBox(width: 8),
-            Expanded(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: themeColor.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Text(
-                'أدخل عدد الأمتار الكلية لجميع الشبابيك التي تريد إزالة الاستيكر منها.',
-                style: themeText.textCaption.copyWith(
-                  color: themeColor.primary.withValues(alpha: 0.7),
-                  fontStyle: FontStyle.italic,
+                '${currentLinear.toStringAsFixed(1).replaceAll('.0', '')} ${l10n.pricing_unit_meter_short}',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: themeColor.primary,
                 ),
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+        // Interactive Stepper Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: themeColor.cardBackground,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.fromBorderSide(themeColor.cardBorder),
+            boxShadow: [themeColor.cardShadow],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: currentLinear > 1
+                        ? () {
+                            final newVal = (currentLinear - 1).clamp(1, 100).toDouble();
+                            _totalLinearController.text = newVal.toStringAsFixed(0);
+                            context.read<BookingFlowCubit>().updateTotalLinearMeters(newVal);
+                          }
+                        : null,
+                    icon: const Icon(Icons.remove, size: 20),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        currentLinear.toStringAsFixed(1).replaceAll('.0', ''),
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: themeColor.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        l10n.pricing_unit_meter,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          color: themeColor.secondaryText,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton.filledTonal(
+                    onPressed: () {
+                      final newVal = (currentLinear + 1).clamp(1, 100).toDouble();
+                      _totalLinearController.text = newVal.toStringAsFixed(0);
+                      context.read<BookingFlowCubit>().updateTotalLinearMeters(newVal);
+                    },
+                    icon: const Icon(Icons.add, size: 20),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Slider(
+                value: currentLinear.clamp(1, 50).toDouble(),
+                min: 1,
+                max: 50,
+                divisions: 49,
+                activeColor: themeColor.primary,
+                inactiveColor: themeColor.primary.withValues(alpha: 0.15),
+                onChanged: (val) {
+                  setState(() {
+                    _totalLinearController.text = val.toStringAsFixed(0);
+                  });
+                  context.read<BookingFlowCubit>().updateTotalLinearMeters(val.roundToDouble());
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Preset Chips
+        SizedBox(
+          height: 38,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [5, 10, 15, 20, 25, 30, 40].map((preset) {
+              final isSelected = currentLinear.round() == preset;
+              return Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: ChoiceChip(
+                  label: Text('$preset ${l10n.pricing_unit_meter_short}'),
+                  labelStyle: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? Colors.white : themeColor.secondaryText,
+                  ),
+                  selected: isSelected,
+                  selectedColor: themeColor.primary,
+                  backgroundColor: themeColor.nestedCardBackground,
+                  onSelected: (selected) {
+                    if (selected) {
+                      _totalLinearController.text = preset.toString();
+                      context.read<BookingFlowCubit>().updateTotalLinearMeters(preset.toDouble());
+                    }
+                  },
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ExpansionTile(
+          title: Text(
+            l10n.pricing_manual_linear_override,
+            style: themeText.textCaption.copyWith(color: themeColor.secondaryText, fontSize: 12),
+          ),
+          childrenPadding: EdgeInsets.zero,
+          tilePadding: EdgeInsets.zero,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: _buildInputField(
+                controller: _totalLinearController,
+                unit: l10n.pricing_unit_meter,
+                onChanged: (val) {
+                  if (val.isEmpty) {
+                    context.read<BookingFlowCubit>().updateTotalLinearMeters(null);
+                  } else {
+                    context.read<BookingFlowCubit>().updateTotalLinearMeters(double.tryParse(val));
+                  }
+                },
+                themeText: themeText,
+                themeColor: themeColor,
+              ),
+            ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: themeColor.primary.withValues(alpha: 0.6),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.pricing_linear_meters_desc,
+                  style: themeText.textCaption.copyWith(
+                    color: themeColor.primary.withValues(alpha: 0.7),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -406,21 +826,22 @@ class _PricingPageState extends State<PricingPage> {
     AppTextThemeExtension themeText,
     ThemeColorExtension themeColor,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'مقاسات الشبابيك',
+          l10n.pricing_windows_dimensions_title,
           style: themeText.titleSectionSmall.copyWith(
-            color: const Color(0xFF333333),
+            color: themeColor.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'أدخل مقاسات كل شباك والعدد المطلوب بدقة.',
-          style: themeText.textCaption.copyWith(color: const Color(0xFF999999)),
+          l10n.pricing_windows_dimensions_desc,
+          style: themeText.textCaption.copyWith(color: themeColor.secondaryText),
         ),
         const SizedBox(height: 20),
         ListView.separated(
@@ -430,7 +851,7 @@ class _PricingPageState extends State<PricingPage> {
           separatorBuilder: (_, _) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
             final window = state.windows[index];
-            return _buildWindowItem(index, window, themeText, themeColor);
+            return _buildWindowItem(index, window, themeText, themeColor, l10n);
           },
         ),
         const SizedBox(height: 20),
@@ -448,7 +869,7 @@ class _PricingPageState extends State<PricingPage> {
                 Icon(Icons.add, color: themeColor.primary, size: 18),
                 const SizedBox(width: 8),
                 Text(
-                  'إضافة شباك آخر',
+                  l10n.pricing_add_window_button,
                   style: themeText.textBodyPrimary.copyWith(
                     color: themeColor.primary,
                     fontWeight: FontWeight.bold,
@@ -467,19 +888,15 @@ class _PricingPageState extends State<PricingPage> {
     WindowDimension window,
     AppTextThemeExtension themeText,
     ThemeColorExtension themeColor,
+    AppLocalizations l10n,
   ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: themeColor.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.fromBorderSide(themeColor.cardBorder),
+        boxShadow: [themeColor.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,9 +905,10 @@ class _PricingPageState extends State<PricingPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'شباك رقم ${index + 1}',
+                l10n.pricing_window_title((index + 1).toString()),
                 style: themeText.textBodySecondary.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: themeColor.textPrimary,
                 ),
               ),
               if (index > 0)
@@ -501,130 +919,281 @@ class _PricingPageState extends State<PricingPage> {
                     _heightControllers.remove(index)?.dispose();
                     _quantityControllers.remove(index)?.dispose();
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.delete_outline,
-                    color: Colors.red,
+                    color: themeColor.error,
                     size: 20,
                   ),
                 ),
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _SideToggleButton(
-                    label: 'وجه واحد (داخلي)',
-                    isSelected: !window.isBothSides,
-                    onTap: () => context.read<BookingFlowCubit>().updateWindow(
-                      index,
-                      window.copyWith(isBothSides: false),
-                    ),
-                    themeText: themeText,
-                    themeColor: themeColor,
-                  ),
+          _buildWindowSideSlidingToggle(
+            window: window,
+            onChanged: (isBoth) => context.read<BookingFlowCubit>().updateWindow(
+                  index,
+                  window.copyWith(isBothSides: isBoth),
                 ),
-                Expanded(
-                  child: _SideToggleButton(
-                    label: 'وجهين (د+خ)',
-                    isSelected: window.isBothSides,
-                    onTap: () => context.read<BookingFlowCubit>().updateWindow(
-                      index,
-                      window.copyWith(isBothSides: true),
-                    ),
-                    themeText: themeText,
-                    themeColor: themeColor,
-                  ),
-                ),
-              ],
-            ),
+            themeColor: themeColor,
+            themeText: themeText,
+            l10n: l10n,
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'العرض (م)',
-                      style: themeText.textCaption.copyWith(fontSize: 12),
-                    ),
-                    const SizedBox(height: 6),
-                    BaseTextFormField(
-                      controller: _widthControllers[index],
-                      keyboardType: TextInputType.number,
-                      onChanged: (val) =>
-                          context.read<BookingFlowCubit>().updateWindow(
-                            index,
-                            window.copyWith(width: double.tryParse(val) ?? 0),
-                          ),
-                      textAlign: TextAlign.center,
-                      hint: "0",
-                      radius: 8,
-                    ),
-                  ],
+                child: _buildWindowDimensionStepper(
+                  label: l10n.pricing_window_width_label,
+                  value: window.width,
+                  onChanged: (w) => context.read<BookingFlowCubit>().updateWindow(
+                        index,
+                        window.copyWith(width: w),
+                      ),
+                  themeColor: themeColor,
+                  themeText: themeText,
+                  l10n: l10n,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'الطول (م)',
-                      style: themeText.textCaption.copyWith(fontSize: 12),
-                    ),
-                    const SizedBox(height: 6),
-                    BaseTextFormField(
-                      controller: _heightControllers[index],
-                      keyboardType: TextInputType.number,
-                      onChanged: (val) =>
-                          context.read<BookingFlowCubit>().updateWindow(
-                            index,
-                            window.copyWith(height: double.tryParse(val) ?? 0),
-                          ),
-                      textAlign: TextAlign.center,
-                      hint: "0",
-                      radius: 8,
-                    ),
-                  ],
+                child: _buildWindowDimensionStepper(
+                  label: l10n.pricing_window_height_label,
+                  value: window.height,
+                  onChanged: (h) => context.read<BookingFlowCubit>().updateWindow(
+                        index,
+                        window.copyWith(height: h),
+                      ),
+                  themeColor: themeColor,
+                  themeText: themeText,
+                  l10n: l10n,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'العدد',
-                      style: themeText.textCaption.copyWith(fontSize: 12),
-                    ),
-                    const SizedBox(height: 6),
-                    BaseTextFormField(
-                      controller: _quantityControllers[index],
-                      keyboardType: TextInputType.number,
-                      onChanged: (val) =>
-                          context.read<BookingFlowCubit>().updateWindow(
-                            index,
-                            window.copyWith(quantity: int.tryParse(val) ?? 1),
-                          ),
-                      textAlign: TextAlign.center,
-                      hint: "1",
-                      radius: 8,
-                    ),
-                  ],
+                child: _buildWindowQuantityStepper(
+                  label: l10n.pricing_window_count_label,
+                  value: window.quantity,
+                  onChanged: (q) => context.read<BookingFlowCubit>().updateWindow(
+                        index,
+                        window.copyWith(quantity: q),
+                      ),
+                  themeColor: themeColor,
+                  themeText: themeText,
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Custom Steppers ────────────────────────────────────────────────────────
+
+  Widget _buildWindowDimensionStepper({
+    required String label,
+    required double value,
+    required Function(double) onChanged,
+    required ThemeColorExtension themeColor,
+    required AppTextThemeExtension themeText,
+    required AppLocalizations l10n,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: themeText.textCaption.copyWith(fontSize: 12, color: themeColor.secondaryText),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: themeColor.nestedCardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.15)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                onPressed: value > 0.1
+                    ? () => onChanged(double.parse((value - 0.1).toStringAsFixed(1)))
+                    : null,
+                icon: const Icon(Icons.remove, size: 16),
+                color: themeColor.primary,
+                disabledColor: themeColor.unselectedItem.withValues(alpha: 0.3),
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(8),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '${value.toStringAsFixed(1)}${l10n.pricing_unit_meter_short}',
+                    style: themeText.textBodyPrimary.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: value < 10.0
+                    ? () => onChanged(double.parse((value + 0.1).toStringAsFixed(1)))
+                    : null,
+                icon: const Icon(Icons.add, size: 16),
+                color: themeColor.primary,
+                disabledColor: themeColor.unselectedItem.withValues(alpha: 0.3),
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(8),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWindowQuantityStepper({
+    required String label,
+    required int value,
+    required Function(int) onChanged,
+    required ThemeColorExtension themeColor,
+    required AppTextThemeExtension themeText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: themeText.textCaption.copyWith(fontSize: 12, color: themeColor.secondaryText),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: themeColor.nestedCardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.15)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                onPressed: value > 1 ? () => onChanged(value - 1) : null,
+                icon: const Icon(Icons.remove, size: 16),
+                color: themeColor.primary,
+                disabledColor: themeColor.unselectedItem.withValues(alpha: 0.3),
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(8),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '$value',
+                    style: themeText.textBodyPrimary.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: value < 50 ? () => onChanged(value + 1) : null,
+                icon: const Icon(Icons.add, size: 16),
+                color: themeColor.primary,
+                disabledColor: themeColor.unselectedItem.withValues(alpha: 0.3),
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(8),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWindowSideSlidingToggle({
+    required WindowDimension window,
+    required Function(bool) onChanged,
+    required ThemeColorExtension themeColor,
+    required AppTextThemeExtension themeText,
+    required AppLocalizations l10n,
+  }) {
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: themeColor.nestedCardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth / 2;
+          return Stack(
+            children: [
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                alignment: window.isBothSides
+                    ? AlignmentDirectional.centerEnd
+                    : AlignmentDirectional.centerStart,
+                child: Container(
+                  width: width,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: themeColor.primary,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: themeColor.primary.withValues(alpha: 0.25),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => onChanged(false),
+                      child: Center(
+                        child: Text(
+                          l10n.pricing_window_single_side,
+                          style: themeText.textCaption.copyWith(
+                            color: !window.isBothSides ? Colors.white : themeColor.secondaryText,
+                            fontWeight: !window.isBothSides ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => onChanged(true),
+                      child: Center(
+                        child: Text(
+                          l10n.pricing_window_both_sides,
+                          style: themeText.textCaption.copyWith(
+                            color: window.isBothSides ? Colors.white : themeColor.secondaryText,
+                            fontWeight: window.isBothSides ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -635,6 +1204,7 @@ class _PricingPageState extends State<PricingPage> {
     ThemeColorExtension themeColor,
     AppTextThemeExtension themeText,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -648,7 +1218,7 @@ class _PricingPageState extends State<PricingPage> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'هذه الخدمة بسعر ثابت، اضغط على زر "احسب السعر" لإظهار التفاصيل والانتقال للخطوة التالية.',
+              l10n.pricing_fixed_price_desc,
               style: themeText.textBodySecondary.copyWith(
                 color: themeColor.primary,
                 fontWeight: FontWeight.w600,
@@ -659,8 +1229,6 @@ class _PricingPageState extends State<PricingPage> {
       ),
     );
   }
-
-
 
   // ── Input Field ────────────────────────────────────────────────────────────
 
@@ -673,15 +1241,10 @@ class _PricingPageState extends State<PricingPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: themeColor.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.fromBorderSide(themeColor.cardBorder),
+        boxShadow: [themeColor.cardShadow],
       ),
       child: BaseTextFormField(
         controller: controller,
@@ -693,56 +1256,255 @@ class _PricingPageState extends State<PricingPage> {
       ),
     );
   }
-}
 
-// ── Side Toggle Button ─────────────────────────────────────────────────────
-
-class _SideToggleButton extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final AppTextThemeExtension themeText;
-  final ThemeColorExtension themeColor;
-
-  const _SideToggleButton({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-    required this.themeText,
-    required this.themeColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSubtleCouponTrigger(
+    AppTextThemeExtension themeText,
+    ThemeColorExtension themeColor,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 8),
+      onTap: () {
+        setState(() {
+          _isCouponFieldExpanded = true;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: themeText.textCaption.copyWith(
-              color: isSelected ? themeColor.primary : const Color(0xFF999999),
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 11,
-            ),
+          color: themeColor.primary.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: themeColor.primary.withValues(alpha: 0.12),
+            width: 1,
           ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.confirmation_number_outlined,
+              size: 18,
+              color: themeColor.primary,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              l10n.pricing_coupon_trigger_text,
+              style: themeText.textCaption.copyWith(
+                color: themeColor.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 18,
+              color: themeColor.primary,
+            ),
+          ],
         ),
       ),
     );
   }
+
+  Widget _buildCouponInput(
+    AppTextThemeExtension themeText,
+    ThemeColorExtension themeColor,
+    BookingFlowState state,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final cubit = context.read<BookingFlowCubit>();
+    final hasCoupon = cubit.state.dynamicInputs['coupon_code'] != null &&
+        cubit.state.dynamicInputs['coupon_code'].toString().isNotEmpty;
+
+    // If there is no active coupon, and the user hasn't expanded it, show trigger
+    if (!_isCouponFieldExpanded && !hasCoupon) {
+      return _buildSubtleCouponTrigger(themeText, themeColor);
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: themeColor.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.fromBorderSide(themeColor.cardBorder),
+        boxShadow: [themeColor.cardShadow],
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.local_offer_outlined, color: themeColor.primary, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.pricing_coupon_label,
+                              style: themeText.textBodySecondary.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: themeColor.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (!hasCoupon)
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () {
+                              setState(() {
+                                _isCouponFieldExpanded = false;
+                              });
+                            },
+                            visualDensity: VisualDensity.compact,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: BaseTextFormField(
+                            controller: _couponController,
+                            hint: l10n.pricing_coupon_hint,
+                            radius: 12,
+                            enabled: !hasCoupon,
+                            prefixIcon: const Icon(Icons.confirmation_number_outlined),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              FocusScope.of(context).unfocus();
+                              if (hasCoupon) {
+                                // Clear coupon
+                                _couponController.clear();
+                                cubit.updateDynamicInput('coupon_code', null);
+                                cubit.calculatePrice();
+                              } else {
+                                // Apply coupon
+                                final code = _couponController.text.trim().toUpperCase();
+                                if (code.isNotEmpty) {
+                                  cubit.updateDynamicInput('coupon_code', code);
+                                  cubit.calculatePrice();
+                                }
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: hasCoupon ? themeColor.error.withValues(alpha: 0.1) : themeColor.primary,
+                              foregroundColor: hasCoupon ? themeColor.error : Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              hasCoupon ? l10n.pricing_coupon_cancel : l10n.pricing_coupon_apply,
+                              style: const TextStyle(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (hasCoupon) ...[
+                const SizedBox(height: 8),
+                Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    CustomPaint(
+                      size: const Size(double.infinity, 1),
+                      painter: DashedLinePainter(color: themeColor.unselectedItem.withValues(alpha: 0.2)),
+                    ),
+                    Positioned(
+                      left: -8,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: themeColor.background,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: -8,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: themeColor.background,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: themeColor.pricingDiscount, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.pricing_coupon_success_message,
+                        style: themeText.textCaption.copyWith(
+                          color: themeColor.pricingDiscount,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else
+                const SizedBox(height: 12),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Dashed Line Painter ──────────────────────────────────────────────────────
+
+class DashedLinePainter extends CustomPainter {
+  final Color color;
+  const DashedLinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    
+    const double dashWidth = 5;
+    const double dashSpace = 4;
+    double startX = 14;
+    while (startX < size.width - 14) {
+      canvas.drawLine(Offset(startX, 0), Offset(startX + dashWidth, 0), paint);
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

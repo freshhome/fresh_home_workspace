@@ -18,6 +18,7 @@ class _PricingSimulationSandboxPageState extends State<PricingSimulationSandboxP
   double _areaValue = 150.0;
   bool _isFurnished = false;
   double _linearMetersValue = 0.0;
+  final _couponController = TextEditingController();
   Timer? _debounceTimer;
 
   @override
@@ -32,6 +33,7 @@ class _PricingSimulationSandboxPageState extends State<PricingSimulationSandboxP
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _couponController.dispose();
     super.dispose();
   }
 
@@ -50,11 +52,14 @@ class _PricingSimulationSandboxPageState extends State<PricingSimulationSandboxP
   }
 
   void _runSimulation() {
-    final inputs = {
+    final inputs = <String, dynamic>{
       'area': _areaValue,
       'furnished': _isFurnished,
       'total_linear_meters': _linearMetersValue,
     };
+    if (_couponController.text.trim().isNotEmpty) {
+      inputs['coupon_code'] = _couponController.text.trim();
+    }
     context.read<PricingGovernanceCubit>().simulatePricing(widget.subServiceId, inputs, []);
   }
 
@@ -199,6 +204,25 @@ class _PricingSimulationSandboxPageState extends State<PricingSimulationSandboxP
           activeColor: Colors.teal.shade400,
           label: '${_linearMetersValue.toStringAsFixed(1)} م',
           onChanged: (v) => _onSliderChanged(() => setState(() => _linearMetersValue = v)),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _couponController,
+          textCapitalization: TextCapitalization.characters,
+          decoration: InputDecoration(
+            labelText: 'كوبون الخصم للتجربة (مثال: FRESH30)',
+            labelStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 13),
+            prefixIcon: const Icon(Icons.confirmation_number_outlined),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onChanged: (v) {
+            if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+            _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+              if (mounted) _runSimulation();
+            });
+          },
         ),
         const SizedBox(height: 24),
         ElevatedButton.icon(

@@ -9,6 +9,8 @@ abstract class PricingGovernanceRemoteDataSource {
   Future<void> toggleRuleActive(String ruleId, bool isActive);
   Future<List<PricingDiscountModel>> getDiscounts();
   Future<void> upsertDiscount(PricingDiscountModel discount);
+  Future<void> toggleDiscountActive(String discountId, bool isActive);
+  Future<void> deleteDiscount(String discountId);
   Future<List<PricingVersionModel>> getPricingVersions(String subServiceId);
   Future<List<Map<String, dynamic>>> getGovernanceAuditLogs(String subServiceId);
   Future<Map<String, dynamic>> replayBookingPricing(String bookingId);
@@ -72,6 +74,24 @@ class PricingGovernanceRemoteDataSourceImpl implements PricingGovernanceRemoteDa
       await _client.from('pricing_discounts').upsert(discount.toJson());
     } catch (e) {
       throw Exception('Failed to upsert pricing discount: $e');
+    }
+  }
+
+  @override
+  Future<void> toggleDiscountActive(String discountId, bool isActive) async {
+    try {
+      await _client.from('pricing_discounts').update({'is_active': isActive}).eq('id', discountId);
+    } catch (e) {
+      throw Exception('Failed to toggle discount active status: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteDiscount(String discountId) async {
+    try {
+      await _client.from('pricing_discounts').delete().eq('id', discountId);
+    } catch (e) {
+      throw Exception('Failed to delete pricing discount: $e');
     }
   }
 

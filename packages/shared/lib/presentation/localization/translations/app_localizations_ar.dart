@@ -1302,4 +1302,101 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tech_action_success_status_updated => 'تم تغيير حالة الفني بنجاح.';
+
+  @override
+  String get pricing_coupon_trigger_text =>
+      'هل لديك كوبون خصم؟ اضغط هنا لتطبيقه';
+
+  @override
+  String get pricing_coupon_label => 'هل لديك كوبون خصم؟';
+
+  @override
+  String get pricing_coupon_hint => 'أدخل رمز الكوبون (مثال: FRESH30)';
+
+  @override
+  String get pricing_coupon_apply => 'تطبيق';
+
+  @override
+  String get pricing_coupon_cancel => 'إلغاء';
+
+  @override
+  String get pricing_coupon_success_message => 'تم تطبيق الكوبون بنجاح!';
+
+  @override
+  String get pricing_linear_meters_title => 'إجمالي الأمتار الطولية';
+
+  @override
+  String get pricing_linear_meters_desc =>
+      'أدخل عدد الأمتار الكلية لجميع الشبابيك التي تريد إزالة الاستيكر منها.';
+
+  @override
+  String get pricing_windows_dimensions_title => 'مقاسات الشبابيك';
+
+  @override
+  String get pricing_windows_dimensions_desc =>
+      'أدخل مقاسات كل شباك والعدد المطلوب بدقة.';
+
+  @override
+  String pricing_window_title(Object index) {
+    return 'شباك رقم $index';
+  }
+
+  @override
+  String get pricing_window_both_sides => 'وجهين (د+خ)';
+
+  @override
+  String get pricing_window_single_side => 'وجه واحد (داخلي)';
+
+  @override
+  String get pricing_window_width_label => 'العرض (م)';
+
+  @override
+  String get pricing_window_height_label => 'الطول (م)';
+
+  @override
+  String get pricing_window_count_label => 'العدد';
+
+  @override
+  String get pricing_add_window_button => 'إضافة شباك آخر';
+
+  @override
+  String get pricing_fixed_price_desc =>
+      'هذه الخدمة بسعر ثابت، اضغط على زر \"احسب السعر\" لإظهار التفاصيل والانتقال للخطوة التالية.';
+
+  @override
+  String get pricing_min_billing_notice =>
+      'الحد الأدنى للمحاسبة هو 100 متر مربع';
+
+  @override
+  String get pricing_calc_from_windows => 'حساب من أبعاد الشبابيك';
+
+  @override
+  String get pricing_direct_linear_meters => 'إدخال إجمالي الأمتار';
+
+  @override
+  String get pricing_manual_area_override => 'أو أدخل المساحة بدقة يدوياً';
+
+  @override
+  String get pricing_manual_linear_override => 'أو أدخل الأمتار بدقة يدوياً';
+
+  @override
+  String get pricing_method_fixed => 'سعر ثابت للخدمة';
+
+  @override
+  String get pricing_method_square_meter => 'تسعير بالمتر المربع (م²)';
+
+  @override
+  String get pricing_method_linear_meter => 'تسعير بالمتر الطولي';
+
+  @override
+  String get pricing_method_issue => 'تسعير حسب العطل/المشكلة';
+
+  @override
+  String get pricing_method_custom => 'تسعير مخصص';
+
+  @override
+  String get pricing_unit_meter => 'متر';
+
+  @override
+  String get pricing_unit_meter_short => 'م';
 }

@@ -46,6 +46,7 @@ class PricingGovernanceRepositoryImpl implements PricingGovernanceRepository {
   Future<void> upsertDiscount(PricingDiscountEntity discount) async {
     final model = PricingDiscountModel(
       id: discount.id,
+      subServiceId: discount.subServiceId,
       name: discount.name,
       code: discount.code,
       campaignType: discount.campaignType,
@@ -60,6 +61,16 @@ class PricingGovernanceRepositoryImpl implements PricingGovernanceRepository {
       isActive: discount.isActive,
     );
     await _remoteDataSource.upsertDiscount(model);
+  }
+
+  @override
+  Future<void> toggleDiscountActive(String discountId, bool isActive) async {
+    await _remoteDataSource.toggleDiscountActive(discountId, isActive);
+  }
+
+  @override
+  Future<void> deleteDiscount(String discountId) async {
+    await _remoteDataSource.deleteDiscount(discountId);
   }
 
   @override

@@ -11,6 +11,8 @@ import '../domain/use_cases/replay_booking_pricing_usecase.dart';
 import '../domain/use_cases/simulate_pricing_pipeline_usecase.dart';
 import '../domain/use_cases/toggle_pricing_rule_usecase.dart';
 import '../domain/use_cases/upsert_pricing_discount_usecase.dart';
+import '../domain/use_cases/toggle_pricing_discount_usecase.dart';
+import '../domain/use_cases/delete_pricing_discount_usecase.dart';
 import '../domain/use_cases/upsert_pricing_rule_usecase.dart';
 import '../presentation/cubit/pricing_governance_cubit.dart';
 
@@ -25,6 +27,8 @@ void initPricingGovernance() {
       toggleRule: sl(),
       getDiscounts: sl(),
       upsertDiscount: sl(),
+      toggleDiscount: sl(),
+      deleteDiscount: sl(),
       getVersions: sl(),
       getAuditLogs: sl(),
       replayBooking: sl(),
@@ -38,6 +42,8 @@ void initPricingGovernance() {
   sl.registerLazySingleton(() => TogglePricingRuleUseCase(sl()));
   sl.registerLazySingleton(() => GetPricingDiscountsUseCase(sl()));
   sl.registerLazySingleton(() => UpsertPricingDiscountUseCase(sl()));
+  sl.registerLazySingleton(() => TogglePricingDiscountUseCase(sl()));
+  sl.registerLazySingleton(() => DeletePricingDiscountUseCase(sl()));
   sl.registerLazySingleton(() => GetPricingVersionsUseCase(sl()));
   sl.registerLazySingleton(() => GetGovernanceAuditLogsUseCase(sl()));
   sl.registerLazySingleton(() => ReplayBookingPricingUseCase(sl()));

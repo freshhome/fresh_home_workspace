@@ -8,6 +8,8 @@ abstract class PricingGovernanceRepository {
   Future<void> toggleRuleActive(String ruleId, bool isActive);
   Future<List<PricingDiscountEntity>> getDiscounts();
   Future<void> upsertDiscount(PricingDiscountEntity discount);
+  Future<void> toggleDiscountActive(String discountId, bool isActive);
+  Future<void> deleteDiscount(String discountId);
   Future<List<PricingVersionEntity>> getPricingVersions(String subServiceId);
   Future<List<Map<String, dynamic>>> getGovernanceAuditLogs(String subServiceId);
   Future<Map<String, dynamic>> replayBookingPricing(String bookingId);

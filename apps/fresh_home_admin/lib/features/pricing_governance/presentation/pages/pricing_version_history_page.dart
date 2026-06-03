@@ -46,8 +46,10 @@ class _PricingVersionHistoryPageState extends State<PricingVersionHistoryPage> {
   Widget build(BuildContext context) {
     final themeColor = Theme.of(context).extension<ThemeColorExtension>()!;
 
-    final oldState = widget.auditLog['before_state'] ?? {};
-    final newState = widget.auditLog['after_state'] ?? {};
+    final oldStateRaw = widget.auditLog['before_state'];
+    final newStateRaw = widget.auditLog['after_state'];
+    final Map<String, dynamic> oldState = oldStateRaw is Map ? Map<String, dynamic>.from(oldStateRaw) : const <String, dynamic>{};
+    final Map<String, dynamic> newState = newStateRaw is Map ? Map<String, dynamic>.from(newStateRaw) : const <String, dynamic>{};
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),

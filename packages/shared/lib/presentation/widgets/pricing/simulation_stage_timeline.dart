@@ -204,15 +204,22 @@ class SimulationStageTimeline extends StatelessWidget {
                                               child: Text(
                                                 '• $action',
                                                 style: const TextStyle(fontFamily: 'Cairo', fontSize: 11),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
-                                            Text(
-                                              'السعر: ${before.toString() == '0' || before.toString() == '0.0' ? '' : '${before.toString()} ➔ '}${after.toString()} ج.م',
-                                              style: TextStyle(
-                                                fontFamily: 'Cairo',
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: themeColor.primary,
+                                            const SizedBox(width: 8),
+                                            Flexible(
+                                              child: Text(
+                                                '${before.toString() == '0' || before.toString() == '0.0' || before == after ? '' : '${before.toString()} ➔ '}${after.toString()} ج.م',
+                                                style: TextStyle(
+                                                  fontFamily: 'Cairo',
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: themeColor.primary,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           ],

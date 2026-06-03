@@ -31,6 +31,14 @@ class AuthenticationRoutes {
       ),
     ),
     GoRoute(
+      path: AppRoutes.resetPassword,
+      name: AppRoutes.resetPassword,
+      builder: (context, state) => BlocProvider.value(
+        value: GetIt.I<AuthCubit>(),
+        child: const ResetPasswordPage(),
+      ),
+    ),
+    GoRoute(
       path: AppRoutes.pendingApproval,
       name: AppRoutes.pendingApproval,
       builder: (context, state) => const PendingApprovalPage(),

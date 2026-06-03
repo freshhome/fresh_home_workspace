@@ -92,15 +92,20 @@ class TechnicianPayoutPreviewCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'صافي مستحقات الفني',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: themeColor.pricingTechEarnings,
+                Expanded(
+                  child: Text(
+                    'صافي مستحقات الفني',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: themeColor.pricingTechEarnings,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   '${technicianPayout.toStringAsFixed(0)} ج.م',
                   style: TextStyle(
@@ -143,6 +148,8 @@ class TechnicianPayoutPreviewCard extends StatelessWidget {
                   fontSize: 13,
                   color: themeColor.secondaryText,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               if (isAbsorbedBadge)
                 Container(

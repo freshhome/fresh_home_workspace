@@ -83,28 +83,35 @@ class ProfitPreviewCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'صافي ربح العملية',
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        color: netProfit >= 0 ? themeColor.pricingDiscount : themeColor.error,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'صافي ربح العملية',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: netProfit >= 0 ? themeColor.pricingDiscount : themeColor.error,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Text(
-                      'هامش الربح: ${profitMargin.toStringAsFixed(1)}%',
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 11,
-                        color: themeColor.secondaryText,
+                      Text(
+                        'هامش الربح: ${profitMargin.toStringAsFixed(1)}%',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 11,
+                          color: themeColor.secondaryText,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   '${netProfit.toStringAsFixed(0)} ج.م',
                   style: TextStyle(
@@ -134,6 +141,8 @@ class ProfitPreviewCard extends StatelessWidget {
               fontSize: 13,
               color: context.themeColor.secondaryText,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(width: 12),

@@ -7,8 +7,13 @@ import '../../domain/use_cases/upsert_pricing_discount_usecase.dart';
 
 class DiscountCampaignBuilderPage extends StatefulWidget {
   final String subServiceId;
+  final PricingDiscountEntity? discount;
 
-  const DiscountCampaignBuilderPage({super.key, required this.subServiceId});
+  const DiscountCampaignBuilderPage({
+    super.key,
+    required this.subServiceId,
+    this.discount,
+  });
 
   @override
   State<DiscountCampaignBuilderPage> createState() => _DiscountCampaignBuilderPageState();
@@ -27,6 +32,22 @@ class _DiscountCampaignBuilderPageState extends State<DiscountCampaignBuilderPag
   final int _priority = 1;
   DateTime? _startDate;
   DateTime? _endDate;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.discount != null) {
+      _nameController.text = widget.discount!.name;
+      _codeController.text = widget.discount!.code;
+      _valueController.text = widget.discount!.discountValue.toString();
+      _limitController.text = widget.discount!.usageLimit?.toString() ?? '';
+      _campaignType = widget.discount!.campaignType;
+      _discountType = widget.discount!.discountType;
+      _isStackable = widget.discount!.isStackable;
+      _startDate = widget.discount!.startDate;
+      _endDate = widget.discount!.endDate;
+    }
+  }
 
   @override
   void dispose() {
@@ -93,19 +114,20 @@ class _DiscountCampaignBuilderPageState extends State<DiscountCampaignBuilderPag
       }
 
       final discount = PricingDiscountEntity(
-        id: const Uuid().v4(),
+        id: widget.discount?.id ?? const Uuid().v4(),
+        subServiceId: widget.discount?.subServiceId ?? widget.subServiceId,
         name: _nameController.text.trim(),
         code: _codeController.text.toUpperCase().trim(),
         campaignType: _campaignType,
         discountType: _discountType,
         discountValue: val,
         isStackable: _isStackable,
-        priority: _priority,
+        priority: widget.discount?.priority ?? _priority,
         startDate: _startDate,
         endDate: _endDate,
         usageLimit: _limitController.text.isNotEmpty ? int.tryParse(_limitController.text) : null,
-        usageCount: 0,
-        isActive: true,
+        usageCount: widget.discount?.usageCount ?? 0,
+        isActive: widget.discount?.isActive ?? true,
       );
 
       await getIt<UpsertPricingDiscountUseCase>().call(discount);
@@ -129,7 +151,7 @@ class _DiscountCampaignBuilderPageState extends State<DiscountCampaignBuilderPag
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
-        title: const Text('تصميم حملة الخصومات والتخفيضات', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+        title: Text(widget.discount != null ? 'تعديل حملة الخصم' : 'تصميم حملة الخصومات والتخفيضات', style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: Directionality(
@@ -277,7 +299,7 @@ class _DiscountCampaignBuilderPageState extends State<DiscountCampaignBuilderPag
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('حفظ ونشر حملة الخصم الجديدة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 14)),
+                child: Text(widget.discount != null ? 'حفظ التعديلات' : 'حفظ ونشر حملة الخصم الجديدة', style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 14)),
               )
             ],
           ),

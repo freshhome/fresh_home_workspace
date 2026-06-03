@@ -12,5 +12,6 @@ abstract class UserRepositories {
   Future<Either<Failure, void>> signInWithGoogle({required String redirectTo});
   Future<Either<Failure, void>> ensureRole(String roleName);
   Future<Either<Failure, bool>> verifyRole(String roleName);
+  Future<Either<Failure, void>> updatePassword(String newPassword);
   Future<User?> getCurrentUser();
 }

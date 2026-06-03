@@ -448,5 +448,40 @@
   "tech_action_success_rescheduled": "Booking rescheduled successfully.",
   "tech_action_success_status_updated": "Technician status updated successfully.",
   "tech_details_decline_order": "Decline Order",
-  "tech_status_timeline_arrived": "Arrived at Site"
+  "tech_status_timeline_arrived": "Arrived at Site",
+  "pricing_coupon_trigger_text": "Have a coupon code? Click here to apply",
+  "pricing_coupon_label": "Do you have a coupon?",
+  "pricing_coupon_hint": "Enter coupon code (e.g. FRESH30)",
+  "pricing_coupon_apply": "Apply",
+  "pricing_coupon_cancel": "Cancel",
+  "pricing_coupon_success_message": "Coupon applied successfully!",
+  "pricing_linear_meters_title": "Total Linear Meters",
+  "pricing_linear_meters_desc": "Enter total meters for all windows you want to clean.",
+  "pricing_windows_dimensions_title": "Window Dimensions",
+  "pricing_windows_dimensions_desc": "Enter the dimensions and quantity of each window precisely.",
+  "pricing_window_title": "Window #{index}",
+  "@pricing_window_title": {
+    "placeholders": {
+        "index": {}
+    }
+  },
+  "pricing_window_both_sides": "Both Sides (In+Out)",
+  "pricing_window_single_side": "Single Side (Internal)",
+  "pricing_window_width_label": "Width (m)",
+  "pricing_window_height_label": "Height (m)",
+  "pricing_window_count_label": "Qty",
+  "pricing_add_window_button": "Add another window",
+  "pricing_fixed_price_desc": "This service is at a fixed price. Click \"Calculate Price\" to show details and proceed.",
+  "pricing_min_billing_notice": "The minimum billable area is 100 sq. meters",
+  "pricing_calc_from_windows": "Calculate from windows",
+  "pricing_direct_linear_meters": "Enter total meters",
+  "pricing_manual_area_override": "Or enter area manually",
+  "pricing_manual_linear_override": "Or enter meters manually",
+  "pricing_method_fixed": "Fixed Price",
+  "pricing_method_square_meter": "Per Square Meter (m²)",
+  "pricing_method_linear_meter": "Per Linear Meter",
+  "pricing_method_issue": "Per Issue / Trouble",
+  "pricing_method_custom": "Custom Pricing",
+  "pricing_unit_meter": "meter",
+  "pricing_unit_meter_short": "m"
 }

@@ -4,6 +4,7 @@ export 'pages/login_page.dart';
 export 'pages/new_account_page.dart';
 export 'pages/pending_approval_page.dart';
 export 'pages/forgot_password/forgot_password_email_page.dart';
+export 'pages/forgot_password/reset_password_page.dart';
 export 'widgets/build_buttons_section.dart';
 export 'widgets/build_header.dart';
 export 'widgets/login_form_fields.dart';

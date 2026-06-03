@@ -35,25 +35,32 @@ class DiscountImpactCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.percent_rounded,
-                      color: themeColor.pricingLocked,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'تأثير الخصومات والحملات الترويجية',
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.percent_rounded,
+                        color: themeColor.pricingLocked,
+                        size: 22,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'تأثير الخصومات والحملات الترويجية',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                if (globalCapHit)
+                if (globalCapHit) ...[
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -71,6 +78,7 @@ class DiscountImpactCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                ],
               ],
             ),
             const Padding(
@@ -96,11 +104,8 @@ class DiscountImpactCard extends StatelessWidget {
               ...appliedCampaigns.map((camp) {
                 final name = camp['name'] as String? ?? 'خصم ترويجي';
                 final code = camp['code'] as String?;
-                final val = (camp['value'] as num? ?? 0).toDouble();
-                final valType = camp['value_type'] as String? ?? 'flat';
-                final displayVal = valType == 'percent' || valType == 'percentage'
-                    ? '${val.toStringAsFixed(0)}%'
-                    : '${val.toStringAsFixed(0)} ج.م';
+                final val = (camp['amount'] as num? ?? camp['value'] as num? ?? 0).toDouble();
+                final displayVal = '${val.toStringAsFixed(0)} ج.م';
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 6),
@@ -159,14 +164,19 @@ class DiscountImpactCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: 13,
-            color: context.themeColor.secondaryText,
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 13,
+              color: context.themeColor.secondaryText,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
+        const SizedBox(width: 12),
         Text(
           value,
           style: TextStyle(

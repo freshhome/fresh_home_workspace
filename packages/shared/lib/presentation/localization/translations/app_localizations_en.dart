@@ -1307,4 +1307,101 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tech_action_success_status_updated =>
       'Technician status updated successfully.';
+
+  @override
+  String get pricing_coupon_trigger_text =>
+      'Have a coupon code? Click here to apply';
+
+  @override
+  String get pricing_coupon_label => 'Do you have a coupon?';
+
+  @override
+  String get pricing_coupon_hint => 'Enter coupon code (e.g. FRESH30)';
+
+  @override
+  String get pricing_coupon_apply => 'Apply';
+
+  @override
+  String get pricing_coupon_cancel => 'Cancel';
+
+  @override
+  String get pricing_coupon_success_message => 'Coupon applied successfully!';
+
+  @override
+  String get pricing_linear_meters_title => 'Total Linear Meters';
+
+  @override
+  String get pricing_linear_meters_desc =>
+      'Enter total meters for all windows you want to clean.';
+
+  @override
+  String get pricing_windows_dimensions_title => 'Window Dimensions';
+
+  @override
+  String get pricing_windows_dimensions_desc =>
+      'Enter the dimensions and quantity of each window precisely.';
+
+  @override
+  String pricing_window_title(Object index) {
+    return 'Window #$index';
+  }
+
+  @override
+  String get pricing_window_both_sides => 'Both Sides (In+Out)';
+
+  @override
+  String get pricing_window_single_side => 'Single Side (Internal)';
+
+  @override
+  String get pricing_window_width_label => 'Width (m)';
+
+  @override
+  String get pricing_window_height_label => 'Height (m)';
+
+  @override
+  String get pricing_window_count_label => 'Qty';
+
+  @override
+  String get pricing_add_window_button => 'Add another window';
+
+  @override
+  String get pricing_fixed_price_desc =>
+      'This service is at a fixed price. Click \"Calculate Price\" to show details and proceed.';
+
+  @override
+  String get pricing_min_billing_notice =>
+      'The minimum billable area is 100 sq. meters';
+
+  @override
+  String get pricing_calc_from_windows => 'Calculate from windows';
+
+  @override
+  String get pricing_direct_linear_meters => 'Enter total meters';
+
+  @override
+  String get pricing_manual_area_override => 'Or enter area manually';
+
+  @override
+  String get pricing_manual_linear_override => 'Or enter meters manually';
+
+  @override
+  String get pricing_method_fixed => 'Fixed Price';
+
+  @override
+  String get pricing_method_square_meter => 'Per Square Meter (m²)';
+
+  @override
+  String get pricing_method_linear_meter => 'Per Linear Meter';
+
+  @override
+  String get pricing_method_issue => 'Per Issue / Trouble';
+
+  @override
+  String get pricing_method_custom => 'Custom Pricing';
+
+  @override
+  String get pricing_unit_meter => 'meter';
+
+  @override
+  String get pricing_unit_meter_short => 'm';
 }

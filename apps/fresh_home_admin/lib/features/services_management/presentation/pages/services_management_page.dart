@@ -929,7 +929,7 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "السعر: ${service.price!.value} ريال / ${service.price!.unit.isNotEmpty ? service.price!.unit : 'وحدة'}",
+                          "السعر: ${service.price!.value} ج.م / ${service.price!.unit.isNotEmpty ? service.price!.unit : 'وحدة'}",
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontSize: 13,

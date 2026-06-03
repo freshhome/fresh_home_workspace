@@ -2605,6 +2605,186 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تم تغيير حالة الفني بنجاح.'**
   String get tech_action_success_status_updated;
+
+  /// No description provided for @pricing_coupon_trigger_text.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل لديك كوبون خصم؟ اضغط هنا لتطبيقه'**
+  String get pricing_coupon_trigger_text;
+
+  /// No description provided for @pricing_coupon_label.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل لديك كوبون خصم؟'**
+  String get pricing_coupon_label;
+
+  /// No description provided for @pricing_coupon_hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل رمز الكوبون (مثال: FRESH30)'**
+  String get pricing_coupon_hint;
+
+  /// No description provided for @pricing_coupon_apply.
+  ///
+  /// In ar, this message translates to:
+  /// **'تطبيق'**
+  String get pricing_coupon_apply;
+
+  /// No description provided for @pricing_coupon_cancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get pricing_coupon_cancel;
+
+  /// No description provided for @pricing_coupon_success_message.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تطبيق الكوبون بنجاح!'**
+  String get pricing_coupon_success_message;
+
+  /// No description provided for @pricing_linear_meters_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الأمتار الطولية'**
+  String get pricing_linear_meters_title;
+
+  /// No description provided for @pricing_linear_meters_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل عدد الأمتار الكلية لجميع الشبابيك التي تريد إزالة الاستيكر منها.'**
+  String get pricing_linear_meters_desc;
+
+  /// No description provided for @pricing_windows_dimensions_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقاسات الشبابيك'**
+  String get pricing_windows_dimensions_title;
+
+  /// No description provided for @pricing_windows_dimensions_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل مقاسات كل شباك والعدد المطلوب بدقة.'**
+  String get pricing_windows_dimensions_desc;
+
+  /// No description provided for @pricing_window_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'شباك رقم {index}'**
+  String pricing_window_title(Object index);
+
+  /// No description provided for @pricing_window_both_sides.
+  ///
+  /// In ar, this message translates to:
+  /// **'وجهين (د+خ)'**
+  String get pricing_window_both_sides;
+
+  /// No description provided for @pricing_window_single_side.
+  ///
+  /// In ar, this message translates to:
+  /// **'وجه واحد (داخلي)'**
+  String get pricing_window_single_side;
+
+  /// No description provided for @pricing_window_width_label.
+  ///
+  /// In ar, this message translates to:
+  /// **'العرض (م)'**
+  String get pricing_window_width_label;
+
+  /// No description provided for @pricing_window_height_label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطول (م)'**
+  String get pricing_window_height_label;
+
+  /// No description provided for @pricing_window_count_label.
+  ///
+  /// In ar, this message translates to:
+  /// **'العدد'**
+  String get pricing_window_count_label;
+
+  /// No description provided for @pricing_add_window_button.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة شباك آخر'**
+  String get pricing_add_window_button;
+
+  /// No description provided for @pricing_fixed_price_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه الخدمة بسعر ثابت، اضغط على زر \"احسب السعر\" لإظهار التفاصيل والانتقال للخطوة التالية.'**
+  String get pricing_fixed_price_desc;
+
+  /// No description provided for @pricing_min_billing_notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى للمحاسبة هو 100 متر مربع'**
+  String get pricing_min_billing_notice;
+
+  /// No description provided for @pricing_calc_from_windows.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب من أبعاد الشبابيك'**
+  String get pricing_calc_from_windows;
+
+  /// No description provided for @pricing_direct_linear_meters.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدخال إجمالي الأمتار'**
+  String get pricing_direct_linear_meters;
+
+  /// No description provided for @pricing_manual_area_override.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو أدخل المساحة بدقة يدوياً'**
+  String get pricing_manual_area_override;
+
+  /// No description provided for @pricing_manual_linear_override.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو أدخل الأمتار بدقة يدوياً'**
+  String get pricing_manual_linear_override;
+
+  /// No description provided for @pricing_method_fixed.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر ثابت للخدمة'**
+  String get pricing_method_fixed;
+
+  /// No description provided for @pricing_method_square_meter.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسعير بالمتر المربع (م²)'**
+  String get pricing_method_square_meter;
+
+  /// No description provided for @pricing_method_linear_meter.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسعير بالمتر الطولي'**
+  String get pricing_method_linear_meter;
+
+  /// No description provided for @pricing_method_issue.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسعير حسب العطل/المشكلة'**
+  String get pricing_method_issue;
+
+  /// No description provided for @pricing_method_custom.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسعير مخصص'**
+  String get pricing_method_custom;
+
+  /// No description provided for @pricing_unit_meter.
+  ///
+  /// In ar, this message translates to:
+  /// **'متر'**
+  String get pricing_unit_meter;
+
+  /// No description provided for @pricing_unit_meter_short.
+  ///
+  /// In ar, this message translates to:
+  /// **'م'**
+  String get pricing_unit_meter_short;
 }
 
 class _AppLocalizationsDelegate

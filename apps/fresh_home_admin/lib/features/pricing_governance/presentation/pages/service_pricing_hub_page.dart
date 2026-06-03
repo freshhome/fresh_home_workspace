@@ -147,7 +147,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     } else {
       _pricingMethod = PricingMethod.fixed;
       _basePrice = 0.0;
-      _unit = 'ريال';
+      _unit = 'ج.م';
       _fields = [];
       _options = [];
       _basePriceFormula = null;
@@ -895,15 +895,20 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "محاكاة شاشة العميل (Interactive Emulator)",
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontWeight: FontWeight.w900,
-                fontSize: 13,
-                color: themeColor.primary,
+            Expanded(
+              child: Text(
+                "محاكاة شاشة العميل (Interactive Emulator)",
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                  color: themeColor.primary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: _runServerSimulation,
               icon: _isLoadingSimulation
@@ -1037,7 +1042,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                                     ),
                                   ),
                                   subtitle: Text(
-                                    '+${opt.value} ريال',
+                                    '+${opt.value} ج.م',
                                     style: TextStyle(
                                       fontSize: 10,
                                       color: themeColor.secondary,
@@ -1298,20 +1303,20 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
           _buildDashedDivider(),
           _buildBillRow(
             "سعر الوحدة الأساسي",
-            "${_basePrice.toStringAsFixed(0)} ريال",
+            "${_basePrice.toStringAsFixed(0)} ج.م",
           ),
           _buildBillRow(
             "حساب الحقول والمعاملات",
-            "${basePriceSimulated.toStringAsFixed(0)} ريال",
+            "${basePriceSimulated.toStringAsFixed(0)} ج.م",
           ),
           _buildBillRow(
             "خيارات وإضافات مخصصة",
-            "+ ${extrasSimulated.toStringAsFixed(0)} ريال",
+            "+ ${extrasSimulated.toStringAsFixed(0)} ج.م",
           ),
           if (isCloudUsed && _simulationResult!.discount > 0)
             _buildBillRow(
               "الخصومات والحملات النشطة",
-              "- ${_simulationResult!.discount.toStringAsFixed(0)} ريال",
+              "- ${_simulationResult!.discount.toStringAsFixed(0)} ج.م",
               color: Colors.redAccent,
             ),
           _buildDashedDivider(),
@@ -1343,7 +1348,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                   ),
                 ),
                 Text(
-                  "${finalBillTotal.toStringAsFixed(0)} ريال",
+                  "${finalBillTotal.toStringAsFixed(0)} ج.م",
                   style: TextStyle(
                     color: themeColor.secondary,
                     fontWeight: FontWeight.w900,
@@ -1555,7 +1560,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                           },
                           decoration: InputDecoration(
                             hintText:
-                                'مثال: 2000 ريال (اتركه فارغاً لعدم تحديد حد أدنى)',
+                                'مثال: 2000 جنيه (اتركه فارغاً لعدم تحديد حد أدنى)',
                             fillColor: themeColor.background,
                             filled: true,
                           ),
@@ -2711,7 +2716,11 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         }
 
         if (state is PricingGovernanceLoaded) {
-          final discounts = state.discounts;
+          final discounts = state.discounts
+              .where((d) =>
+                  d.subServiceId == null ||
+                  d.subServiceId == widget.subServiceId)
+              .toList();
           return Scaffold(
             backgroundColor: Colors.transparent,
             floatingActionButton: FloatingActionButton.extended(
@@ -2770,6 +2779,16 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
+                                          discount.name,
+                                          style: const TextStyle(
+                                            fontFamily: 'Cairo',
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
                                           discount.code,
                                           style: const TextStyle(
                                             fontFamily: 'monospace',
@@ -2787,7 +2806,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                                           style: const TextStyle(
                                             fontFamily: 'Cairo',
                                             fontSize: 13,
-                                            color: Colors.black87,
+                                            color: Colors.black54,
                                           ),
                                         ),
                                       ],
@@ -2870,6 +2889,91 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                                   ],
                                 ),
                               ],
+                              const Divider(height: 24),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Switch(
+                                        value: discount.isActive,
+                                        activeThumbColor: const Color(0xFF1A7A43),
+                                        onChanged: (val) {
+                                          _cubit.toggleDiscountActive(
+                                            discount.id,
+                                            widget.subServiceId,
+                                            val,
+                                          );
+                                        },
+                                      ),
+                                      Text(
+                                        discount.isActive ? 'نشط' : 'معطل',
+                                        style: TextStyle(
+                                          fontFamily: 'Cairo',
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: discount.isActive ? const Color(0xFF1A7A43) : Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit_rounded, color: Colors.blueGrey, size: 20),
+                                        tooltip: 'تعديل الحملة',
+                                        onPressed: () async {
+                                          final result = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => DiscountCampaignBuilderPage(
+                                                subServiceId: widget.subServiceId,
+                                                discount: discount,
+                                              ),
+                                            ),
+                                          );
+                                          if (result == true) {
+                                            _cubit.loadPricingGovernanceData(widget.subServiceId);
+                                          }
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade700, size: 20),
+                                        tooltip: 'حذف الحملة',
+                                        onPressed: () async {
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: const Text(
+                                                'تأكيد الحذف',
+                                                style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+                                              ),
+                                              content: Text(
+                                                'هل أنت متأكد من رغبتك في حذف حملة الخصم "${discount.name}" نهائياً؟',
+                                                style: const TextStyle(fontFamily: 'Cairo'),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context, false),
+                                                  child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo')),
+                                                ),
+                                                ElevatedButton(
+                                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                                  onPressed: () => Navigator.pop(context, true),
+                                                  child: const Text('حذف', style: TextStyle(fontFamily: 'Cairo', color: Colors.white)),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          if (confirm == true) {
+                                            _cubit.deleteDiscount(discount.id, widget.subServiceId);
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -3053,28 +3157,45 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                       globalCapHit: globalCapHitVal,
                     ),
                     const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ProfitPreviewCard(
-                            customerPrice: totalVal,
-                            technicianPayout: technicianPayoutVal,
-                            discountImpact: discountVal,
-                            netProfit: netProfitVal,
+                    if (MediaQuery.of(context).size.width >= 700)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ProfitPreviewCard(
+                              customerPrice: totalVal,
+                              technicianPayout: technicianPayoutVal,
+                              discountImpact: discountVal,
+                              netProfit: netProfitVal,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TechnicianPayoutPreviewCard(
-                            customerPrice: totalVal,
-                            technicianPayout: technicianPayoutVal,
-                            platformCommission: platformCommissionVal,
-                            bonuses: bonusesVal,
-                            promosAbsorbed: discountVal,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: TechnicianPayoutPreviewCard(
+                              customerPrice: totalVal,
+                              technicianPayout: technicianPayoutVal,
+                              platformCommission: platformCommissionVal,
+                              bonuses: bonusesVal,
+                              promosAbsorbed: discountVal,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      )
+                    else ...[
+                      ProfitPreviewCard(
+                        customerPrice: totalVal,
+                        technicianPayout: technicianPayoutVal,
+                        discountImpact: discountVal,
+                        netProfit: netProfitVal,
+                      ),
+                      const SizedBox(height: 16),
+                      TechnicianPayoutPreviewCard(
+                        customerPrice: totalVal,
+                        technicianPayout: technicianPayoutVal,
+                        platformCommission: platformCommissionVal,
+                        bonuses: bonusesVal,
+                        promosAbsorbed: discountVal,
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     DiscountImpactCard(
                       discountAmount: discountVal,

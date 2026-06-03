@@ -13,6 +13,7 @@ class AuthCubit extends Cubit<AuthState> {
   final SignUpUseCase signUpUseCase;
   final ResendVerificationCodeUseCase resendVerificationCodeUseCase;
   final ResetPasswordUseCase resetPasswordUseCase;
+  final UpdatePasswordUseCase updatePasswordUseCase;
   final SignInWithGoogleUseCase signInWithGoogleUseCase;
   final SignOutUseCase signOutUseCase;
   final StopRealtimeSyncUseCase stopRealtimeSyncUseCase;
@@ -33,6 +34,7 @@ class AuthCubit extends Cubit<AuthState> {
     this.signUpUseCase,
     this.resendVerificationCodeUseCase,
     this.resetPasswordUseCase,
+    this.updatePasswordUseCase,
     this.signInWithGoogleUseCase,
     this.signOutUseCase,
     this.stopRealtimeSyncUseCase,
@@ -130,6 +132,16 @@ class AuthCubit extends Cubit<AuthState> {
     result.fold(
       (failure) => emit(AuthErrorState(failure)),
       (_) => emit(ResetPasswordSuccess()),
+    );
+  }
+
+  Future<void> updatePassword({required String newPassword}) async {
+    emit(AuthLoadingState());
+    final result = await updatePasswordUseCase(newPassword);
+    if (isClosed) return;
+    result.fold(
+      (failure) => emit(AuthErrorState(failure)),
+      (_) => emit(UpdatePasswordSuccess()),
     );
   }
 
