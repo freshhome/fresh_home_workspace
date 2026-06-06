@@ -151,7 +151,7 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
         Text(
           widget.label,
           style: widget.themeText.titleSectionSmall.copyWith(
-            color: const Color(0xFF333333),
+            color: widget.themeColor.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 15,
           ),
@@ -159,15 +159,10 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: widget.themeColor.cardBackground,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
-            ],
+            border: Border.fromBorderSide(widget.themeColor.cardBorder),
+            boxShadow: [widget.themeColor.cardShadow],
           ),
           child: BaseTextFormField(
             controller: _controller,
@@ -233,47 +228,42 @@ class DynamicToggleField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onChanged(!value),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          )
-        ],
-        border: Border.all(
-          color: value ? themeColor.primary.withValues(alpha: 0.15) : Colors.grey.shade200,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: value ? themeColor.primary.withValues(alpha: 0.03) : themeColor.cardBackground,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: value ? themeColor.primary : Colors.grey.shade200,
+              width: 1.5,
+            ),
+            boxShadow: [themeColor.cardShadow],
+          ),
+          child: Row(
+            children: [
+              Icon(
+                value ? Icons.check_box : Icons.check_box_outline_blank,
+                color: value ? themeColor.primary : Colors.grey.shade400,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
                   label,
                   style: themeText.textBodyPrimary.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF333333),
+                    fontWeight: value ? FontWeight.bold : FontWeight.normal,
+                    color: themeColor.textPrimary,
                   ),
                 ),
-
-              ],
-            ),
+              ),
+            ],
           ),
-          Switch.adaptive(
-            value: value,
-            onChanged: onChanged,
-            activeColor: themeColor.primary,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -301,41 +291,92 @@ class DynamicDropdownField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final options = field.options ?? [];
+    final bool isValidValue = options.any((opt) => opt.id == value);
+    final String? effectiveVal = isValidValue ? value : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: themeText.titleSectionSmall.copyWith(
-            color: const Color(0xFF333333),
+            color: themeColor.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 15,
+            fontFamily: 'Cairo',
           ),
         ),
         const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade300),
+        DropdownButtonFormField<String>(
+          key: ValueKey(effectiveVal),
+          value: effectiveVal,
+          isExpanded: true,
+          onChanged: onChanged,
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: themeColor.primary,
+            size: 22,
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              hint: Text('اختر قيمة...', style: themeText.textCaption),
-              icon: Icon(Icons.keyboard_arrow_down, color: themeColor.primary),
-              onChanged: onChanged,
-              items: field.options?.map((opt) {
-                final currentLocale = Localizations.localeOf(context).languageCode;
-                return DropdownMenuItem<String>(
-                  value: opt.id,
-                  child: Text(opt.label[currentLocale] ?? opt.label['ar'] ?? opt.id),
-                );
-              }).toList() ?? [],
+          dropdownColor: themeColor.cardBackground,
+          style: themeText.textBodyPrimary.copyWith(
+            color: themeColor.textPrimary,
+            fontFamily: 'Cairo',
+            fontSize: 14,
+          ),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            prefixIcon: Icon(
+              Icons.list_alt_rounded,
+              color: themeColor.primary.withValues(alpha: 0.6),
+              size: 20,
+            ),
+            hintText: locale == 'ar' ? 'اختر قيمة...' : 'Select value...',
+            hintStyle: themeText.textCaption.copyWith(
+              fontFamily: 'Cairo',
+              fontSize: 13,
+              color: themeColor.unselectedItem.withValues(alpha: 0.4),
+            ),
+            fillColor: themeColor.cardBackground,
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: themeColor.unselectedItem.withValues(alpha: 0.15),
+                width: 1.5,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: themeColor.unselectedItem.withValues(alpha: 0.15),
+                width: 1.5,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: themeColor.primary,
+                width: 1.5,
+              ),
             ),
           ),
+          items: options.map((opt) {
+            return DropdownMenuItem<String>(
+              value: opt.id,
+              child: Text(
+                opt.label[locale] ?? opt.label['ar'] ?? opt.id,
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: themeColor.textPrimary,
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
@@ -370,7 +411,7 @@ class DynamicOptionsGroup extends StatelessWidget {
         Text(
           locale == 'ar' ? 'خيارات إضافية' : 'Extra Features',
           style: themeText.titleSectionSmall.copyWith(
-            color: const Color(0xFF333333),
+            color: themeColor.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
@@ -392,12 +433,13 @@ class DynamicOptionsGroup extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isSelected ? themeColor.primary.withValues(alpha: 0.03) : Colors.white,
+                  color: isSelected ? themeColor.primary.withValues(alpha: 0.03) : themeColor.cardBackground,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isSelected ? themeColor.primary : Colors.grey.shade200,
                     width: 1.5,
                   ),
+                  boxShadow: [themeColor.cardShadow],
                 ),
                 child: Row(
                   children: [
@@ -411,11 +453,10 @@ class DynamicOptionsGroup extends StatelessWidget {
                         optionLabel,
                         style: themeText.textBodyPrimary.copyWith(
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: const Color(0xFF333333),
+                          color: themeColor.textPrimary,
                         ),
                       ),
                     ),
-
                   ],
                 ),
               ),

@@ -37,6 +37,7 @@ abstract class BookingRemoteDataSource {
     required String subServiceId,
     required Map<String, dynamic> pricingInputs,
   });
+  Future<bool> hasActiveCoupons(String subServiceId);
 }
 
 class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
@@ -253,6 +254,49 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       return Map<String, dynamic>.from(response as Map);
     } catch (e) {
       throw SupabaseExceptionApp(e.toString(), code: 'supabase_error');
+    }
+  }
+
+  @override
+  Future<bool> hasActiveCoupons(String subServiceId) async {
+    try {
+      final response = await _supabase
+          .from('pricing_discounts')
+          .select('id, start_date, end_date, usage_limit, usage_count')
+          .eq('is_active', true)
+          .eq('type', 'coupon')
+          .not('code', 'is', null)
+          .neq('code', '')
+          .or('sub_service_id.eq.$subServiceId,sub_service_id.is.null');
+
+      if (response == null) return false;
+      final list = response as List;
+      if (list.isEmpty) return false;
+
+      final now = DateTime.now().toUtc();
+      for (final item in list) {
+        final startDateStr = item['start_date'] as String?;
+        final endDateStr = item['end_date'] as String?;
+        final usageLimit = item['usage_limit'] as int?;
+        final usageCount = item['usage_count'] as int? ?? 0;
+
+        if (startDateStr != null) {
+          final startDate = DateTime.parse(startDateStr).toUtc();
+          if (now.isBefore(startDate)) continue;
+        }
+        if (endDateStr != null) {
+          final endDate = DateTime.parse(endDateStr).toUtc();
+          if (now.isAfter(endDate)) continue;
+        }
+        if (usageLimit != null && usageCount >= usageLimit) {
+          continue;
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      // Return false on any network or parsing error so booking flow is not blocked
+      return false;
     }
   }
 }

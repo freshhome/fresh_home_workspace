@@ -30,6 +30,7 @@ class ServicesRoutes {
                 ..getServiceDetails(
                   mainServiceId: serviceId,
                   subserviceId: subServiceId,
+                  forceRemote: true,
                 ),
               child: ServiceDetailsPage(
                 serviceId: serviceId,

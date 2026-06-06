@@ -15,6 +15,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
   final CalculatePriceUseCase calculatePriceUseCase;
   final CreateBookingUseCase createBookingUseCase;
   final GetAvailableDaysUseCase getAvailableDaysUseCase;
+  final CheckActiveCouponsUseCase checkActiveCouponsUseCase;
 
   // Optional – only required in customer mode for profile sync
   final ProfileRepository? profileRepository;
@@ -30,6 +31,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     required this.calculatePriceUseCase,
     required this.createBookingUseCase,
     required this.getAvailableDaysUseCase,
+    required this.checkActiveCouponsUseCase,
     this.profileRepository,
     this.serviceRepository,
   }) : super(
@@ -56,6 +58,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         emit(state.copyWith(computedFields: serviceEntity.computedFields));
       });
     }
+    await _checkActiveCoupons();
   }
 
   Future<void> _loadProfile() async {
@@ -84,12 +87,28 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         dynamicInputs: _getInitialDynamicInputs(subService.price),
         isPriceCalculated: false,
         clearPrice: true,
+        hasActiveCoupons: false, // temporarily reset while fetching
       ),
     );
     _validateCurrentStep();
+    _checkActiveCoupons();
   }
 
   // ── Pricing ────────────────────────────────────────────────────────────────
+  
+  Future<void> _checkActiveCoupons() async {
+    final subServiceId = state.service?.subServiceId;
+    if (subServiceId == null) return;
+
+    final result = await checkActiveCouponsUseCase(subServiceId);
+    if (isClosed) return;
+    result.fold(
+      (failure) => null,
+      (hasCoupons) {
+        emit(state.copyWith(hasActiveCoupons: hasCoupons));
+      },
+    );
+  }
 
   // ── Pricing ────────────────────────────────────────────────────────────────
 

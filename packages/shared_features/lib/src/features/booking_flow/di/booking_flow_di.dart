@@ -11,6 +11,7 @@ Future<void> initBookingFlowDI(GetIt getIt) async {
         calculatePriceUseCase: getIt<CalculatePriceUseCase>(),
         createBookingUseCase: getIt<CreateBookingUseCase>(),
         getAvailableDaysUseCase: getIt<GetAvailableDaysUseCase>(),
+        checkActiveCouponsUseCase: getIt<CheckActiveCouponsUseCase>(),
         // Profile sync only in customer mode
         profileRepository:
             config.requiresProfileSync ? getIt<ProfileRepository>() : null,

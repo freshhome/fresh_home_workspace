@@ -13,6 +13,7 @@ import 'package:shared/data/booking/datasources/availability_remote_datasource.d
 import 'package:shared/data/booking/repositories/availability_repository_impl.dart';
 import 'package:shared/domain/booking/repositories/availability_repository.dart';
 import 'package:shared/domain/booking/use_cases/booking/get_available_days_use_case.dart';
+import 'package:shared/domain/booking/use_cases/booking/check_active_coupons_use_case.dart';
 
 import 'package:shared/data/booking/datasources/admin_booking_remote_data_source.dart';
 import 'package:shared/data/booking/repositories/admin_booking_repository_impl.dart';
@@ -50,6 +51,10 @@ void setupBookingDI(GetIt getIt) {
 
   getIt.registerLazySingleton<CalculatePriceUseCase>(
     () => CalculatePriceUseCase(getIt<BookingRepository>()),
+  );
+
+  getIt.registerLazySingleton<CheckActiveCouponsUseCase>(
+    () => CheckActiveCouponsUseCase(repository: getIt<BookingRepository>()),
   );
 
   getIt.registerLazySingleton<GetBookingByIdUseCase>(

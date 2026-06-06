@@ -105,6 +105,12 @@ class _PricingPageState extends State<PricingPage> {
               (prev.isPriceCalculated != curr.isPriceCalculated && curr.isPriceCalculated) ||
               (prev.errorMessage != curr.errorMessage && curr.errorMessage != null),
           listener: (context, state) {
+            if (state.errorMessage != null) {
+              debugPrint('🚨 Pricing Calculation Error: ${state.errorMessage}');
+            }
+            if (state.isPriceCalculated && state.price != null) {
+              debugPrint('💵 Pricing Calculated: Base=${state.price!.basePrice}, Total=${state.price!.total}, Metadata=${state.price!.metadata}');
+            }
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (_scrollController.hasClients) {
                 _scrollController.animateTo(
@@ -196,8 +202,10 @@ class _PricingPageState extends State<PricingPage> {
                   const SizedBox(height: 24),
                 ],
                 if (state.isPriceCalculated && state.price != null) ...[
-                  _buildCouponInput(themeText, themeColor, state),
-                  const SizedBox(height: 24),
+                  if (state.hasActiveCoupons || (state.dynamicInputs['coupon_code'] != null && state.dynamicInputs['coupon_code'].toString().isNotEmpty)) ...[
+                    _buildCouponInput(themeText, themeColor, state),
+                    const SizedBox(height: 24),
+                  ],
                   PriceBreakdownCard(pricing: state.price!, showHeader: true),
                 ],
               ],

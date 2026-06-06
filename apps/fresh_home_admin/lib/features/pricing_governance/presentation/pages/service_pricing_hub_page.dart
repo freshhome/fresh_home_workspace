@@ -5,6 +5,7 @@ import 'package:shared/shared.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:shared/presentation/dialogs/dialog_helper.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
+import 'package:shared_features/shared_features.dart';
 
 import '../cubit/pricing_governance_cubit.dart';
 import '../cubit/pricing_governance_state.dart';
@@ -49,12 +50,17 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
   late List<PriceOptionEntity> _options;
   late List<ComputedFieldEntity> _computedFields;
   late TextEditingController _formulaController;
+  late TextEditingController _pricingUnitController;
   String? _basePriceFormula;
   double? _minPrice;
 
   // Simulator Inputs State
   final Map<String, dynamic> _simulatorInputs = {};
   final List<String> _simulatorSelectedOptions = [];
+  List<WindowDimension> _simulatorWindows = [];
+  bool _simulatorUseWindowsCalculator = false;
+  final TextEditingController _simulatorCouponController = TextEditingController();
+  bool _simulatorIsCouponFieldExpanded = false;
 
   // Server Simulation Result
   PricingSimulationResult? _simulationResult;
@@ -96,6 +102,8 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
   void dispose() {
     _tabController.dispose();
     _formulaController.dispose();
+    _pricingUnitController.dispose();
+    _simulatorCouponController.dispose();
     _cubit.close();
     super.dispose();
   }
@@ -143,6 +151,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
       _options = List.from(price.options);
       _basePriceFormula = price.basePriceFormula;
       _formulaController = TextEditingController(text: _basePriceFormula ?? '');
+      _pricingUnitController = TextEditingController(text: _unit);
       _minPrice = price.minPrice?.toDouble();
     } else {
       _pricingMethod = PricingMethod.fixed;
@@ -152,6 +161,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
       _options = [];
       _basePriceFormula = null;
       _formulaController = TextEditingController(text: '');
+      _pricingUnitController = TextEditingController(text: 'ج.م');
       _minPrice = null;
     }
     _computedFields = List.from(_service?.computedFields ?? const []);
@@ -170,11 +180,24 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
   void _initializeSimulatorDefaults() {
     _simulatorInputs.clear();
     _simulatorSelectedOptions.clear();
+    _simulatorWindows = [const WindowDimension(width: 1.0, height: 1.0, quantity: 1, isBothSides: false)];
+    _simulatorUseWindowsCalculator = false;
+    _simulatorCouponController.clear();
+    _simulatorIsCouponFieldExpanded = false;
+
+    // Set default values for built-in/classic fields
+    _simulatorInputs['area'] = 100.0;
+    _simulatorInputs['total_linear_meters'] = 10.0;
+
     for (final field in _fields) {
       if (field.type == DynamicFieldType.number) {
         _simulatorInputs[field.id] = field.min?.toDouble() ?? 100.0;
       } else if (field.type == DynamicFieldType.toggle) {
         _simulatorInputs[field.id] = false;
+      } else if (field.type == DynamicFieldType.dropdown) {
+        _simulatorInputs[field.id] = (field.options != null && field.options!.isNotEmpty)
+            ? field.options!.first.id
+            : null;
       }
     }
   }
@@ -242,6 +265,16 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
       _simulationError = null;
     });
 
+    double? calcLinearMeters = (_simulatorInputs['total_linear_meters'] as num?)?.toDouble();
+    if (_pricingMethod == PricingMethod.perLinearMeter) {
+      if (_simulatorUseWindowsCalculator && _simulatorWindows.isNotEmpty) {
+        calcLinearMeters = _simulatorWindows.fold(
+          0.0,
+          (sum, window) => sum! + window.effectiveLinearMeters,
+        );
+      }
+    }
+
     try {
       final Map<String, dynamic> priceConfig = {
         'type': _pricingMethod.name,
@@ -257,6 +290,10 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                 if (f.min != null) 'min': f.min,
                 if (f.unit != null) 'unit': f.unit,
                 if (f.priceModifier != null) 'price_modifier': f.priceModifier,
+                if (f.options != null)
+                  'options': f.options!
+                      .map((o) => {'id': o.id, 'label': o.label})
+                      .toList(),
               },
             )
             .toList(),
@@ -278,6 +315,30 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         pricingInputs[key] = val;
       });
       pricingInputs['selected_options'] = _simulatorSelectedOptions;
+
+      // Sync special fields to pricing inputs
+      if (_pricingMethod == PricingMethod.perSquareMeter) {
+        pricingInputs['area'] = _simulatorInputs['area'] ?? 100.0;
+      } else if (_pricingMethod == PricingMethod.perLinearMeter) {
+        pricingInputs['total_linear_meters'] = calcLinearMeters ?? 10.0;
+        if (_simulatorUseWindowsCalculator) {
+          pricingInputs['windows'] = _simulatorWindows
+              .map((w) => {
+                    'width': w.width,
+                    'height': w.height,
+                    'quantity': w.quantity,
+                    'isBothSides': w.isBothSides,
+                  })
+              .toList();
+        } else {
+          pricingInputs['windows'] = [];
+        }
+      }
+
+      if (_simulatorCouponController.text.trim().isNotEmpty) {
+        pricingInputs['coupon_code'] =
+            _simulatorCouponController.text.trim().toUpperCase();
+      }
 
       final result = await _simulationGateway.simulatePricing(
         subServiceId: widget.subServiceId,
@@ -365,44 +426,6 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         }
       },
     );
-  }
-
-  double _calculateSimulatedBase() {
-    double basePrice = _basePrice;
-    double primaryVal = 1.0;
-
-    for (final field in _fields) {
-      final dynamicVal = _simulatorInputs[field.id];
-      if (dynamicVal != null) {
-        if (field.type == DynamicFieldType.number) {
-          double val = (dynamicVal as num).toDouble();
-          if (field.min != null && val < field.min!) {
-            val = field.min!.toDouble();
-          }
-          if (field.id == 'area' || field.id == 'total_linear_meters') {
-            primaryVal = val;
-          } else {
-            if (field.priceModifier != null) {
-              basePrice += val * field.priceModifier!;
-            }
-          }
-        } else if (field.type == DynamicFieldType.toggle) {
-          if (dynamicVal == true && field.priceModifier != null) {
-            double modifier = field.priceModifier!.toDouble();
-            if (modifier <= 5.0) {
-              basePrice *= modifier;
-            }
-          }
-        }
-      }
-    }
-
-    if (_pricingMethod == PricingMethod.perSquareMeter ||
-        _pricingMethod == PricingMethod.perLinearMeter) {
-      basePrice *= primaryVal;
-    }
-
-    return basePrice;
   }
 
   double _calculateSimulatedExtras() {
@@ -819,16 +842,16 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     );
   }
 
-  Widget _buildStatusBar() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+  Widget _buildStatusBar({Color color = Colors.black87}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             "09:41",
             style: TextStyle(
-              color: Colors.white,
+              color: color,
               fontSize: 10,
               fontWeight: FontWeight.w600,
               fontFamily: 'monospace',
@@ -838,13 +861,13 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
             children: [
               Icon(
                 Icons.signal_cellular_4_bar_rounded,
-                color: Colors.white,
+                color: color,
                 size: 10,
               ),
-              SizedBox(width: 4),
-              Icon(Icons.wifi_rounded, color: Colors.white, size: 10),
-              SizedBox(width: 4),
-              Icon(Icons.battery_5_bar_rounded, color: Colors.white, size: 10),
+              const SizedBox(width: 4),
+              Icon(Icons.wifi_rounded, color: color, size: 10),
+              const SizedBox(width: 4),
+              Icon(Icons.battery_5_bar_rounded, color: color, size: 10),
             ],
           ),
         ],
@@ -861,24 +884,6 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         decoration: const BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDashedDivider() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: List.generate(
-          24,
-          (index) => Expanded(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              height: 1,
-              color: Colors.white.withValues(alpha: 0.15),
-            ),
-          ),
         ),
       ),
     );
@@ -966,134 +971,85 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(34),
-              child: Stack(
-                children: [
-                  Scaffold(
-                    backgroundColor: const Color(
-                      0xFF090D1A,
-                    ), // Sleek deep background for mockup
-                    appBar: AppBar(
-                      backgroundColor: const Color(0xFF131A30),
-                      title: const Text(
-                        "حجز الخدمة",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Cairo',
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      centerTitle: true,
-                      automaticallyImplyLeading: false,
-                      elevation: 0,
-                      toolbarHeight: 52,
-                    ),
-                    body: ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
-                      physics: const BouncingScrollPhysics(),
+              child: Theme(
+                data: AppTheme.light,
+                child: Builder(
+                  builder: (emulatorContext) {
+                    final localThemeColor = emulatorContext.themeColor;
+                    final localThemeText = Theme.of(emulatorContext)
+                        .extension<AppTextThemeExtension>()!;
+
+                    return Stack(
                       children: [
-                        ..._buildEmulatorInputWidgets(themeColor),
-                        const SizedBox(height: 12),
-                        if (_options.isNotEmpty) ...[
-                          const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 8,
-                            ),
-                            child: Text(
-                              "الخيارات والإضافات المتوفرة",
+                        Scaffold(
+                          backgroundColor: const Color(0xFFF9FAFB),
+                          appBar: AppBar(
+                            backgroundColor: Colors.white,
+                            title: const Text(
+                              "حجز الخدمة",
                               style: TextStyle(
-                                color: Colors.white70,
+                                color: Color(0xFF1F2937),
                                 fontFamily: 'Cairo',
-                                fontSize: 12,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                            centerTitle: true,
+                            automaticallyImplyLeading: false,
+                            elevation: 0,
+                            toolbarHeight: 52,
                           ),
-                          const SizedBox(height: 8),
-                          ..._options.map((opt) {
-                            final isSelected = _simulatorSelectedOptions
-                                .contains(opt.key);
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF131A30,
-                                ).withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? themeColor.secondary.withValues(
-                                          alpha: 0.6,
-                                        )
-                                      : const Color(0xFF1E293B),
-                                  width: 1.2,
-                                ),
+                          body: ListView(
+                            padding: const EdgeInsets.fromLTRB(16, 36, 16, 24),
+                            physics: const BouncingScrollPhysics(),
+                            children: [
+                              _buildMockupServiceHeader(
+                                localThemeColor,
+                                localThemeText,
                               ),
-                              child: Theme(
-                                data: ThemeData.dark(),
-                                child: CheckboxListTile(
-                                  title: Text(
-                                    opt.key ?? '',
-                                    style: const TextStyle(
-                                      fontFamily: 'Cairo',
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    '+${opt.value} ج.م',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: themeColor.secondary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  value: isSelected,
-                                  activeColor: themeColor.secondary,
-                                  checkColor: Colors.white,
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  onChanged: (val) {
-                                    setState(() {
-                                      if (val == true && opt.key != null) {
-                                        _simulatorSelectedOptions.add(opt.key!);
-                                      } else {
-                                        _simulatorSelectedOptions.remove(
-                                          opt.key,
-                                        );
-                                      }
-                                    });
-                                  },
-                                ),
+                              const SizedBox(height: 16),
+                              _buildMockupInputs(
+                                emulatorContext,
+                                localThemeColor,
+                                localThemeText,
                               ),
-                            );
-                          }),
-                        ],
-                        const SizedBox(height: 20),
-                        _buildInvoiceBreakdown(themeColor, themeText),
+                              const SizedBox(height: 24),
+                              _buildMockupCouponInput(
+                                localThemeColor,
+                                localThemeText,
+                              ),
+                              const SizedBox(height: 24),
+                              _buildMockupBreakdown(
+                                localThemeColor,
+                                localThemeText,
+                              ),
+                            ],
+                          ),
+                          bottomNavigationBar: _buildMockupBottomBar(
+                            localThemeColor,
+                            localThemeText,
+                          ),
+                        ),
+                        // Status bar and Notch Overlay
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            color: Colors.white,
+                            height: 24,
+                            child: Stack(
+                              children: [
+                                _buildStatusBar(color: Colors.black87),
+                                _buildPhoneNotch(),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
-                    ),
-                  ),
-                  // Status bar and Notch Overlay
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      color: const Color(0xFF131A30),
-                      height: 24,
-                      child: Stack(
-                        children: [_buildStatusBar(), _buildPhoneNotch()],
-                      ),
-                    ),
-                  ),
-                ],
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -1102,257 +1058,92 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     );
   }
 
-  List<Widget> _buildEmulatorInputWidgets(ThemeColorExtension themeColor) {
-    return _fields.map((field) {
-      final String label = field.label['ar'] ?? field.id;
-
-      if (field.type == DynamicFieldType.number) {
-        final double currentVal =
-            (_simulatorInputs[field.id] as num?)?.toDouble() ??
-            field.min?.toDouble() ??
-            100.0;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF131A30),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF1E293B), width: 1.2),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      fontFamily: 'Cairo',
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: themeColor.secondary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '${currentVal.toStringAsFixed(0)} ${field.unit ?? ''}',
-                      style: TextStyle(
-                        color: themeColor.secondary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                        fontFamily: 'Cairo',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 4,
-                  activeTrackColor: themeColor.secondary,
-                  inactiveTrackColor: const Color(0xFF1E293B),
-                  thumbColor: Colors.white,
-                  overlayColor: themeColor.secondary.withValues(alpha: 0.2),
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 8,
-                  ),
-                  overlayShape: const RoundSliderOverlayShape(
-                    overlayRadius: 16,
-                  ),
-                ),
-                child: Slider(
-                  value: currentVal,
-                  min: (field.min ?? 0.0).toDouble(),
-                  max: ((field.min ?? 100.0) * 10).toDouble(),
-                  onChanged: (val) {
-                    setState(() {
-                      _simulatorInputs[field.id] = val;
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      } else if (field.type == DynamicFieldType.toggle) {
-        final bool currentVal = _simulatorInputs[field.id] == true;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF131A30),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF1E293B), width: 1.2),
-          ),
-          child: Theme(
-            data: ThemeData.dark(),
-            child: SwitchListTile(
-              title: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  fontFamily: 'Cairo',
-                ),
-              ),
-              value: currentVal,
-              activeThumbColor: themeColor.secondary,
-              activeTrackColor: themeColor.secondary.withValues(alpha: 0.3),
-              inactiveThumbColor: Colors.grey.shade400,
-              inactiveTrackColor: const Color(0xFF1E293B),
-              dense: true,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              onChanged: (val) {
-                setState(() {
-                  _simulatorInputs[field.id] = val;
-                });
-              },
-            ),
-          ),
-        );
-      }
-      return const SizedBox.shrink();
-    }).toList();
-  }
-
-  Widget _buildInvoiceBreakdown(
+  Widget _buildMockupServiceHeader(
     ThemeColorExtension themeColor,
     AppTextThemeExtension themeText,
   ) {
-    final basePriceSimulated = _calculateSimulatedBase();
-    final extrasSimulated = _calculateSimulatedExtras();
-    final totalSimulated = basePriceSimulated + extrasSimulated;
+    String pricingMethodText = 'تسعير مخصص';
+    IconData pricingIcon = Icons.payments_outlined;
+    switch (_pricingMethod) {
+      case PricingMethod.fixed:
+        pricingMethodText = 'سعر ثابت';
+        pricingIcon = Icons.bookmark_added_rounded;
+        break;
+      case PricingMethod.perSquareMeter:
+        pricingMethodText = 'سعر المتر المربع';
+        pricingIcon = Icons.square_foot_rounded;
+        break;
+      case PricingMethod.perLinearMeter:
+        pricingMethodText = 'سعر المتر الطولي';
+        pricingIcon = Icons.linear_scale_rounded;
+        break;
+      case PricingMethod.perIssue:
+        pricingMethodText = 'سعر المشكلة';
+        pricingIcon = Icons.report_problem_rounded;
+        break;
+      case PricingMethod.unknown:
+        pricingMethodText = 'تسعير مخصص';
+        pricingIcon = Icons.payments_outlined;
+        break;
+      case PricingMethod.inspection:
+        pricingMethodText = 'تسعير معاينة';
+        pricingIcon = Icons.payments_outlined;
+        break;
+    }
 
-    final finalBillTotal = _simulationResult != null
-        ? _simulationResult!.total
-        : totalSimulated;
-    final isCloudUsed = _simulationResult != null;
+    final String arTitle = _service?.title['ar'] ?? '';
 
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        gradient: LinearGradient(
+          colors: [
+            themeColor.primary.withValues(alpha: 0.1),
+            themeColor.primary.withValues(alpha: 0.02),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isCloudUsed
-              ? themeColor.secondary.withValues(alpha: 0.6)
-              : const Color(0xFF1E293B),
+          color: themeColor.primary.withValues(alpha: 0.15),
           width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "تفصيل الحساب المالي",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  fontFamily: 'Cairo',
-                ),
-              ),
-              if (isCloudUsed)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: themeColor.secondary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: themeColor.secondary.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    "مدقق سحابياً",
-                    style: TextStyle(
-                      color: themeColor.secondary,
-                      fontSize: 9,
-                      fontFamily: 'Cairo',
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          _buildDashedDivider(),
-          _buildBillRow(
-            "سعر الوحدة الأساسي",
-            "${_basePrice.toStringAsFixed(0)} ج.م",
-          ),
-          _buildBillRow(
-            "حساب الحقول والمعاملات",
-            "${basePriceSimulated.toStringAsFixed(0)} ج.م",
-          ),
-          _buildBillRow(
-            "خيارات وإضافات مخصصة",
-            "+ ${extrasSimulated.toStringAsFixed(0)} ج.م",
-          ),
-          if (isCloudUsed && _simulationResult!.discount > 0)
-            _buildBillRow(
-              "الخصومات والحملات النشطة",
-              "- ${_simulationResult!.discount.toStringAsFixed(0)} ج.م",
-              color: Colors.redAccent,
-            ),
-          _buildDashedDivider(),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  themeColor.secondary.withValues(alpha: 0.1),
-                  themeColor.secondary.withValues(alpha: 0.02),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: themeColor.secondary.withValues(alpha: 0.2),
-                width: 1,
-              ),
+              color: themeColor.primary.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Icon(
+              pricingIcon,
+              color: themeColor.primary,
+              size: 26,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "الإجمالي النهائي",
-                  style: TextStyle(
-                    color: Colors.white,
+                Text(
+                  arTitle,
+                  style: themeText.textBodyPrimary.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    fontFamily: 'Cairo',
+                    fontSize: 16,
+                    color: themeColor.textPrimary,
                   ),
                 ),
+                const SizedBox(height: 6),
                 Text(
-                  "${finalBillTotal.toStringAsFixed(0)} ج.م",
-                  style: TextStyle(
-                    color: themeColor.secondary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
+                  pricingMethodText,
+                  style: themeText.textCaption.copyWith(
+                    color: themeColor.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
                   ),
                 ),
               ],
@@ -1363,26 +1154,1202 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     );
   }
 
-  Widget _buildBillRow(
-    String label,
-    String val, {
-    Color color = Colors.white70,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
+  Widget _buildMockupInputs(
+    BuildContext context,
+    ThemeColorExtension themeColor,
+    AppTextThemeExtension themeText,
+  ) {
+    final computedFieldIds = _computedFields.map((cf) => cf.id).toSet();
+    final filteredFields =
+        _fields.where((f) => !computedFieldIds.contains(f.id)).toList();
+    final isDynamic = filteredFields.isNotEmpty;
+
+    if (isDynamic) {
+      return DynamicFormRenderer(
+        fields: filteredFields,
+        values: _simulatorInputs,
+        options: _options,
+        selectedOptions: _simulatorSelectedOptions,
+        onFieldChanged: (key, val) {
+          setState(() {
+            _simulatorInputs[key] = val;
+          });
+        },
+        onOptionToggled: (optKey) {
+          setState(() {
+            if (_simulatorSelectedOptions.contains(optKey)) {
+              _simulatorSelectedOptions.remove(optKey);
+            } else {
+              _simulatorSelectedOptions.add(optKey);
+            }
+          });
+        },
+      );
+    } else {
+      if (_pricingMethod == PricingMethod.perSquareMeter) {
+        return _buildMockupAreaInput(themeColor, themeText);
+      } else if (_pricingMethod == PricingMethod.perLinearMeter) {
+        return _buildMockupLinearPricingSection(themeColor, themeText);
+      } else {
+        return _buildMockupFixedPriceMessage(themeColor, themeText);
+      }
+    }
+  }
+
+  Widget _buildMockupFixedPriceMessage(
+    ThemeColorExtension themeColor,
+    AppTextThemeExtension themeText,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: themeColor.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: themeColor.primary.withValues(alpha: 0.1)),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(color: color, fontSize: 11, fontFamily: 'Cairo'),
+          Icon(Icons.check_circle_outline, color: themeColor.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "هذه الخدمة يتم تقديمها بسعر ثابت ومحدد مسبقاً ولا تتطلب إدخال تفاصيل إضافية.",
+              style: themeText.textBodySecondary.copyWith(
+                color: themeColor.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          Text(
-            val,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMockupAreaInput(
+    ThemeColorExtension themeColor,
+    AppTextThemeExtension themeText,
+  ) {
+    final currentArea = (_simulatorInputs['area'] as num?)?.toDouble() ?? 100.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "المساحة المطلوبة",
+              style: themeText.titleSectionSmall.copyWith(
+                color: themeColor.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: themeColor.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '${currentArea.toStringAsFixed(0)} متر مربع',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: themeColor.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Stepper Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: themeColor.cardBackground,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.fromBorderSide(themeColor.cardBorder),
+            boxShadow: [themeColor.cardShadow],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: currentArea > 50
+                        ? () {
+                            setState(() {
+                              _simulatorInputs['area'] =
+                                  (currentArea - 10).clamp(50, 1000).toDouble();
+                            });
+                          }
+                        : null,
+                    icon: const Icon(Icons.remove, size: 20),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        currentArea.toStringAsFixed(0),
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: themeColor.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        "متر مربع",
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          color: themeColor.secondaryText,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton.filledTonal(
+                    onPressed: () {
+                      setState(() {
+                        _simulatorInputs['area'] =
+                            (currentArea + 10).clamp(50, 1000).toDouble();
+                      });
+                    },
+                    icon: const Icon(Icons.add, size: 20),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Slider(
+                value: currentArea.clamp(50, 500).toDouble(),
+                min: 50,
+                max: 500,
+                divisions: 45,
+                activeColor: themeColor.primary,
+                inactiveColor: themeColor.primary.withValues(alpha: 0.15),
+                onChanged: (val) {
+                  setState(() {
+                    _simulatorInputs['area'] = val.roundToDouble();
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Preset Chips
+        SizedBox(
+          height: 38,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [100, 150, 200, 250, 300, 400].map((preset) {
+              final isSelected = currentArea.round() == preset;
+              return Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: ChoiceChip(
+                  label: Text('$preset م²'),
+                  labelStyle: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? Colors.white : themeColor.secondaryText,
+                  ),
+                  selected: isSelected,
+                  selectedColor: themeColor.primary,
+                  backgroundColor: themeColor.nestedCardBackground,
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() {
+                        _simulatorInputs['area'] = preset.toDouble();
+                      });
+                    }
+                  },
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: themeColor.primary.withValues(alpha: 0.6),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "الحد الأدنى للاحتساب هو 50 م²",
+                style: themeText.textCaption.copyWith(
+                  color: themeColor.primary.withValues(alpha: 0.7),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMockupLinearPricingSection(
+    ThemeColorExtension themeColor,
+    AppTextThemeExtension themeText,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: themeColor.nestedCardBackground,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: themeColor.unselectedItem.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _simulatorUseWindowsCalculator = true;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _simulatorUseWindowsCalculator
+                          ? themeColor.primary
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "حساب من قياسات النوافذ",
+                        style: themeText.textCaption.copyWith(
+                          color: _simulatorUseWindowsCalculator
+                              ? Colors.white
+                              : themeColor.secondaryText,
+                          fontWeight: _simulatorUseWindowsCalculator
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _simulatorUseWindowsCalculator = false;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: !_simulatorUseWindowsCalculator
+                          ? themeColor.primary
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "إدخال المتر الطولي مباشرة",
+                        style: themeText.textCaption.copyWith(
+                          color: !_simulatorUseWindowsCalculator
+                              ? Colors.white
+                              : themeColor.secondaryText,
+                          fontWeight: !_simulatorUseWindowsCalculator
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        if (_simulatorUseWindowsCalculator)
+          _buildMockupWindowsList(themeColor, themeText)
+        else
+          _buildMockupDirectLinearMetersInput(themeColor, themeText),
+      ],
+    );
+  }
+
+  Widget _buildMockupDirectLinearMetersInput(
+    ThemeColorExtension themeColor,
+    AppTextThemeExtension themeText,
+  ) {
+    final currentLinear =
+        (_simulatorInputs['total_linear_meters'] as num?)?.toDouble() ?? 10.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "إجمالي الأمتار الطولية",
+              style: themeText.titleSectionSmall.copyWith(
+                color: themeColor.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: themeColor.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '${currentLinear.toStringAsFixed(1).replaceAll('.0', '')} م',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: themeColor.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: themeColor.cardBackground,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.fromBorderSide(themeColor.cardBorder),
+            boxShadow: [themeColor.cardShadow],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: currentLinear > 1
+                        ? () {
+                            setState(() {
+                              _simulatorInputs['total_linear_meters'] =
+                                  (currentLinear - 1).clamp(1, 100).toDouble();
+                            });
+                          }
+                        : null,
+                    icon: const Icon(Icons.remove, size: 20),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        currentLinear.toStringAsFixed(1).replaceAll('.0', ''),
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: themeColor.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        "متر طولي",
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          color: themeColor.secondaryText,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton.filledTonal(
+                    onPressed: () {
+                      setState(() {
+                        _simulatorInputs['total_linear_meters'] =
+                            (currentLinear + 1).clamp(1, 100).toDouble();
+                      });
+                    },
+                    icon: const Icon(Icons.add, size: 20),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Slider(
+                value: currentLinear.clamp(1, 50).toDouble(),
+                min: 1,
+                max: 50,
+                divisions: 49,
+                activeColor: themeColor.primary,
+                inactiveColor: themeColor.primary.withValues(alpha: 0.15),
+                onChanged: (val) {
+                  setState(() {
+                    _simulatorInputs['total_linear_meters'] =
+                        val.roundToDouble();
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 38,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [5, 10, 15, 20, 25, 30, 40].map((preset) {
+              final isSelected = currentLinear.round() == preset;
+              return Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: ChoiceChip(
+                  label: Text('$preset م'),
+                  labelStyle: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? Colors.white : themeColor.secondaryText,
+                  ),
+                  selected: isSelected,
+                  selectedColor: themeColor.primary,
+                  backgroundColor: themeColor.nestedCardBackground,
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() {
+                        _simulatorInputs['total_linear_meters'] =
+                            preset.toDouble();
+                      });
+                    }
+                  },
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMockupWindowsList(
+    ThemeColorExtension themeColor,
+    AppTextThemeExtension themeText,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "أبعاد وقياسات النوافذ",
+          style: themeText.titleSectionSmall.copyWith(
+            color: themeColor.textPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "قم بإدخال أبعاد النوافذ لحساب إجمالي الأمتار الطولية تلقائياً.",
+          style: themeText.textCaption.copyWith(color: themeColor.secondaryText),
+        ),
+        const SizedBox(height: 20),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _simulatorWindows.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final window = _simulatorWindows[index];
+            return _buildMockupWindowItem(index, window, themeColor, themeText);
+          },
+        ),
+        const SizedBox(height: 20),
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _simulatorWindows.add(
+                const WindowDimension(
+                  width: 1.0,
+                  height: 1.0,
+                  quantity: 1,
+                  isBothSides: false,
+                ),
+              );
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: BoxDecoration(
+              border: Border.all(color: themeColor.primary, width: 1.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add, color: themeColor.primary, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  "إضافة نافذة جديدة",
+                  style: themeText.textBodyPrimary.copyWith(
+                    color: themeColor.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMockupWindowItem(
+    int index,
+    WindowDimension window,
+    ThemeColorExtension themeColor,
+    AppTextThemeExtension themeText,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: themeColor.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.fromBorderSide(themeColor.cardBorder),
+        boxShadow: [themeColor.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "النافذة رقم ${index + 1}",
+                style: themeText.textBodySecondary.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: themeColor.textPrimary,
+                ),
+              ),
+              if (index > 0)
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _simulatorWindows.removeAt(index);
+                    });
+                  },
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: themeColor.error,
+                    size: 20,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildMockupWindowSideSlidingToggle(
+            window,
+            index,
+            themeColor,
+            themeText,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMockupWindowDimensionStepper(
+                  label: "العرض",
+                  value: window.width,
+                  onChanged: (w) {
+                    setState(() {
+                      _simulatorWindows[index] = window.copyWith(width: w);
+                    });
+                  },
+                  themeColor: themeColor,
+                  themeText: themeText,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMockupWindowDimensionStepper(
+                  label: "الارتفاع",
+                  value: window.height,
+                  onChanged: (h) {
+                    setState(() {
+                      _simulatorWindows[index] = window.copyWith(height: h);
+                    });
+                  },
+                  themeColor: themeColor,
+                  themeText: themeText,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMockupWindowQuantityStepper(
+                  label: "العدد",
+                  value: window.quantity,
+                  onChanged: (q) {
+                    setState(() {
+                      _simulatorWindows[index] = window.copyWith(quantity: q);
+                    });
+                  },
+                  themeColor: themeColor,
+                  themeText: themeText,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMockupWindowSideSlidingToggle(
+    WindowDimension window,
+    int index,
+    ThemeColorExtension themeColor,
+    AppTextThemeExtension themeText,
+  ) {
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: themeColor.nestedCardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: themeColor.unselectedItem.withValues(alpha: 0.1),
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth / 2;
+          return Stack(
+            children: [
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                alignment: window.isBothSides
+                    ? AlignmentDirectional.centerEnd
+                    : AlignmentDirectional.centerStart,
+                child: Container(
+                  width: width,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: themeColor.primary,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: themeColor.primary.withValues(alpha: 0.25),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        setState(() {
+                          _simulatorWindows[index] =
+                              window.copyWith(isBothSides: false);
+                        });
+                      },
+                      child: Center(
+                        child: Text(
+                          "جهة واحدة",
+                          style: themeText.textCaption.copyWith(
+                            color: !window.isBothSides
+                                ? Colors.white
+                                : themeColor.secondaryText,
+                            fontWeight: !window.isBothSides
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        setState(() {
+                          _simulatorWindows[index] =
+                              window.copyWith(isBothSides: true);
+                        });
+                      },
+                      child: Center(
+                        child: Text(
+                          "الجهتين",
+                          style: themeText.textCaption.copyWith(
+                            color: window.isBothSides
+                                ? Colors.white
+                                : themeColor.secondaryText,
+                            fontWeight: window.isBothSides
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMockupWindowDimensionStepper({
+    required String label,
+    required double value,
+    required Function(double) onChanged,
+    required ThemeColorExtension themeColor,
+    required AppTextThemeExtension themeText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: themeText.textCaption.copyWith(
+            fontSize: 12,
+            color: themeColor.secondaryText,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: themeColor.nestedCardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: themeColor.unselectedItem.withValues(alpha: 0.15),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                onPressed: value > 0.1
+                    ? () => onChanged(
+                          double.parse((value - 0.1).toStringAsFixed(1)),
+                        )
+                    : null,
+                icon: const Icon(Icons.remove, size: 16),
+                color: themeColor.primary,
+                disabledColor: themeColor.unselectedItem.withValues(alpha: 0.3),
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(8),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '${value.toStringAsFixed(1)}م',
+                    style: themeText.textBodyPrimary.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: value < 10.0
+                    ? () => onChanged(
+                          double.parse((value + 0.1).toStringAsFixed(1)),
+                        )
+                    : null,
+                icon: const Icon(Icons.add, size: 16),
+                color: themeColor.primary,
+                disabledColor: themeColor.unselectedItem.withValues(alpha: 0.3),
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(8),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMockupWindowQuantityStepper({
+    required String label,
+    required int value,
+    required Function(int) onChanged,
+    required ThemeColorExtension themeColor,
+    required AppTextThemeExtension themeText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: themeText.textCaption.copyWith(
+            fontSize: 12,
+            color: themeColor.secondaryText,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: themeColor.nestedCardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: themeColor.unselectedItem.withValues(alpha: 0.15),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                onPressed: value > 1 ? () => onChanged(value - 1) : null,
+                icon: const Icon(Icons.remove, size: 16),
+                color: themeColor.primary,
+                disabledColor: themeColor.unselectedItem.withValues(alpha: 0.3),
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(8),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '$value',
+                    style: themeText.textBodyPrimary.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: value < 50 ? () => onChanged(value + 1) : null,
+                icon: const Icon(Icons.add, size: 16),
+                color: themeColor.primary,
+                disabledColor: themeColor.unselectedItem.withValues(alpha: 0.3),
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(8),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMockupCouponInput(
+    ThemeColorExtension themeColor,
+    AppTextThemeExtension themeText,
+  ) {
+    final hasCoupon = _simulatorCouponController.text.trim().isNotEmpty &&
+        _simulationResult != null &&
+        _simulationResult!.discount > 0;
+
+    if (!_simulatorIsCouponFieldExpanded && !hasCoupon) {
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            _simulatorIsCouponFieldExpanded = true;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          decoration: BoxDecoration(
+            color: themeColor.primary.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: themeColor.primary.withValues(alpha: 0.12),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.confirmation_number_outlined,
+                size: 18,
+                color: themeColor.primary,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                "هل لديك كوبون خصم؟",
+                style: themeText.textCaption.copyWith(
+                  color: themeColor.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: themeColor.primary,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: themeColor.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.fromBorderSide(themeColor.cardBorder),
+        boxShadow: [themeColor.cardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.local_offer_outlined,
+                          color: themeColor.primary,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "كوبون الخصم",
+                          style: themeText.textBodySecondary.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: themeColor.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (!hasCoupon)
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () {
+                          setState(() {
+                            _simulatorIsCouponFieldExpanded = false;
+                          });
+                        },
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: BaseTextFormField(
+                        controller: _simulatorCouponController,
+                        hint: "أدخل كود الكوبون",
+                        radius: 12,
+                        enabled: !hasCoupon,
+                        prefixIcon:
+                            const Icon(Icons.confirmation_number_outlined),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          FocusScope.of(context).unfocus();
+                          if (hasCoupon) {
+                            setState(() {
+                              _simulatorCouponController.clear();
+                            });
+                            _runServerSimulation();
+                          } else {
+                            final code = _simulatorCouponController.text
+                                .trim()
+                                .toUpperCase();
+                            if (code.isNotEmpty) {
+                              _runServerSimulation();
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: hasCoupon
+                              ? themeColor.error.withValues(alpha: 0.1)
+                              : themeColor.primary,
+                          foregroundColor:
+                              hasCoupon ? themeColor.error : Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          hasCoupon ? "إلغاء الكوبون" : "تطبيق",
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (hasCoupon) ...[
+            const SizedBox(height: 8),
+            Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                CustomPaint(
+                  size: const Size(double.infinity, 1),
+                  painter: DashedLinePainter(
+                    color: themeColor.unselectedItem.withValues(alpha: 0.2),
+                  ),
+                ),
+                Positioned(
+                  left: -8,
+                  child: Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: themeColor.background,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: -8,
+                  child: Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: themeColor.background,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: themeColor.pricingDiscount,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "تم تطبيق الكوبون بنجاح!",
+                    style: themeText.textCaption.copyWith(
+                      color: themeColor.pricingDiscount,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else
+            const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMockupBreakdown(
+    ThemeColorExtension themeColor,
+    AppTextThemeExtension themeText,
+  ) {
+    if (_simulationResult == null) {
+      return const SizedBox.shrink();
+    }
+
+    final BookingPricing bookingPricing = BookingPricing(
+      basePrice: _simulationResult!.basePrice,
+      extraFees: _simulationResult!.extraFees,
+      discount: _simulationResult!.discount,
+      total: _simulationResult!.total,
+      metadata: {
+        'subtotal': _simulationResult!.subtotal,
+        'execution_trace': _simulationResult!.executionTrace,
+        'options_breakdown': _simulationResult!.metadata['options_breakdown'] ??
+            _simulatorSelectedOptions
+                .map((optKey) {
+                  final matched = _options.firstWhere(
+                    (opt) => opt.key == optKey,
+                    orElse: () => const PriceOptionEntity(key: '', value: 0.0),
+                  );
+                  return {
+                    'key': optKey,
+                    'price': matched.value ?? 0.0,
+                  };
+                })
+                .toList(),
+        'applied_rules': _simulationResult!.metadata['applied_rules'] ?? [],
+        'applied_discounts':
+            _simulationResult!.metadata['applied_discounts'] ?? [],
+      },
+    );
+
+    return PriceBreakdownCard(
+      pricing: bookingPricing,
+      showHeader: true,
+    );
+  }
+
+  Widget _buildMockupBottomBar(
+    ThemeColorExtension themeColor,
+    AppTextThemeExtension themeText,
+  ) {
+    final bool isCalculated = _simulationResult != null;
+    final String buttonText = isCalculated ? "إعادة الحساب" : "احسب التكلفة";
+
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: themeColor.cardBackground,
+        boxShadow: [themeColor.cardShadow],
+        border: Border(top: themeColor.cardBorder),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: MyCustomButton(
+              text: buttonText,
+              isLoading: _isLoadingSimulation,
+              onPressed: _isLoadingSimulation ? null : _runServerSimulation,
             ),
           ),
         ],
@@ -1419,6 +2386,13 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                         onTap: () {
                           setState(() {
                             _pricingMethod = method;
+                            if (method == PricingMethod.perSquareMeter) {
+                              _unit = 'م²';
+                              _pricingUnitController.text = 'م²';
+                            } else if (method == PricingMethod.perLinearMeter) {
+                              _unit = 'م';
+                              _pricingUnitController.text = 'م';
+                            }
                             _validateConfiguration();
                           });
                           _markDirty();
@@ -1504,7 +2478,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                         _buildSubsectionTitle(themeColor, "وحدة القياس"),
                         const SizedBox(height: 8),
                         TextFormField(
-                          initialValue: _unit,
+                          controller: _pricingUnitController,
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontSize: 13,
@@ -1540,7 +2514,6 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
-                          key: ValueKey('min_price_${_minPrice ?? 0}'),
                           initialValue: _minPrice != null
                               ? _minPrice!.toStringAsFixed(0)
                               : '',
@@ -1833,6 +2806,13 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
           spacing: 10,
           runSpacing: 10,
           children: [
+            // Base Price (Orange glow)
+            _buildGlowingTokenChip(
+              'base_price',
+              themeColor,
+              Colors.orangeAccent,
+              Icons.monetization_on_rounded,
+            ),
             // Dynamic Fields (Blue/Indigo glow)
             ..._fields.map((f) {
               return _buildGlowingTokenChip(
@@ -1853,60 +2833,55 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
             }),
           ],
         ),
-        const SizedBox(height: 20),
-        const Text(
-          'أمثلة وصيغ جاهزة للتحميل:',
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
+        if (_fields.any((f) => f.type == DynamicFieldType.dropdown && f.options != null && f.options!.isNotEmpty)) ...[
+          const SizedBox(height: 16),
+          const Text(
+            'قيم خيارات القوائم المنسدلة (اضغط للإدراج كنص مثل \'value\'):',
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: 12,
-            color: themeColor.textPrimary,
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _fields
+                .where((f) => f.type == DynamicFieldType.dropdown && f.options != null)
+                .expand((f) => f.options!.map((opt) {
+                      return InkWell(
+                        onTap: () => _insertToken("'${opt.id}'"),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.purple.withValues(alpha: 0.3), width: 1.2),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.label_outline_rounded, size: 10, color: Colors.purple.shade300),
+                              const SizedBox(width: 6),
+                              Text(
+                                '{${f.id}} == \'${opt.id}\'',
+                                style: const TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purpleAccent,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }))
+                .toList(),
           ),
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-            labelText: 'اختر صيغة نموذجية للتحميل السريع',
-            fillColor: themeColor.cardBackground,
-            filled: true,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          items: const [
-            DropdownMenuItem(
-              value: '({area} * 5.5) + 150',
-              child: Text('سعر المتر المربع + رسوم تأسيس'),
-            ),
-            DropdownMenuItem(
-              value: '({bathrooms} * 150) + ({kitchens} * 200) + 100',
-              child: Text('حساب عدد الغرف/الحمامات المستقل'),
-            ),
-            DropdownMenuItem(
-              value: '{width} * {height} * 25',
-              child: Text('حساب الطول × العرض للمساحات الزجاجية'),
-            ),
-            DropdownMenuItem(
-              value: '{total_linear_meters} * 75',
-              child: Text('سعر المتر الطولي الثابت'),
-            ),
-          ],
-          onChanged: (val) {
-            if (val != null) {
-              setState(() {
-                _basePriceFormula = val;
-                _formulaController.text = val;
-              });
-            }
-          },
-        ),
+        ],
       ],
     );
   }
@@ -3688,6 +4663,11 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
   late final TextEditingController _unitController;
   late final TextEditingController _priceModifierController;
 
+  // New option insertion controllers
+  late final TextEditingController _newOptIdController;
+  late final TextEditingController _newOptLabelArController;
+  late final TextEditingController _newOptLabelEnController;
+
   @override
   void initState() {
     super.initState();
@@ -3700,6 +4680,9 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     _priceModifierController = TextEditingController(
       text: f.priceModifier?.toString() ?? '',
     );
+    _newOptIdController = TextEditingController();
+    _newOptLabelArController = TextEditingController();
+    _newOptLabelEnController = TextEditingController();
   }
 
   @override
@@ -3733,6 +4716,9 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     _minController.dispose();
     _unitController.dispose();
     _priceModifierController.dispose();
+    _newOptIdController.dispose();
+    _newOptLabelArController.dispose();
+    _newOptLabelEnController.dispose();
     super.dispose();
   }
 
@@ -3744,6 +4730,7 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     double? min,
     String? unit,
     double? priceModifier,
+    List<DropdownOptionEntity>? options,
   }) {
     final f = widget.field;
     return DynamicFieldEntity(
@@ -3754,8 +4741,10 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
       min: min ?? f.min,
       unit: unit ?? f.unit,
       priceModifier: priceModifier ?? f.priceModifier,
+      options: options ?? f.options,
     );
   }
+
 
   String _getFieldTypeLabel(DynamicFieldType type) {
     switch (type) {
@@ -3801,6 +4790,28 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
         borderSide: BorderSide(color: t.primary, width: 1.5),
       ),
     );
+  }
+
+  void _showEditOptionDialog(
+    BuildContext context,
+    DropdownOptionEntity option,
+    List<DropdownOptionEntity> currentOptions,
+  ) async {
+    final updatedOptions = await showDialog<List<DropdownOptionEntity>>(
+      context: context,
+      builder: (context) {
+        return _EditOptionDialog(
+          option: option,
+          currentOptions: currentOptions,
+          themeColor: widget.themeColor,
+          inputDec: _inputDec,
+        );
+      },
+    );
+
+    if (updatedOptions != null) {
+      widget.onFieldChanged(_copyWith(options: updatedOptions));
+    }
   }
 
   @override
@@ -4183,7 +5194,268 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
                                 ),
                               ),
                             ],
+                            // Dropdown options configurator
+                            if (field.type == DynamicFieldType.dropdown) ...[
+                              const SizedBox(height: 16),
+                              const Divider(height: 1, thickness: 0.5),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Icon(Icons.list_alt_rounded, size: 16, color: t.primary),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'خيارات القائمة المنسدلة (Dropdown Options)',
+                                    style: TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              // List of existing options
+                              if (field.options == null || field.options!.isEmpty)
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: t.background,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: t.unselectedItem.withValues(alpha: 0.1)),
+                                  ),
+                                  child: Text(
+                                    'لا توجد خيارات مضافة بعد. الرجاء إضافة خيار أدناه.',
+                                    style: TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontSize: 11,
+                                      color: t.unselectedItem,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                )
+                              else
+                                ...field.options!.map((opt) {
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: t.background,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: t.unselectedItem.withValues(alpha: 0.15)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: t.primary.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            opt.id,
+                                            style: TextStyle(
+                                              fontFamily: 'monospace',
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: t.primary,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'العربية: ${opt.label['ar'] ?? ''}',
+                                                style: TextStyle(
+                                                  fontFamily: 'Cairo',
+                                                  fontSize: 11,
+                                                  color: t.textPrimary,
+                                                ),
+                                              ),
+                                              Text(
+                                                'English: ${opt.label['en'] ?? ''}',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: t.unselectedItem,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                         IconButton(
+                                           icon: Icon(Icons.settings_suggest_outlined, size: 18, color: t.primary),
+                                           onPressed: () => _showEditOptionDialog(context, opt, field.options ?? []),
+                                         ),
+                                         const SizedBox(width: 4),
+                                         IconButton(
+                                          icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+                                          onPressed: () {
+                                            final updatedOptions = List<DropdownOptionEntity>.from(field.options ?? []);
+                                            updatedOptions.removeWhere((o) => o.id == opt.id);
+                                            widget.onFieldChanged(_copyWith(options: updatedOptions));
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              const SizedBox(height: 12),
+                              // Inline option adder form
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: t.background.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: t.primary.withValues(alpha: 0.15)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'إضافة خيار جديد:',
+                                      style: TextStyle(
+                                        fontFamily: 'Cairo',
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: t.primary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextFormField(
+                                            controller: _newOptIdController,
+                                            style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+                                            decoration: InputDecoration(
+                                              labelText: 'معرف الخيار (ID)',
+                                              labelStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 10),
+                                              isDense: true,
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: TextFormField(
+                                            controller: _newOptLabelArController,
+                                            style: const TextStyle(fontFamily: 'Cairo', fontSize: 11),
+                                            decoration: InputDecoration(
+                                              labelText: 'الاسم بالعربية',
+                                              labelStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 10),
+                                              isDense: true,
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: TextFormField(
+                                            controller: _newOptLabelEnController,
+                                            style: const TextStyle(fontSize: 11),
+                                            decoration: InputDecoration(
+                                              labelText: 'الاسم بالإنجليزية',
+                                              labelStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 10),
+                                              isDense: true,
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          final id = _newOptIdController.text.trim();
+                                          final labelAr = _newOptLabelArController.text.trim();
+                                          final labelEn = _newOptLabelEnController.text.trim();
+
+                                          if (id.isEmpty || labelAr.isEmpty || labelEn.isEmpty) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'الرجاء تعبئة جميع حقول الخيار الجديد (المعرف، العربية، الإنجليزية).',
+                                                  style: TextStyle(fontFamily: 'Cairo'),
+                                                ),
+                                                backgroundColor: Colors.amber,
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          // Validation: Alphanumeric and underscores only
+                                          final validIdRegex = RegExp(r'^[a-zA-Z0-9_]+$');
+                                          if (!validIdRegex.hasMatch(id)) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'معرف الخيار يجب أن يحتوي على أحرف وأرقام وشرطة سفلية فقط وبدون مسافات.',
+                                                  style: TextStyle(fontFamily: 'Cairo'),
+                                                ),
+                                                backgroundColor: Colors.amber,
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          final existingOptions = field.options ?? [];
+                                          if (existingOptions.any((o) => o.id == id)) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'هذا المعرف مضاف بالفعل لهذا الحقل. يرجى استخدام معرف فريد.',
+                                                  style: TextStyle(fontFamily: 'Cairo'),
+                                                ),
+                                                backgroundColor: Colors.amber,
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          final newOption = DropdownOptionEntity(
+                                            id: id,
+                                            label: {'ar': labelAr, 'en': labelEn},
+                                          );
+
+                                          final updatedOptions = List<DropdownOptionEntity>.from(existingOptions)..add(newOption);
+                                          widget.onFieldChanged(_copyWith(options: updatedOptions));
+
+                                          // Clear inputs
+                                          _newOptIdController.clear();
+                                          _newOptLabelArController.clear();
+                                          _newOptLabelEnController.clear();
+                                        },
+                                        icon: const Icon(Icons.add_circle_outline_rounded, size: 14),
+                                        label: const Text(
+                                          'إضافة عنصر خيار',
+                                          style: TextStyle(
+                                            fontFamily: 'Cairo',
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: t.primary,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
+
                         )
                       : const SizedBox.shrink(),
                 ),
@@ -4406,4 +5678,230 @@ class _DiscountValidityChip extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Edit Option Dialog ────────────────────────────────────────────────────────
+class _EditOptionDialog extends StatefulWidget {
+  final DropdownOptionEntity option;
+  final List<DropdownOptionEntity> currentOptions;
+  final ThemeColorExtension themeColor;
+  final InputDecoration Function({required String label, required IconData icon}) inputDec;
+
+  const _EditOptionDialog({
+    required this.option,
+    required this.currentOptions,
+    required this.themeColor,
+    required this.inputDec,
+  });
+
+  @override
+  State<_EditOptionDialog> createState() => _EditOptionDialogState();
+}
+
+class _EditOptionDialogState extends State<_EditOptionDialog> {
+  late final TextEditingController _editIdController;
+  late final TextEditingController _editLabelArController;
+  late final TextEditingController _editLabelEnController;
+
+  @override
+  void initState() {
+    super.initState();
+    _editIdController = TextEditingController(text: widget.option.id);
+    _editLabelArController = TextEditingController(text: widget.option.label['ar'] ?? '');
+    _editLabelEnController = TextEditingController(text: widget.option.label['en'] ?? '');
+  }
+
+  @override
+  void dispose() {
+    _editIdController.dispose();
+    _editLabelArController.dispose();
+    _editLabelEnController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.themeColor;
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: t.cardBackground,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [t.cardShadow],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.edit_note_rounded, color: t.primary, size: 24),
+                const SizedBox(width: 8),
+                const Text(
+                  'تعديل عنصر خيار القائمة',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _editIdController,
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+              decoration: widget.inputDec(
+                label: 'معرف الخيار (ID)',
+                icon: Icons.tag_rounded,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _editLabelArController,
+              style: const TextStyle(fontFamily: 'Cairo', fontSize: 13),
+              decoration: widget.inputDec(
+                label: 'الاسم بالعربية',
+                icon: Icons.text_fields_rounded,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _editLabelEnController,
+              style: const TextStyle(fontSize: 13),
+              decoration: widget.inputDec(
+                label: 'الاسم بالإنجليزية',
+                icon: Icons.language_rounded,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    'إلغاء',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      color: t.unselectedItem,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: t.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                  ),
+                  onPressed: () {
+                    final newId = _editIdController.text.trim();
+                    final newLabelAr = _editLabelArController.text.trim();
+                    final newLabelEn = _editLabelEnController.text.trim();
+
+                    if (newId.isEmpty || newLabelAr.isEmpty || newLabelEn.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'الرجاء تعبئة جميع حقول الخيار.',
+                            style: TextStyle(fontFamily: 'Cairo'),
+                          ),
+                          backgroundColor: Colors.amber,
+                        ),
+                      );
+                      return;
+                    }
+
+                    // Validation: Alphanumeric and underscores only
+                    final validIdRegex = RegExp(r'^[a-zA-Z0-9_]+$');
+                    if (!validIdRegex.hasMatch(newId)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'معرف الخيار يجب أن يحتوي على أحرف وأرقام وشرطة سفلية فقط وبدون مسافات.',
+                            style: TextStyle(fontFamily: 'Cairo'),
+                          ),
+                          backgroundColor: Colors.amber,
+                        ),
+                      );
+                      return;
+                    }
+
+                    // Check uniqueness if ID changed
+                    if (newId != widget.option.id && widget.currentOptions.any((o) => o.id == newId)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'هذا المعرف مستخدم بالفعل في خيار آخر.',
+                            style: TextStyle(fontFamily: 'Cairo'),
+                          ),
+                          backgroundColor: Colors.amber,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final updatedOptions = widget.currentOptions.map((o) {
+                      if (o.id == widget.option.id) {
+                        return DropdownOptionEntity(
+                          id: newId,
+                          label: {'ar': newLabelAr, 'en': newLabelEn},
+                        );
+                      }
+                      return o;
+                    }).toList();
+
+                    Navigator.of(context).pop(updatedOptions);
+                  },
+                  child: const Text(
+                    'حفظ التعديل',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Dashed Line Painter ──────────────────────────────────────────────────────
+
+class DashedLinePainter extends CustomPainter {
+  final Color color;
+  const DashedLinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    
+    const double dashWidth = 5;
+    const double dashSpace = 4;
+    double startX = 14;
+    while (startX < size.width - 14) {
+      canvas.drawLine(Offset(startX, 0), Offset(startX + dashWidth, 0), paint);
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

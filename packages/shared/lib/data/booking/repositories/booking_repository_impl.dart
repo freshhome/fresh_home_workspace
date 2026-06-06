@@ -263,4 +263,18 @@ class BookingRepositoryImpl implements BookingRepository {
       return Left(ServerFailure(message: e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> hasActiveCoupons({
+    required String subServiceId,
+  }) async {
+    try {
+      final result = await remoteDataSource.hasActiveCoupons(subServiceId);
+      return Right(result);
+    } on AppException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
 }

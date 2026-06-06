@@ -7,6 +7,7 @@ class PricingSimulationResult {
   final double discount;
   final double total;
   final List<dynamic> executionTrace;
+  final Map<String, dynamic> metadata;
 
   PricingSimulationResult({
     required this.basePrice,
@@ -15,10 +16,11 @@ class PricingSimulationResult {
     required this.discount,
     required this.total,
     required this.executionTrace,
+    required this.metadata,
   });
 
   factory PricingSimulationResult.fromJson(Map<String, dynamic> json) {
-    final metadata = json['metadata'] as Map<String, dynamic>? ?? {};
+    final metadata = Map<String, dynamic>.from(json['metadata'] as Map? ?? {});
     return PricingSimulationResult(
       basePrice: (json['basePrice'] as num?)?.toDouble() ?? 0.0,
       subtotal: (metadata['subtotal'] as num?)?.toDouble() ?? 0.0,
@@ -26,6 +28,7 @@ class PricingSimulationResult {
       discount: (json['discount'] as num?)?.toDouble() ?? 0.0,
       total: (json['total'] as num?)?.toDouble() ?? 0.0,
       executionTrace: metadata['execution_trace'] as List<dynamic>? ?? [],
+      metadata: metadata,
     );
   }
 }

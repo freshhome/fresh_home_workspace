@@ -122,14 +122,25 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    color: isFavorite ? Colors.redAccent : Colors.white,
+                  ),
+                  onPressed: _toggleFavorite,
+                  tooltip: isArabic ? 'المفضلة' : 'Favorite',
+                ),
+              ],
             ),
-            bottomNavigationBar: _buildBookingBar(
+            floatingActionButton: _buildBookingButton(
               context,
               service,
               isArabic,
               themeColor,
               themeText,
             ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
             body: RefreshIndicator(
               onRefresh: () => context.read<ServicesCubit>().getServiceDetails(
                     subserviceId: widget.subServiceId,
@@ -225,7 +236,7 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
 
                           // Exclusions
                           InclusionExclusionSection(notIncluded: service.notIncluded),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 90),
                         ],
                       ),
                     ),
@@ -316,7 +327,7 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
     );
   }
 
-  Widget _buildBookingBar(
+  Widget _buildBookingButton(
     BuildContext context,
     SubServiceEntity service,
     bool isArabic,
@@ -324,96 +335,51 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
     AppTextThemeExtension themeText,
   ) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 30,
-            offset: const Offset(0, -10),
-          ),
-        ],
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
       child: SafeArea(
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: _toggleFavorite,
-              child: Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        child: MyCustomButton(
+          text: isArabic ? 'احجز الآن' : 'Book Now',
+          leadingIcon: const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
+          onPressed: () {
+            final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+
+            if (userId.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isArabic ? 'يرجى تسجيل الدخول أولاً' : 'Please login first',
+                  ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                      color: isFavorite ? Colors.redAccent : Colors.grey,
-                      size: 24,
-                    ),
-                    Text(
-                      isArabic ? 'المفضلة' : 'Save',
-                      style: TextStyle(
-                        fontSize: 8,
-                        color: isFavorite ? Colors.redAccent : Colors.grey,
-                        fontFamily: 'Cairo',
-                      ),
-                    ),
-                  ],
-                ),
+              );
+              context.pushNamed(AppRoutes.login);
+              return;
+            }
+
+            final bookedService = BookedService(
+              id: widget.serviceId,
+              subServiceId: widget.subServiceId,
+              name: service.title,
+              image: service.image ?? '',
+            );
+
+            context.pushNamed(
+              AppRoutes.bookingFlow,
+              extra: BookingFlowConfig(
+                mode: BookingFlowMode.customer,
+                actorId: userId,
+                preSelectedService: bookedService,
+                initialServicePrice: service.price,
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: MyCustomButton(
-                text: isArabic ? 'احجز الآن' : 'Book Now',
-                onPressed: () {
-                  final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
-
-                  if (userId.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isArabic ? 'يرجى تسجيل الدخول أولاً' : 'Please login first',
-                        ),
-                      ),
-                    );
-                    context.pushNamed(AppRoutes.login);
-                    return;
-                  }
-
-                  final bookedService = BookedService(
-                    id: widget.serviceId,
-                    subServiceId: widget.subServiceId,
-                    name: service.title,
-                    image: service.image ?? '',
-                  );
-
-                  context.pushNamed(
-                    AppRoutes.bookingFlow,
-                    extra: BookingFlowConfig(
-                      mode: BookingFlowMode.customer,
-                      actorId: userId,
-                      preSelectedService: bookedService,
-                      initialServicePrice: service.price,
-                    ),
-                  );
-                },
-                height: 58,
-                textStyle: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  fontFamily: 'Cairo',
-                ),
-              ),
-            ),
-          ],
+            );
+          },
+          height: 54,
+          borderRadius: 27, // Fully pill-shaped borders for a premium floating look
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontFamily: 'Cairo',
+          ),
         ),
       ),
     );

@@ -50,6 +50,9 @@ class _ServiceConfiguratorWizardPageState
   // Step 2: Advanced Details State (Inclusions & Exclusions)
   late List<DetailEntity> _details;
   late NotIncludedEntity _notIncluded;
+  final Map<int, int> _detailSelectedTab = {};
+  int _exclusionsSelectedTab = 0;
+  bool _hasExclusions = false;
 
   // Step 3: Instructions State
   late TextEditingController _instructionsArController;
@@ -81,6 +84,10 @@ class _ServiceConfiguratorWizardPageState
     const defaultLanguageContent = LanguageContentEntity(title: '', icon: '', points: []);
     _notIncluded = data?.notIncluded ?? 
         const NotIncludedEntity(ar: defaultLanguageContent, en: defaultLanguageContent);
+    _hasExclusions = (_notIncluded.ar.title?.isNotEmpty == true ||
+        (_notIncluded.ar.points?.isNotEmpty == true && _notIncluded.ar.points!.any((p) => p.trim().isNotEmpty)) ||
+        _notIncluded.en.title?.isNotEmpty == true ||
+        (_notIncluded.en.points?.isNotEmpty == true && _notIncluded.en.points!.any((p) => p.trim().isNotEmpty)));
 
     // Step 3 Instructions Initialization
     _instructionsArController = TextEditingController(
@@ -277,7 +284,12 @@ class _ServiceConfiguratorWizardPageState
           updatedAt: DateTime.now(),
           price: widget.initialData?.price ?? defaultPrice,
           details: _details,
-          notIncluded: _notIncluded,
+          notIncluded: _hasExclusions
+              ? _notIncluded
+              : const NotIncludedEntity(
+                  ar: LanguageContentEntity(title: '', icon: '', points: []),
+                  en: LanguageContentEntity(title: '', icon: '', points: []),
+                ),
           instructions: instructions,
         ),
         context,
@@ -664,10 +676,283 @@ class _ServiceConfiguratorWizardPageState
   void _removeDetailSection(int index) {
     setState(() {
       _details.removeAt(index);
+      _detailSelectedTab.remove(index);
     });
   }
 
+  void _moveDetailUp(int index) {
+    if (index > 0) {
+      setState(() {
+        final item = _details.removeAt(index);
+        _details.insert(index - 1, item);
+        
+        final tabCurrent = _detailSelectedTab[index] ?? 0;
+        final tabPrev = _detailSelectedTab[index - 1] ?? 0;
+        _detailSelectedTab[index - 1] = tabCurrent;
+        _detailSelectedTab[index] = tabPrev;
+      });
+    }
+  }
+
+  void _moveDetailDown(int index) {
+    if (index < _details.length - 1) {
+      setState(() {
+        final item = _details.removeAt(index);
+        _details.insert(index + 1, item);
+        
+        final tabCurrent = _detailSelectedTab[index] ?? 0;
+        final tabNext = _detailSelectedTab[index + 1] ?? 0;
+        _detailSelectedTab[index + 1] = tabCurrent;
+        _detailSelectedTab[index] = tabNext;
+      });
+    }
+  }
+
+  void _addBulletPoint(int detailIdx) {
+    setState(() {
+      final detail = _details[detailIdx];
+      final arPoints = List<String>.from(detail.ar.points ?? []);
+      final enPoints = List<String>.from(detail.en.points ?? []);
+      arPoints.add('');
+      enPoints.add('');
+      
+      _details[detailIdx] = DetailEntity(
+        id: detail.id,
+        ar: LanguageContentEntity(
+          title: detail.ar.title,
+          icon: detail.ar.icon,
+          iconPath: detail.ar.iconPath,
+          iconId: detail.ar.iconId,
+          points: arPoints,
+        ),
+        en: LanguageContentEntity(
+          title: detail.en.title,
+          icon: detail.en.icon,
+          iconPath: detail.en.iconPath,
+          iconId: detail.en.iconId,
+          points: enPoints,
+        ),
+      );
+    });
+  }
+
+  void _removeBulletPoint(int detailIdx, int pointIdx) {
+    setState(() {
+      final detail = _details[detailIdx];
+      final arPoints = List<String>.from(detail.ar.points ?? []);
+      final enPoints = List<String>.from(detail.en.points ?? []);
+      if (pointIdx < arPoints.length) arPoints.removeAt(pointIdx);
+      if (pointIdx < enPoints.length) enPoints.removeAt(pointIdx);
+      
+      _details[detailIdx] = DetailEntity(
+        id: detail.id,
+        ar: LanguageContentEntity(
+          title: detail.ar.title,
+          icon: detail.ar.icon,
+          iconPath: detail.ar.iconPath,
+          iconId: detail.ar.iconId,
+          points: arPoints,
+        ),
+        en: LanguageContentEntity(
+          title: detail.en.title,
+          icon: detail.en.icon,
+          iconPath: detail.en.iconPath,
+          iconId: detail.en.iconId,
+          points: enPoints,
+        ),
+      );
+    });
+  }
+
+  void _moveBulletPointUp(int detailIdx, int pointIdx) {
+    if (pointIdx > 0) {
+      setState(() {
+        final detail = _details[detailIdx];
+        final arPoints = List<String>.from(detail.ar.points ?? []);
+        final enPoints = List<String>.from(detail.en.points ?? []);
+        
+        final arItem = arPoints.removeAt(pointIdx);
+        arPoints.insert(pointIdx - 1, arItem);
+        
+        final enItem = enPoints.removeAt(pointIdx);
+        enPoints.insert(pointIdx - 1, enItem);
+        
+        _details[detailIdx] = DetailEntity(
+          id: detail.id,
+          ar: LanguageContentEntity(
+            title: detail.ar.title,
+            icon: detail.ar.icon,
+            iconPath: detail.ar.iconPath,
+            iconId: detail.ar.iconId,
+            points: arPoints,
+          ),
+          en: LanguageContentEntity(
+            title: detail.en.title,
+            icon: detail.en.icon,
+            iconPath: detail.en.iconPath,
+            iconId: detail.en.iconId,
+            points: enPoints,
+          ),
+        );
+      });
+    }
+  }
+
+  void _moveBulletPointDown(int detailIdx, int pointIdx) {
+    final detail = _details[detailIdx];
+    final totalPoints = detail.ar.points?.length ?? 0;
+    if (pointIdx < totalPoints - 1) {
+      setState(() {
+        final arPoints = List<String>.from(detail.ar.points ?? []);
+        final enPoints = List<String>.from(detail.en.points ?? []);
+        
+        final arItem = arPoints.removeAt(pointIdx);
+        arPoints.insert(pointIdx + 1, arItem);
+        
+        final enItem = enPoints.removeAt(pointIdx);
+        enPoints.insert(pointIdx + 1, enItem);
+        
+        _details[detailIdx] = DetailEntity(
+          id: detail.id,
+          ar: LanguageContentEntity(
+            title: detail.ar.title,
+            icon: detail.ar.icon,
+            iconPath: detail.ar.iconPath,
+            iconId: detail.ar.iconId,
+            points: arPoints,
+          ),
+          en: LanguageContentEntity(
+            title: detail.en.title,
+            icon: detail.en.icon,
+            iconPath: detail.en.iconPath,
+            iconId: detail.en.iconId,
+            points: enPoints,
+          ),
+        );
+      });
+    }
+  }
+
+  void _addExclusionBulletPoint() {
+    setState(() {
+      final arPoints = List<String>.from(_notIncluded.ar.points ?? []);
+      final enPoints = List<String>.from(_notIncluded.en.points ?? []);
+      arPoints.add('');
+      enPoints.add('');
+      
+      _notIncluded = NotIncludedEntity(
+        ar: LanguageContentEntity(
+          title: _notIncluded.ar.title,
+          icon: _notIncluded.ar.icon,
+          iconPath: _notIncluded.ar.iconPath,
+          iconId: _notIncluded.ar.iconId,
+          points: arPoints,
+        ),
+        en: LanguageContentEntity(
+          title: _notIncluded.en.title,
+          icon: _notIncluded.en.icon,
+          iconPath: _notIncluded.en.iconPath,
+          iconId: _notIncluded.en.iconId,
+          points: enPoints,
+        ),
+      );
+    });
+  }
+
+  void _removeExclusionBulletPoint(int pointIdx) {
+    setState(() {
+      final arPoints = List<String>.from(_notIncluded.ar.points ?? []);
+      final enPoints = List<String>.from(_notIncluded.en.points ?? []);
+      if (pointIdx < arPoints.length) arPoints.removeAt(pointIdx);
+      if (pointIdx < enPoints.length) enPoints.removeAt(pointIdx);
+      
+      _notIncluded = NotIncludedEntity(
+        ar: LanguageContentEntity(
+          title: _notIncluded.ar.title,
+          icon: _notIncluded.ar.icon,
+          iconPath: _notIncluded.ar.iconPath,
+          iconId: _notIncluded.ar.iconId,
+          points: arPoints,
+        ),
+        en: LanguageContentEntity(
+          title: _notIncluded.en.title,
+          icon: _notIncluded.en.icon,
+          iconPath: _notIncluded.en.iconPath,
+          iconId: _notIncluded.en.iconId,
+          points: enPoints,
+        ),
+      );
+    });
+  }
+
+  void _moveExclusionBulletPointUp(int pointIdx) {
+    if (pointIdx > 0) {
+      setState(() {
+        final arPoints = List<String>.from(_notIncluded.ar.points ?? []);
+        final enPoints = List<String>.from(_notIncluded.en.points ?? []);
+        
+        final arItem = arPoints.removeAt(pointIdx);
+        arPoints.insert(pointIdx - 1, arItem);
+        
+        final enItem = enPoints.removeAt(pointIdx);
+        enPoints.insert(pointIdx - 1, enItem);
+        
+        _notIncluded = NotIncludedEntity(
+          ar: LanguageContentEntity(
+            title: _notIncluded.ar.title,
+            icon: _notIncluded.ar.icon,
+            iconPath: _notIncluded.ar.iconPath,
+            iconId: _notIncluded.ar.iconId,
+            points: arPoints,
+          ),
+          en: LanguageContentEntity(
+            title: _notIncluded.en.title,
+            icon: _notIncluded.en.icon,
+            iconPath: _notIncluded.en.iconPath,
+            iconId: _notIncluded.en.iconId,
+            points: enPoints,
+          ),
+        );
+      });
+    }
+  }
+
+  void _moveExclusionBulletPointDown(int pointIdx) {
+    final totalPoints = _notIncluded.ar.points?.length ?? 0;
+    if (pointIdx < totalPoints - 1) {
+      setState(() {
+        final arPoints = List<String>.from(_notIncluded.ar.points ?? []);
+        final enPoints = List<String>.from(_notIncluded.en.points ?? []);
+        
+        final arItem = arPoints.removeAt(pointIdx);
+        arPoints.insert(pointIdx + 1, arItem);
+        
+        final enItem = enPoints.removeAt(pointIdx);
+        enPoints.insert(pointIdx + 1, enItem);
+        
+        _notIncluded = NotIncludedEntity(
+          ar: LanguageContentEntity(
+            title: _notIncluded.ar.title,
+            icon: _notIncluded.ar.icon,
+            iconPath: _notIncluded.ar.iconPath,
+            iconId: _notIncluded.ar.iconId,
+            points: arPoints,
+          ),
+          en: LanguageContentEntity(
+            title: _notIncluded.en.title,
+            icon: _notIncluded.en.icon,
+            iconPath: _notIncluded.en.iconPath,
+            iconId: _notIncluded.en.iconId,
+            points: enPoints,
+          ),
+        );
+      });
+    }
+  }
+
   Widget _buildDetailSectionCard(ThemeColorExtension themeColor, DetailEntity detail, int index) {
+    final activeTab = _detailSelectedTab[index] ?? 0;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -681,42 +966,397 @@ class _ServiceConfiguratorWizardPageState
           backgroundColor: themeColor.secondary.withValues(alpha: 0.1),
           child: Text("${index + 1}", style: TextStyle(color: themeColor.secondary, fontWeight: FontWeight.bold)),
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-          onPressed: () => _removeDetailSection(index),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (index > 0)
+              IconButton(
+                icon: Icon(Icons.arrow_upward_rounded, size: 20, color: themeColor.unselectedItem),
+                onPressed: () => _moveDetailUp(index),
+                tooltip: "تحريك لأعلى",
+              ),
+            if (index < _details.length - 1)
+              IconButton(
+                icon: Icon(Icons.arrow_downward_rounded, size: 20, color: themeColor.unselectedItem),
+                onPressed: () => _moveDetailDown(index),
+                tooltip: "تحريك لأسفل",
+              ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: themeColor.cardBackground,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    title: const Text("حذف القسم التفصيلي", style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+                    content: const Text("هل أنت متأكد من رغبتك في حذف هذا القسم بالكامل؟", style: TextStyle(fontFamily: 'Cairo', fontSize: 13)),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text("إلغاء", style: TextStyle(fontFamily: 'Cairo')),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _removeDetailSection(index);
+                        },
+                        child: const Text("حذف", style: TextStyle(fontFamily: 'Cairo', color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
         ),
-        childrenPadding: const EdgeInsets.all(16.0),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
-          _buildLanguageContentFields(
-            themeColor: themeColor,
-            title: "المحتوى بالعربية",
-            content: detail.ar,
-            onChanged: (newContent) {
-              setState(() {
-                _details[index] = DetailEntity(id: detail.id, ar: newContent, en: detail.en);
-              });
-            },
+          const Divider(),
+          const SizedBox(height: 8),
+
+          // Section Icon Selection Row
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: themeColor.background,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: themeColor.unselectedItem.withValues(alpha: 0.05),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.image_outlined, color: themeColor.primary, size: 20),
+                const SizedBox(width: 8),
+                const Text(
+                  "أيقونة القسم المشتركة:",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                InkWell(
+                  onTap: () async {
+                    final pickedIcon = await SharedIconPickerDialog.show(
+                      context,
+                      selectedIconId: detail.ar.iconId,
+                    );
+                    if (pickedIcon != null) {
+                      setState(() {
+                        final updatedAr = LanguageContentEntity(
+                          title: detail.ar.title,
+                          icon: pickedIcon.publicUrl,
+                          iconPath: pickedIcon.storagePath,
+                          iconId: pickedIcon.id,
+                          points: detail.ar.points,
+                        );
+                        final updatedEn = LanguageContentEntity(
+                          title: detail.en.title,
+                          icon: pickedIcon.publicUrl,
+                          iconPath: pickedIcon.storagePath,
+                          iconId: pickedIcon.id,
+                          points: detail.en.points,
+                        );
+                        _details[index] = DetailEntity(
+                          id: detail.id,
+                          ar: updatedAr,
+                          en: updatedEn,
+                        );
+                      });
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: themeColor.cardBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: themeColor.unselectedItem.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        if (detail.ar.icon?.isNotEmpty == true) ...[
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: CachedNetworkImage(
+                              imageUrl: detail.ar.icon!,
+                              width: 24,
+                              height: 24,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(
+                          detail.ar.icon?.isNotEmpty == true ? "تغيير الأيقونة" : "اختر أيقونة",
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: themeColor.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (detail.ar.icon?.isNotEmpty == true) ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 16, color: Colors.redAccent),
+                    onPressed: () {
+                      setState(() {
+                        final updatedAr = LanguageContentEntity(
+                          title: detail.ar.title,
+                          icon: '',
+                          iconPath: '',
+                          iconId: '',
+                          points: detail.ar.points,
+                        );
+                        final updatedEn = LanguageContentEntity(
+                          title: detail.en.title,
+                          icon: '',
+                          iconPath: '',
+                          iconId: '',
+                          points: detail.en.points,
+                        );
+                        _details[index] = DetailEntity(
+                          id: detail.id,
+                          ar: updatedAr,
+                          en: updatedEn,
+                        );
+                      });
+                    },
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ],
+            ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(),
+
+          // Language Select Tab Bar
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: themeColor.background,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _detailSelectedTab[index] = 0;
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: activeTab == 0
+                            ? themeColor.cardBackground
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: activeTab == 0
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]
+                            : [],
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        "المحتوى بالعربية",
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          fontWeight: activeTab == 0
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: activeTab == 0
+                              ? themeColor.primary
+                              : themeColor.textPrimary.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _detailSelectedTab[index] = 1;
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: activeTab == 1
+                            ? themeColor.cardBackground
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: activeTab == 1
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]
+                            : [],
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        "English Content",
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          fontWeight: activeTab == 1
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: activeTab == 1
+                              ? themeColor.primary
+                              : themeColor.textPrimary.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          _buildLanguageContentFields(
-            themeColor: themeColor,
-            title: "المحتوى بالإنجليزية",
-            content: detail.en,
-            onChanged: (newContent) {
-              setState(() {
-                _details[index] = DetailEntity(id: detail.id, ar: detail.ar, en: newContent);
-              });
-            },
-          ),
+
+          // Fields according to selected tab
+          if (activeTab == 0)
+            _buildDetailLanguageFields(
+              themeColor: themeColor,
+              isArabic: true,
+              detailIdx: index,
+              content: detail.ar,
+              onTitleChanged: (titleVal) {
+                setState(() {
+                  _details[index] = DetailEntity(
+                    id: detail.id,
+                    ar: LanguageContentEntity(
+                      title: titleVal,
+                      icon: detail.ar.icon,
+                      iconPath: detail.ar.iconPath,
+                      iconId: detail.ar.iconId,
+                      points: detail.ar.points,
+                    ),
+                    en: detail.en,
+                  );
+                });
+              },
+            )
+          else
+            _buildDetailLanguageFields(
+              themeColor: themeColor,
+              isArabic: false,
+              detailIdx: index,
+              content: detail.en,
+              onTitleChanged: (titleVal) {
+                setState(() {
+                  _details[index] = DetailEntity(
+                    id: detail.id,
+                    ar: detail.ar,
+                    en: LanguageContentEntity(
+                      title: titleVal,
+                      icon: detail.en.icon,
+                      iconPath: detail.en.iconPath,
+                      iconId: detail.en.iconId,
+                      points: detail.en.points,
+                    ),
+                  );
+                });
+              },
+            ),
         ],
       ),
     );
   }
 
   Widget _buildNotIncludedSection(ThemeColorExtension themeColor) {
+    if (!_hasExclusions) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: themeColor.cardBackground,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: themeColor.unselectedItem.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              size: 48,
+              color: themeColor.unselectedItem.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              "لا توجد استثناءات مضافة حالياً",
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "الاستثناءات توضح للعميل ما لا تشمله الخدمة لمنع الالتباس.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 12,
+                color: themeColor.textPrimary.withValues(alpha: 0.5),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _hasExclusions = true;
+                  _notIncluded = const NotIncludedEntity(
+                    ar: LanguageContentEntity(title: "ما لا تشمله الخدمة", icon: '', points: []),
+                    en: LanguageContentEntity(title: "What is not included", icon: '', points: []),
+                  );
+                });
+              },
+              icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+              label: const Text(
+                "تفعيل وإضافة استثناءات",
+                style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: themeColor.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Exclusions is active/enabled
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -725,269 +1365,618 @@ class _ServiceConfiguratorWizardPageState
         border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLanguageContentFields(
-            themeColor: themeColor,
-            title: "الاستثناءات بالعربية",
-            content: _notIncluded.ar,
-            onChanged: (newContent) {
-              setState(() {
-                _notIncluded = NotIncludedEntity(ar: newContent, en: _notIncluded.en);
-              });
-            },
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.block_flipped, color: Colors.orange, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    "تعديل الاستثناءات",
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: themeColor.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                tooltip: "حذف الاستثناءات بالكامل",
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: themeColor.cardBackground,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      title: const Text("حذف الاستثناءات", style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+                      content: const Text("هل أنت متأكد من رغبتك في حذف وإلغاء الاستثناءات لهذه الخدمة؟", style: TextStyle(fontFamily: 'Cairo', fontSize: 13)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text("إلغاء", style: TextStyle(fontFamily: 'Cairo')),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            setState(() {
+                              _hasExclusions = false;
+                              _notIncluded = const NotIncludedEntity(
+                                ar: LanguageContentEntity(title: '', icon: '', points: []),
+                                en: LanguageContentEntity(title: '', icon: '', points: []),
+                              );
+                            });
+                          },
+                          child: const Text("حذف", style: TextStyle(fontFamily: 'Cairo', color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Divider(),
+          const Divider(),
+          const SizedBox(height: 12),
+
+          // Shared Icon Selector Row for Exclusions
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: themeColor.background,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: themeColor.unselectedItem.withValues(alpha: 0.05),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.image_outlined, color: themeColor.primary, size: 20),
+                const SizedBox(width: 8),
+                const Text(
+                  "أيقونة الاستثناءات المشتركة:",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                InkWell(
+                  onTap: () async {
+                    final pickedIcon = await SharedIconPickerDialog.show(
+                      context,
+                      selectedIconId: _notIncluded.ar.iconId,
+                    );
+                    if (pickedIcon != null) {
+                      setState(() {
+                        _notIncluded = NotIncludedEntity(
+                          ar: LanguageContentEntity(
+                            title: _notIncluded.ar.title,
+                            icon: pickedIcon.publicUrl,
+                            iconPath: pickedIcon.storagePath,
+                            iconId: pickedIcon.id,
+                            points: _notIncluded.ar.points,
+                          ),
+                          en: LanguageContentEntity(
+                            title: _notIncluded.en.title,
+                            icon: pickedIcon.publicUrl,
+                            iconPath: pickedIcon.storagePath,
+                            iconId: pickedIcon.id,
+                            points: _notIncluded.en.points,
+                          ),
+                        );
+                      });
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: themeColor.cardBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: themeColor.unselectedItem.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        if (_notIncluded.ar.icon?.isNotEmpty == true) ...[
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: CachedNetworkImage(
+                              imageUrl: _notIncluded.ar.icon!,
+                              width: 24,
+                              height: 24,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(
+                          _notIncluded.ar.icon?.isNotEmpty == true ? "تغيير الأيقونة" : "اختر أيقونة",
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: themeColor.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_notIncluded.ar.icon?.isNotEmpty == true) ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 16, color: Colors.redAccent),
+                    onPressed: () {
+                      setState(() {
+                        _notIncluded = NotIncludedEntity(
+                          ar: LanguageContentEntity(
+                            title: _notIncluded.ar.title,
+                            icon: '',
+                            iconPath: '',
+                            iconId: '',
+                            points: _notIncluded.ar.points,
+                          ),
+                          en: LanguageContentEntity(
+                            title: _notIncluded.en.title,
+                            icon: '',
+                            iconPath: '',
+                            iconId: '',
+                            points: _notIncluded.en.points,
+                          ),
+                        );
+                      });
+                    },
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ],
+            ),
           ),
-          _buildLanguageContentFields(
-            themeColor: themeColor,
-            title: "الاستثناءات بالإنجليزية",
-            content: _notIncluded.en,
-            onChanged: (newContent) {
-              setState(() {
-                _notIncluded = NotIncludedEntity(ar: _notIncluded.ar, en: newContent);
-              });
-            },
+
+          // Sliding Tab Bar for Exclusions Language
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: themeColor.background,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _exclusionsSelectedTab = 0;
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _exclusionsSelectedTab == 0
+                            ? themeColor.cardBackground
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: _exclusionsSelectedTab == 0
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]
+                            : [],
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        "الاستثناءات بالعربية",
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          fontWeight: _exclusionsSelectedTab == 0
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: _exclusionsSelectedTab == 0
+                              ? themeColor.primary
+                              : themeColor.textPrimary.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _exclusionsSelectedTab = 1;
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _exclusionsSelectedTab == 1
+                            ? themeColor.cardBackground
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: _exclusionsSelectedTab == 1
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]
+                            : [],
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        "English Exclusions",
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          fontWeight: _exclusionsSelectedTab == 1
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: _exclusionsSelectedTab == 1
+                              ? themeColor.primary
+                              : themeColor.textPrimary.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
+
+          // Exclusion Fields according to active tab
+          if (_exclusionsSelectedTab == 0)
+            _buildExclusionsLanguageFields(
+              themeColor: themeColor,
+              isArabic: true,
+              content: _notIncluded.ar,
+              onTitleChanged: (val) {
+                setState(() {
+                  _notIncluded = NotIncludedEntity(
+                    ar: LanguageContentEntity(
+                      title: val,
+                      icon: _notIncluded.ar.icon,
+                      iconPath: _notIncluded.ar.iconPath,
+                      iconId: _notIncluded.ar.iconId,
+                      points: _notIncluded.ar.points,
+                    ),
+                    en: _notIncluded.en,
+                  );
+                });
+              },
+            )
+          else
+            _buildExclusionsLanguageFields(
+              themeColor: themeColor,
+              isArabic: false,
+              content: _notIncluded.en,
+              onTitleChanged: (val) {
+                setState(() {
+                  _notIncluded = NotIncludedEntity(
+                    ar: _notIncluded.ar,
+                    en: LanguageContentEntity(
+                      title: val,
+                      icon: _notIncluded.en.icon,
+                      iconPath: _notIncluded.en.iconPath,
+                      iconId: _notIncluded.en.iconId,
+                      points: _notIncluded.en.points,
+                    ),
+                  );
+                });
+              },
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildLanguageContentFields({
+  Widget _buildDetailLanguageFields({
     required ThemeColorExtension themeColor,
-    required String title,
+    required bool isArabic,
+    required int detailIdx,
     required LanguageContentEntity content,
-    required ValueChanged<LanguageContentEntity> onChanged,
+    required ValueChanged<String> onTitleChanged,
   }) {
+    final points = content.points ?? [];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 13, color: themeColor.secondary),
+        BaseTextFormField(
+          hint: isArabic ? "العنوان الرئيسي (مثال: ماذا تشمل الخدمة؟)" : "Section Title (e.g. What does this service include?)",
+          initialValue: content.title ?? '',
+          fillColor: themeColor.background,
+          onChanged: onTitleChanged,
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: BaseTextFormField(
-                hint: "العنوان الرئيسي (مثال: ماذا تشمل الخدمة؟)",
-                initialValue: content.title ?? '',
-                fillColor: themeColor.background,
-                onChanged: (val) {
-                  onChanged(LanguageContentEntity(
-                    title: val,
-                    icon: content.icon,
-                    iconPath: content.iconPath,
-                    iconId: content.iconId,
-                    points: content.points,
-                  ));
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: InkWell(
-                onTap: () async {
-                  final pickedIcon = await SharedIconPickerDialog.show(
-                    context,
-                    selectedIconId: content.iconId,
-                  );
-                  if (pickedIcon != null) {
-                    onChanged(LanguageContentEntity(
-                      title: content.title,
-                      icon: pickedIcon.publicUrl,
-                      iconPath: pickedIcon.storagePath,
-                      iconId: pickedIcon.id,
-                      points: content.points,
-                    ));
-                  }
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  height: 52, // Standard height matching BaseTextFormField
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: themeColor.background,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: themeColor.unselectedItem.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: themeColor.cardBackground,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: themeColor.unselectedItem.withValues(alpha: 0.05),
-                          ),
-                        ),
-                        child: content.icon != null && content.icon!.isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: CachedNetworkImage(
-                                  imageUrl: content.icon!,
-                                  fit: BoxFit.contain,
-                                  placeholder: (context, url) => const Center(
-                                    child: SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(strokeWidth: 1.5),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) => const Icon(
-                                    Icons.broken_image_outlined,
-                                    size: 16,
-                                    color: Colors.redAccent,
-                                  ),
-                                ),
-                              )
-                            : Icon(Icons.add_photo_alternate_outlined, color: themeColor.primary, size: 16),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              content.icon != null && content.icon!.isNotEmpty
-                                  ? "أيقونة مختارة"
-                                  : "اختر أيقونة مشتركة",
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (content.icon != null && content.icon!.isNotEmpty)
-                              Text(
-                                content.icon!.split('/').last,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontFamily: 'Cairo',
-                                  fontSize: 8,
-                                  color: Colors.grey.shade500,
-                                ),
-                              )
-                            else
-                              Text(
-                                "اضغط لفتح المكتبة",
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontFamily: 'Cairo',
-                                  fontSize: 8,
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      if (content.icon != null && content.icon!.isNotEmpty)
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 14, color: Colors.redAccent),
-                          onPressed: () {
-                            onChanged(LanguageContentEntity(
-                              title: content.title,
-                              icon: '',
-                              iconPath: '',
-                              iconId: '',
-                              points: content.points,
-                            ));
-                          },
-                          visualDensity: VisualDensity.compact,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              "نقاط القائمة (Bullet Points)",
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey),
+            Text(
+              isArabic ? "نقاط القائمة (Bullet Points)" : "Bullet Points",
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
             ),
             TextButton.icon(
-              onPressed: () {
-                final points = List<String>.from(content.points ?? []);
-                points.add('');
-                onChanged(LanguageContentEntity(
-                  title: content.title,
-                  icon: content.icon,
-                  iconPath: content.iconPath,
-                  iconId: content.iconId,
-                  points: points,
-                ));
-              },
+              onPressed: () => _addBulletPoint(detailIdx),
               icon: const Icon(Icons.add, size: 16),
-              label: const Text("إضافة نقطة", style: TextStyle(fontFamily: 'Cairo', fontSize: 11)),
+              label: Text(isArabic ? "إضافة نقطة" : "Add Point", style: const TextStyle(fontFamily: 'Cairo', fontSize: 11)),
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
             ),
           ],
         ),
-        if (content.points == null || content.points!.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.0),
-            child: Text("لا توجد نقاط مضافة", style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey)),
+        if (points.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            decoration: BoxDecoration(
+              color: themeColor.background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.05)),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              isArabic ? "لا توجد نقاط مضافة حالياً" : "No points added yet",
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: themeColor.textPrimary.withValues(alpha: 0.4)),
+            ),
           )
         else
-          ...content.points!.asMap().entries.map((entry) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: BaseTextFormField(
-                      hint: "محتوى النقطة ${entry.key + 1}",
-                      initialValue: entry.value,
-                      fillColor: themeColor.background,
-                      onChanged: (val) {
-                        final points = List<String>.from(content.points!);
-                        points[entry.key] = val;
-                        onChanged(LanguageContentEntity(
-                          title: content.title,
-                          icon: content.icon,
-                          iconPath: content.iconPath,
-                          iconId: content.iconId,
-                          points: points,
-                        ));
-                      },
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: points.length,
+            itemBuilder: (context, pointIdx) {
+              final pointValue = points[pointIdx];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 10,
+                      backgroundColor: themeColor.primary.withValues(alpha: 0.1),
+                      child: Text(
+                        "${pointIdx + 1}",
+                        style: TextStyle(fontSize: 9, color: themeColor.primary, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle_outline, color: Colors.amber),
-                    onPressed: () {
-                      final points = List<String>.from(content.points!);
-                      points.removeAt(entry.key);
-                      onChanged(LanguageContentEntity(
-                        title: content.title,
-                        icon: content.icon,
-                        iconPath: content.iconPath,
-                        iconId: content.iconId,
-                        points: points,
-                      ));
-                    },
-                  ),
-                ],
-              ),
-            );
-          }),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: BaseTextFormField(
+                        hint: isArabic ? "محتوى النقطة ${pointIdx + 1}" : "Point content ${pointIdx + 1}",
+                        initialValue: pointValue,
+                        fillColor: themeColor.background,
+                        onChanged: (val) {
+                          setState(() {
+                            final detail = _details[detailIdx];
+                            if (isArabic) {
+                              final arPoints = List<String>.from(detail.ar.points ?? []);
+                              if (pointIdx < arPoints.length) {
+                                arPoints[pointIdx] = val;
+                              }
+                              _details[detailIdx] = DetailEntity(
+                                id: detail.id,
+                                ar: LanguageContentEntity(
+                                  title: detail.ar.title,
+                                  icon: detail.ar.icon,
+                                  iconPath: detail.ar.iconPath,
+                                  iconId: detail.ar.iconId,
+                                  points: arPoints,
+                                ),
+                                en: detail.en,
+                              );
+                            } else {
+                              final enPoints = List<String>.from(detail.en.points ?? []);
+                              if (pointIdx < enPoints.length) {
+                                enPoints[pointIdx] = val;
+                              }
+                              _details[detailIdx] = DetailEntity(
+                                id: detail.id,
+                                ar: detail.ar,
+                                en: LanguageContentEntity(
+                                  title: detail.en.title,
+                                  icon: detail.en.icon,
+                                  iconPath: detail.en.iconPath,
+                                  iconId: detail.en.iconId,
+                                  points: enPoints,
+                                ),
+                              );
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    if (pointIdx > 0)
+                      IconButton(
+                        icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _moveBulletPointUp(detailIdx, pointIdx),
+                        visualDensity: VisualDensity.compact,
+                        tooltip: isArabic ? "تحريك لأعلى" : "Move Up",
+                      ),
+                    if (pointIdx < points.length - 1)
+                      IconButton(
+                        icon: const Icon(Icons.arrow_downward_rounded, size: 16),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _moveBulletPointDown(detailIdx, pointIdx),
+                        visualDensity: VisualDensity.compact,
+                        tooltip: isArabic ? "تحريك لأسفل" : "Move Down",
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent, size: 18),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _removeBulletPoint(detailIdx, pointIdx),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildExclusionsLanguageFields({
+    required ThemeColorExtension themeColor,
+    required bool isArabic,
+    required LanguageContentEntity content,
+    required ValueChanged<String> onTitleChanged,
+  }) {
+    final points = content.points ?? [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        BaseTextFormField(
+          hint: isArabic ? "عنوان الاستثناءات (مثال: ما لا تشمله الخدمة)" : "Exclusions Title (e.g. What is not included)",
+          initialValue: content.title ?? '',
+          fillColor: themeColor.background,
+          onChanged: onTitleChanged,
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              isArabic ? "نقاط الاستثناء (Bullet Points)" : "Exclusion Points",
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
+            ),
+            TextButton.icon(
+              onPressed: _addExclusionBulletPoint,
+              icon: const Icon(Icons.add, size: 16),
+              label: Text(isArabic ? "إضافة نقطة" : "Add Point", style: const TextStyle(fontFamily: 'Cairo', fontSize: 11)),
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+            ),
+          ],
+        ),
+        if (points.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            decoration: BoxDecoration(
+              color: themeColor.background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.05)),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              isArabic ? "لا توجد نقاط استثناء مضافة" : "No exclusion points added yet",
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: themeColor.textPrimary.withValues(alpha: 0.4)),
+            ),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: points.length,
+            itemBuilder: (context, pointIdx) {
+              final pointValue = points[pointIdx];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 10,
+                      backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                      child: Text(
+                        "${pointIdx + 1}",
+                        style: const TextStyle(fontSize: 9, color: Colors.orange, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: BaseTextFormField(
+                        hint: isArabic ? "محتوى نقطة الاستثناء ${pointIdx + 1}" : "Exclusion point content ${pointIdx + 1}",
+                        initialValue: pointValue,
+                        fillColor: themeColor.background,
+                        onChanged: (val) {
+                          setState(() {
+                            if (isArabic) {
+                              final arPoints = List<String>.from(_notIncluded.ar.points ?? []);
+                              if (pointIdx < arPoints.length) {
+                                arPoints[pointIdx] = val;
+                              }
+                              _notIncluded = NotIncludedEntity(
+                                ar: LanguageContentEntity(
+                                  title: _notIncluded.ar.title,
+                                  icon: _notIncluded.ar.icon,
+                                  iconPath: _notIncluded.ar.iconPath,
+                                  iconId: _notIncluded.ar.iconId,
+                                  points: arPoints,
+                                ),
+                                en: _notIncluded.en,
+                              );
+                            } else {
+                              final enPoints = List<String>.from(_notIncluded.en.points ?? []);
+                              if (pointIdx < enPoints.length) {
+                                enPoints[pointIdx] = val;
+                              }
+                              _notIncluded = NotIncludedEntity(
+                                ar: _notIncluded.ar,
+                                en: LanguageContentEntity(
+                                  title: _notIncluded.en.title,
+                                  icon: _notIncluded.en.icon,
+                                  iconPath: _notIncluded.en.iconPath,
+                                  iconId: _notIncluded.en.iconId,
+                                  points: enPoints,
+                                ),
+                              );
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    if (pointIdx > 0)
+                      IconButton(
+                        icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _moveExclusionBulletPointUp(pointIdx),
+                        visualDensity: VisualDensity.compact,
+                        tooltip: isArabic ? "تحريك لأعلى" : "Move Up",
+                      ),
+                    if (pointIdx < points.length - 1)
+                      IconButton(
+                        icon: const Icon(Icons.arrow_downward_rounded, size: 16),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _moveExclusionBulletPointDown(pointIdx),
+                        visualDensity: VisualDensity.compact,
+                        tooltip: isArabic ? "تحريك لأسفل" : "Move Down",
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent, size: 18),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _removeExclusionBulletPoint(pointIdx),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
       ],
     );
   }

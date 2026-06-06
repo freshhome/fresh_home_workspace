@@ -39,4 +39,5 @@ abstract class BookingRepository {
     required String subServiceId,
     required Map<String, dynamic> pricingInputs,
   });
+  Future<Either<Failure, bool>> hasActiveCoupons({required String subServiceId});
 }

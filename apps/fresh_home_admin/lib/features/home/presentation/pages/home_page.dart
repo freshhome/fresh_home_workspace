@@ -8,140 +8,7 @@ import 'package:shared/data/service/datasources/service_remote_datasource.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  void _showSubServiceSelector(
-    BuildContext context,
-    ThemeColorExtension themeColor,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      builder: (context) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'اختر الخدمة الفرعية لإدارة تسعيرها وحوكمتها',
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'سيتم فتح لوحة الحوكمة والتدقيق المالي وقواعد AST للخدمة المحددة.',
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  FutureBuilder<List<dynamic>>(
-                    future: Supabase.instance.client
-                        .from('services')
-                        .select('id, title')
-                        .eq('is_bookable', true)
-                        .order('sort_order'),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 32),
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
-                      if (snapshot.hasError ||
-                          !snapshot.hasData ||
-                          snapshot.data!.isEmpty) {
-                        if (snapshot.hasError) {
-                          debugPrint('❌ [HomePage sub_services load error]: ${snapshot.error}');
-                        }
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 32),
-                            child: Text(
-                              'فشل تحميل الخدمات الفرعية أو لا توجد بيانات.',
-                              style: TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        );
-                      }
 
-                      final subServices = snapshot.data!;
-                      return Container(
-                        constraints: BoxConstraints(
-                          maxHeight: MediaQuery.of(context).size.height * 0.4,
-                        ),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: subServices.length,
-                          itemBuilder: (context, index) {
-                            final item = subServices[index];
-                            final id = item['id'] as String;
-                            final titleMap =
-                                item['title'] as Map<String, dynamic>? ?? {};
-                            final String title =
-                                titleMap['ar'] ?? titleMap['en'] ?? id;
-
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              elevation: 0,
-                              color: Colors.grey.shade50,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ListTile(
-                                leading: const Icon(
-                                  Icons.gavel_rounded,
-                                  color: Colors.amber,
-                                ),
-                                title: Text(
-                                  title,
-                                  style: const TextStyle(
-                                    fontFamily: 'Cairo',
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                trailing: const Icon(
-                                  Icons.arrow_forward_ios_rounded,
-                                  size: 14,
-                                ),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  GoRouter.of(
-                                    context,
-                                  ).push('/pricing-governance/$id');
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -222,7 +89,7 @@ class HomePage extends StatelessWidget {
                       'تعديل قوانين AST الشرطية، إدارة الخصومات التراكمية، ومراجعة سجل التدقيق.',
                   icon: Icons.gavel_rounded,
                   color: Colors.amber.shade800,
-                  onTap: () => _showSubServiceSelector(context, themeColor),
+                  onTap: () => GoRouter.of(context).push('/pricing-governance'),
                 ),
                 const SizedBox(height: 16),
                 // ! اداره الحجوزات

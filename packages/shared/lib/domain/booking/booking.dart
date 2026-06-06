@@ -13,3 +13,5 @@ export 'use_cases/booking/update_booking_schedule_use_case.dart';
 export 'entities/availability/day_availability.dart';
 export 'repositories/availability_repository.dart';
 export 'use_cases/booking/get_available_days_use_case.dart';
+export 'use_cases/booking/check_active_coupons_use_case.dart';
+

@@ -64,6 +64,7 @@ class BookingFlowState {
   final bool isCurrentStepValid;
   final String? errorMessage;
   final String? generatedBookingId;
+  final bool hasActiveCoupons;
 
   const BookingFlowState({
     this.service,
@@ -99,6 +100,7 @@ class BookingFlowState {
     this.isCurrentStepValid = false,
     this.errorMessage,
     this.generatedBookingId,
+    this.hasActiveCoupons = false,
   });
 
   BookingFlowState copyWith({
@@ -138,6 +140,7 @@ class BookingFlowState {
     bool? isCurrentStepValid,
     String? errorMessage,
     String? generatedBookingId,
+    bool? hasActiveCoupons,
   }) {
     return BookingFlowState(
       service: service ?? this.service,
@@ -173,6 +176,7 @@ class BookingFlowState {
       isCurrentStepValid: isCurrentStepValid ?? this.isCurrentStepValid,
       errorMessage: errorMessage,   // explicitly null-able
       generatedBookingId: generatedBookingId ?? this.generatedBookingId,
+      hasActiveCoupons: hasActiveCoupons ?? this.hasActiveCoupons,
     );
   }
 }
