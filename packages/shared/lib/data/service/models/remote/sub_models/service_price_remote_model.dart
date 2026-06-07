@@ -62,6 +62,10 @@ class DynamicFieldRemoteModel {
   @JsonKey(name: 'price_modifier')
   final double? priceModifier;
   final List<DropdownOptionRemoteModel>? options;
+  final Map<String, String>? description;
+  final String? icon;
+  @JsonKey(name: 'display_type')
+  final String? displayType;
 
   const DynamicFieldRemoteModel({
     required this.id,
@@ -72,6 +76,9 @@ class DynamicFieldRemoteModel {
     this.unit,
     this.priceModifier,
     this.options,
+    this.description,
+    this.icon,
+    this.displayType,
   });
 
   factory DynamicFieldRemoteModel.fromJson(Map<String, dynamic> json) {
@@ -86,6 +93,11 @@ class DynamicFieldRemoteModel {
       options: (json['options'] as List?)
           ?.map((e) => DropdownOptionRemoteModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
+      description: json['description'] != null
+          ? Map<String, String>.from(json['description'] as Map)
+          : null,
+      icon: json['icon'] as String?,
+      displayType: json['display_type'] as String?,
     );
   }
 
@@ -99,6 +111,9 @@ class DynamicFieldRemoteModel {
       'unit': unit,
       'price_modifier': priceModifier,
       'options': options?.map((e) => e.toJson()).toList(),
+      'description': description,
+      'icon': icon,
+      'display_type': displayType,
     };
   }
 }

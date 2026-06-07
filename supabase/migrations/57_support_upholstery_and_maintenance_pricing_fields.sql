@@ -1,0 +1,64 @@
+-- ==============================================================================
+-- Fresh Home: Support Dynamic Visual Card Layout Metadata in Price Configurations
+-- Migration ID: 57_support_upholstery_and_maintenance_pricing_fields
+--
+-- Description: This migration provides documentation and verification guidelines
+-- for the JSONB schema of services.price_config. The database validation function
+-- public.validate_price_config(p_config) natively supports extra properties in
+-- the fields array (such as display_type, description, and icon).
+--
+-- No tables are modified, and no service data is seeded as requested. The system
+-- is fully initialized to accept custom visual cards configured through the Admin App.
+-- ==============================================================================
+
+-- 1. Verify validate_price_config status and behavior
+-- The function public.validate_price_config parses fields like:
+--   - id (text, required)
+--   - type (text: 'number' | 'toggle' | 'dropdown' | 'text' | 'multi-select', required)
+--   - label (object, required)
+-- Any additional fields (such as 'display_type', 'icon', 'description') are 
+-- permitted by the schema validator, allowing dynamic UI visual configurations.
+
+-- 2. Document the supported UI schemas for fields:
+--
+-- A. Card with Stepper (e.g. Sofa Quantity Selector):
+-- {
+--   "id": "sofa_qty",
+--   "type": "number",
+--   "required": false,
+--   "min": 0,
+--   "unit": "كنبة",
+--   "price_modifier": 150,
+--   "label": {
+--     "ar": "غسيل كنب",
+--     "en": "Sofa Cleaning"
+--   },
+--   "display_type": "card_stepper",
+--   "icon": "sofa_clean", -- Can be key string or remote URL
+--   "description": {
+--     "ar": "غسيل عميق بالبخار الساخن وسحب الأتربة.",
+--     "en": "Deep steam wash and dust extraction."
+--   }
+-- }
+--
+-- B. Card with Toggle Selection (e.g. Electrical short circuit repair):
+-- {
+--   "id": "short_circuit_fix",
+--   "type": "toggle",
+--   "required": false,
+--   "price_modifier": 250,
+--   "label": {
+--     "ar": "إصلاح قفلة كهربائية",
+--     "en": "Short Circuit Repair"
+--   },
+--   "display_type": "card_toggle",
+--   "icon": "electric_bolt", -- Can be key string or remote URL
+--   "description": {
+--     "ar": "فحص وتحديد مكان الالتماس وإصلاحه بأمان.",
+--     "en": "Locate and repair circuit short circuit safely."
+--   }
+-- }
+
+-- Comment on table to document pricing metadata extensions
+COMMENT ON COLUMN public.services.price_config IS 
+'Stores pricing configurations and visual layouts. Natively supports visual cards using display_type (card_stepper, card_toggle), icon (text or URL), and description (JSON translation map) keys inside field objects.';

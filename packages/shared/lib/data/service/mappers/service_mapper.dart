@@ -141,6 +141,9 @@ class ServiceMapper {
                 label: opt.label,
               ))
           .toList(),
+      description: model.description,
+      icon: model.icon,
+      displayType: model.displayType,
     );
   }
 
@@ -159,6 +162,11 @@ class ServiceMapper {
                 label: Map<String, String>.from(opt['label'] as Map? ?? {}),
               ))
           .toList(),
+      description: map['description'] != null
+          ? Map<String, String>.from(map['description'] as Map? ?? {})
+          : null,
+      icon: map['icon'] as String?,
+      displayType: map['display_type'] as String?,
     );
   }
 
@@ -177,6 +185,9 @@ class ServiceMapper {
                 label: opt.label,
               ))
           .toList(),
+      description: entity.description,
+      icon: entity.icon,
+      displayType: entity.displayType,
     );
   }
 
@@ -195,6 +206,9 @@ class ServiceMapper {
                 'label': opt.label,
               })
           .toList(),
+      'description': entity.description,
+      'icon': entity.icon,
+      'display_type': entity.displayType,
     };
   }
 

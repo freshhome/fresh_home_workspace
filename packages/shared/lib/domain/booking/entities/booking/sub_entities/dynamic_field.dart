@@ -42,6 +42,9 @@ class DynamicFieldEntity extends Equatable {
   final String? unit;
   final num? priceModifier;
   final List<DropdownOptionEntity>? options;
+  final Map<String, String>? description;
+  final String? icon;
+  final String? displayType;
 
   const DynamicFieldEntity({
     required this.id,
@@ -52,8 +55,23 @@ class DynamicFieldEntity extends Equatable {
     this.unit,
     this.priceModifier,
     this.options,
+    this.description,
+    this.icon,
+    this.displayType,
   });
 
   @override
-  List<Object?> get props => [id, type, label, required, min, unit, priceModifier, options];
+  List<Object?> get props => [
+        id,
+        type,
+        label,
+        required,
+        min,
+        unit,
+        priceModifier,
+        options,
+        description,
+        icon,
+        displayType,
+      ];
 }

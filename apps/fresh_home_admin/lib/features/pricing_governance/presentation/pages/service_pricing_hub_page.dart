@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/shared.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../services_management/presentation/widgets/shared_icon_picker_dialog.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:shared/presentation/dialogs/dialog_helper.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
@@ -4668,6 +4670,12 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
   late final TextEditingController _newOptLabelArController;
   late final TextEditingController _newOptLabelEnController;
 
+  // New visual card controllers
+  late final TextEditingController _descArController;
+  late final TextEditingController _descEnController;
+  late final TextEditingController _iconController;
+  String? _displayType;
+
   @override
   void initState() {
     super.initState();
@@ -4683,6 +4691,11 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     _newOptIdController = TextEditingController();
     _newOptLabelArController = TextEditingController();
     _newOptLabelEnController = TextEditingController();
+
+    _descArController = TextEditingController(text: f.description?['ar'] ?? '');
+    _descEnController = TextEditingController(text: f.description?['en'] ?? '');
+    _iconController = TextEditingController(text: f.icon ?? '');
+    _displayType = f.displayType;
   }
 
   @override
@@ -4706,6 +4719,21 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
       _unitController.text = f.unit ?? '';
       _priceModifierController.text = f.priceModifier?.toString() ?? '';
     }
+
+    if ((f.description?['ar'] ?? '') != (old.description?['ar'] ?? '') &&
+        (f.description?['ar'] ?? '') != _descArController.text) {
+      _descArController.text = f.description?['ar'] ?? '';
+    }
+    if ((f.description?['en'] ?? '') != (old.description?['en'] ?? '') &&
+        (f.description?['en'] ?? '') != _descEnController.text) {
+      _descEnController.text = f.description?['en'] ?? '';
+    }
+    if (f.icon != old.icon && f.icon != _iconController.text) {
+      _iconController.text = f.icon ?? '';
+    }
+    if (f.displayType != old.displayType) {
+      _displayType = f.displayType;
+    }
   }
 
   @override
@@ -4719,6 +4747,9 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     _newOptIdController.dispose();
     _newOptLabelArController.dispose();
     _newOptLabelEnController.dispose();
+    _descArController.dispose();
+    _descEnController.dispose();
+    _iconController.dispose();
     super.dispose();
   }
 
@@ -4731,6 +4762,12 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     String? unit,
     double? priceModifier,
     List<DropdownOptionEntity>? options,
+    Map<String, String>? description,
+    String? icon,
+    String? displayType,
+    bool clearDescription = false,
+    bool clearIcon = false,
+    bool clearDisplayType = false,
   }) {
     final f = widget.field;
     return DynamicFieldEntity(
@@ -4742,7 +4779,43 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
       unit: unit ?? f.unit,
       priceModifier: priceModifier ?? f.priceModifier,
       options: options ?? f.options,
+      description: clearDescription ? null : (description ?? f.description),
+      icon: clearIcon ? null : (icon ?? f.icon),
+      displayType: clearDisplayType ? null : (displayType ?? f.displayType),
     );
+  }
+
+  Widget _buildPreviewIcon(String iconKey, Color color) {
+    switch (iconKey.toLowerCase()) {
+      case 'sofa':
+      case 'sofa_clean':
+        return Icon(Icons.chair_rounded, color: color, size: 20);
+      case 'armchair':
+      case 'armchair_clean':
+        return Icon(Icons.chair_alt_rounded, color: color, size: 20);
+      case 'chair':
+      case 'chair_clean':
+      case 'dining_chair':
+        return Icon(Icons.single_bed_rounded, color: color, size: 20);
+      case 'electric':
+      case 'bolt':
+      case 'electric_bolt':
+      case 'short_circuit':
+        return Icon(Icons.bolt_rounded, color: color, size: 20);
+      case 'install_chandelier':
+      case 'chandelier':
+        return Icon(Icons.light_rounded, color: color, size: 20);
+      case 'plumbing':
+      case 'water':
+      case 'tap':
+        return Icon(Icons.water_drop_rounded, color: color, size: 20);
+      case 'carpentry':
+      case 'wood':
+      case 'hammer':
+        return Icon(Icons.handyman_rounded, color: color, size: 20);
+      default:
+        return Icon(Icons.build_circle_outlined, color: color, size: 20);
+    }
   }
 
 
@@ -5139,6 +5212,215 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
                                   ),
                                 ],
                               ),
+                            ),
+                            const SizedBox(height: 12),
+                            // display_type
+                            DropdownButtonFormField<String>(
+                              value: _displayType,
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 12,
+                                color: t.textPrimary,
+                              ),
+                              decoration: _inputDec(
+                                label: 'شكل العرض بالواجهة (Display Style)',
+                                icon: Icons.palette_rounded,
+                              ),
+                              items: const [
+                                DropdownMenuItem<String>(
+                                  value: null,
+                                  child: Text('افتراضي (حقل إدخال تقليدي)'),
+                                ),
+                                DropdownMenuItem<String>(
+                                  value: 'card_stepper',
+                                  child: Text('بطاقة بعداد كمية (+ / -)'),
+                                ),
+                                DropdownMenuItem<String>(
+                                  value: 'card_toggle',
+                                  child: Text('بطاقة تفعيل (نعم / لا)'),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                setState(() {
+                                  _displayType = val;
+                                });
+                                if (val == null) {
+                                  widget.onFieldChanged(_copyWith(clearDisplayType: true));
+                                } else {
+                                  widget.onFieldChanged(_copyWith(displayType: val));
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            // Icon Selector Card
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: t.background,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: t.unselectedItem.withValues(alpha: isDark ? 0.15 : 0.08),
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.image_outlined, color: t.primary, size: 20),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    "أيقونة الحقل:",
+                                    style: TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  InkWell(
+                                    onTap: () async {
+                                      String? selectedIconId;
+                                      final getSharedIcons = getIt<GetSharedIconsUseCase>();
+                                      final result = await getSharedIcons();
+                                      result.fold(
+                                        (_) {},
+                                        (icons) {
+                                          try {
+                                            final matched = icons.firstWhere(
+                                              (icon) => icon.publicUrl == field.icon || icon.id == field.icon,
+                                            );
+                                            selectedIconId = matched.id;
+                                          } catch (_) {}
+                                        },
+                                      );
+
+                                      if (context.mounted) {
+                                        final pickedIcon = await SharedIconPickerDialog.show(
+                                          context,
+                                          selectedIconId: selectedIconId,
+                                        );
+                                        if (pickedIcon != null) {
+                                          setState(() {
+                                            _iconController.text = pickedIcon.publicUrl;
+                                          });
+                                          widget.onFieldChanged(_copyWith(icon: pickedIcon.publicUrl));
+                                        }
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: t.cardBackground,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: t.unselectedItem.withValues(alpha: 0.1),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (field.icon?.isNotEmpty == true) ...[
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(6),
+                                              child: field.icon!.startsWith('http')
+                                                  ? CachedNetworkImage(
+                                                      imageUrl: field.icon!,
+                                                      width: 24,
+                                                      height: 24,
+                                                      fit: BoxFit.contain,
+                                                      placeholder: (_, __) => const SizedBox(
+                                                        width: 20,
+                                                        height: 20,
+                                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                                      ),
+                                                      errorWidget: (_, __, ___) => const Icon(Icons.broken_image, size: 20, color: Colors.redAccent),
+                                                    )
+                                                  : _buildPreviewIcon(field.icon!, t.primary),
+                                            ),
+                                            const SizedBox(width: 8),
+                                          ],
+                                          Text(
+                                            field.icon?.isNotEmpty == true ? "تغيير الأيقونة" : "اختر أيقونة",
+                                            style: TextStyle(
+                                              fontFamily: 'Cairo',
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: t.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  if (field.icon?.isNotEmpty == true) ...[
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      icon: const Icon(Icons.close_rounded, size: 16, color: Colors.redAccent),
+                                      onPressed: () {
+                                        setState(() {
+                                          _iconController.text = '';
+                                        });
+                                        widget.onFieldChanged(_copyWith(clearIcon: true));
+                                      },
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // Arabic Description
+                            TextFormField(
+                              controller: _descArController,
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 12,
+                                color: t.textPrimary,
+                              ),
+                              decoration: _inputDec(
+                                label: 'الوصف القصير بالعربية',
+                                icon: Icons.description_rounded,
+                              ),
+                              onChanged: (val) {
+                                final desc = Map<String, String>.from(field.description ?? {});
+                                if (val.trim().isEmpty) {
+                                  desc.remove('ar');
+                                } else {
+                                  desc['ar'] = val.trim();
+                                }
+                                if (desc.isEmpty) {
+                                  widget.onFieldChanged(_copyWith(clearDescription: true));
+                                } else {
+                                  widget.onFieldChanged(_copyWith(description: desc));
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            // English Description
+                            TextFormField(
+                              controller: _descEnController,
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 12,
+                                color: t.textPrimary,
+                              ),
+                              decoration: _inputDec(
+                                label: 'الوصف القصير بالإنجليزية',
+                                icon: Icons.translate_rounded,
+                              ),
+                              onChanged: (val) {
+                                final desc = Map<String, String>.from(field.description ?? {});
+                                if (val.trim().isEmpty) {
+                                  desc.remove('en');
+                                } else {
+                                  desc['en'] = val.trim();
+                                }
+                                if (desc.isEmpty) {
+                                  widget.onFieldChanged(_copyWith(clearDescription: true));
+                                } else {
+                                  widget.onFieldChanged(_copyWith(description: desc));
+                                }
+                              },
                             ),
                             // Numeric-only fields
                             if (field.type == DynamicFieldType.number) ...[
