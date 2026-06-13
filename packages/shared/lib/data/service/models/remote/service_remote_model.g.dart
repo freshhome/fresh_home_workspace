@@ -35,6 +35,7 @@ ServiceRemoteModel _$ServiceRemoteModelFromJson(Map<String, dynamic> json) =>
           ?.map((e) =>
               ComputedFieldRemoteModel.fromJson(e as Map<String, dynamic>))
           .toList(),
+      commissionRate: (json['commission_rate'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$ServiceRemoteModelToJson(ServiceRemoteModel instance) =>
@@ -54,6 +55,7 @@ Map<String, dynamic> _$ServiceRemoteModelToJson(ServiceRemoteModel instance) =>
       'not_included': instance.notIncluded?.toJson(),
       'computed_fields':
           instance.computedFields?.map((e) => e.toJson()).toList(),
+      'commission_rate': instance.commissionRate,
     };
 
 const _$ServiceStatusEnumMap = {

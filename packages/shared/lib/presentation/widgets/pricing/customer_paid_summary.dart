@@ -39,12 +39,14 @@ class CustomerPaidSummary extends StatelessWidget {
                   size: 22,
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  'تفاصيل ما سدده العميل (Customer Paid Summary)',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
+                const Expanded(
+                  child: Text(
+                    'تفاصيل ما سدده العميل (Customer Paid Summary)',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
               ],
@@ -123,38 +125,52 @@ class CustomerPaidSummary extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: fontSize,
-                color: isBold ? themeColor.textPrimary : themeColor.secondaryText,
-                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-            if (badgeText != null) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: themeColor.pricingLocked.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  badgeText,
+        Expanded(
+          child: badgeText == null
+              ? Text(
+                  label,
                   style: TextStyle(
                     fontFamily: 'Cairo',
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    color: themeColor.pricingLocked,
+                    fontSize: fontSize,
+                    color: isBold ? themeColor.textPrimary : themeColor.secondaryText,
+                    fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
                   ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: fontSize,
+                          color: isBold ? themeColor.textPrimary : themeColor.secondaryText,
+                          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: themeColor.pricingLocked.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: themeColor.pricingLocked,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ],
         ),
+        const SizedBox(width: 12),
         Text(
           value,
           style: TextStyle(

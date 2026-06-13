@@ -44,7 +44,10 @@ class _VisualRuleBuilderPageState extends State<VisualRuleBuilderPage> {
 
   Future<void> _loadService() async {
     try {
-      final result = await getIt<GetServiceByIdUseCase>().call(widget.subServiceId);
+      final result = await getIt<GetServiceByIdUseCase>().call(
+        widget.subServiceId,
+        forceRefresh: true,
+      );
       result.fold(
         (failure) {
           setState(() {

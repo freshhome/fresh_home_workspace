@@ -352,6 +352,7 @@ class ServiceMapper {
       details: model.details?.map(detailRemoteToEntity).toList(),
       notIncluded: model.notIncluded != null ? notIncludedRemoteToEntity(model.notIncluded!) : null,
       computedFields: model.computedFields?.map(computedFieldRemoteToEntity).toList(),
+      commissionRate: model.commissionRate,
     );
   }
 
@@ -371,6 +372,7 @@ class ServiceMapper {
       details: model.details?.map(detailHiveToEntity).toList(),
       notIncluded: model.notIncluded != null ? notIncludedHiveToEntity(model.notIncluded!) : null,
       computedFields: model.computedFields?.map((e) => computedFieldMapToEntity(e as Map)).toList(),
+      commissionRate: model.commissionRate,
     );
   }
 
@@ -390,6 +392,7 @@ class ServiceMapper {
       details: entity.details?.map(detailToRemote).toList(),
       notIncluded: entity.notIncluded != null ? notIncludedToRemote(entity.notIncluded!) : null,
       computedFields: entity.computedFields?.map(computedFieldToRemote).toList(),
+      commissionRate: entity.commissionRate,
     );
   }
 
@@ -409,6 +412,7 @@ class ServiceMapper {
       details: entity.details?.map(detailToHive).toList(),
       notIncluded: entity.notIncluded != null ? notIncludedToHive(entity.notIncluded!) : null,
       computedFields: entity.computedFields?.map(computedFieldToMap).toList(),
+      commissionRate: entity.commissionRate,
     );
   }
 
@@ -428,6 +432,7 @@ class ServiceMapper {
       details: model.details?.map((e) => detailToHive(detailRemoteToEntity(e))).toList(),
       notIncluded: model.notIncluded != null ? notIncludedToHive(notIncludedRemoteToEntity(model.notIncluded!)) : null,
       computedFields: model.computedFields?.map((e) => computedFieldToMap(computedFieldRemoteToEntity(e))).toList(),
+      commissionRate: model.commissionRate,
     );
   }
 
@@ -459,6 +464,7 @@ class ServiceMapper {
       status: service.status,
       order: service.order,
       updatedAt: service.updatedAt,
+      commissionRate: service.commissionRate,
       price: service.price ?? PriceEntity(
         type: PricingMethod.fixed,
         value: 0.0,

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:shared_features/shared_features.dart';
+import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
 import '../cubit/technician_orders_cubit.dart';
 import '../cubit/technician_orders_state.dart';
 import '../widgets/status_timeline.dart';
@@ -33,6 +34,8 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
   bool _loadingService = false;
   final Map<String, dynamic> _dynamicInputs = {};
   final List<String> _selectedOptions = [];
+  final Map<String, dynamic> _originalInputs = {};
+  final List<String> _originalSelectedOptions = [];
   BookingPricing? _calculatedPricing;
   bool _isCalculating = false;
 
@@ -61,15 +64,20 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
       (service) {
         if (mounted) {
           setState(() {
-            _subService = service as SubServiceEntity;
+            _subService = ServiceMapper.serviceToSubServiceEntity(service);
             _loadingService = false;
             // Pre-fill measurements if booking has pricing inputs
             if (booking.pricingInputs != null) {
               _dynamicInputs.addAll(booking.pricingInputs!);
+              if (_originalInputs.isEmpty) {
+                _originalInputs.addAll(booking.pricingInputs!);
+              }
               if (booking.pricingInputs!['selected_options'] != null) {
-                _selectedOptions.addAll(
-                  List<String>.from(booking.pricingInputs!['selected_options'] as List)
-                );
+                final list = List<String>.from(booking.pricingInputs!['selected_options'] as List);
+                _selectedOptions.addAll(list);
+                if (_originalSelectedOptions.isEmpty) {
+                  _originalSelectedOptions.addAll(list);
+                }
               }
             }
             _calculatedPricing = booking.price;
@@ -163,6 +171,7 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                     SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 160),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // 1. Order Header Card (ID & Status Badge)
                           _buildOrderHeaderCard(context, currentOrder),
@@ -175,8 +184,8 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                           _buildInspectionCard(context, currentOrder),
                           
                           // Financial Details & Transparency for Technician
-                          _buildFinancialSection(context, currentOrder),
-                          const SizedBox(height: 16),
+                          // _buildFinancialSection(context, currentOrder),
+                          // const SizedBox(height: 16),
                           
                           // 3. Customer Details Card
                           _buildCustomerInfoCard(context, currentOrder, canShowSensitive),
@@ -296,6 +305,34 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
             "موعد الوصول المتوقع", 
             timeStr
           ),
+          
+          if (_subService != null) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(height: 1, thickness: 0.5),
+            ),
+            Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                iconColor: themeColor.primary,
+                collapsedIconColor: themeColor.secondaryText,
+                title: Text(
+                  "تفاصيل الخدمة المضافة",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: themeColor.primary,
+                    fontFamily: 'Cairo',
+                  ),
+                ),
+                leading: Icon(Icons.info_outline_rounded, color: themeColor.primary, size: 20),
+                childrenPadding: const EdgeInsets.only(top: 8, bottom: 12),
+                children: _buildServiceComponentsList(context, order),
+              ),
+            ),
+          ],
+
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1, thickness: 0.5),
@@ -310,6 +347,110 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
         ],
       ),
     );
+  }
+
+  List<Widget> _buildServiceComponentsList(BuildContext context, Booking order) {
+    final themeColor = context.themeColor;
+    final locale = Localizations.localeOf(context).languageCode;
+    final List<Widget> items = [];
+
+    if (_subService == null) return items;
+
+    // 1. Dynamic fields
+    for (final field in _subService!.price.fields) {
+      final val = _dynamicInputs[field.id];
+      if (val != null) {
+        String displayVal = '';
+        if (field.type == DynamicFieldType.toggle) {
+          if (val == true) {
+            displayVal = field.label[locale] ?? field.label['ar'] ?? field.id;
+          } else {
+            continue;
+          }
+        } else if (field.type == DynamicFieldType.number) {
+          final num numVal = val as num;
+          if (numVal > 0) {
+            displayVal = "${field.label[locale] ?? field.label['ar'] ?? field.id}: ${numVal.toStringAsFixed(0)} ${field.unit ?? ''}";
+          } else {
+            continue;
+          }
+        } else {
+          displayVal = "${field.label[locale] ?? field.label['ar'] ?? field.id}: $val";
+        }
+
+        items.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle_outline_rounded, size: 16, color: themeColor.secondary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    displayVal,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: themeColor.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+
+    // 2. Extra options
+    for (final option in _subService!.price.options) {
+      final key = option.key ?? '';
+      if (_selectedOptions.contains(key)) {
+        final label = option.label?[locale] ?? option.label?['ar'] ?? key;
+        items.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Icon(Icons.add_circle_outline_rounded, size: 16, color: themeColor.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: themeColor.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+
+    if (items.isEmpty) {
+      items.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            "لا توجد إضافات أو خيارات محددة",
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 12,
+              color: themeColor.secondaryText,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return items;
   }
 
   // ── CUSTOMER INFO CARD ──────────────────────────────────────────────────
@@ -682,6 +823,10 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
   }
 
   void _handleAction(BuildContext context, Booking currentOrder, OrderStatus nextStatus) {
+    if (nextStatus == OrderStatus.completed) {
+      _showCompleteOrderCashDialog(context, currentOrder);
+      return;
+    }
     final l10n = AppLocalizations.of(context)!;
     String title = l10n.tech_details_confirm_action;
     String desc = "";
@@ -805,70 +950,73 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
     }
   }
 
-  Widget _buildFinancialSection(BuildContext context, Booking order) {
-    final themeColor = context.themeColor;
-    final locale = Localizations.localeOf(context).languageCode;
-
-    final basePriceVal = order.price.basePrice;
-    final extraFeesVal = order.price.extraFees;
-    final discountVal = order.price.discount;
-    final totalVal = order.price.total;
-    final metadata = order.price.metadata ?? {};
-    final subtotalVal = (metadata['subtotal'] ?? basePriceVal).toDouble();
-
-    // Standard 80/20 split based on pre-discount subtotal + extra fees
-    final baseCommissionableAmount = subtotalVal + extraFeesVal;
-    final platformCommissionVal = baseCommissionableAmount * 0.20;
-    final bonusesVal = 0.0; // default 0
-    final technicianPayoutVal = (baseCommissionableAmount * 0.80) + bonusesVal;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          child: Text(
-            "البيانات المالية والأرباح",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              color: themeColor.textPrimary,
-              fontFamily: 'Cairo',
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        EarningsLedgerCard(
-          orderId: order.displayId,
-          serviceName: order.service.name[locale] ?? '',
-          date: order.scheduledAt,
-          earnings: technicianPayoutVal,
-          status: order.status.name,
-        ),
-        const SizedBox(height: 16),
-        CommissionBreakdownCard(
-          customerPaid: totalVal,
-          technicianEarnings: technicianPayoutVal,
-          platformCommission: platformCommissionVal,
-        ),
-        if (bonusesVal > 0) ...[
-          const SizedBox(height: 16),
-          BonusHighlightCard(
-            bonusAmount: bonusesVal,
-            title: "حافز الأداء المتميز",
-            description: "حافز الأداء المتميز للطلب",
-          ),
-        ],
-        const SizedBox(height: 16),
-        CustomerPaidSummary(
-          basePrice: basePriceVal,
-          extraFees: extraFeesVal,
-          customerDiscount: discountVal,
-          customerPaid: totalVal,
-        ),
-      ],
-    );
-  }
+  // Widget _buildFinancialSection(BuildContext context, Booking order) {
+  //   final themeColor = context.themeColor;
+  //   final locale = Localizations.localeOf(context).languageCode;
+  // 
+  //   final basePriceVal = order.price.basePrice;
+  //   final extraFeesVal = order.price.extraFees;
+  //   final discountVal = order.price.discount;
+  //   final totalVal = order.price.total;
+  //   final metadata = order.price.metadata ?? {};
+  //   final subtotalVal = (metadata['subtotal'] ?? basePriceVal).toDouble();
+  // 
+  //   // Commissionable amount based on pre-discount subtotal + extra fees
+  //   final baseCommissionableAmount = subtotalVal + extraFeesVal;
+  // 
+  //   // Retrieve platform commission and technician payout directly from metadata, fallback to standard 80/20 split
+  //   final commissionRateVal = (metadata['commission_rate'] ?? 0.20).toDouble();
+  //   final platformCommissionVal = (metadata['platform_commission'] ?? (baseCommissionableAmount * commissionRateVal)).toDouble();
+  //   final bonusesVal = 0.0; // default 0
+  //   final technicianPayoutVal = (metadata['technician_payout'] ?? (baseCommissionableAmount * (1.0 - commissionRateVal))).toDouble() + bonusesVal;
+  // 
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.stretch,
+  //     children: [
+  //       Padding(
+  //         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+  //         child: Text(
+  //           "البيانات المالية والأرباح",
+  //           style: TextStyle(
+  //             fontSize: 16,
+  //             fontWeight: FontWeight.w900,
+  //             color: themeColor.textPrimary,
+  //             fontFamily: 'Cairo',
+  //           ),
+  //         ),
+  //       ),
+  //       const SizedBox(height: 8),
+  //       EarningsLedgerCard(
+  //         orderId: order.displayId,
+  //         serviceName: order.service.name[locale] ?? '',
+  //         date: order.scheduledAt,
+  //         earnings: technicianPayoutVal,
+  //         status: order.status.name,
+  //       ),
+  //       const SizedBox(height: 16),
+  //       CommissionBreakdownCard(
+  //         customerPaid: totalVal,
+  //         technicianEarnings: technicianPayoutVal,
+  //         platformCommission: platformCommissionVal,
+  //       ),
+  //       if (bonusesVal > 0) ...[
+  //         const SizedBox(height: 16),
+  //         BonusHighlightCard(
+  //           bonusAmount: bonusesVal,
+  //           title: "حافز الأداء المتميز",
+  //           description: "حافز الأداء المتميز للطلب",
+  //         ),
+  //       ],
+  //       const SizedBox(height: 16),
+  //       CustomerPaidSummary(
+  //         basePrice: basePriceVal,
+  //         extraFees: extraFeesVal,
+  //         customerDiscount: discountVal,
+  //         customerPaid: totalVal,
+  //       ),
+  //     ],
+  //   );
+  // }
 
   // ── 5. POST-INSPECTION CARD & HELPERS ───────────────────────────────────
 
@@ -957,23 +1105,75 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
           ),
           const SizedBox(height: 20),
 
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline_rounded, color: themeColor.warning, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    "التعديل متاح للإضافة فقط. لتعديل أو إلغاء أي خدمة سابقة، يرجى التواصل مع الإدارة.",
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 12,
+                      color: themeColor.warning,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
           DynamicFormRenderer(
             fields: filteredFields,
             values: _dynamicInputs,
             options: _subService!.price.options,
             selectedOptions: _selectedOptions,
             onFieldChanged: (key, value) {
+              final originalVal = _originalInputs[key];
+              if (originalVal != null) {
+                final double origNum = (originalVal is num) ? originalVal.toDouble() : 0.0;
+                final double newNum = (value is num) ? value.toDouble() : 0.0;
+                if (newNum < origNum) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        "حظر الإجراء: التعديل متاح للإضافة فقط. لتعديل أو إلغاء الخدمات السابقة، اتصل بالإدارة.",
+                        style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+                      ),
+                      backgroundColor: Colors.orange,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
+              }
               setState(() {
                 if (value == null) {
                   _dynamicInputs.remove(key);
                 } else {
                   _dynamicInputs[key] = value;
                 }
-                // Reset calculated price when inputs change to enforce recalculation
                 _calculatedPricing = null;
               });
             },
             onOptionToggled: (optionKey) {
+              if (_originalSelectedOptions.contains(optionKey) && _selectedOptions.contains(optionKey)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "حظر الإجراء: التعديل متاح للإضافة فقط. لتعديل أو إلغاء الخدمات السابقة، اتصل بالإدارة.",
+                      style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: Colors.orange,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
               setState(() {
                 if (_selectedOptions.contains(optionKey)) {
                   _selectedOptions.remove(optionKey);
@@ -981,7 +1181,6 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                   _selectedOptions.add(optionKey);
                 }
                 _dynamicInputs['selected_options'] = _selectedOptions;
-                // Reset calculated price when options change
                 _calculatedPricing = null;
               });
             },
@@ -1051,10 +1250,6 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
     final discount = _calculatedPricing!.discount;
     final total = _calculatedPricing!.total;
 
-    final commissionable = subtotal + extraFees;
-    final platformCommission = commissionable * 0.20;
-    final technicianPayout = commissionable * 0.80;
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1089,29 +1284,11 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
             child: Divider(height: 1, thickness: 0.5),
           ),
           _buildPriceRow(
-            "إجمالي العميل",
+            "إجمالي السعر المتوقع للعميل",
             "${total.toStringAsFixed(2)} ج.م",
             themeColor,
             isBold: true,
-            textColor: themeColor.textPrimary,
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 10),
-            child: Divider(height: 1, thickness: 0.5),
-          ),
-          _buildPriceRow(
-            "عمولة الشركة (20%)",
-            "${platformCommission.toStringAsFixed(2)} ج.م",
-            themeColor,
-            textColor: Colors.redAccent,
-          ),
-          const SizedBox(height: 8),
-          _buildPriceRow(
-            "صافي مستحقاتك (80%)",
-            "${technicianPayout.toStringAsFixed(2)} ج.م",
-            themeColor,
-            isBold: true,
-            textColor: const Color(0xFF10B981),
+            textColor: themeColor.primary,
           ),
         ],
       ),
@@ -1129,15 +1306,18 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: isBold ? themeColor.textPrimary : themeColor.secondaryText,
-            fontFamily: 'Cairo',
-            fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: isBold ? themeColor.textPrimary : themeColor.secondaryText,
+              fontFamily: 'Cairo',
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
+            ),
           ),
         ),
+        const SizedBox(width: 12),
         Text(
           value,
           style: TextStyle(
@@ -1221,5 +1401,352 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
       },
       btnCancelOnPress: () {},
     ).show();
+  }
+
+  void _showCompleteOrderCashDialog(BuildContext context, Booking currentOrder) {
+    final themeColor = context.themeColor;
+    final totalAmount = currentOrder.price.total;
+    final requiredAmount = totalAmount.toInt();
+
+    final controller = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool isConfirmed = false;
+    bool isValidInput = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setModalState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: themeColor.cardBackground,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 24,
+                      offset: const Offset(0, 12),
+                    )
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Header Icon and Title
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.account_balance_wallet_rounded,
+                                color: Color(0xFF10B981),
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                "تأكيد التحصيل وإتمام الطلب",
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        // Subtitle
+                        Text(
+                          "يرجى التأكد من استلام المبلغ المطلوب نقداً من العميل قبل تأكيد إتمام المهمة.",
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 13,
+                            color: themeColor.secondaryText,
+                            fontWeight: FontWeight.w600,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Required Amount Card
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F172A).withValues(alpha: 0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              const Text(
+                                "المبلغ المطلوب تحصيله كاش",
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "$requiredAmount ج.م",
+                                style: const TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF10B981),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              if (totalAmount != requiredAmount) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  "المبلغ الإجمالي مع الكسور: ${totalAmount.toStringAsFixed(2)} ج.م",
+                                  style: const TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontSize: 11,
+                                    color: Colors.white54,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Input label
+                        const Text(
+                          "أدخل القيمة المستلمة للمطابقة:",
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Custom Styled TextFormField
+                        TextFormField(
+                          controller: controller,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: themeColor.primary,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: "أدخل القيمة هنا",
+                            hintStyle: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[400],
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: Colors.grey[200]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: Colors.grey[200]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: themeColor.primary,
+                                width: 2.0,
+                              ),
+                            ),
+                            errorStyle: const TextStyle(
+                              fontFamily: 'Cairo',
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          onChanged: (val) {
+                            final entered = int.tryParse(val);
+                            setModalState(() {
+                              isValidInput = entered == requiredAmount;
+                            });
+                          },
+                          validator: (val) {
+                            if (val == null || val.isEmpty) {
+                              return "يرجى إدخال المبلغ للمطابقة";
+                            }
+                            final entered = int.tryParse(val);
+                            if (entered == null) {
+                              return "يرجى إدخال رقم صحيح";
+                            }
+                            if (entered != requiredAmount) {
+                              return "المبلغ غير مطابق لقيمة الطلب ($requiredAmount ج.م)";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Confirmation Switch Card (Interactive & Premium)
+                        InkWell(
+                          onTap: () {
+                            setModalState(() {
+                              isConfirmed = !isConfirmed;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isConfirmed
+                                  ? const Color(0xFF10B981).withValues(alpha: 0.05)
+                                  : Colors.grey[50],
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isConfirmed ? const Color(0xFF10B981) : Colors.grey[200]!,
+                                width: isConfirmed ? 2.0 : 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: isConfirmed ? const Color(0xFF10B981) : Colors.transparent,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isConfirmed ? const Color(0xFF10B981) : Colors.grey[400]!,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.check,
+                                    size: 14,
+                                    color: isConfirmed ? Colors.white : Colors.transparent,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Text(
+                                    "أؤكد استلام كامل المبلغ نقداً من العميل",
+                                    style: TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+
+                        // Action Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: Text(
+                                  "تراجع",
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: (isValidInput && isConfirmed)
+                                    ? () {
+                                        if (formKey.currentState!.validate()) {
+                                          Navigator.pop(dialogContext);
+                                          final authCubit = context.read<AuthCubit>();
+                                          context.read<TechnicianOrdersCubit>().completeOrderWithCash(
+                                                booking: currentOrder,
+                                                technicianId: authCubit.userId ?? currentOrder.technicianId ?? '',
+                                                collectedAmount: requiredAmount.toDouble(),
+                                              );
+                                        }
+                                      }
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF10B981),
+                                  disabledBackgroundColor: Colors.grey[200],
+                                  foregroundColor: Colors.white,
+                                  disabledForegroundColor: Colors.grey[400],
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  elevation: 0,
+                                ),
+                                child: const Text(
+                                  "تأكيد وإتمام الطلب",
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }

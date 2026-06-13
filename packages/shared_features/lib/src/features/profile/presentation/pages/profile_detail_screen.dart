@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared/shared.dart';
 import 'package:shared/domain/user/entities/user/phone.dart';
-import 'package:shared/domain/user/entities/user/technician_profile.dart';
 import 'package:shared_features/src/features/profile/domain/entities/user_with_profile.dart';
 import 'package:shared/presentation/theme/components/colors/theme_colors.dart';
 import '../cubit/profile_cubit.dart';
@@ -399,7 +398,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
           // Technician Section
           if (profile.technicianProfile != null) ...[
-            _buildTechnicianSection(profile.technicianProfile!),
+            _buildTechnicianSection(profile),
             const SizedBox(height: 32),
           ],
 
@@ -999,7 +998,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
   }
 
-  Widget _buildTechnicianSection(TechnicianProfile tech) {
+  Widget _buildTechnicianSection(UserWithProfile profile) {
+    final tech = profile.technicianProfile!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1108,7 +1108,211 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 24),
+        const Text(
+          'التخصصات والقدرة اليومية',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+            fontFamily: 'Cairo',
+          ),
+        ),
+        const SizedBox(height: 16),
+        _buildCapacityPoolsSection(profile),
       ],
+    );
+  }
+
+  Widget _buildCapacityPoolsSection(UserWithProfile profile) {
+    final pools = profile.capacityPools ?? [];
+    if (pools.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF0F0F0)),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.amber[600],
+              size: 40,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'لم يتم تحديد خزانات القدرة أو التخصصات بعد من قبل المسؤول.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.black54,
+                fontSize: 14,
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'يرجى التواصل مع الإدارة لتفعيل خدماتك وتحديد طاقتك الاستيعابية اليومية.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 12,
+                fontFamily: 'Cairo',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: pools.map((pool) {
+        final poolSkills = profile.technicianSkills
+                ?.where((s) => s.capacityPoolId == pool.id && s.isActive)
+                .toList() ??
+            [];
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFF0F0F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: ThemeColors.primaryLight.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.work_history_rounded,
+                      color: ThemeColors.primaryLight,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      pool.title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Cairo',
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Divider(color: Colors.grey[100]),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'القدرة اليومية:',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                      fontFamily: 'Cairo',
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${pool.maxDailyCapacity} مهام / يوم',
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Cairo',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'الخدمات المقدمة:',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontFamily: 'Cairo',
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (poolSkills.isEmpty)
+                Text(
+                  'لا توجد خدمات نشطة مسندة لهذا الخزان حالياً.',
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    fontFamily: 'Cairo',
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: poolSkills.map((skill) {
+                    final subServiceName = profile.subServiceNames?[skill.subServiceId] ?? skill.subServiceId;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey.withValues(alpha: 0.05),
+                        border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.15)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.check_circle_outline_rounded,
+                            color: Colors.blueGrey,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            subServiceName,
+                            style: const TextStyle(
+                              color: Colors.blueGrey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'Cairo',
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 

@@ -5,7 +5,7 @@ import 'package:shared/shared.dart';
 import 'package:shared_features/shared_features.dart';
 import 'core/di/injection_container.dart' as di;
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';                                         
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,9 +36,7 @@ class FreshHomeStaffApp extends StatelessWidget {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider.value(
-          value: GetIt.instance<ThemeCubit>()..loadTheme(),
-        ),
+        BlocProvider.value(value: GetIt.instance<ThemeCubit>()..loadTheme()),
         BlocProvider.value(
           value: GetIt.instance<LocaleCubit>()..loadSavedLocale(),
         ),
@@ -49,7 +47,7 @@ class FreshHomeStaffApp extends StatelessWidget {
           return BlocBuilder<LocaleCubit, LocaleState>(
             builder: (context, localeState) {
               final locale = localeState is LocaleLoaded
-                  ? localeState.locale                                                                      
+                  ? localeState.locale
                   : const Locale('ar');
               return BlocProvider.value(
                 value: GetIt.instance<AuthCubit>(),
@@ -62,16 +60,19 @@ class FreshHomeStaffApp extends StatelessWidget {
                           .initializeForegroundHandling();
 
                       return MaterialApp.router(
-                        scaffoldMessengerKey: GetIt.instance<NavigationService>().scaffoldMessengerKey,
+                        scaffoldMessengerKey:
+                            GetIt.instance<NavigationService>()
+                                .scaffoldMessengerKey,
                         title: 'فريش - فني',
                         debugShowCheckedModeBanner: false,
                         routerConfig: routerConfig.router,
-                        localizationsDelegates: AppLocalizations.localizationsDelegates,
+                        localizationsDelegates:
+                            AppLocalizations.localizationsDelegates,
                         supportedLocales: AppLocalizations.supportedLocales,
                         locale: locale,
                         theme: isDark ? AppTheme.dark : AppTheme.light,
                       );
-                    }
+                    },
                   ),
                 ),
               );

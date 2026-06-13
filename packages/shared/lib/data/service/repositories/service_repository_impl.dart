@@ -289,8 +289,19 @@ class ServiceRepositoryImpl implements ServiceRepository {
     bool forceRefresh = false,
   }) async {
     try {
-      if (forceRefresh) {
-        await syncAllServices(forceFull: true);
+      if (forceRefresh && await networkInfo.isConnected) {
+        final remoteModel = await remoteDataSource.getServiceById(id);
+        final hiveModel = ServiceMapper.remoteToHive(remoteModel);
+        await localDataSource.cacheService(hiveModel);
+
+        final entity = ServiceMapper.remoteToEntity(remoteModel);
+
+        await _loadCacheIfNeeded();
+        _allServices.removeWhere((s) => s.id == id);
+        _allServices.add(entity);
+        _buildTreeCache();
+
+        return Right(entity);
       } else {
         await _loadCacheIfNeeded();
       }

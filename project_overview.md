@@ -85,3 +85,5 @@ The workspace is organized as a monorepo containing three applications and two s
 - **Booking Flow**: Complete. Lifecycle state machine, RLS policies, PostgreSQL transitions, and timeline builders are implemented.
 - **Pricing MVP Bridge**: Complete. Deprecated legacy client-side calculations (`USE_LEGACY_PRICING = false`) and implemented the live cloud sandbox connector (`PricingSimulationGateway`) to avoid arithmetic drifts.
 - **Pricing Governance UI (Admin)**: Complete. Includes visual rule AST builder, discount campaign management, Sandbox Simulator, and Version history page.
+- **Financial System Schema & Foundations (Phase 2)**: Complete. Database-level schema, RLS security policies, custom triggers, indexes, and full architectural specifications are finalized.
+

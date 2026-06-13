@@ -1082,7 +1082,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tech_quick_tools_title => 'QUICK TOOLS';
 
   @override
-  String get tech_tool_wallet => 'Wallet';
+  String get tech_tool_wallet => 'My Balance';
 
   @override
   String get tech_tool_schedule => 'Schedule';
@@ -1404,4 +1404,338 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pricing_unit_meter_short => 'm';
+
+  @override
+  String get finance_title => 'My Balance';
+
+  @override
+  String get finance_balance_owed_to_you => 'Available Balance';
+
+  @override
+  String get finance_amount_owed_to_company => 'Owed to Company';
+
+  @override
+  String get finance_debt_limit => 'Debt Limit';
+
+  @override
+  String get finance_remaining_limit => 'Remaining Limit';
+
+  @override
+  String get finance_status => 'Account Status';
+
+  @override
+  String get finance_status_active => 'Active';
+
+  @override
+  String get finance_status_restricted => 'Restricted';
+
+  @override
+  String get finance_status_blocked => 'Blocked';
+
+  @override
+  String get finance_status_warning => 'Warning: Debt limit exceeded 80%';
+
+  @override
+  String get finance_status_blocked_desc =>
+      'Your account is suspended due to high debt. Please request a settlement.';
+
+  @override
+  String get finance_ledger_statement => 'Financial Ledger Statement';
+
+  @override
+  String get finance_ledger_empty => 'No transaction history found.';
+
+  @override
+  String get finance_btn_request_settlement => 'Request Settlement';
+
+  @override
+  String get finance_entry_type_order_earnings => 'Order Earnings';
+
+  @override
+  String get finance_entry_type_company_commission_debit =>
+      'Company Commission';
+
+  @override
+  String get finance_entry_type_cash_collection_debit =>
+      'Cash Collection Debit';
+
+  @override
+  String get finance_entry_type_manual_bonus => 'Bonus Added';
+
+  @override
+  String get finance_entry_type_manual_penalty => 'Penalty Deducted';
+
+  @override
+  String get finance_entry_type_manual_adjustment => 'Manual Adjustment';
+
+  @override
+  String get finance_entry_type_settlement_reconciliation =>
+      'Settlement Reconciliation';
+
+  @override
+  String get finance_settlement_request_title => 'New Settlement Request';
+
+  @override
+  String get finance_settlement_type_label => 'Transaction Type';
+
+  @override
+  String get finance_settlement_type_withdrawal => 'Withdrawal (From Company)';
+
+  @override
+  String get finance_settlement_type_payment => 'Pay Company (Settle Debt)';
+
+  @override
+  String get finance_settlement_type_required =>
+      'Please select transaction type';
+
+  @override
+  String get finance_settlement_method => 'Settlement Method';
+
+  @override
+  String get finance_settlement_method_vodafone_cash => 'Vodafone Cash';
+
+  @override
+  String get finance_settlement_method_instapay => 'Instapay';
+
+  @override
+  String get finance_settlement_method_bank_transfer => 'Bank Transfer';
+
+  @override
+  String get finance_settlement_method_cash_handover => 'Cash Handover';
+
+  @override
+  String get finance_settlement_method_other => 'Other';
+
+  @override
+  String get finance_settlement_amount => 'Settlement Amount (EGP)';
+
+  @override
+  String get finance_settlement_amount_hint => 'Enter amount to settle';
+
+  @override
+  String get finance_settlement_proof => 'Proof of Transfer (Screenshot)';
+
+  @override
+  String get finance_settlement_proof_select => 'Select Screenshot/Image';
+
+  @override
+  String get finance_settlement_proof_selected => 'Image selected successfully';
+
+  @override
+  String get finance_settlement_submit => 'Submit Request';
+
+  @override
+  String get finance_settlement_submit_success =>
+      'Settlement request submitted successfully for approval';
+
+  @override
+  String get finance_error_amount_required => 'Please enter a valid amount';
+
+  @override
+  String get finance_error_amount_positive =>
+      'Amount must be greater than zero';
+
+  @override
+  String get finance_error_method_required =>
+      'Please select a settlement method';
+
+  @override
+  String get finance_error_proof_required =>
+      'Please upload a transfer proof image';
+
+  @override
+  String get finance_error_upload_failed =>
+      'Failed to upload image. Please try again.';
+
+  @override
+  String get finance_error_generic =>
+      'An error occurred while loading financial data';
+
+  @override
+  String get admin_finance_title => 'Admin Accounting Center';
+
+  @override
+  String get admin_finance_desc =>
+      'Manage technician balances, manual adjustments, settlement requests, and discrepancies.';
+
+  @override
+  String get admin_finance_tab_settlements => 'Settlement Requests';
+
+  @override
+  String get admin_finance_tab_balances => 'Technician Balances';
+
+  @override
+  String get admin_finance_tab_adjustments => 'Manual Adjustments';
+
+  @override
+  String get admin_finance_tab_cases => 'Discrepancies (Cases)';
+
+  @override
+  String get admin_finance_col_technician => 'Technician';
+
+  @override
+  String get admin_finance_col_amount => 'Amount';
+
+  @override
+  String get admin_finance_col_method => 'Method';
+
+  @override
+  String get admin_finance_col_date => 'Date';
+
+  @override
+  String get admin_finance_col_action => 'Action';
+
+  @override
+  String get admin_finance_btn_view_proof => 'View Proof';
+
+  @override
+  String get admin_finance_btn_approve => 'Approve';
+
+  @override
+  String get admin_finance_btn_reject => 'Reject';
+
+  @override
+  String get admin_finance_approve_title => 'Approve Settlement';
+
+  @override
+  String get admin_finance_approve_msg =>
+      'Are you sure you want to approve this settlement request? Technician account balances will be updated immediately.';
+
+  @override
+  String get admin_finance_reject_title => 'Reject Settlement';
+
+  @override
+  String get admin_finance_reject_reason => 'Enter rejection reason...';
+
+  @override
+  String get admin_finance_col_status => 'Status';
+
+  @override
+  String get admin_finance_col_net_balance => 'Net Balance';
+
+  @override
+  String get admin_finance_col_owed_to_company => 'Owed to Company';
+
+  @override
+  String get admin_finance_col_owed_to_technician => 'Owed to Tech';
+
+  @override
+  String get admin_finance_col_debt_limit => 'Debt Limit';
+
+  @override
+  String get admin_finance_field_select_technician => 'Select Technician';
+
+  @override
+  String get admin_finance_field_adjustment_type => 'Adjustment Type';
+
+  @override
+  String get admin_finance_type_bonus => 'Bonus (+)';
+
+  @override
+  String get admin_finance_type_penalty => 'Penalty (-)';
+
+  @override
+  String get admin_finance_type_adjustment => 'Custom Adjustment';
+
+  @override
+  String get admin_finance_field_reason => 'Reason / Statement';
+
+  @override
+  String get admin_finance_field_notes => 'Additional Notes';
+
+  @override
+  String get admin_finance_btn_submit_adjustment =>
+      'Create & Approve Adjustment';
+
+  @override
+  String get admin_finance_success_adjustment =>
+      'Financial adjustment created and approved successfully.';
+
+  @override
+  String get admin_finance_col_expected => 'Expected';
+
+  @override
+  String get admin_finance_col_collected => 'Collected';
+
+  @override
+  String get admin_finance_col_case_desc => 'Discrepancy Description';
+
+  @override
+  String get admin_finance_btn_resolve_case => 'Resolve Case';
+
+  @override
+  String get admin_finance_field_resolution_notes => 'Resolution Notes';
+
+  @override
+  String get admin_finance_success_resolve =>
+      'Financial case resolved and closed successfully.';
+
+  @override
+  String get admin_finance_col_admin_proof => 'Admin Transfer Proof';
+
+  @override
+  String get admin_finance_btn_edit_debt => 'Edit Debt Limit';
+
+  @override
+  String get admin_finance_edit_debt_title => 'Update Debt Limit';
+
+  @override
+  String get admin_finance_edit_debt_label => 'Debt Limit (EGP)';
+
+  @override
+  String get admin_finance_success_debt => 'Debt limit updated successfully';
+
+  @override
+  String get admin_finance_payout_proof_title => 'Upload Payout Receipt';
+
+  @override
+  String get admin_finance_payout_proof_desc =>
+      'Please upload the transfer receipt screenshot to approve this payout request.';
+
+  @override
+  String get admin_finance_error_payout_proof =>
+      'Payout proof is required to approve this transaction';
+
+  @override
+  String get finance_admin_proof_label => 'Company Payout Receipt';
+
+  @override
+  String get admin_finance_tab_reports => 'Reports & Analytics';
+
+  @override
+  String get admin_finance_reports_company_profit => 'Company Net Profit';
+
+  @override
+  String get admin_finance_reports_total_debt => 'Total Market Debt';
+
+  @override
+  String get admin_finance_reports_tech_earnings => 'Total Tech Earnings';
+
+  @override
+  String get admin_finance_reports_profit_growth =>
+      'Company Profit Growth (Monthly)';
+
+  @override
+  String get admin_finance_reports_revenue_ratio =>
+      'Payment Ratios (Cash vs. Online)';
+
+  @override
+  String get admin_finance_reports_cash => 'Cash Collection';
+
+  @override
+  String get admin_finance_reports_online => 'Online Payment';
+
+  @override
+  String get admin_finance_reports_export_ledger => 'Export Ledger to Excel';
+
+  @override
+  String get admin_finance_reports_print_summary =>
+      'Print Monthly Summary (PDF)';
+
+  @override
+  String get admin_finance_reports_refresh_btn => 'Refresh Financial Reports';
+
+  @override
+  String get admin_finance_reports_refresh_success =>
+      'Financial report data refreshed successfully.';
 }

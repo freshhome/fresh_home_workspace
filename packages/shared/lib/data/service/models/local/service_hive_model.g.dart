@@ -31,13 +31,14 @@ class ServiceHiveModelAdapter extends TypeAdapter<ServiceHiveModel> {
       details: (fields[11] as List?)?.cast<DetailHiveModel>(),
       notIncluded: fields[12] as NotIncludedHiveModel?,
       computedFields: (fields[13] as List?)?.cast<dynamic>(),
+      commissionRate: fields[14] as double?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ServiceHiveModel obj) {
     writer
-      ..writeByte(14)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -65,7 +66,9 @@ class ServiceHiveModelAdapter extends TypeAdapter<ServiceHiveModel> {
       ..writeByte(12)
       ..write(obj.notIncluded)
       ..writeByte(13)
-      ..write(obj.computedFields);
+      ..write(obj.computedFields)
+      ..writeByte(14)
+      ..write(obj.commissionRate);
   }
 
   @override

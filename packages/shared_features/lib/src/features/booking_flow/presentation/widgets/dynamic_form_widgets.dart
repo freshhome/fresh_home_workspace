@@ -35,20 +35,24 @@ class DynamicFormRenderer extends StatelessWidget {
       children: [
         ...fields.map((field) {
           final dynamic val = values[field.id];
-          final String label = field.label[locale] ?? field.label['ar'] ?? field.id;
+          final String label =
+              field.label[locale] ?? field.label['ar'] ?? field.id;
 
           Widget fieldWidget;
-          if (field.displayType == 'card_stepper' && field.type == DynamicFieldType.number) {
+          if (field.displayType == 'card_stepper' &&
+              field.type == DynamicFieldType.number) {
             fieldWidget = DynamicCardStepper(
               field: field,
               label: label,
               value: val != null ? (val as num).toDouble() : 0.0,
-              onChanged: (double newVal) => onFieldChanged(field.id, newVal == 0.0 ? null : newVal),
+              onChanged: (double newVal) =>
+                  onFieldChanged(field.id, newVal == 0.0 ? null : newVal),
               themeColor: themeColor,
               themeText: themeText,
               locale: locale,
             );
-          } else if (field.displayType == 'card_toggle' && field.type == DynamicFieldType.toggle) {
+          } else if (field.displayType == 'card_toggle' &&
+              field.type == DynamicFieldType.toggle) {
             fieldWidget = DynamicCardToggle(
               field: field,
               label: label,
@@ -65,7 +69,8 @@ class DynamicFormRenderer extends StatelessWidget {
                   field: field,
                   label: label,
                   value: val != null ? (val as num).toDouble() : null,
-                  onChanged: (double? newVal) => onFieldChanged(field.id, newVal),
+                  onChanged: (double? newVal) =>
+                      onFieldChanged(field.id, newVal),
                   themeColor: themeColor,
                   themeText: themeText,
                 );
@@ -74,7 +79,7 @@ class DynamicFormRenderer extends StatelessWidget {
                 fieldWidget = DynamicToggleField(
                   field: field,
                   label: label,
-                  value: val == true,
+                  value: val as bool?,
                   onChanged: (bool newVal) => onFieldChanged(field.id, newVal),
                   themeColor: themeColor,
                   themeText: themeText,
@@ -85,7 +90,8 @@ class DynamicFormRenderer extends StatelessWidget {
                   field: field,
                   label: label,
                   value: val?.toString(),
-                  onChanged: (String? newVal) => onFieldChanged(field.id, newVal),
+                  onChanged: (String? newVal) =>
+                      onFieldChanged(field.id, newVal),
                   themeColor: themeColor,
                   themeText: themeText,
                 );
@@ -111,7 +117,7 @@ class DynamicFormRenderer extends StatelessWidget {
             themeText: themeText,
             locale: locale,
           ),
-        ]
+        ],
       ],
     );
   }
@@ -155,8 +161,11 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
   @override
   void didUpdateWidget(covariant DynamicNumberField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.value != oldWidget.value && widget.value != double.tryParse(_controller.text)) {
-      _controller.text = widget.value != null ? widget.value!.toStringAsFixed(0) : '';
+    if (widget.value != oldWidget.value &&
+        widget.value != double.tryParse(_controller.text)) {
+      _controller.text = widget.value != null
+          ? widget.value!.toStringAsFixed(0)
+          : '';
     }
   }
 
@@ -234,7 +243,7 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
 class DynamicToggleField extends StatelessWidget {
   final DynamicFieldEntity field;
   final String label;
-  final bool value;
+  final bool? value;
   final ValueChanged<bool> onChanged;
   final ThemeColorExtension themeColor;
   final AppTextThemeExtension themeText;
@@ -251,43 +260,199 @@ class DynamicToggleField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => onChanged(!value),
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: value ? themeColor.primary.withValues(alpha: 0.03) : themeColor.cardBackground,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: value ? themeColor.primary : Colors.grey.shade200,
-              width: 1.5,
-            ),
-            boxShadow: [themeColor.cardShadow],
-          ),
-          child: Row(
-            children: [
-              Icon(
-                value ? Icons.check_box : Icons.check_box_outline_blank,
-                color: value ? themeColor.primary : Colors.grey.shade400,
+    final locale = Localizations.localeOf(context).languageCode;
+    
+    // Retrieve custom options labels
+    final optTrue = field.options != null && field.options!.isNotEmpty
+        ? field.options!.firstWhere((o) => o.id == 'true' || o.id == 'yes',
+            orElse: () => const DropdownOptionEntity(id: 'true', label: {'ar': 'نعم', 'en': 'Yes'}))
+        : const DropdownOptionEntity(id: 'true', label: {'ar': 'نعم', 'en': 'Yes'});
+
+    final optFalse = field.options != null && field.options!.length > 1
+        ? field.options!.firstWhere((o) => o.id == 'false' || o.id == 'no',
+            orElse: () => const DropdownOptionEntity(id: 'false', label: {'ar': 'لا', 'en': 'No'}))
+        : const DropdownOptionEntity(id: 'false', label: {'ar': 'لا', 'en': 'No'});
+
+    final String trueLabel = optTrue.label[locale] ?? optTrue.label['ar'] ?? 'نعم';
+    final String falseLabel = optFalse.label[locale] ?? optFalse.label['ar'] ?? 'لا';
+
+    final isTrueSelected = value == true;
+    final isFalseSelected = value == false;
+    final hasError = field.required && value == null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: themeText.titleSectionSmall.copyWith(
+                color: themeColor.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                fontFamily: 'Cairo',
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: themeText.textBodyPrimary.copyWith(
-                    fontWeight: value ? FontWeight.bold : FontWeight.normal,
-                    color: themeColor.textPrimary,
-                  ),
+            ),
+            if (field.required) ...[
+              const SizedBox(width: 4),
+              Text(
+                '*',
+                style: TextStyle(
+                  color: Colors.red.shade700,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
               ),
             ],
-          ),
+          ],
         ),
-      ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            // Option 1: True / Yes
+            Expanded(
+              child: GestureDetector(
+                onTap: () => onChanged(true),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: isTrueSelected
+                        ? themeColor.primary.withValues(alpha: 0.05)
+                        : themeColor.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isTrueSelected
+                          ? themeColor.primary
+                          : (hasError ? Colors.red.shade300 : Colors.grey.shade200),
+                      width: isTrueSelected ? 2.0 : 1.5,
+                    ),
+                    boxShadow: isTrueSelected
+                        ? [
+                            BoxShadow(
+                              color: themeColor.primary.withValues(alpha: 0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            )
+                          ]
+                        : [themeColor.cardShadow],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        isTrueSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.radio_button_off_rounded,
+                        color: isTrueSelected
+                            ? themeColor.primary
+                            : (hasError ? Colors.red.shade400 : Colors.grey.shade400),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          trueLabel,
+                          style: themeText.textBodyPrimary.copyWith(
+                            fontWeight: isTrueSelected ? FontWeight.bold : FontWeight.w600,
+                            color: isTrueSelected ? themeColor.primary : themeColor.textPrimary,
+                            fontFamily: 'Cairo',
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Option 2: False / No
+            Expanded(
+              child: GestureDetector(
+                onTap: () => onChanged(false),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: isFalseSelected
+                        ? themeColor.primary.withValues(alpha: 0.05)
+                        : themeColor.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isFalseSelected
+                          ? themeColor.primary
+                          : (hasError ? Colors.red.shade300 : Colors.grey.shade200),
+                      width: isFalseSelected ? 2.0 : 1.5,
+                    ),
+                    boxShadow: isFalseSelected
+                        ? [
+                            BoxShadow(
+                              color: themeColor.primary.withValues(alpha: 0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            )
+                          ]
+                        : [themeColor.cardShadow],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        isFalseSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.radio_button_off_rounded,
+                        color: isFalseSelected
+                            ? themeColor.primary
+                            : (hasError ? Colors.red.shade400 : Colors.grey.shade400),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          falseLabel,
+                          style: themeText.textBodyPrimary.copyWith(
+                            fontWeight: isFalseSelected ? FontWeight.bold : FontWeight.w600,
+                            color: isFalseSelected ? themeColor.primary : themeColor.textPrimary,
+                            fontFamily: 'Cairo',
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, right: 4, left: 4),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  size: 14,
+                  color: Colors.red.shade700,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  locale == 'ar' ? 'هذا الحقل مطلوب، يرجى اختيار أحد الخيارات.' : 'This field is required. Please select an option.',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 11,
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -350,7 +515,10 @@ class DynamicDropdownField extends StatelessWidget {
           ),
           decoration: InputDecoration(
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
             prefixIcon: Icon(
               Icons.list_alt_rounded,
               color: themeColor.primary.withValues(alpha: 0.6),
@@ -380,10 +548,7 @@ class DynamicDropdownField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: themeColor.primary,
-                width: 1.5,
-              ),
+              borderSide: BorderSide(color: themeColor.primary, width: 1.5),
             ),
           ),
           items: options.map((opt) {
@@ -445,7 +610,8 @@ class DynamicOptionsGroup extends StatelessWidget {
           final isSelected = selectedOptions.contains(key);
 
           // Dynamic label from backend or fallback to key
-          String optionLabel = option.label?[locale] ?? option.label?['ar'] ?? key;
+          String optionLabel =
+              option.label?[locale] ?? option.label?['ar'] ?? key;
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -456,10 +622,14 @@ class DynamicOptionsGroup extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isSelected ? themeColor.primary.withValues(alpha: 0.03) : themeColor.cardBackground,
+                  color: isSelected
+                      ? themeColor.primary.withValues(alpha: 0.03)
+                      : themeColor.cardBackground,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isSelected ? themeColor.primary : Colors.grey.shade200,
+                    color: isSelected
+                        ? themeColor.primary
+                        : Colors.grey.shade200,
                     width: 1.5,
                   ),
                   boxShadow: [themeColor.cardShadow],
@@ -467,15 +637,21 @@ class DynamicOptionsGroup extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                      color: isSelected ? themeColor.primary : Colors.grey.shade400,
+                      isSelected
+                          ? Icons.check_box
+                          : Icons.check_box_outline_blank,
+                      color: isSelected
+                          ? themeColor.primary
+                          : Colors.grey.shade400,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         optionLabel,
                         style: themeText.textBodyPrimary.copyWith(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                           color: themeColor.textPrimary,
                         ),
                       ),
@@ -495,57 +671,57 @@ class DynamicOptionsGroup extends StatelessWidget {
 
 Widget _buildIcon(String? iconKey, Color color) {
   if (iconKey == null || iconKey.isEmpty) {
-    return Icon(Icons.build_circle_outlined, color: color, size: 28);
+    return Icon(Icons.build_circle_outlined, color: color, size: 35);
   }
   if (iconKey.startsWith('http://') || iconKey.startsWith('https://')) {
     if (iconKey.endsWith('.svg')) {
       return SvgPicture.network(
         iconKey,
-        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-        width: 28,
-        height: 28,
-        placeholderBuilder: (_) => Icon(Icons.broken_image_outlined, color: color, size: 28),
+        width: 35,
+        height: 35,
+        placeholderBuilder: (_) =>
+            Icon(Icons.broken_image_outlined, color: color, size: 35),
       );
     } else {
       return Image.network(
         iconKey,
-        color: color,
-        width: 28,
-        height: 28,
-        errorBuilder: (context, error, stackTrace) => Icon(Icons.broken_image_outlined, color: color, size: 28),
+        width: 35,
+        height: 35,
+        errorBuilder: (context, error, stackTrace) =>
+            Icon(Icons.broken_image_outlined, color: color, size: 35),
       );
     }
   }
-  
+
   switch (iconKey.toLowerCase()) {
     case 'sofa':
     case 'sofa_clean':
-      return Icon(Icons.chair_rounded, color: color, size: 28);
+      return Icon(Icons.chair_rounded, color: color, size: 35);
     case 'armchair':
     case 'armchair_clean':
-      return Icon(Icons.chair_alt_rounded, color: color, size: 28);
+      return Icon(Icons.chair_alt_rounded, color: color, size: 35);
     case 'chair':
     case 'chair_clean':
     case 'dining_chair':
-      return Icon(Icons.single_bed_rounded, color: color, size: 28);
+      return Icon(Icons.single_bed_rounded, color: color, size: 35);
     case 'electric':
     case 'bolt':
     case 'electric_bolt':
     case 'short_circuit':
-      return Icon(Icons.bolt_rounded, color: color, size: 28);
+      return Icon(Icons.bolt_rounded, color: color, size: 35);
     case 'install_chandelier':
     case 'chandelier':
-      return Icon(Icons.light_rounded, color: color, size: 28);
+      return Icon(Icons.light_rounded, color: color, size: 35);
     case 'plumbing':
     case 'water':
     case 'tap':
-      return Icon(Icons.water_drop_rounded, color: color, size: 28);
+      return Icon(Icons.water_drop_rounded, color: color, size: 35);
     case 'carpentry':
     case 'wood':
     case 'hammer':
-      return Icon(Icons.handyman_rounded, color: color, size: 28);
+      return Icon(Icons.handyman_rounded, color: color, size: 35);
     default:
-      return Icon(Icons.build_circle_outlined, color: color, size: 28);
+      return Icon(Icons.build_circle_outlined, color: color, size: 35);
   }
 }
 
@@ -592,48 +768,65 @@ class DynamicCardStepper extends StatelessWidget {
           ),
           boxShadow: [themeColor.cardShadow],
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon section
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: hasValue
-                    ? themeColor.primary.withValues(alpha: 0.1)
-                    : themeColor.unselectedItem.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: _buildIcon(field.icon, hasValue ? themeColor.primary : themeColor.secondaryText),
-            ),
-            const SizedBox(width: 16),
-            // Middle text section
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: themeText.textBodyPrimary.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: themeColor.textPrimary,
-                    ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                //! Icon section
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: hasValue
+                        ? themeColor.primary.withValues(alpha: 0.1)
+                        : themeColor.unselectedItem.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  if (description != null && description.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: themeText.textCaption.copyWith(
-                        color: themeColor.secondaryText,
-                        fontSize: 12,
+                  child: _buildIcon(
+                    field.icon,
+                    hasValue ? themeColor.primary : themeColor.secondaryText,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Middle text section
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: themeText.textBodyPrimary.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: themeColor.textPrimary,
+                        ),
                       ),
-                    ),
-                  ],
-                  if (field.priceModifier != null && field.priceModifier! > 0) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      if (description != null && description.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          description,
+                          style: themeText.textCaption.copyWith(
+                            color: themeColor.secondaryText,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                if (field.priceModifier != null && field.priceModifier! > 0)
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: themeColor.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -647,17 +840,14 @@ class DynamicCardStepper extends StatelessWidget {
                           fontWeight: FontWeight.w900,
                           fontSize: 11,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Stepper buttons section
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+                  ),
+                const SizedBox(width: 8),
+                const Spacer(),
+                // Stepper buttons section
                 Container(
                   decoration: BoxDecoration(
                     color: themeColor.nestedCardBackground,
@@ -769,14 +959,17 @@ class DynamicCardToggle extends StatelessWidget {
             children: [
               // Icon section
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: value
                       ? themeColor.primary.withValues(alpha: 0.1)
                       : themeColor.unselectedItem.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: _buildIcon(field.icon, value ? themeColor.primary : themeColor.secondaryText),
+                child: _buildIcon(
+                  field.icon,
+                  value ? themeColor.primary : themeColor.secondaryText,
+                ),
               ),
               const SizedBox(width: 16),
               // Text and details
@@ -802,10 +995,14 @@ class DynamicCardToggle extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (field.priceModifier != null && field.priceModifier! > 0) ...[
+                    if (field.priceModifier != null &&
+                        field.priceModifier! > 0) ...[
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: themeColor.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -828,8 +1025,12 @@ class DynamicCardToggle extends StatelessWidget {
               const SizedBox(width: 12),
               // Selection indicator
               Icon(
-                value ? Icons.check_circle_rounded : Icons.radio_button_off_rounded,
-                color: value ? themeColor.primary : themeColor.secondaryText.withValues(alpha: 0.4),
+                value
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_off_rounded,
+                color: value
+                    ? themeColor.primary
+                    : themeColor.secondaryText.withValues(alpha: 0.4),
                 size: 24,
               ),
             ],

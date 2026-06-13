@@ -11,6 +11,7 @@ class TechnicianOrdersLoaded extends TechnicianOrdersState {
   final List<DailyOrderGroup> upcomingGroups;
   final List<Booking> todayOrders;
   final List<DailyOrderGroup> historyGroups;
+  final List<DailyOrderGroup> cancelledGroups;
   final int selectedTabIndex;
   final bool isTransitioning;
   final String? transitionError;
@@ -19,6 +20,7 @@ class TechnicianOrdersLoaded extends TechnicianOrdersState {
     required this.upcomingGroups,
     required this.todayOrders,
     required this.historyGroups,
+    required this.cancelledGroups,
     this.selectedTabIndex = 0,
     this.isTransitioning = false,
     this.transitionError,
@@ -28,6 +30,7 @@ class TechnicianOrdersLoaded extends TechnicianOrdersState {
     List<DailyOrderGroup>? upcomingGroups,
     List<Booking>? todayOrders,
     List<DailyOrderGroup>? historyGroups,
+    List<DailyOrderGroup>? cancelledGroups,
     int? selectedTabIndex,
     bool? isTransitioning,
     String? transitionError,
@@ -37,6 +40,7 @@ class TechnicianOrdersLoaded extends TechnicianOrdersState {
       upcomingGroups: upcomingGroups ?? this.upcomingGroups,
       todayOrders: todayOrders ?? this.todayOrders,
       historyGroups: historyGroups ?? this.historyGroups,
+      cancelledGroups: cancelledGroups ?? this.cancelledGroups,
       selectedTabIndex: selectedTabIndex ?? this.selectedTabIndex,
       isTransitioning: isTransitioning ?? this.isTransitioning,
       transitionError: clearError ? null : (transitionError ?? this.transitionError),

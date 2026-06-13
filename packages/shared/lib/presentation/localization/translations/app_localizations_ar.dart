@@ -1081,7 +1081,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tech_quick_tools_title => 'أدوات سريعة';
 
   @override
-  String get tech_tool_wallet => 'المحفظة';
+  String get tech_tool_wallet => 'رصيدي';
 
   @override
   String get tech_tool_schedule => 'الجدول';
@@ -1399,4 +1399,335 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get pricing_unit_meter_short => 'م';
+
+  @override
+  String get finance_title => 'رصيدي';
+
+  @override
+  String get finance_balance_owed_to_you => 'الرصيد المتاح للسحب';
+
+  @override
+  String get finance_amount_owed_to_company => 'مستحقات الشركة';
+
+  @override
+  String get finance_debt_limit => 'حد المديونية';
+
+  @override
+  String get finance_remaining_limit => 'الحد المتبقي المتاح';
+
+  @override
+  String get finance_status => 'حالة الحساب';
+
+  @override
+  String get finance_status_active => 'نشط';
+
+  @override
+  String get finance_status_restricted => 'مقيد (تنبيه)';
+
+  @override
+  String get finance_status_blocked => 'محظور (موقوف)';
+
+  @override
+  String get finance_status_warning =>
+      'تنبيه: مديونيتك تجاوزت 80% من الحد الأقصى';
+
+  @override
+  String get finance_status_blocked_desc =>
+      'تم تعليق حسابك لتجاوز حد المديونية. يرجى سداد المستحقات وإرسال طلب تسوية.';
+
+  @override
+  String get finance_ledger_statement => 'كشف الحساب المالي وسجل العمليات';
+
+  @override
+  String get finance_ledger_empty =>
+      'لا توجد معاملات مسجلة في كشف الحساب حالياً.';
+
+  @override
+  String get finance_btn_request_settlement => 'طلب تسوية مالية';
+
+  @override
+  String get finance_entry_type_order_earnings => 'أرباح الطلب المكتمل';
+
+  @override
+  String get finance_entry_type_company_commission_debit =>
+      'عمولة المنصة المستقطعة';
+
+  @override
+  String get finance_entry_type_cash_collection_debit =>
+      'مستحقات الشركة (تحصيل كاش)';
+
+  @override
+  String get finance_entry_type_manual_bonus => 'مكافأة مالية مضافة';
+
+  @override
+  String get finance_entry_type_manual_penalty => 'غرامة مالية مستقطعة';
+
+  @override
+  String get finance_entry_type_manual_adjustment => 'تسوية وتعديل رصيد';
+
+  @override
+  String get finance_entry_type_settlement_reconciliation =>
+      'تسوية وإغلاق دفعة';
+
+  @override
+  String get finance_settlement_request_title => 'طلب تسوية مالية جديد';
+
+  @override
+  String get finance_settlement_type_label => 'نوع العملية المالية';
+
+  @override
+  String get finance_settlement_type_withdrawal => 'سحب مستحقات (من الشركة)';
+
+  @override
+  String get finance_settlement_type_payment => 'دفع للشركة (سداد مديونية)';
+
+  @override
+  String get finance_settlement_type_required => 'يرجى تحديد نوع العملية';
+
+  @override
+  String get finance_settlement_method => 'طريقة التسوية والتحويل';
+
+  @override
+  String get finance_settlement_method_vodafone_cash => 'فودافون كاش';
+
+  @override
+  String get finance_settlement_method_instapay => 'إنستاباي (Instapay)';
+
+  @override
+  String get finance_settlement_method_bank_transfer => 'تحويل بنكي';
+
+  @override
+  String get finance_settlement_method_cash_handover => 'تسليم نقدي باليد';
+
+  @override
+  String get finance_settlement_method_other => 'طريقة تحويل أخرى';
+
+  @override
+  String get finance_settlement_amount => 'مبلغ التسوية (ج.م)';
+
+  @override
+  String get finance_settlement_amount_hint => 'أدخل المبلغ الذي قمت بتحويله';
+
+  @override
+  String get finance_settlement_proof => 'صورة إثبات التحويل (لقطة الشاشة)';
+
+  @override
+  String get finance_settlement_proof_select => 'اختر صورة الإثبات';
+
+  @override
+  String get finance_settlement_proof_selected =>
+      'تم اختيار صورة الإثبات بنجاح';
+
+  @override
+  String get finance_settlement_submit => 'إرسال طلب التسوية';
+
+  @override
+  String get finance_settlement_submit_success =>
+      'تم إرسال طلب التسوية بنجاح للمراجعة والتدقيق';
+
+  @override
+  String get finance_error_amount_required => 'يرجى إدخال مبلغ صحيح';
+
+  @override
+  String get finance_error_amount_positive => 'يجب أن يكون المبلغ أكبر من صفر';
+
+  @override
+  String get finance_error_method_required =>
+      'يرجى تحديد طريقة التحويل والتسوية';
+
+  @override
+  String get finance_error_proof_required => 'يرجى إرفاق صورة إثبات التحويل';
+
+  @override
+  String get finance_error_upload_failed =>
+      'فشل رفع صورة الإثبات، يرجى المحاولة لاحقاً';
+
+  @override
+  String get finance_error_generic => 'حدث خطأ أثناء تحميل البيانات المالية';
+
+  @override
+  String get admin_finance_title => 'المركز المحاسبي للإدارة';
+
+  @override
+  String get admin_finance_desc =>
+      'إدارة أرصدة الفنيين، التسويات المالية اليدوية، طلبات السحب والتسوية، وتتبع الفروقات المالية.';
+
+  @override
+  String get admin_finance_tab_settlements => 'طلبات التسوية';
+
+  @override
+  String get admin_finance_tab_balances => 'أرصدة الفنيين';
+
+  @override
+  String get admin_finance_tab_adjustments => 'تسويات يدوية';
+
+  @override
+  String get admin_finance_tab_cases => 'نزاعات مالية (فروقات)';
+
+  @override
+  String get admin_finance_col_technician => 'الفني';
+
+  @override
+  String get admin_finance_col_amount => 'المبلغ';
+
+  @override
+  String get admin_finance_col_method => 'طريقة التحويل';
+
+  @override
+  String get admin_finance_col_date => 'التاريخ';
+
+  @override
+  String get admin_finance_col_action => 'الإجراء';
+
+  @override
+  String get admin_finance_btn_view_proof => 'عرض الإثبات';
+
+  @override
+  String get admin_finance_btn_approve => 'موافقة';
+
+  @override
+  String get admin_finance_btn_reject => 'رفض';
+
+  @override
+  String get admin_finance_approve_title => 'الموافقة على التسوية';
+
+  @override
+  String get admin_finance_approve_msg =>
+      'هل أنت متأكد من الموافقة على طلب التسوية هذا؟ سيتم تحديث رصيد الفني في النظام فوراً.';
+
+  @override
+  String get admin_finance_reject_title => 'رفض طلب التسوية';
+
+  @override
+  String get admin_finance_reject_reason => 'أدخل سبب الرفض هنا...';
+
+  @override
+  String get admin_finance_col_status => 'الحالة';
+
+  @override
+  String get admin_finance_col_net_balance => 'صافي الرصيد';
+
+  @override
+  String get admin_finance_col_owed_to_company => 'مستحق للشركة';
+
+  @override
+  String get admin_finance_col_owed_to_technician => 'مستحقات الفني';
+
+  @override
+  String get admin_finance_col_debt_limit => 'حد المديونية';
+
+  @override
+  String get admin_finance_field_select_technician => 'اختر الفني';
+
+  @override
+  String get admin_finance_field_adjustment_type => 'نوع التسوية';
+
+  @override
+  String get admin_finance_type_bonus => 'مكافأة (+)';
+
+  @override
+  String get admin_finance_type_penalty => 'غرامة/خصم (-)';
+
+  @override
+  String get admin_finance_type_adjustment => 'تعديل رصيد مخصص';
+
+  @override
+  String get admin_finance_field_reason => 'السبب / البيان';
+
+  @override
+  String get admin_finance_field_notes => 'ملاحظات إضافية';
+
+  @override
+  String get admin_finance_btn_submit_adjustment => 'إرسال واعتماد التسوية';
+
+  @override
+  String get admin_finance_success_adjustment =>
+      'تم إنشاء واعتماد التسوية المالية بنجاح.';
+
+  @override
+  String get admin_finance_col_expected => 'المتوقع';
+
+  @override
+  String get admin_finance_col_collected => 'المحصل';
+
+  @override
+  String get admin_finance_col_case_desc => 'بيان الفارق';
+
+  @override
+  String get admin_finance_btn_resolve_case => 'حل وإغلاق النزاع';
+
+  @override
+  String get admin_finance_field_resolution_notes => 'تفاصيل الحل والإغلاق';
+
+  @override
+  String get admin_finance_success_resolve =>
+      'تم حل وإغلاق القضية المالية بنجاح.';
+
+  @override
+  String get admin_finance_col_admin_proof => 'إثبات تحويل الإدارة';
+
+  @override
+  String get admin_finance_btn_edit_debt => 'تعديل حد الدين';
+
+  @override
+  String get admin_finance_edit_debt_title => 'تحديث حد الدين';
+
+  @override
+  String get admin_finance_edit_debt_label => 'حد الدين (ج.م)';
+
+  @override
+  String get admin_finance_success_debt => 'تم تحديث حد الدين للفني بنجاح';
+
+  @override
+  String get admin_finance_payout_proof_title => 'رفع إثبات التحويل المالي';
+
+  @override
+  String get admin_finance_payout_proof_desc =>
+      'يرجى رفع لقطة الشاشة الخاصة بإثبات تحويل المستحقات للموافقة على عملية الدفع.';
+
+  @override
+  String get admin_finance_error_payout_proof =>
+      'يجب إرفاق إثبات تحويل الأموال للموافقة على العملية';
+
+  @override
+  String get finance_admin_proof_label => 'إثبات تحويل الشركة للفني';
+
+  @override
+  String get admin_finance_tab_reports => 'التقارير والتحليلات';
+
+  @override
+  String get admin_finance_reports_company_profit => 'صافي أرباح الشركة';
+
+  @override
+  String get admin_finance_reports_total_debt => 'إجمالي ديون السوق';
+
+  @override
+  String get admin_finance_reports_tech_earnings => 'مستحقات الفنيين';
+
+  @override
+  String get admin_finance_reports_profit_growth => 'نمو أرباح الشركة (شهرياً)';
+
+  @override
+  String get admin_finance_reports_revenue_ratio =>
+      'نسب الدفع (كاش مقابل إلكتروني)';
+
+  @override
+  String get admin_finance_reports_cash => 'نقدي (كاش)';
+
+  @override
+  String get admin_finance_reports_online => 'إلكتروني (أونلاين)';
+
+  @override
+  String get admin_finance_reports_export_ledger =>
+      'تصدير دفتر الأستاذ (Excel)';
+
+  @override
+  String get admin_finance_reports_print_summary => 'طباعة تقرير الشهر (PDF)';
+
+  @override
+  String get admin_finance_reports_refresh_btn => 'تحديث البيانات المحاسبية';
+
+  @override
+  String get admin_finance_reports_refresh_success =>
+      'تم تحديث البيانات المحاسبية بنجاح.';
 }

@@ -19,7 +19,7 @@ class TechnicianOrdersScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         backgroundColor: themeColor.background,
         appBar: AppBar(
@@ -50,12 +50,12 @@ class TechnicianOrdersScreen extends StatelessWidget {
             unselectedLabelColor: themeColor.secondaryText,
             labelStyle: const TextStyle(
               fontWeight: FontWeight.w900,
-              fontSize: 14,
+              fontSize: 13,
               fontFamily: 'Cairo',
             ),
             unselectedLabelStyle: const TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 13,
+              fontSize: 12,
               fontFamily: 'Cairo',
             ),
             indicatorWeight: 3,
@@ -63,6 +63,7 @@ class TechnicianOrdersScreen extends StatelessWidget {
               Tab(text: l10n.technician_orders_tab_upcoming),
               Tab(text: l10n.technician_orders_tab_today),
               Tab(text: l10n.technician_orders_tab_history),
+              Tab(text: Localizations.localeOf(context).languageCode == 'ar' ? 'الملغية' : 'Cancelled'),
             ],
           ),
         ),
@@ -82,6 +83,7 @@ class TechnicianOrdersScreen extends StatelessWidget {
                   _buildGroupedOrdersList(context, state.upcomingGroups),
                   _buildTodayOrdersList(context, state.todayOrders),
                   _buildGroupedOrdersList(context, state.historyGroups),
+                  _buildGroupedOrdersList(context, state.cancelledGroups),
                 ],
               );
             }

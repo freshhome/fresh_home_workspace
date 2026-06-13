@@ -12,6 +12,7 @@ class ServiceEntity extends BaseServiceEntity {
   final List<DetailEntity>? details;
   final NotIncludedEntity? notIncluded;
   final List<ComputedFieldEntity>? computedFields;
+  final double? commissionRate;
 
   const ServiceEntity({
     required super.id,
@@ -28,6 +29,7 @@ class ServiceEntity extends BaseServiceEntity {
     this.details,
     this.notIncluded,
     this.computedFields,
+    this.commissionRate,
   });
 
   @override
@@ -46,6 +48,7 @@ class ServiceEntity extends BaseServiceEntity {
     List<DetailEntity>? details,
     NotIncludedEntity? notIncluded,
     List<ComputedFieldEntity>? computedFields,
+    double? commissionRate,
   }) {
     return ServiceEntity(
       id: id ?? this.id,
@@ -62,6 +65,7 @@ class ServiceEntity extends BaseServiceEntity {
       details: details ?? this.details,
       notIncluded: notIncluded ?? this.notIncluded,
       computedFields: computedFields ?? this.computedFields,
+      commissionRate: commissionRate ?? this.commissionRate,
     );
   }
 }

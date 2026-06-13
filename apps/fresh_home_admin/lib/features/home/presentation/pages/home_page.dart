@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared/data/service/datasources/service_remote_datasource.dart';
 
@@ -114,6 +113,18 @@ class HomePage extends StatelessWidget {
                   onTap: () => GoRouter.of(
                     context,
                   ).pushNamed(AppRoutes.adminUserManagement),
+                ),
+                const SizedBox(height: 16),
+
+                // ! المركز المحاسبي للإدارة
+                _buildFeatureCard(
+                  context,
+                  title: 'المركز المحاسبي للإدارة',
+                  description:
+                      'إدارة أرصدة الفنيين، التسويات اليدوية، طلبات تسوية المستحقات، وفروقات التحصيل.',
+                  icon: Icons.account_balance_rounded,
+                  color: Colors.green,
+                  onTap: () => GoRouter.of(context).push('/admin/finance'),
                 ),
                 const SizedBox(height: 16),
 

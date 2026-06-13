@@ -21,8 +21,8 @@ class MainLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final navigationConfig = GetIt.instance<NavigationConfig>();
     
-    return BlocProvider<ProfileCubit>(
-      create: (context) => GetIt.instance<ProfileCubit>()..load(),
+    return BlocProvider<ProfileCubit>.value(
+      value: GetIt.instance<ProfileCubit>()..load(),
       child: PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, result) async {

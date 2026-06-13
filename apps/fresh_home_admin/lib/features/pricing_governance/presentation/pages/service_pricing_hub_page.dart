@@ -53,8 +53,10 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
   late List<ComputedFieldEntity> _computedFields;
   late TextEditingController _formulaController;
   late TextEditingController _pricingUnitController;
+  late TextEditingController _commissionController;
   String? _basePriceFormula;
   double? _minPrice;
+  double _commissionRate = 0.20;
 
   // Simulator Inputs State
   final Map<String, dynamic> _simulatorInputs = {};
@@ -105,6 +107,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     _tabController.dispose();
     _formulaController.dispose();
     _pricingUnitController.dispose();
+    _commissionController.dispose();
     _simulatorCouponController.dispose();
     _cubit.close();
     super.dispose();
@@ -119,6 +122,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     try {
       final result = await getIt<GetServiceByIdUseCase>().call(
         widget.subServiceId,
+        forceRefresh: true,
       );
       result.fold(
         (failure) {
@@ -141,6 +145,18 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         _serviceError = 'حدث خطأ أثناء الاتصال بالخادم: $e';
       });
     }
+  }
+
+  Future<void> _handleRefresh() async {
+    await _loadServiceDetails();
+    await _cubit.loadPricingGovernanceData(widget.subServiceId);
+  }
+
+  Widget _buildScrollableEmptyState(Widget emptyState) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: emptyState,
+    );
   }
 
   void _initializeServiceState() {
@@ -166,6 +182,8 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
       _pricingUnitController = TextEditingController(text: 'ج.م');
       _minPrice = null;
     }
+    _commissionRate = _service?.commissionRate ?? 0.20;
+    _commissionController = TextEditingController(text: '${(_commissionRate * 100).round()}');
     _computedFields = List.from(_service?.computedFields ?? const []);
 
     // تهيئة مفاتيح ثابتة لكل حقل بناءً على وقت التحميل — لا تتغيّر أبداً
@@ -380,6 +398,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     final updatedService = _service!.copyWith(
       price: updatedPrice,
       computedFields: _computedFields,
+      commissionRate: _commissionRate,
     );
 
     DialogHelper.showConfirmation(
@@ -401,6 +420,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
 
           result.fold(
             (failure) {
+              debugPrint('❌ [ServicePricingHubPage - Save Failure]: ${failure.message}');
               DialogHelper.showError(
                 context,
                 message: "فشل حفظ إعدادات التسعير: ${failure.message}",
@@ -421,7 +441,8 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
               _loadServiceDetails();
             },
           );
-        } catch (e) {
+        } catch (e, stackTrace) {
+          debugPrint('❌ [ServicePricingHubPage - Save Exception]: $e\n$stackTrace');
           if (!mounted) return;
           DialogHelper.dismissLoading(context);
           DialogHelper.showError(context, message: "حدث خطأ غير متوقع: $e");
@@ -513,6 +534,19 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         value: _cubit,
         child: Scaffold(
           backgroundColor: themeColor.background,
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: _savePriceConfig,
+            backgroundColor: themeColor.secondary,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.save_rounded),
+            label: const Text(
+              'حفظ وتطبيق',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
           appBar: AppBar(
             title: Text(
               'لوحة التسعير الموحدة: ${_service?.title['ar'] ?? ''}',
@@ -524,28 +558,10 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
             ),
             centerTitle: true,
             actions: [
-              ElevatedButton.icon(
-                onPressed: _savePriceConfig,
-                icon: const Icon(Icons.save_rounded, size: 18),
-                label: const Text(
-                  'حفظ وتطبيق',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: themeColor.secondary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded),
+                tooltip: 'تحديث البيانات',
+                onPressed: _handleRefresh,
               ),
               const SizedBox(width: 12),
             ],
@@ -651,40 +667,46 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                             // Right view: configure tabs
                             Expanded(
                               flex: 6,
-                              child: TabBarView(
-                                controller: _tabController,
-                                children: [
-                                  _buildPricingRulesTab(themeColor, themeText),
-                                  _buildFieldsTab(themeColor, themeText),
-                                  _buildComputedFieldsTab(
-                                    themeColor,
-                                    themeText,
-                                  ),
-                                  _buildAddonsTab(themeColor, themeText),
-                                  _buildASTGovernanceTab(),
-                                  _buildDiscountsTab(),
-                                  _buildLiveSimulationTab(
-                                    themeColor,
-                                    themeText,
-                                  ),
-                                  _buildAuditTab(),
-                                ],
+                              child: RefreshIndicator(
+                                onRefresh: _handleRefresh,
+                                child: TabBarView(
+                                  controller: _tabController,
+                                  children: [
+                                    _buildPricingRulesTab(themeColor, themeText),
+                                    _buildFieldsTab(themeColor, themeText),
+                                    _buildComputedFieldsTab(
+                                      themeColor,
+                                      themeText,
+                                    ),
+                                    _buildAddonsTab(themeColor, themeText),
+                                    _buildASTGovernanceTab(),
+                                    _buildDiscountsTab(),
+                                    _buildLiveSimulationTab(
+                                      themeColor,
+                                      themeText,
+                                    ),
+                                    _buildAuditTab(),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
                         )
-                      : TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _buildPricingRulesTab(themeColor, themeText),
-                            _buildFieldsTab(themeColor, themeText),
-                            _buildComputedFieldsTab(themeColor, themeText),
-                            _buildAddonsTab(themeColor, themeText),
-                            _buildASTGovernanceTab(),
-                            _buildDiscountsTab(),
-                            _buildMobileSimulatorTab(themeColor, themeText),
-                            _buildAuditTab(),
-                          ],
+                      : RefreshIndicator(
+                          onRefresh: _handleRefresh,
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              _buildPricingRulesTab(themeColor, themeText),
+                              _buildFieldsTab(themeColor, themeText),
+                              _buildComputedFieldsTab(themeColor, themeText),
+                              _buildAddonsTab(themeColor, themeText),
+                              _buildASTGovernanceTab(),
+                              _buildDiscountsTab(),
+                              _buildMobileSimulatorTab(themeColor, themeText),
+                              _buildAuditTab(),
+                            ],
+                          ),
                         ),
                 ),
               ],
@@ -2365,6 +2387,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     AppTextThemeExtension themeText,
   ) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -2538,6 +2561,108 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                                 'مثال: 2000 جنيه (اتركه فارغاً لعدم تحديد حد أدنى)',
                             fillColor: themeColor.background,
                             filled: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSubsectionTitle(
+                          themeColor,
+                          "نسبة عمولة المنصة (الافتراضي: 20%)",
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Right side: Decrement button (First in RTL Row)
+                            IconButton(
+                              onPressed: () {
+                                final currentVal = int.tryParse(_commissionController.text) ?? 0;
+                                if (currentVal > 0) {
+                                  final newVal = currentVal - 1;
+                                  _commissionController.text = '$newVal';
+                                  setState(() {
+                                    _commissionRate = newVal / 100.0;
+                                  });
+                                  _markDirty();
+                                }
+                              },
+                              icon: const Icon(Icons.remove_circle_outline_rounded),
+                              color: themeColor.secondary,
+                            ),
+                            const SizedBox(width: 8),
+                            // Middle: Centered Input field
+                            SizedBox(
+                              width: 100,
+                              child: TextFormField(
+                                controller: _commissionController,
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: themeColor.textPrimary,
+                                ),
+                                decoration: InputDecoration(
+                                  suffixText: '%',
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                  fillColor: themeColor.background,
+                                  filled: true,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide(
+                                      color: themeColor.unselectedItem.withValues(alpha: 0.15),
+                                    ),
+                                  ),
+                                ),
+                                onChanged: (val) {
+                                  final int? ratePercent = int.tryParse(val);
+                                  if (ratePercent != null && ratePercent >= 0 && ratePercent <= 100) {
+                                    setState(() {
+                                      _commissionRate = ratePercent / 100.0;
+                                    });
+                                    _markDirty();
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Left side: Increment button (Third in RTL Row)
+                            IconButton(
+                              onPressed: () {
+                                final currentVal = int.tryParse(_commissionController.text) ?? 0;
+                                if (currentVal < 100) {
+                                  final newVal = currentVal + 1;
+                                  _commissionController.text = '$newVal';
+                                  setState(() {
+                                    _commissionRate = newVal / 100.0;
+                                  });
+                                  _markDirty();
+                                }
+                              },
+                              icon: const Icon(Icons.add_circle_outline_rounded),
+                              color: themeColor.secondary,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'مستحقات الفني المتبقية: ${((1.0 - _commissionRate) * 100).round()}%',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade600,
                           ),
                         ),
                       ],
@@ -3008,7 +3133,8 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         ),
         Expanded(
           child: _fields.isEmpty
-              ? _buildEmptyStateWidget(
+              ? _buildScrollableEmptyState(
+                  _buildEmptyStateWidget(
                   themeColor: themeColor,
                   icon: Icons.tune_rounded,
                   title: 'لا توجد حقول إدخال ديناميكية',
@@ -3016,8 +3142,9 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                       'أضف حقل إدخال مخصص لتهيئة وتخصيص الأسئلة والخيارات لعملائك.',
                   onPressed: _addNewField,
                   buttonText: 'إضافة أول حقل مخصص',
-                )
+                ))
               : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
@@ -3124,7 +3251,8 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         ),
         Expanded(
           child: _computedFields.isEmpty
-              ? _buildEmptyStateWidget(
+              ? _buildScrollableEmptyState(
+                  _buildEmptyStateWidget(
                   themeColor: themeColor,
                   icon: Icons.calculate_rounded,
                   title: 'لا توجد حقول محسوبة',
@@ -3132,8 +3260,9 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                       'تساعدك الحقول المحسوبة على استنتاج أبعاد وقيم جديدة تلقائياً بناءً على إدخالات العميل.',
                   onPressed: _addNewComputedField,
                   buttonText: 'إضافة أول حقل محسوب',
-                )
+                ))
               : ReorderableListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
@@ -3438,11 +3567,13 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         ),
         Expanded(
           child: _options.isEmpty
-              ? _buildEmptyState(
+              ? _buildScrollableEmptyState(
+                  _buildEmptyState(
                   Icons.add_shopping_cart_rounded,
                   'لا توجد خيارات إضافية مضافة حالياً. أضف ميزة جديدة.',
-                )
+                ))
               : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: _options.length,
                   itemBuilder: (context, index) {
@@ -3564,11 +3695,13 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
               ),
             ),
             body: rules.isEmpty
-                ? _buildEmptyState(
+                ? _buildScrollableEmptyState(
+                    _buildEmptyState(
                     Icons.rule_rounded,
                     'لا توجد قواعد تسعير شرطية مضافة بعد لهذه الخدمة.\nاضغط على إضافة قاعدة لتبدأ في تصميم الهيكل الشرطي.',
-                  )
+                  ))
                 : ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
                     itemCount: rules.length,
                     itemBuilder: (context, index) {
@@ -3724,11 +3857,13 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
               ),
             ),
             body: discounts.isEmpty
-                ? _buildEmptyState(
+                ? _buildScrollableEmptyState(
+                    _buildEmptyState(
                     Icons.local_offer_rounded,
                     'لا توجد حملات ترويجية أو أكواد خصم متاحة حالياً.\nقم بإنشاء كود خصم جديد لتطبيقه على سلة المشتريات.',
-                  )
+                  ))
                 : ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
                     itemCount: discounts.length,
                     itemBuilder: (context, index) {
@@ -3976,6 +4111,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     AppTextThemeExtension themeText,
   ) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
@@ -3998,6 +4134,7 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     final double legacyExtras = _calculateSimulatedExtras();
 
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4114,10 +4251,10 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                 final trace = _simulationResult!.executionTrace;
 
                 final baseCommissionableAmount = subtotalVal + legacyExtras;
-                final platformCommissionVal = baseCommissionableAmount * 0.20;
+                final platformCommissionVal = (_simulationResult!.metadata['platform_commission'] ?? (baseCommissionableAmount * _commissionRate)).toDouble();
                 final bonusesVal = 0.0;
                 final technicianPayoutVal =
-                    (baseCommissionableAmount * 0.80) + bonusesVal;
+                    (_simulationResult!.metadata['technician_payout'] ?? (baseCommissionableAmount * (1.0 - _commissionRate))).toDouble() + bonusesVal;
                 final netProfitVal = totalVal - technicianPayoutVal;
                 final globalCapHitVal = subtotalVal > 0
                     ? (discountVal / subtotalVal) >= 0.299
@@ -4318,13 +4455,14 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                 const SizedBox(height: 8),
                 Expanded(
                   child: auditLogs.isEmpty
-                      ? const Center(
+                      ? _buildScrollableEmptyState(const Center(
                           child: Text(
                             'سجل المراجعة والتدقيق فارغ حالياً.',
                             style: TextStyle(fontFamily: 'Cairo', fontSize: 12),
                           ),
-                        )
+                        ))
                       : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           itemCount: auditLogs.length,
                           itemBuilder: (context, index) {
                             final log = auditLogs[index];
@@ -4676,6 +4814,12 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
   late final TextEditingController _iconController;
   String? _displayType;
 
+  // Toggle option labels controllers
+  late final TextEditingController _toggleTrueLabelArController;
+  late final TextEditingController _toggleTrueLabelEnController;
+  late final TextEditingController _toggleFalseLabelArController;
+  late final TextEditingController _toggleFalseLabelEnController;
+
   @override
   void initState() {
     super.initState();
@@ -4696,6 +4840,18 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     _descEnController = TextEditingController(text: f.description?['en'] ?? '');
     _iconController = TextEditingController(text: f.icon ?? '');
     _displayType = f.displayType;
+
+    final optTrue = f.options != null && f.options!.isNotEmpty 
+        ? f.options!.firstWhere((o) => o.id == 'true' || o.id == 'yes', orElse: () => const DropdownOptionEntity(id: 'true', label: {'ar': 'نعم', 'en': 'Yes'}))
+        : const DropdownOptionEntity(id: 'true', label: {'ar': 'نعم', 'en': 'Yes'});
+    final optFalse = f.options != null && f.options!.length > 1
+        ? f.options!.firstWhere((o) => o.id == 'false' || o.id == 'no', orElse: () => const DropdownOptionEntity(id: 'false', label: {'ar': 'لا', 'en': 'No'}))
+        : const DropdownOptionEntity(id: 'false', label: {'ar': 'لا', 'en': 'No'});
+
+    _toggleTrueLabelArController = TextEditingController(text: optTrue.label['ar'] ?? 'نعم');
+    _toggleTrueLabelEnController = TextEditingController(text: optTrue.label['en'] ?? 'Yes');
+    _toggleFalseLabelArController = TextEditingController(text: optFalse.label['ar'] ?? 'لا');
+    _toggleFalseLabelEnController = TextEditingController(text: optFalse.label['en'] ?? 'No');
   }
 
   @override
@@ -4734,6 +4890,26 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     if (f.displayType != old.displayType) {
       _displayType = f.displayType;
     }
+
+    final optTrue = f.options != null && f.options!.isNotEmpty 
+        ? f.options!.firstWhere((o) => o.id == 'true' || o.id == 'yes', orElse: () => const DropdownOptionEntity(id: 'true', label: {'ar': 'نعم', 'en': 'Yes'}))
+        : const DropdownOptionEntity(id: 'true', label: {'ar': 'نعم', 'en': 'Yes'});
+    final optFalse = f.options != null && f.options!.length > 1
+        ? f.options!.firstWhere((o) => o.id == 'false' || o.id == 'no', orElse: () => const DropdownOptionEntity(id: 'false', label: {'ar': 'لا', 'en': 'No'}))
+        : const DropdownOptionEntity(id: 'false', label: {'ar': 'لا', 'en': 'No'});
+
+    if ((optTrue.label['ar'] ?? '') != _toggleTrueLabelArController.text) {
+      _toggleTrueLabelArController.text = optTrue.label['ar'] ?? 'نعم';
+    }
+    if ((optTrue.label['en'] ?? '') != _toggleTrueLabelEnController.text) {
+      _toggleTrueLabelEnController.text = optTrue.label['en'] ?? 'Yes';
+    }
+    if ((optFalse.label['ar'] ?? '') != _toggleFalseLabelArController.text) {
+      _toggleFalseLabelArController.text = optFalse.label['ar'] ?? 'لا';
+    }
+    if ((optFalse.label['en'] ?? '') != _toggleFalseLabelEnController.text) {
+      _toggleFalseLabelEnController.text = optFalse.label['en'] ?? 'No';
+    }
   }
 
   @override
@@ -4750,6 +4926,10 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     _descArController.dispose();
     _descEnController.dispose();
     _iconController.dispose();
+    _toggleTrueLabelArController.dispose();
+    _toggleTrueLabelEnController.dispose();
+    _toggleFalseLabelArController.dispose();
+    _toggleFalseLabelEnController.dispose();
     super.dispose();
   }
 
@@ -5085,6 +5265,12 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
                                   .toList(),
                               onChanged: (newType) {
                                 if (newType != null) {
+                                  final defaultToggleOptions = newType == DynamicFieldType.toggle
+                                      ? const [
+                                          DropdownOptionEntity(id: 'true', label: {'ar': 'نعم', 'en': 'Yes'}),
+                                          DropdownOptionEntity(id: 'false', label: {'ar': 'لا', 'en': 'No'}),
+                                        ]
+                                      : null;
                                   widget.onFieldChanged(
                                     DynamicFieldEntity(
                                       id: field.id,
@@ -5101,6 +5287,7 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
                                           newType == DynamicFieldType.number
                                           ? 0.0
                                           : null,
+                                      options: defaultToggleOptions,
                                     ),
                                   );
                                 }
@@ -5216,7 +5403,7 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
                             const SizedBox(height: 12),
                             // display_type
                             DropdownButtonFormField<String>(
-                              value: _displayType,
+                              initialValue: _displayType,
                               style: TextStyle(
                                 fontFamily: 'Cairo',
                                 fontSize: 12,
@@ -5328,12 +5515,12 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
                                                       width: 24,
                                                       height: 24,
                                                       fit: BoxFit.contain,
-                                                      placeholder: (_, __) => const SizedBox(
+                                                      placeholder: (_, _) => const SizedBox(
                                                         width: 20,
                                                         height: 20,
                                                         child: CircularProgressIndicator(strokeWidth: 2),
                                                       ),
-                                                      errorWidget: (_, __, ___) => const Icon(Icons.broken_image, size: 20, color: Colors.redAccent),
+                                                      errorWidget: (_, _, _) => const Icon(Icons.broken_image, size: 20, color: Colors.redAccent),
                                                     )
                                                   : _buildPreviewIcon(field.icon!, t.primary),
                                             ),
@@ -5736,8 +5923,28 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
                                 ),
                               ),
                             ],
+                            if (field.type == DynamicFieldType.toggle) ...[
+                              const SizedBox(height: 16),
+                              const Divider(height: 1, thickness: 0.5),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Icon(Icons.tune_rounded, size: 16, color: t.primary),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'إعداد خيارات التبديل (Yes/No Options Config)',
+                                    style: TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildToggleOptionFields(t),
+                            ],
                           ],
-
                         )
                       : const SizedBox.shrink(),
                 ),
@@ -5747,6 +5954,105 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
         ),
       ),
     );
+  }
+
+  Widget _buildToggleOptionFields(ThemeColorExtension t) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Option 1: True (Yes)
+        Text(
+          'الخيار الأول (يمثل القيمة نعم / True):',
+          style: TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: t.primary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _toggleTrueLabelArController,
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 11),
+                decoration: _inputDec(
+                  label: 'الاسم بالعربية (مثل: يوجد أثاث)',
+                  icon: Icons.text_fields_rounded,
+                ),
+                onChanged: (val) => _updateToggleOptions(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextFormField(
+                controller: _toggleTrueLabelEnController,
+                style: const TextStyle(fontSize: 11),
+                decoration: _inputDec(
+                  label: 'الاسم بالإنجليزية (مثل: Furniture exists)',
+                  icon: Icons.language_rounded,
+                ),
+                onChanged: (val) => _updateToggleOptions(),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Option 2: False (No)
+        Text(
+          'الخيار الثاني (يمثل القيمة لا / False):',
+          style: TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: t.primary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _toggleFalseLabelArController,
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 11),
+                decoration: _inputDec(
+                  label: 'الاسم بالعربية (مثل: لا يوجد أثاث)',
+                  icon: Icons.text_fields_rounded,
+                ),
+                onChanged: (val) => _updateToggleOptions(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextFormField(
+                controller: _toggleFalseLabelEnController,
+                style: const TextStyle(fontSize: 11),
+                decoration: _inputDec(
+                  label: 'الاسم بالإنجليزية (مثل: No furniture)',
+                  icon: Icons.language_rounded,
+                ),
+                onChanged: (val) => _updateToggleOptions(),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _updateToggleOptions() {
+    final arTrue = _toggleTrueLabelArController.text.trim();
+    final enTrue = _toggleTrueLabelEnController.text.trim();
+    final arFalse = _toggleFalseLabelArController.text.trim();
+    final enFalse = _toggleFalseLabelEnController.text.trim();
+
+    final updatedOptions = [
+      DropdownOptionEntity(id: 'true', label: {'ar': arTrue.isEmpty ? 'نعم' : arTrue, 'en': enTrue.isEmpty ? 'Yes' : enTrue}),
+      DropdownOptionEntity(id: 'false', label: {'ar': arFalse.isEmpty ? 'لا' : arFalse, 'en': enFalse.isEmpty ? 'No' : enFalse}),
+    ];
+
+    widget.onFieldChanged(_copyWith(options: updatedOptions));
   }
 }
 

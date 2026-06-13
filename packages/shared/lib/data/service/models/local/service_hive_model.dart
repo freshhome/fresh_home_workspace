@@ -50,6 +50,9 @@ class ServiceHiveModel extends HiveObject {
   @HiveField(13)
   final List<dynamic>? computedFields;
 
+  @HiveField(14)
+  final double? commissionRate;
+
   ServiceHiveModel({
     required this.id,
     this.parentId,
@@ -65,5 +68,6 @@ class ServiceHiveModel extends HiveObject {
     this.details,
     this.notIncluded,
     this.computedFields,
+    this.commissionRate,
   });
 }

@@ -23,6 +23,7 @@ class SubServiceEntity extends ServiceEntity {
     required super.status,
     required super.order,
     required super.updatedAt,
+    super.commissionRate,
     required this.price,
     required this.details,
     required this.notIncluded,
@@ -45,6 +46,7 @@ class SubServiceEntity extends ServiceEntity {
     List<DetailEntity>? details,
     NotIncludedEntity? notIncluded,
     List<ComputedFieldEntity>? computedFields,
+    double? commissionRate,
   }) {
     return SubServiceEntity(
       id: id ?? this.id,
@@ -57,6 +59,7 @@ class SubServiceEntity extends ServiceEntity {
       status: status ?? this.status,
       order: order ?? this.order,
       updatedAt: updatedAt ?? this.updatedAt,
+      commissionRate: commissionRate ?? this.commissionRate,
       price: price ?? this.price,
       details: details ?? this.details,
       notIncluded: notIncluded ?? this.notIncluded,

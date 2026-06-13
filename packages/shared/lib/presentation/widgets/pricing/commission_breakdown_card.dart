@@ -38,12 +38,14 @@ class CommissionBreakdownCard extends StatelessWidget {
                   size: 22,
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  'تفاصيل توزيع المدفوعات (Commission Split)',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
+                const Expanded(
+                  child: Text(
+                    'تفاصيل توزيع المدفوعات (Commission Split)',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
               ],
@@ -84,15 +86,18 @@ class CommissionBreakdownCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: fontSize,
-            color: isBold ? context.themeColor.textPrimary : context.themeColor.secondaryText,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: fontSize,
+              color: isBold ? context.themeColor.textPrimary : context.themeColor.secondaryText,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            ),
           ),
         ),
+        const SizedBox(width: 12),
         Text(
           value,
           style: TextStyle(

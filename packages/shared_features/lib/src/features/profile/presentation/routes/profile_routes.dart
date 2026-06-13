@@ -9,8 +9,8 @@ class ProfileRoutes {
     GoRoute(
       path: AppRoutes.profile,
       name: AppRoutes.profile,
-      builder: (context, state) => BlocProvider(
-        create: (context) => GetIt.instance<ProfileCubit>(),
+      builder: (context, state) => BlocProvider.value(
+        value: GetIt.instance<ProfileCubit>(),
         child: const ProfileDetailScreen(),
       ),
     ),

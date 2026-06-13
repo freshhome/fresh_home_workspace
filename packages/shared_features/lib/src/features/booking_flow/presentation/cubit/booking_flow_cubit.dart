@@ -214,6 +214,43 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
       }
     }
 
+    // Dynamic area calculation from width & height inputs if present
+    num? widthVal;
+    num? heightVal;
+    
+    updated.forEach((k, v) {
+      final keyLower = k.toLowerCase();
+      num? parsedNum;
+      if (v is num) {
+        parsedNum = v;
+      } else if (v is String) {
+        parsedNum = num.tryParse(v);
+      }
+      
+      if (parsedNum != null) {
+        if (keyLower == 'width' || keyLower.contains('width')) {
+          widthVal = parsedNum;
+        } else if (keyLower == 'height' || keyLower.contains('height')) {
+          heightVal = parsedNum;
+        }
+      }
+    });
+
+    if (widthVal != null && heightVal != null) {
+      final calculatedArea = (widthVal! * heightVal!).toDouble();
+      updated['area'] = calculatedArea;
+      syncArea = calculatedArea;
+      shouldClearArea = false;
+    } else {
+      final hasWidthField = updated.keys.any((k) => k.toLowerCase().contains('width'));
+      final hasHeightField = updated.keys.any((k) => k.toLowerCase().contains('height'));
+      if (hasWidthField || hasHeightField) {
+        updated.remove('area');
+        syncArea = null;
+        shouldClearArea = true;
+      }
+    }
+
     emit(
       state.copyWith(
         dynamicInputs: updated,
@@ -711,7 +748,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     final inputs = <String, dynamic>{};
     if (priceConfig != null) {
       for (final field in priceConfig.fields) {
-        if (field.type == DynamicFieldType.toggle) {
+        if (field.type == DynamicFieldType.toggle && !field.required) {
           inputs[field.id] = false;
         }
       }

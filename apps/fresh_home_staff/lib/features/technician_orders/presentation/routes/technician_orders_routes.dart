@@ -4,6 +4,7 @@ import 'package:shared/shared.dart';
 import 'package:get_it/get_it.dart';
 import '../pages/technician_order_details_screen.dart';
 import '../cubit/technician_orders_cubit.dart';
+import '../../../finance/presentation/cubit/technician_finance_cubit.dart';
 
 import '../pages/technician_financial_portal_page.dart';
 
@@ -16,7 +17,10 @@ class TechnicianOrdersRoutes {
         GoRoute(
           path: '/technician-financial-portal',
           name: technicianFinancialPortal,
-          builder: (context, state) => const TechnicianFinancialPortalPage(),
+          builder: (context, state) => BlocProvider<TechnicianFinanceCubit>.value(
+            value: GetIt.instance<TechnicianFinanceCubit>()..loadFinancialData(),
+            child: const TechnicianFinancialPortalPage(),
+          ),
         ),
         GoRoute(
           path: '/technician-order-details/:id',
@@ -40,8 +44,8 @@ class TechnicianOrdersRoutes {
               );
             }
             
-            return BlocProvider(
-              create: (_) => GetIt.instance<TechnicianOrdersCubit>(),
+            return BlocProvider.value(
+              value: GetIt.instance<TechnicianOrdersCubit>(),
               child: screen,
             );
           },

@@ -24,6 +24,14 @@ This document outlines the current state of the **Fresh Home** platform, categor
 - The `PricingSimulationGateway` is integrated, querying the `simulate_pricing_pipeline` RPC on the server.
 - Built a Drift Warning alert card, notifying users with a red card warning if client calculations differ from server values by more than 2%.
 
+### E. Financial System Schema & Foundations (Phase 2)
+- Created the complete database schema including custom enums, tables (`technician_financial_accounts`, `financial_adjustments`, `ledger_entries`, `settlement_requests`, `financial_cases`, `financial_case_events`).
+- Enforced hard ledger immutability via `trg_prevent_ledger_modifications` preventing any `UPDATE` or `DELETE` commands.
+- Established an automated status engine trigger to recalculate technician financial state (`active`, `restricted`, `blocked`) based on their debt-limit ratios.
+- Configured indexes, storage buckets, and Row-Level Security (RLS) policies for all financial tables.
+- Saved SQL definitions in `60_financial_system_schema.sql` (migrations) and `06_financial_system.sql` (schema).
+- Published the comprehensive Financial System Design Hub under [docs/financial_system/](file:///d:/fresh_home_workspace/docs/financial_system/README.md).
+
 ---
 
 ## 2. Partially Completed Modules
@@ -69,7 +77,7 @@ This document outlines the current state of the **Fresh Home** platform, categor
 
 ## 6. Suggested Next Development Phase
 
-We recommend focusing the next development phase on completing **Pricing Governance Phase 2**:
-1. **Pipeline Constraints & Security Checks**: Implement automated tests for the 30% discount cap logic inside Stage 4.
-2. **Version Comparison Tools**: Build a UI tool to compare active price configurations with previous version snapshots.
+We recommend focusing the next development phase on **Phase 3 & Phase 4 of the Financial System**:
+1. **Phase 3: Technician Financial App Integration**: Replace mock transactions in the technician app's `FinancialCubit` with live database calls to read accounts and ledger entries, and implement settlement request forms with proof uploads.
+2. **Phase 4: Admin Financial Dashboard & Case Resolutions**: Develop pages in the admin app to approve/reject settlements, review manual adjustments, and resolve cash discrepancy cases.
 3. **AST Parser Tests**: Write unit tests for the PostgreSQL PL/pgSQL AST parser (`evaluate_ast_condition`) to ensure robust evaluation of conditional logic.

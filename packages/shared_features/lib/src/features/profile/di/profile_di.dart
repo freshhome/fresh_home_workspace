@@ -39,7 +39,7 @@ Future<void> initProfileDI(GetIt getIt) async {
   getIt.registerLazySingleton(() => UpdateProfileUseCase(getIt()));
 
   // Cubit
-  getIt.registerFactory<ProfileCubit>(
+  getIt.registerLazySingleton<ProfileCubit>(
     () => ProfileCubit(
       getIt(),
       getIt(),

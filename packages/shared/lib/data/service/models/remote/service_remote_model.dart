@@ -31,6 +31,8 @@ class ServiceRemoteModel {
   final NotIncludedRemoteModel? notIncluded;
   @JsonKey(name: 'computed_fields')
   final List<ComputedFieldRemoteModel>? computedFields;
+  @JsonKey(name: 'commission_rate')
+  final double? commissionRate;
 
   const ServiceRemoteModel({
     required this.id,
@@ -47,6 +49,7 @@ class ServiceRemoteModel {
     this.details,
     this.notIncluded,
     this.computedFields,
+    this.commissionRate,
   });
 
   factory ServiceRemoteModel.fromJson(Map<String, dynamic> json) =>
@@ -69,6 +72,7 @@ class ServiceRemoteModel {
     List<DetailRemoteModel>? details,
     NotIncludedRemoteModel? notIncluded,
     List<ComputedFieldRemoteModel>? computedFields,
+    double? commissionRate,
   }) {
     return ServiceRemoteModel(
       id: id ?? this.id,
@@ -85,6 +89,7 @@ class ServiceRemoteModel {
       details: details ?? this.details,
       notIncluded: notIncluded ?? this.notIncluded,
       computedFields: computedFields ?? this.computedFields,
+      commissionRate: commissionRate ?? this.commissionRate,
     );
   }
 }

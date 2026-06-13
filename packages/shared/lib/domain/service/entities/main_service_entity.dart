@@ -20,6 +20,7 @@ class MainServiceEntity extends ServiceEntity {
     required super.order,
     required super.updatedAt,
     super.computedFields,
+    super.commissionRate,
     this.subServices = const [],
   });
 
@@ -39,6 +40,7 @@ class MainServiceEntity extends ServiceEntity {
     List<DetailEntity>? details,
     NotIncludedEntity? notIncluded,
     List<ComputedFieldEntity>? computedFields,
+    double? commissionRate,
     List<SubServiceEntity>? subServices,
   }) {
     return MainServiceEntity(
@@ -53,6 +55,7 @@ class MainServiceEntity extends ServiceEntity {
       order: order ?? this.order,
       updatedAt: updatedAt ?? this.updatedAt,
       computedFields: computedFields ?? this.computedFields,
+      commissionRate: commissionRate ?? this.commissionRate,
       subServices: subServices ?? this.subServices,
     );
   }

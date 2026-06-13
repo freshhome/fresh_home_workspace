@@ -148,19 +148,34 @@ class _BookingPageState extends State<BookingPage> {
             nextButtonText = l10n.booking_calculate_button;
             nextButtonIcon = null;
 
-            bool canCalculate = false;
-            final pricingType = state.servicePrice?.type;
-            if (pricingType == PricingMethod.perSquareMeter) {
-              canCalculate = state.area != null && state.area! > 0;
-            } else if (pricingType == PricingMethod.perLinearMeter) {
-              if (state.useWindowsCalculator) {
-                canCalculate = state.windows.isNotEmpty &&
-                    state.windows.every((w) => w.width > 0 && w.height > 0 && w.quantity > 0);
-              } else {
-                canCalculate = state.totalLinearMeters != null && state.totalLinearMeters! > 0;
+            bool allRequiredFieldsFilled = true;
+            if (state.servicePrice != null) {
+              for (final field in state.servicePrice!.fields) {
+                if (field.required) {
+                  final val = state.dynamicInputs[field.id];
+                  if (val == null || (val is String && val.trim().isEmpty)) {
+                    allRequiredFieldsFilled = false;
+                    break;
+                  }
+                }
               }
-            } else {
-              canCalculate = true;
+            }
+
+            bool canCalculate = false;
+            if (allRequiredFieldsFilled) {
+              final pricingType = state.servicePrice?.type;
+              if (pricingType == PricingMethod.perSquareMeter) {
+                canCalculate = state.area != null && state.area! > 0;
+              } else if (pricingType == PricingMethod.perLinearMeter) {
+                if (state.useWindowsCalculator) {
+                  canCalculate = state.windows.isNotEmpty &&
+                      state.windows.every((w) => w.width > 0 && w.height > 0 && w.quantity > 0);
+                } else {
+                  canCalculate = state.totalLinearMeters != null && state.totalLinearMeters! > 0;
+                }
+              } else {
+                canCalculate = true;
+              }
             }
 
             nextOnPressed = canCalculate

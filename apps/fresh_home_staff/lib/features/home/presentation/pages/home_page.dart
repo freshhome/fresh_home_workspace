@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:shared/presentation/localization/translations/app_localizations.dart';
-import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
-import 'package:shared/presentation/widget/my_custom_button.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_features/shared_features.dart';
+import 'package:shared/shared.dart';
+import 'package:get_it/get_it.dart';
 import '../../../technician_orders/presentation/routes/technician_orders_routes.dart';
+import '../../../technician_orders/presentation/cubit/technician_orders_cubit.dart';
+import '../../../technician_orders/presentation/cubit/technician_orders_state.dart';
+import '../../../../features/finance/presentation/cubit/technician_finance_cubit.dart';
+import '../../../../features/finance/presentation/cubit/technician_finance_state.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -15,9 +20,18 @@ class HomePage extends StatelessWidget {
     final textTheme = Theme.of(context).extension<AppTextThemeExtension>()!;
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      backgroundColor: themeColor.background,
-      body: SafeArea(
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<TechnicianOrdersCubit>.value(
+          value: GetIt.instance<TechnicianOrdersCubit>()..loadOrders(),
+        ),
+        BlocProvider<TechnicianFinanceCubit>.value(
+          value: GetIt.instance<TechnicianFinanceCubit>()..loadFinancialData(),
+        ),
+      ],
+      child: Scaffold(
+        backgroundColor: themeColor.background,
+        body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
@@ -25,186 +39,345 @@ class HomePage extends StatelessWidget {
             children: [
               const SizedBox(height: 20),
               // Header Section
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Stack(
+              BlocBuilder<ProfileCubit, ProfileState>(
+                builder: (context, state) {
+                  String userName = '';
+                  String? avatarUrl;
+                  if (state is ProfileLoaded) {
+                    userName = state.profile.user.firstName;
+                    avatarUrl = state.profile.user.avatarUrl;
+                  } else if (state is ProfileLoading) {
+                    userName = '...';
+                  }
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const CircleAvatar(
+                      CircleAvatar(
                         radius: 28,
-                        backgroundColor: Color(0xFFE2E8F0),
-                        backgroundImage: AssetImage(
-                          'packages/shared/assets/core/images/Frame 1000006212.png',
+                        backgroundColor: const Color(0xFFE2E8F0),
+                        backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                            ? NetworkImage(avatarUrl)
+                            : null,
+                        child: avatarUrl == null || avatarUrl.isEmpty
+                            ? const Icon(
+                                Icons.person_rounded,
+                                size: 32,
+                                color: Color(0xFF94A3B8),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              l10n.tech_greeting_morning,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.textBodySecondary.copyWith(
+                                color: themeColor.secondaryText,
+                                fontSize: 12,
+                                height: 1.2,
+                                fontFamily: 'Cairo',
+                              ),
+                            ),
+                            Text(
+                              userName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.titleDisplaySmall.copyWith(
+                                height: 1.0,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'Cairo',
+                                color: themeColor.textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => context.pushNamed(AppRoutes.notifications),
                         child: Container(
-                          width: 12,
-                          height: 12,
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF00C566),
+                            color: themeColor.cardBackground,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [themeColor.cardShadow],
+                          ),
+                          child: Stack(
+                            children: [
+                              Icon(
+                                Icons.notifications_none_outlined,
+                                color: themeColor.textPrimary,
+                                size: 22,
+                              ),
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          l10n.tech_dashboard_title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.textOverline.copyWith(
-                            color: themeColor.secondaryText,
-                            letterSpacing: 0.5,
-                            fontSize: 10,
-                            fontFamily: 'Cairo',
-                          ),
-                        ),
-                        Text(
-                          l10n.tech_greeting_morning,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.textBodySecondary.copyWith(
-                            color: themeColor.secondaryText,
-                            fontSize: 12,
-                            height: 1.2,
-                            fontFamily: 'Cairo',
-                          ),
-                        ),
-                        Text(
-                          'Fahd',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.titleDisplaySmall.copyWith(
-                            height: 1.0,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'Cairo',
-                            color: themeColor.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(10, 2, 2, 2),
-                    decoration: BoxDecoration(
-                      color: themeColor.cardBackground,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [themeColor.cardShadow],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          l10n.tech_status_online,
-                          style: const TextStyle(
-                            color: Color(0xFF00C566),
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'Cairo',
-                          ),
-                        ),
-                        Transform.scale(
-                          scale: 0.65,
-                          child: Switch.adaptive(
-                            value: true,
-                            onChanged: (v) {},
-                            activeThumbColor: const Color(0xFF00C566),
-                            activeTrackColor: const Color(
-                              0xFF00C566,
-                            ).withValues(alpha: 0.5),
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: themeColor.cardBackground,
-                      shape: BoxShape.circle,
-                      boxShadow: [themeColor.cardShadow],
-                    ),
-                    child: Stack(
-                      children: [
-                        Icon(
-                          Icons.notifications_none_outlined,
-                          color: themeColor.textPrimary,
-                          size: 22,
-                        ),
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            width: 7,
-                            height: 7,
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 1.2,
+                  );
+                },
+              ),
+              const SizedBox(height: 30),
+              // Wallet Overview Card & Today's Stats
+              BlocBuilder<TechnicianFinanceCubit, TechnicianFinanceState>(
+                builder: (context, financialState) {
+                  return BlocBuilder<TechnicianOrdersCubit, TechnicianOrdersState>(
+                    builder: (context, ordersState) {
+                      String jobsToday = '...';
+                      String earningsToday = '...';
+                      String completedJobsToday = '...';
+
+                      if (ordersState is TechnicianOrdersLoaded) {
+                        final now = DateTime.now();
+                        final todayStart = DateTime(now.year, now.month, now.day);
+                        final todayEnd = todayStart.add(const Duration(days: 1));
+
+                        // Compile all bookings scheduled for today to get a complete daily view
+                        final List<Booking> allTodayBookings = [];
+                        
+                        // 1. Active today bookings (scheduled for today, not completed/cancelled)
+                        allTodayBookings.addAll(ordersState.todayOrders);
+
+                        // 2. Completed/history bookings scheduled for today
+                        for (var group in ordersState.historyGroups) {
+                          for (var order in group.orders) {
+                            if (!order.scheduledAt.isBefore(todayStart) &&
+                                order.scheduledAt.isBefore(todayEnd)) {
+                              allTodayBookings.add(order);
+                            }
+                          }
+                        }
+
+                        // 3. Cancelled bookings scheduled for today
+                        for (var group in ordersState.cancelledGroups) {
+                          for (var order in group.orders) {
+                            if (!order.scheduledAt.isBefore(todayStart) &&
+                                order.scheduledAt.isBefore(todayEnd)) {
+                              allTodayBookings.add(order);
+                            }
+                          }
+                        }
+
+                        // Total today's orders (excluding cancelled)
+                        final int activeOrCompletedCount = allTodayBookings
+                            .where((o) => o.status != OrderStatus.cancelled)
+                            .length;
+                        jobsToday = activeOrCompletedCount.toString();
+
+                        // Completed tasks today
+                        final int completedCount = allTodayBookings
+                            .where((o) => o.status == OrderStatus.completed)
+                            .length;
+                        completedJobsToday = completedCount.toString();
+
+                        // Total earnings from completed today bookings
+                        final double totalEarnings = allTodayBookings
+                            .where((o) => o.status == OrderStatus.completed)
+                            .fold(0.0, (sum, o) => sum + o.price.total);
+                        earningsToday = totalEarnings.toStringAsFixed(0);
+                      }
+
+                      final profileState = context.watch<ProfileCubit>().state;
+                      String rating = '5.0';
+
+                      if (profileState is ProfileLoaded) {
+                        rating = profileState.profile.technicianProfile?.rating.toString() ?? '5.0';
+                      }
+
+                      final isAr = Localizations.localeOf(context).languageCode == 'ar';
+                      final completedLabel = isAr ? 'المهام المنجزة اليوم' : 'Completed Today';
+                      final todayEarningsLabel = isAr ? 'دخل اليوم' : 'Today Earnings';
+
+                      // Wallet balance calculation
+                      double netBalance = 0.0;
+                      bool hasMoney = true;
+                      bool isWalletLoaded = false;
+
+                      if (financialState is TechnicianFinanceLoaded) {
+                        netBalance = financialState.account.netBalance;
+                        hasMoney = financialState.account.netBalance >= 0;
+                        isWalletLoaded = true;
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // A. Wallet overview card
+                          GestureDetector(
+                            onTap: () => context.pushNamed(
+                              TechnicianOrdersRoutes.technicianFinancialPortal,
+                            ),
+                            behavior: HitTestBehavior.opaque,
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: !isWalletLoaded
+                                      ? [
+                                          themeColor.primary.withValues(alpha: 0.8),
+                                          themeColor.primary.withValues(alpha: 0.6),
+                                        ]
+                                      : hasMoney
+                                          ? [
+                                              themeColor.primary,
+                                              themeColor.primary.withValues(alpha: 0.8),
+                                            ]
+                                          : [
+                                              const Color(0xFFDC2626),
+                                              const Color(0xFF991B1B),
+                                            ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (!isWalletLoaded
+                                            ? themeColor.primary
+                                            : hasMoney
+                                                ? themeColor.primary
+                                                : const Color(0xFFDC2626))
+                                        .withValues(alpha: 0.2),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 6),
+                                  )
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          isAr ? 'رصيدي الحالي' : 'My Balance',
+                                          style: const TextStyle(
+                                            fontFamily: 'Cairo',
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          !isWalletLoaded
+                                              ? '... ج.م'
+                                              : '${netBalance.abs().toStringAsFixed(0)} ج.م',
+                                          style: const TextStyle(
+                                            fontFamily: 'Cairo',
+                                            color: Colors.white,
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            !isWalletLoaded
+                                                ? (isAr ? 'جاري التحميل...' : 'Loading...')
+                                                : hasMoney
+                                                    ? (isAr ? 'متاح للسحب' : 'Available for withdrawal')
+                                                    : (isAr ? 'مستحق للشركة' : 'Due to company'),
+                                            style: const TextStyle(
+                                              fontFamily: 'Cairo',
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              // Stats Container
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: themeColor.cardBackground,
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [themeColor.cardShadow],
-                ),
-                child: GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  childAspectRatio: 1.8,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  children: [
-                    _buildStatItem(context, l10n.tech_stats_jobs_today, '4'),
-                    GestureDetector(
-                      onTap: () => context.pushNamed(
-                        TechnicianOrdersRoutes.technicianFinancialPortal,
-                      ),
-                      behavior: HitTestBehavior.opaque,
-                      child: _buildStatItem(
-                        context,
-                        l10n.tech_stats_earnings,
-                        '240.50',
-                      ),
-                    ),
-                    _buildStatItem(
-                      context,
-                      l10n.tech_stats_rating,
-                      '4.9',
-                      icon: Icons.star_rounded,
-                    ),
-                    _buildStatItem(context, l10n.tech_stats_acceptance, '98%'),
-                  ],
-                ),
+                          const SizedBox(height: 20),
+                          // B. Today's stats 2x2 grid
+                          GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 2,
+                            childAspectRatio: 1.4,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            children: [
+                              _buildStatCard(
+                                context: context,
+                                title: l10n.tech_stats_jobs_today,
+                                value: jobsToday,
+                                icon: Icons.assignment_rounded,
+                                color: Colors.blue.shade700,
+                              ),
+                              _buildStatCard(
+                                context: context,
+                                title: todayEarningsLabel,
+                                value: isAr ? '$earningsToday ج.م' : '$earningsToday EGP',
+                                icon: Icons.payments_rounded,
+                                color: Colors.green.shade700,
+                                onTap: () => context.pushNamed(
+                                  TechnicianOrdersRoutes.technicianFinancialPortal,
+                                ),
+                              ),
+                              _buildStatCard(
+                                context: context,
+                                title: l10n.tech_stats_rating,
+                                value: rating,
+                                icon: Icons.star_rounded,
+                                color: Colors.amber.shade700,
+                              ),
+                              _buildStatCard(
+                                context: context,
+                                title: completedLabel,
+                                value: completedJobsToday,
+                                icon: Icons.check_circle_rounded,
+                                color: Colors.teal.shade700,
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
               ),
               const SizedBox(height: 30),
               // Quick Tools
@@ -402,48 +575,9 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildStatItem(
-    BuildContext context,
-    String label,
-    String value, {
-    IconData? icon,
-  }) {
-    final themeColor = context.themeColor;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: themeColor.secondaryText,
-            fontSize: 13,
-            fontFamily: 'Cairo',
-          ),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: themeColor.textPrimary,
-                fontFamily: 'Cairo',
-              ),
-            ),
-            if (icon != null) ...[
-              const SizedBox(width: 4),
-              Icon(icon, color: Colors.amber, size: 20),
-            ],
-          ],
-        ),
-      ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildToolItem(
     BuildContext context,
@@ -530,5 +664,85 @@ class HomePage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildStatCard({
+    required BuildContext context,
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    final themeColor = context.themeColor;
+    final cardWidget = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: themeColor.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: color.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    color: themeColor.secondaryText,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              color: themeColor.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: cardWidget,
+      );
+    }
+    return cardWidget;
   }
 }

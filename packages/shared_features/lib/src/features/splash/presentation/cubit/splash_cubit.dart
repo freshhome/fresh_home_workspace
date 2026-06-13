@@ -33,25 +33,21 @@ class SplashCubit extends Cubit<SplashState> {
       emit(SplashLoadingState());
       debugPrint('🚀 [SplashCubit] Starting getCurrentUser...');
 
-      // 1. Sync Services (Centralized in Splash) - Only for Customer App
-      if (appRole == UserRole.client) {
-        debugPrint('🔵 [SplashCubit] Client App detected - Syncing services...');
-        try {
-          final syncResult = await syncServicesUseCase.call().timeout(const Duration(seconds: 20));
-          syncResult.fold(
-            (failure) => debugPrint('⚠️ [SplashCubit] Service sync failed: ${failure.message}'),
-            (success) {
-              debugPrint('✅ [SplashCubit] Service sync completed successfully');
-              // Start listening to realtime database changes so UI reflects remote updates
-              debugPrint('🔵 [SplashCubit] Starting real-time service sync...');
-              startRealtimeSyncUseCase.call();
-            },
-          );
-        } catch (e) {
-          debugPrint('⚠️ [SplashCubit] Service sync timed out: $e');
-        }
-      } else {
-        debugPrint('🚀 [SplashCubit] App role is ${appRole.name} - Skipping service sync');
+      // 1. Sync Services (Centralized in Splash) - For all roles (client, admin, technician)
+      debugPrint('🔵 [SplashCubit] Syncing services for role ${appRole.name}...');
+      try {
+        final syncResult = await syncServicesUseCase.call().timeout(const Duration(seconds: 20));
+        syncResult.fold(
+          (failure) => debugPrint('⚠️ [SplashCubit] Service sync failed: ${failure.message}'),
+          (success) {
+            debugPrint('✅ [SplashCubit] Service sync completed successfully');
+            // Start listening to realtime database changes so UI reflects remote updates
+            debugPrint('🔵 [SplashCubit] Starting real-time service sync...');
+            startRealtimeSyncUseCase.call();
+          },
+        );
+      } catch (e) {
+        debugPrint('⚠️ [SplashCubit] Service sync timed out: $e');
       }
 
       // 2. Check if user is logged in

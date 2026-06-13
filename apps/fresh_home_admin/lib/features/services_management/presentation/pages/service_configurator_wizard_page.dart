@@ -1700,6 +1700,7 @@ class _ServiceConfiguratorWizardPageState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         BaseTextFormField(
+          key: ValueKey('${isArabic ? "ar" : "en"}_detail_${detailIdx}_title'),
           hint: isArabic ? "العنوان الرئيسي (مثال: ماذا تشمل الخدمة؟)" : "Section Title (e.g. What does this service include?)",
           initialValue: content.title ?? '',
           fillColor: themeColor.background,
@@ -1758,6 +1759,7 @@ class _ServiceConfiguratorWizardPageState
                     const SizedBox(width: 8),
                     Expanded(
                       child: BaseTextFormField(
+                        key: ValueKey('${isArabic ? "ar" : "en"}_detail_${detailIdx}_point_$pointIdx'),
                         hint: isArabic ? "محتوى النقطة ${pointIdx + 1}" : "Point content ${pointIdx + 1}",
                         initialValue: pointValue,
                         fillColor: themeColor.background,
@@ -1848,6 +1850,7 @@ class _ServiceConfiguratorWizardPageState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         BaseTextFormField(
+          key: ValueKey(isArabic ? 'ar_exclusion_title' : 'en_exclusion_title'),
           hint: isArabic ? "عنوان الاستثناءات (مثال: ما لا تشمله الخدمة)" : "Exclusions Title (e.g. What is not included)",
           initialValue: content.title ?? '',
           fillColor: themeColor.background,
@@ -1906,6 +1909,7 @@ class _ServiceConfiguratorWizardPageState
                     const SizedBox(width: 8),
                     Expanded(
                       child: BaseTextFormField(
+                        key: ValueKey(isArabic ? 'ar_exclusion_point_$pointIdx' : 'en_exclusion_point_$pointIdx'),
                         hint: isArabic ? "محتوى نقطة الاستثناء ${pointIdx + 1}" : "Exclusion point content ${pointIdx + 1}",
                         initialValue: pointValue,
                         fillColor: themeColor.background,

@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared/shared.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_features/shared_features.dart';
 import '../../features/technician_orders/domain/use_cases/get_all_orders.dart';
 import '../../features/technician_orders/presentation/cubit/technician_orders_cubit.dart';
+import '../../features/finance/data/data_sources/technician_finance_remote_data_source.dart';
+import '../../features/finance/data/repositories/technician_finance_repository_impl.dart';
+import '../../features/finance/domain/repositories/technician_finance_repository.dart';
+import '../../features/finance/presentation/cubit/technician_finance_cubit.dart';
 import '../../features/technician_orders/presentation/routes/technician_orders_routes.dart';
 import '../../features/technician_orders/presentation/pages/technician_orders_screen.dart';
 import '../../features/home/di/home_di.dart';
@@ -45,8 +50,8 @@ Future<void> initAppDI() async {
           labelKey: 'technician_orders_title',
           icon: Icons.work_outline,
           activeIcon: Icons.work,
-          pageBuilder: (context) => BlocProvider(
-            create: (_) => GetIt.instance<TechnicianOrdersCubit>()..loadOrders(),
+          pageBuilder: (context) => BlocProvider.value(
+            value: GetIt.instance<TechnicianOrdersCubit>()..loadOrders(),
             child: const TechnicianOrdersScreen(),
           ),
           path: AppRoutes.technicianOrders, // Using technicianOrders to match existing routes
@@ -79,7 +84,7 @@ Future<void> initAppDI() async {
   // --------------------------------------------------------------------------
 
   // Technician Orders Feature
-  getIt.registerFactory<TechnicianOrdersCubit>(
+  getIt.registerLazySingleton<TechnicianOrdersCubit>(
     () => TechnicianOrdersCubit(
       getAllOrders: getIt<GetAllOrders>(),
       transitionBooking: getIt<TransitionBookingUseCase>(),
@@ -99,6 +104,22 @@ Future<void> initAppDI() async {
   // Technician Schedule Feature
   getIt.registerFactory<SmartScheduleCubit>(
     () => SmartScheduleCubit(getIt()),
+  );
+
+  // Financial feature
+  getIt.registerLazySingleton<TechnicianFinanceRemoteDataSource>(
+    () => TechnicianFinanceRemoteDataSourceImpl(getIt<SupabaseClient>()),
+  );
+
+  getIt.registerLazySingleton<TechnicianFinanceRepository>(
+    () => TechnicianFinanceRepositoryImpl(
+      getIt<TechnicianFinanceRemoteDataSource>(),
+      getIt<SupabaseClient>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<TechnicianFinanceCubit>(
+    () => TechnicianFinanceCubit(getIt<TechnicianFinanceRepository>()),
   );
 
   // Register local home feature

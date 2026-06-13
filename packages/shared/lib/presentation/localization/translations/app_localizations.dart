@@ -2165,7 +2165,7 @@ abstract class AppLocalizations {
   /// No description provided for @tech_tool_wallet.
   ///
   /// In ar, this message translates to:
-  /// **'المحفظة'**
+  /// **'رصيدي'**
   String get tech_tool_wallet;
 
   /// No description provided for @tech_tool_schedule.
@@ -2785,6 +2785,630 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'م'**
   String get pricing_unit_meter_short;
+
+  /// No description provided for @finance_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيدي'**
+  String get finance_title;
+
+  /// No description provided for @finance_balance_owed_to_you.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد المتاح للسحب'**
+  String get finance_balance_owed_to_you;
+
+  /// No description provided for @finance_amount_owed_to_company.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستحقات الشركة'**
+  String get finance_amount_owed_to_company;
+
+  /// No description provided for @finance_debt_limit.
+  ///
+  /// In ar, this message translates to:
+  /// **'حد المديونية'**
+  String get finance_debt_limit;
+
+  /// No description provided for @finance_remaining_limit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد المتبقي المتاح'**
+  String get finance_remaining_limit;
+
+  /// No description provided for @finance_status.
+  ///
+  /// In ar, this message translates to:
+  /// **'حالة الحساب'**
+  String get finance_status;
+
+  /// No description provided for @finance_status_active.
+  ///
+  /// In ar, this message translates to:
+  /// **'نشط'**
+  String get finance_status_active;
+
+  /// No description provided for @finance_status_restricted.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقيد (تنبيه)'**
+  String get finance_status_restricted;
+
+  /// No description provided for @finance_status_blocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'محظور (موقوف)'**
+  String get finance_status_blocked;
+
+  /// No description provided for @finance_status_warning.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه: مديونيتك تجاوزت 80% من الحد الأقصى'**
+  String get finance_status_warning;
+
+  /// No description provided for @finance_status_blocked_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعليق حسابك لتجاوز حد المديونية. يرجى سداد المستحقات وإرسال طلب تسوية.'**
+  String get finance_status_blocked_desc;
+
+  /// No description provided for @finance_ledger_statement.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف الحساب المالي وسجل العمليات'**
+  String get finance_ledger_statement;
+
+  /// No description provided for @finance_ledger_empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد معاملات مسجلة في كشف الحساب حالياً.'**
+  String get finance_ledger_empty;
+
+  /// No description provided for @finance_btn_request_settlement.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب تسوية مالية'**
+  String get finance_btn_request_settlement;
+
+  /// No description provided for @finance_entry_type_order_earnings.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرباح الطلب المكتمل'**
+  String get finance_entry_type_order_earnings;
+
+  /// No description provided for @finance_entry_type_company_commission_debit.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمولة المنصة المستقطعة'**
+  String get finance_entry_type_company_commission_debit;
+
+  /// No description provided for @finance_entry_type_cash_collection_debit.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستحقات الشركة (تحصيل كاش)'**
+  String get finance_entry_type_cash_collection_debit;
+
+  /// No description provided for @finance_entry_type_manual_bonus.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكافأة مالية مضافة'**
+  String get finance_entry_type_manual_bonus;
+
+  /// No description provided for @finance_entry_type_manual_penalty.
+  ///
+  /// In ar, this message translates to:
+  /// **'غرامة مالية مستقطعة'**
+  String get finance_entry_type_manual_penalty;
+
+  /// No description provided for @finance_entry_type_manual_adjustment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسوية وتعديل رصيد'**
+  String get finance_entry_type_manual_adjustment;
+
+  /// No description provided for @finance_entry_type_settlement_reconciliation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسوية وإغلاق دفعة'**
+  String get finance_entry_type_settlement_reconciliation;
+
+  /// No description provided for @finance_settlement_request_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب تسوية مالية جديد'**
+  String get finance_settlement_request_title;
+
+  /// No description provided for @finance_settlement_type_label.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع العملية المالية'**
+  String get finance_settlement_type_label;
+
+  /// No description provided for @finance_settlement_type_withdrawal.
+  ///
+  /// In ar, this message translates to:
+  /// **'سحب مستحقات (من الشركة)'**
+  String get finance_settlement_type_withdrawal;
+
+  /// No description provided for @finance_settlement_type_payment.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفع للشركة (سداد مديونية)'**
+  String get finance_settlement_type_payment;
+
+  /// No description provided for @finance_settlement_type_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى تحديد نوع العملية'**
+  String get finance_settlement_type_required;
+
+  /// No description provided for @finance_settlement_method.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة التسوية والتحويل'**
+  String get finance_settlement_method;
+
+  /// No description provided for @finance_settlement_method_vodafone_cash.
+  ///
+  /// In ar, this message translates to:
+  /// **'فودافون كاش'**
+  String get finance_settlement_method_vodafone_cash;
+
+  /// No description provided for @finance_settlement_method_instapay.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنستاباي (Instapay)'**
+  String get finance_settlement_method_instapay;
+
+  /// No description provided for @finance_settlement_method_bank_transfer.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحويل بنكي'**
+  String get finance_settlement_method_bank_transfer;
+
+  /// No description provided for @finance_settlement_method_cash_handover.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسليم نقدي باليد'**
+  String get finance_settlement_method_cash_handover;
+
+  /// No description provided for @finance_settlement_method_other.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة تحويل أخرى'**
+  String get finance_settlement_method_other;
+
+  /// No description provided for @finance_settlement_amount.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبلغ التسوية (ج.م)'**
+  String get finance_settlement_amount;
+
+  /// No description provided for @finance_settlement_amount_hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل المبلغ الذي قمت بتحويله'**
+  String get finance_settlement_amount_hint;
+
+  /// No description provided for @finance_settlement_proof.
+  ///
+  /// In ar, this message translates to:
+  /// **'صورة إثبات التحويل (لقطة الشاشة)'**
+  String get finance_settlement_proof;
+
+  /// No description provided for @finance_settlement_proof_select.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر صورة الإثبات'**
+  String get finance_settlement_proof_select;
+
+  /// No description provided for @finance_settlement_proof_selected.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم اختيار صورة الإثبات بنجاح'**
+  String get finance_settlement_proof_selected;
+
+  /// No description provided for @finance_settlement_submit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال طلب التسوية'**
+  String get finance_settlement_submit;
+
+  /// No description provided for @finance_settlement_submit_success.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إرسال طلب التسوية بنجاح للمراجعة والتدقيق'**
+  String get finance_settlement_submit_success;
+
+  /// No description provided for @finance_error_amount_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى إدخال مبلغ صحيح'**
+  String get finance_error_amount_required;
+
+  /// No description provided for @finance_error_amount_positive.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب أن يكون المبلغ أكبر من صفر'**
+  String get finance_error_amount_positive;
+
+  /// No description provided for @finance_error_method_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى تحديد طريقة التحويل والتسوية'**
+  String get finance_error_method_required;
+
+  /// No description provided for @finance_error_proof_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى إرفاق صورة إثبات التحويل'**
+  String get finance_error_proof_required;
+
+  /// No description provided for @finance_error_upload_failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشل رفع صورة الإثبات، يرجى المحاولة لاحقاً'**
+  String get finance_error_upload_failed;
+
+  /// No description provided for @finance_error_generic.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث خطأ أثناء تحميل البيانات المالية'**
+  String get finance_error_generic;
+
+  /// No description provided for @admin_finance_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'المركز المحاسبي للإدارة'**
+  String get admin_finance_title;
+
+  /// No description provided for @admin_finance_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة أرصدة الفنيين، التسويات المالية اليدوية، طلبات السحب والتسوية، وتتبع الفروقات المالية.'**
+  String get admin_finance_desc;
+
+  /// No description provided for @admin_finance_tab_settlements.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبات التسوية'**
+  String get admin_finance_tab_settlements;
+
+  /// No description provided for @admin_finance_tab_balances.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرصدة الفنيين'**
+  String get admin_finance_tab_balances;
+
+  /// No description provided for @admin_finance_tab_adjustments.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسويات يدوية'**
+  String get admin_finance_tab_adjustments;
+
+  /// No description provided for @admin_finance_tab_cases.
+  ///
+  /// In ar, this message translates to:
+  /// **'نزاعات مالية (فروقات)'**
+  String get admin_finance_tab_cases;
+
+  /// No description provided for @admin_finance_col_technician.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفني'**
+  String get admin_finance_col_technician;
+
+  /// No description provided for @admin_finance_col_amount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get admin_finance_col_amount;
+
+  /// No description provided for @admin_finance_col_method.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة التحويل'**
+  String get admin_finance_col_method;
+
+  /// No description provided for @admin_finance_col_date.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get admin_finance_col_date;
+
+  /// No description provided for @admin_finance_col_action.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجراء'**
+  String get admin_finance_col_action;
+
+  /// No description provided for @admin_finance_btn_view_proof.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الإثبات'**
+  String get admin_finance_btn_view_proof;
+
+  /// No description provided for @admin_finance_btn_approve.
+  ///
+  /// In ar, this message translates to:
+  /// **'موافقة'**
+  String get admin_finance_btn_approve;
+
+  /// No description provided for @admin_finance_btn_reject.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض'**
+  String get admin_finance_btn_reject;
+
+  /// No description provided for @admin_finance_approve_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموافقة على التسوية'**
+  String get admin_finance_approve_title;
+
+  /// No description provided for @admin_finance_approve_msg.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل أنت متأكد من الموافقة على طلب التسوية هذا؟ سيتم تحديث رصيد الفني في النظام فوراً.'**
+  String get admin_finance_approve_msg;
+
+  /// No description provided for @admin_finance_reject_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض طلب التسوية'**
+  String get admin_finance_reject_title;
+
+  /// No description provided for @admin_finance_reject_reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل سبب الرفض هنا...'**
+  String get admin_finance_reject_reason;
+
+  /// No description provided for @admin_finance_col_status.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get admin_finance_col_status;
+
+  /// No description provided for @admin_finance_col_net_balance.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي الرصيد'**
+  String get admin_finance_col_net_balance;
+
+  /// No description provided for @admin_finance_col_owed_to_company.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستحق للشركة'**
+  String get admin_finance_col_owed_to_company;
+
+  /// No description provided for @admin_finance_col_owed_to_technician.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستحقات الفني'**
+  String get admin_finance_col_owed_to_technician;
+
+  /// No description provided for @admin_finance_col_debt_limit.
+  ///
+  /// In ar, this message translates to:
+  /// **'حد المديونية'**
+  String get admin_finance_col_debt_limit;
+
+  /// No description provided for @admin_finance_field_select_technician.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر الفني'**
+  String get admin_finance_field_select_technician;
+
+  /// No description provided for @admin_finance_field_adjustment_type.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع التسوية'**
+  String get admin_finance_field_adjustment_type;
+
+  /// No description provided for @admin_finance_type_bonus.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكافأة (+)'**
+  String get admin_finance_type_bonus;
+
+  /// No description provided for @admin_finance_type_penalty.
+  ///
+  /// In ar, this message translates to:
+  /// **'غرامة/خصم (-)'**
+  String get admin_finance_type_penalty;
+
+  /// No description provided for @admin_finance_type_adjustment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل رصيد مخصص'**
+  String get admin_finance_type_adjustment;
+
+  /// No description provided for @admin_finance_field_reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'السبب / البيان'**
+  String get admin_finance_field_reason;
+
+  /// No description provided for @admin_finance_field_notes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات إضافية'**
+  String get admin_finance_field_notes;
+
+  /// No description provided for @admin_finance_btn_submit_adjustment.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال واعتماد التسوية'**
+  String get admin_finance_btn_submit_adjustment;
+
+  /// No description provided for @admin_finance_success_adjustment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إنشاء واعتماد التسوية المالية بنجاح.'**
+  String get admin_finance_success_adjustment;
+
+  /// No description provided for @admin_finance_col_expected.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتوقع'**
+  String get admin_finance_col_expected;
+
+  /// No description provided for @admin_finance_col_collected.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحصل'**
+  String get admin_finance_col_collected;
+
+  /// No description provided for @admin_finance_col_case_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيان الفارق'**
+  String get admin_finance_col_case_desc;
+
+  /// No description provided for @admin_finance_btn_resolve_case.
+  ///
+  /// In ar, this message translates to:
+  /// **'حل وإغلاق النزاع'**
+  String get admin_finance_btn_resolve_case;
+
+  /// No description provided for @admin_finance_field_resolution_notes.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الحل والإغلاق'**
+  String get admin_finance_field_resolution_notes;
+
+  /// No description provided for @admin_finance_success_resolve.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حل وإغلاق القضية المالية بنجاح.'**
+  String get admin_finance_success_resolve;
+
+  /// No description provided for @admin_finance_col_admin_proof.
+  ///
+  /// In ar, this message translates to:
+  /// **'إثبات تحويل الإدارة'**
+  String get admin_finance_col_admin_proof;
+
+  /// No description provided for @admin_finance_btn_edit_debt.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل حد الدين'**
+  String get admin_finance_btn_edit_debt;
+
+  /// No description provided for @admin_finance_edit_debt_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث حد الدين'**
+  String get admin_finance_edit_debt_title;
+
+  /// No description provided for @admin_finance_edit_debt_label.
+  ///
+  /// In ar, this message translates to:
+  /// **'حد الدين (ج.م)'**
+  String get admin_finance_edit_debt_label;
+
+  /// No description provided for @admin_finance_success_debt.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث حد الدين للفني بنجاح'**
+  String get admin_finance_success_debt;
+
+  /// No description provided for @admin_finance_payout_proof_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفع إثبات التحويل المالي'**
+  String get admin_finance_payout_proof_title;
+
+  /// No description provided for @admin_finance_payout_proof_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى رفع لقطة الشاشة الخاصة بإثبات تحويل المستحقات للموافقة على عملية الدفع.'**
+  String get admin_finance_payout_proof_desc;
+
+  /// No description provided for @admin_finance_error_payout_proof.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب إرفاق إثبات تحويل الأموال للموافقة على العملية'**
+  String get admin_finance_error_payout_proof;
+
+  /// No description provided for @finance_admin_proof_label.
+  ///
+  /// In ar, this message translates to:
+  /// **'إثبات تحويل الشركة للفني'**
+  String get finance_admin_proof_label;
+
+  /// No description provided for @admin_finance_tab_reports.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقارير والتحليلات'**
+  String get admin_finance_tab_reports;
+
+  /// No description provided for @admin_finance_reports_company_profit.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي أرباح الشركة'**
+  String get admin_finance_reports_company_profit;
+
+  /// No description provided for @admin_finance_reports_total_debt.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي ديون السوق'**
+  String get admin_finance_reports_total_debt;
+
+  /// No description provided for @admin_finance_reports_tech_earnings.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستحقات الفنيين'**
+  String get admin_finance_reports_tech_earnings;
+
+  /// No description provided for @admin_finance_reports_profit_growth.
+  ///
+  /// In ar, this message translates to:
+  /// **'نمو أرباح الشركة (شهرياً)'**
+  String get admin_finance_reports_profit_growth;
+
+  /// No description provided for @admin_finance_reports_revenue_ratio.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسب الدفع (كاش مقابل إلكتروني)'**
+  String get admin_finance_reports_revenue_ratio;
+
+  /// No description provided for @admin_finance_reports_cash.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقدي (كاش)'**
+  String get admin_finance_reports_cash;
+
+  /// No description provided for @admin_finance_reports_online.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلكتروني (أونلاين)'**
+  String get admin_finance_reports_online;
+
+  /// No description provided for @admin_finance_reports_export_ledger.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصدير دفتر الأستاذ (Excel)'**
+  String get admin_finance_reports_export_ledger;
+
+  /// No description provided for @admin_finance_reports_print_summary.
+  ///
+  /// In ar, this message translates to:
+  /// **'طباعة تقرير الشهر (PDF)'**
+  String get admin_finance_reports_print_summary;
+
+  /// No description provided for @admin_finance_reports_refresh_btn.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث البيانات المحاسبية'**
+  String get admin_finance_reports_refresh_btn;
+
+  /// No description provided for @admin_finance_reports_refresh_success.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث البيانات المحاسبية بنجاح.'**
+  String get admin_finance_reports_refresh_success;
 }
 
 class _AppLocalizationsDelegate

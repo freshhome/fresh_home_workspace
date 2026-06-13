@@ -48,9 +48,9 @@ class SmartSchedulePage extends StatelessWidget {
             }
 
             if (state is SmartScheduleError) {
-              print("==================🔴🔴🔴🔴🔴🔴🔴========");
-              print(state.message);
-              print("==================🔴🔴🔴🔴🔴🔴🔴========");
+              debugPrint("==================🔴🔴🔴🔴🔴🔴🔴========");
+              debugPrint(state.message);
+              debugPrint("==================🔴🔴🔴🔴🔴🔴🔴========");
 
               return Center(
                 child: Column(

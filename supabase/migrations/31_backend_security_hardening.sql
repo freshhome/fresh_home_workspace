@@ -373,7 +373,14 @@ BEGIN
         SELECT r.name INTO v_db_role
         FROM public.user_roles ur
         JOIN public.roles r ON ur.role_id = r.id
-        WHERE ur.user_id = p_actor_id;
+        WHERE ur.user_id = p_actor_id
+        ORDER BY CASE r.name
+            WHEN 'admin' THEN 1
+            WHEN 'technician' THEN 2
+            WHEN 'client' THEN 3
+            ELSE 4
+        END ASC
+        LIMIT 1;
         
         IF v_db_role IS NULL THEN
             RAISE EXCEPTION 'Unauthorized: User role not configured.' USING ERRCODE = '42501';

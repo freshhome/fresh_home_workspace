@@ -11,14 +11,13 @@ class SettingsRoutes {
       name: AppRoutes.settings,
       builder: (context, state) => MultiBlocProvider(
         providers: [
-          BlocProvider(create: (context) => GetIt.instance<ProfileCubit>()),
+          BlocProvider.value(value: GetIt.instance<ProfileCubit>()),
           BlocProvider(create: (context) => GetIt.instance<SignOutCubit>()),
-          BlocProvider(
-            create: (context) => GetIt.instance<ThemeCubit>()..loadTheme(),
+          BlocProvider.value(
+            value: GetIt.instance<ThemeCubit>()..loadTheme(),
           ),
-          BlocProvider(
-            create: (context) =>
-                GetIt.instance<LocaleCubit>()..loadSavedLocale(),
+          BlocProvider.value(
+            value: GetIt.instance<LocaleCubit>()..loadSavedLocale(),
           ),
         ],
         child: const SettingsScreen(),

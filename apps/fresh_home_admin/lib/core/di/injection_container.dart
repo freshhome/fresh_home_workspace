@@ -20,6 +20,8 @@ import '../../features/admin_dashboard/di/admin_dashboard_di.dart';
 import '../../features/admin_dashboard/presentation/routes/admin_dashboard_routes.dart';
 import '../../features/pricing_governance/di/pricing_governance_di.dart';
 import '../../features/pricing_governance/presentation/routes/pricing_governance_routes.dart';
+import '../../features/finance/di/admin_finance_di.dart';
+import '../../features/finance/presentation/routes/admin_finance_routes.dart';
 
 final getIt = GetIt.instance;
 
@@ -37,6 +39,7 @@ Future<void> initAppDI() async {
       ...UserManagementRoutes.routes,
       ...AdminDashboardRoutes.routes,
       ...PricingGovernanceRoutes.routes,
+      ...AdminFinanceRoutes.routes,
     ],
     navigationConfig: NavigationConfig(
       items: [
@@ -126,4 +129,9 @@ Future<void> initAppDI() async {
   // PRICING GOVERNANCE FEATURE
   // --------------------------------------------------------------------------
   initPricingGovernance();
+
+  // --------------------------------------------------------------------------
+  // ADMIN FINANCE FEATURE
+  // --------------------------------------------------------------------------
+  initAdminFinanceDI(getIt);
 }
