@@ -111,53 +111,69 @@ export default function PopularServices() {
               const arTitle = sub.title?.ar || sub.title;
 
               return (
-                <div 
+                <Link 
                   key={sub.id}
-                  className="bg-slate-50 rounded-2xl p-5 border border-slate-100 flex flex-col justify-between hover:bg-white hover:border-slate-200 transition-all duration-300 hover:shadow-lg hover:shadow-slate-100 group"
+                  href={`/services/details?serviceId=${sub.parent_id}&subServiceId=${sub.id}`}
+                  className="bg-white rounded-[20px] border border-slate-100/60 shadow-[0_8px_40px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all duration-300 flex flex-col justify-between group overflow-hidden transform hover:-translate-y-1 text-right block"
                 >
-                  <div className="space-y-4">
-                    {/* Badge & Rating */}
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="bg-primary/5 text-primary font-black px-2 py-0.5 rounded-md text-[10px]">
-                        {badge}
-                      </span>
-                      <div className="flex items-center gap-1 text-amber-500 font-bold">
-                        <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                        <span>{rating}</span>
-                        <span className="text-slate-400 font-normal">({reviews})</span>
+                  {/* Top Image Container */}
+                  <div className="relative h-[140px] w-full bg-service-bg border-b border-primary/5 flex items-center justify-center p-4">
+                    {sub.image ? (
+                      <img 
+                        src={sub.image} 
+                        alt={arTitle} 
+                        className="w-20 h-20 object-contain transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary/45">
+                        <Sparkles className="w-6 h-6" />
                       </div>
+                    )}
+                    
+                    {/* Badge Overlay */}
+                    <span className="absolute top-3 right-3 bg-primary/90 text-white font-extrabold px-2 py-0.5 rounded-md text-[9px] shadow-xs">
+                      {badge}
+                    </span>
+
+                    {/* Rating Overlay */}
+                    <div className="absolute top-3 left-3 bg-white/90 text-amber-500 font-extrabold px-2 py-0.5 rounded-md text-[9px] flex items-center gap-1 shadow-xs">
+                      <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                      <span>{rating}</span>
                     </div>
-
-                    {/* Title */}
-                    <h3 className="font-extrabold text-slate-800 text-sm leading-snug group-hover:text-primary transition-colors min-h-[40px] line-clamp-2">
-                      {arTitle}
-                    </h3>
-
-                    {/* Highlights */}
-                    <ul className="space-y-1.5 text-xs text-slate-500 border-t border-slate-200/60 pt-3">
-                      {highlights.map((hl, i) => (
-                        <li key={i} className="flex items-center gap-1.5">
-                          <Check className="w-3 h-3 text-secondary shrink-0" />
-                          <span className="line-clamp-1">{hl}</span>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
 
-                  {/* Price & CTA */}
-                  <div className="mt-6 pt-4 border-t border-slate-200/60 flex items-center justify-between gap-2">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold uppercase">السعر التقديري</span>
-                      <span className="text-primary font-black text-sm block">{priceLabel}</span>
+                  {/* Card Content */}
+                  <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <h3 className="font-extrabold text-slate-800 text-sm leading-snug group-hover:text-primary transition-colors min-h-[40px] line-clamp-2">
+                        {arTitle}
+                      </h3>
+
+                      {/* Highlights */}
+                      <ul className="space-y-1 text-[11px] text-slate-500 pt-2">
+                        {highlights.map((hl, i) => (
+                          <li key={i} className="flex items-center gap-1.5">
+                            <Check className="w-3.5 h-3.5 text-secondary shrink-0" />
+                            <span className="line-clamp-1">{hl}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <Link 
-                      href={`/booking?serviceId=${sub.parent_id}&subServiceId=${sub.id}`}
-                      className="bg-primary hover:bg-primary/95 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md shadow-primary/10"
-                    >
-                      <span>احجز كضيف</span>
-                    </Link>
+
+                    {/* Price & CTA */}
+                    <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <div>
+                        <span className="text-[9px] text-slate-400 block font-bold uppercase">السعر التقديري</span>
+                        <span className="text-secondary font-black text-sm block">{priceLabel}</span>
+                      </div>
+                      <span 
+                        className="bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md shadow-primary/20 transition-all duration-300"
+                      >
+                        تفاصيل الخدمة
+                      </span>
+                    </div>
                   </div>
-                </div>
+                </Link>
               );
             })
           )}

@@ -251,40 +251,26 @@ function BookingFlowContent() {
   const handleCompleteBooking = async () => {
     setIsSubmittingBooking(true);
     try {
-      // 1. Create anonymous auth user to satisfy database constraints
-      const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
-      if (authError) throw authError;
+      // 1. Check if there is an active logged-in user session
+      let userId: string | null = null;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        userId = session.user.id;
+      }
 
-      const userId = authData.user?.id;
-      if (!userId) throw new Error("فشل تسجيل حساب العميل المجهول");
-
-      // 2. Setup user profile manually (using name inputs)
-      const nameParts = name.trim().split(" ");
-      const firstName = nameParts[0] || "Guest";
-      const lastName = nameParts.slice(1).join(" ") || "User";
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          id: userId,
-          first_name: firstName,
-          last_name: lastName,
-          email: `${userId}@freshhome-guest.com`,
-          gender: "unspecified",
-          account_status: "active"
-        });
-      if (profileError) throw profileError;
-
-      // 3. Setup user primary phone
-      const { error: phoneError } = await supabase
-        .from("user_phones")
-        .insert({
-          user_id: userId,
-          phone_number: phone.trim(),
-          is_primary: true,
-          is_verified: true
-        });
-      if (phoneError) throw phoneError;
+      // 2. If user is logged in, attempt to register their phone number if not already present
+      if (userId) {
+        await supabase
+          .from("user_phones")
+          .insert({
+            user_id: userId,
+            phone_number: phone.trim(),
+            is_primary: true,
+            is_verified: true
+          });
+        // We do not throw on phone insert error for logged-in users to prevent blocking the booking
+        // if the phone number already exists or is already linked.
+      }
 
       // 4. Convert chosen time (e.g. "09:00 ص") to 24h format (e.g. "09:00:00")
       let time24 = "09:00:00";

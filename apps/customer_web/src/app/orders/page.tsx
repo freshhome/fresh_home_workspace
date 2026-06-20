@@ -68,14 +68,15 @@ function OrderTrackingContent() {
       }
       setLoading(true);
       try {
-        // 1. Fetch booking record
+        // 1. Fetch booking record via get_guest_booking_details RPC
         const { data: bookingData, error: bookingError } = await supabase
-          .from("bookings")
-          .select("*")
-          .eq("id", bookingId)
-          .single();
+          .rpc("get_guest_booking_details", {
+            p_booking_id: bookingId
+          });
 
         if (bookingError) throw bookingError;
+        if (!bookingData) throw new Error("لم يتم العثور على الحجز");
+        
         setBooking(bookingData);
         if (isSuccess && bookingData.is_whatsapp_confirmed === false) {
           setShowConfirmModal(true);
@@ -98,28 +99,14 @@ function OrderTrackingContent() {
           setActiveStep(statusMap[currentStatus]);
         }
 
-        // 3. Fetch technician profile if assigned
-        if (bookingData.technician_id) {
-          const { data: techProfile, error: profileError } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", bookingData.technician_id)
-            .single();
-
-          const { data: techMetrics } = await supabase
-            .from("technician_profiles")
-            .select("*")
-            .eq("user_id", bookingData.technician_id)
-            .single();
-
-          if (!profileError && techProfile) {
-            setTechnician({
-              name: `م/ ${techProfile.first_name} ${techProfile.last_name} - فني معتمد`,
-              rating: techMetrics?.rating ? Number(techMetrics.rating).toFixed(1) : "4.9",
-              jobs: techMetrics?.completed_jobs || 120,
-              phone: "01012345678" // Fallback number for testing
-            });
-          }
+        // 3. Set technician details from RPC data if assigned
+        if (bookingData.technician) {
+          setTechnician({
+            name: `م/ ${bookingData.technician.name}`,
+            rating: bookingData.technician.rating ? Number(bookingData.technician.rating).toFixed(1) : "4.9",
+            jobs: bookingData.technician.completed_jobs || 120,
+            phone: "01012345678" // Fallback number for testing
+          });
         }
       } catch (e) {
         console.error("Error fetching booking details:", e);
@@ -144,49 +131,39 @@ function OrderTrackingContent() {
           },
           async (payload: any) => {
             console.log("Realtime update received for booking:", payload.new);
-            setBooking(payload.new);
             
-            const statusMap: Record<string, number> = {
-              "created": 0,
-              "assigned": 1,
-              "accepted": 2,
-              "on_the_way": 3,
-              "arrived": 4,
-              "in_progress": 5,
-              "completed": 6,
-              "cancelled": -1
-            };
-            const currentStatus = payload.new.status || "created";
-            if (statusMap[currentStatus] !== undefined) {
-              setActiveStep(statusMap[currentStatus]);
-            }
-
-            // Fetch technician details dynamically if newly assigned
-            if (payload.new.technician_id) {
-              try {
-                const { data: techProfile } = await supabase
-                  .from("profiles")
-                  .select("*")
-                  .eq("id", payload.new.technician_id)
-                  .single();
-                
-                const { data: techMetrics } = await supabase
-                  .from("technician_profiles")
-                  .select("*")
-                  .eq("user_id", payload.new.technician_id)
-                  .single();
-
-                if (techProfile) {
+            // Re-fetch the full booking details using get_guest_booking_details RPC to update UI state safely
+            try {
+              const { data: updatedBooking } = await supabase
+                .rpc("get_guest_booking_details", { p_booking_id: bookingId });
+              
+              if (updatedBooking) {
+                setBooking(updatedBooking);
+                const statusMap: Record<string, number> = {
+                  "created": 0,
+                  "assigned": 1,
+                  "accepted": 2,
+                  "on_the_way": 3,
+                  "arrived": 4,
+                  "in_progress": 5,
+                  "completed": 6,
+                  "cancelled": -1
+                };
+                const currentStatus = updatedBooking.status || "created";
+                if (statusMap[currentStatus] !== undefined) {
+                  setActiveStep(statusMap[currentStatus]);
+                }
+                if (updatedBooking.technician) {
                   setTechnician({
-                    name: `م/ ${techProfile.first_name} ${techProfile.last_name} - فني معتمد`,
-                    rating: techMetrics?.rating ? Number(techMetrics.rating).toFixed(1) : "4.9",
-                    jobs: techMetrics?.completed_jobs || 120,
+                    name: `م/ ${updatedBooking.technician.name}`,
+                    rating: updatedBooking.technician.rating ? Number(updatedBooking.technician.rating).toFixed(1) : "4.9",
+                    jobs: updatedBooking.technician.completed_jobs || 120,
                     phone: "01012345678"
                   });
                 }
-              } catch (err) {
-                console.error("Error fetching realtime tech details:", err);
               }
+            } catch (err) {
+              console.error("Error updating booking via RPC on realtime event:", err);
             }
           }
         )

@@ -8,10 +8,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo & Intro */}
           <div className="space-y-4 col-span-1 md:col-span-2">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white">
-                <Shield className="w-6 h-6 stroke-[2.5]" />
-              </div>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/app_icon_customer.png" 
+                alt="فريش هوم" 
+                className="w-10 h-10 object-contain rounded-xl shadow-md" 
+              />
               <div>
                 <span className="text-xl font-black text-white tracking-tight">فريش هوم</span>
                 <span className="block text-[9px] text-secondary font-bold -mt-1 tracking-wider uppercase">Fresh Home</span>

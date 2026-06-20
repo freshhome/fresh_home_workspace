@@ -13,10 +13,12 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-md shadow-primary/20">
-                <Shield className="w-6 h-6 stroke-[2.5]" />
-              </div>
+            <Link href="/" className="flex items-center gap-3 group">
+              <img 
+                src="/app_icon_customer.png" 
+                alt="فريش هوم" 
+                className="w-10 h-10 object-contain rounded-xl shadow-md shadow-primary/10 transition-transform duration-300 group-hover:scale-105" 
+              />
               <div>
                 <span className="text-xl font-black text-primary tracking-tight font-sans">فريش هوم</span>
                 <span className="block text-[9px] text-secondary font-bold -mt-1 tracking-wider uppercase">Fresh Home</span>
@@ -43,7 +45,7 @@ export default function Header() {
             </a>
             <Link 
               href="/booking" 
-              className="flex items-center gap-2 bg-primary hover:bg-primary/95 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-primary/20 transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
+              className="flex items-center gap-2 bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-primary/20 transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
             >
               <Calendar className="w-4 h-4" />
               <span>احجز الآن</span>
@@ -101,7 +103,7 @@ export default function Header() {
             </a>
             <Link 
               href="/booking" 
-              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/95 text-white font-bold py-3 rounded-xl text-center shadow-lg shadow-primary/10"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-bold py-3 rounded-xl text-center shadow-lg shadow-primary/25"
               onClick={() => setIsOpen(false)}
             >
               <Calendar className="w-4 h-4" />
