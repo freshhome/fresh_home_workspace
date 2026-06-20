@@ -1252,7 +1252,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get schedule_status_full => 'مكتمل';
 
   @override
-  String get admin_dashboard_title => 'متابعة أسطول العمليات';
+  String get admin_dashboard_title => 'لوحة التحكم للإدارة';
 
   @override
   String get utilization => 'نسبة الإشغال';
@@ -1730,4 +1730,272 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get admin_finance_reports_refresh_success =>
       'تم تحديث البيانات المحاسبية بنجاح.';
+
+  @override
+  String get tech_profile_title => 'الملف الفني';
+
+  @override
+  String get tech_profile_verified => 'موثق';
+
+  @override
+  String get tech_profile_rating => 'التقييم';
+
+  @override
+  String get tech_profile_completed_jobs => 'المهام المنجزة';
+
+  @override
+  String get tech_profile_bio => 'النبذة التعريفية';
+
+  @override
+  String get tech_profile_bio_empty => 'لم يقم الفني بكتابة نبذة تعريفية بعد.';
+
+  @override
+  String get tech_profile_skills_capacity => 'التخصصات والقدرة اليومية';
+
+  @override
+  String get tech_profile_skills_empty_admin =>
+      'لم يتم تحديد خزانات القدرة أو التخصصات بعد من قبل المسؤول.';
+
+  @override
+  String get tech_profile_skills_empty_admin_desc =>
+      'يرجى التواصل مع الإدارة لتفعيل خدماتك وتحديد طاقتك الاستيعابية اليومية.';
+
+  @override
+  String get tech_profile_daily_capacity => 'القدرة اليومية:';
+
+  @override
+  String tech_profile_tasks_per_day(Object count) {
+    return '$count مهام / يوم';
+  }
+
+  @override
+  String get tech_profile_services_provided => 'الخدمات المقدمة:';
+
+  @override
+  String get tech_profile_skills_empty =>
+      'لا توجد خدمات نشطة مسندة لهذا الخزان حالياً.';
+
+  @override
+  String get booking_admin_step_1_title => 'الخدمة';
+
+  @override
+  String get booking_admin_step_2_title => 'السعر';
+
+  @override
+  String get booking_admin_step_3_title => 'الموعد';
+
+  @override
+  String get booking_admin_step_4_title => 'العميل';
+
+  @override
+  String get booking_admin_step_5_title => 'تأكيد';
+
+  @override
+  String get booking_admin_step_1_desc => 'اختيار الخدمة';
+
+  @override
+  String get booking_admin_step_2_desc => 'تحديد السعر';
+
+  @override
+  String get booking_admin_step_3_desc => 'تحديد الموعد';
+
+  @override
+  String get booking_admin_step_4_desc => 'بيانات العميل';
+
+  @override
+  String get booking_admin_step_5_desc => 'تأكيد الحجز';
+
+  @override
+  String get currency_egp => 'ج.م';
+
+  @override
+  String get booking_unit => 'وحدة';
+
+  @override
+  String booking_building_val(Object num) {
+    return 'عمارة $num';
+  }
+
+  @override
+  String booking_apartment_val(Object num) {
+    return 'شقة $num';
+  }
+
+  @override
+  String booking_floor_val(Object num) {
+    return 'دور $num';
+  }
+
+  @override
+  String booking_min_required(Object min, Object unit) {
+    return 'الحد الأدنى المطلوب: $min $unit';
+  }
+
+  @override
+  String get booking_select_value => 'اختر قيمة...';
+
+  @override
+  String get booking_extra_features => 'خيارات إضافية';
+
+  @override
+  String get booking_autofill_debug => 'تعبئة تلقائية للتجربة (Debug)';
+
+  @override
+  String get booking_autofill_success => 'تم ملء البيانات بنجاح! ✨';
+
+  @override
+  String get booking_search_region => 'بحث عن المنطقة...';
+
+  @override
+  String booking_services_of(Object serviceName) {
+    return 'خدمات $serviceName';
+  }
+
+  @override
+  String get validation_password_required => 'الرجاء إدخال كلمة المرور';
+
+  @override
+  String get validation_password_min_length =>
+      'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل';
+
+  @override
+  String get validation_confirm_password_required => 'الرجاء تأكيد كلمة المرور';
+
+  @override
+  String get validation_passwords_match => 'كلمتا المرور غير متطابقتين';
+
+  @override
+  String get validation_retype_password => 'أعد كتابة كلمة المرور';
+
+  @override
+  String get auth_save_new_password => 'حفظ كلمة المرور الجديدة';
+
+  @override
+  String get auth_reset_password_success =>
+      'تم تعيين كلمة المرور الجديدة بنجاح! يمكنك الآن تسجيل الدخول بها.';
+
+  @override
+  String get auth_reset_password_subtitle =>
+      'الرجاء إدخال كلمة المرور الجديدة الخاصة بحسابك وتأكيدها لتغييرها.';
+
+  @override
+  String get auth_reset_password_title => 'استعادة كلمة المرور';
+
+  @override
+  String get auth_pending_title => 'في انتظار التأكيد';
+
+  @override
+  String get auth_pending_desc =>
+      'حسابك حالياً في انتظار تأكيد الإدارة. يرجى التواصل مع المدير لتفعيل صلاحيات الوصول لهذا التطبيق.';
+
+  @override
+  String get auth_retry => 'إعادة المحاولة';
+
+  @override
+  String get auth_sign_out => 'تسجيل الخروج';
+
+  @override
+  String get schedule_no_times_available => 'لا توجد مواعيد متاحة في هذا اليوم';
+
+  @override
+  String get error_service_repository_unavailable =>
+      'ServiceRepository غير متوفر';
+
+  @override
+  String get booking_select_main_service => 'اختر الخدمة الرئيسية';
+
+  @override
+  String get reviews_title => 'تقييماتي وآراء العملاء';
+
+  @override
+  String get reviews_overall_rating => 'التقييم العام للفني';
+
+  @override
+  String reviews_summary_desc(Object count) {
+    return 'شكراً لجهودك! تم احتساب هذا التقييم بناءً على المهام المنجزة البالغ عددها $count مهمة.';
+  }
+
+  @override
+  String get reviews_latest_feedback => 'آخر تعليقات ومراجعات العملاء';
+
+  @override
+  String get reviews_no_reviews => 'لا توجد مراجعات منشورة لك بعد.';
+
+  @override
+  String get reviews_previous_customer => 'عميل سابق';
+
+  @override
+  String reviews_load_error(Object message) {
+    return 'فشل جلب المراجعات: $message';
+  }
+
+  @override
+  String get admin_welcome_title => 'مرحباً بك مجدداً!';
+
+  @override
+  String get admin_welcome_subtitle =>
+      'إليك ملخص سريع لإدارة البيانات والعمليات.';
+
+  @override
+  String get admin_nav_dispatch => 'إدارة جدول الحجز';
+
+  @override
+  String get admin_nav_dispatch_desc =>
+      'متابعة حية لسعة الفريق، إحصائيات الإشغال وإعادة توجيه المهام.';
+
+  @override
+  String get admin_nav_services => 'إدارة الخدمات';
+
+  @override
+  String get admin_nav_services_desc =>
+      'إدارة وتعديل الفئات، الخدمات الفرعية، وتفاصيل الأسعار.';
+
+  @override
+  String get admin_nav_pricing => 'إدارة أسعار الخدمات';
+
+  @override
+  String get admin_nav_pricing_desc =>
+      'تعديل قوانين AST الشرطية، إدارة الخصومات التراكمية، ومراجعة سجل التدقيق.';
+
+  @override
+  String get admin_nav_bookings => 'إدارة الحجوزات';
+
+  @override
+  String get admin_nav_bookings_desc =>
+      'تتبع الحجوزات، إعادة التعيين، الجدولة وإلغاء الطلبات.';
+
+  @override
+  String get admin_nav_users => 'إدارة المستخدمين';
+
+  @override
+  String get admin_nav_users_desc =>
+      'عرض وإدارة بيانات المستخدمين والأدوار في المنصة.';
+
+  @override
+  String get admin_nav_finance => 'المركز المحاسبي للإدارة';
+
+  @override
+  String get admin_nav_finance_desc =>
+      'إدارة أرصدة الفنيين، التسويات اليدوية، وطلبات تسوية المستحقات.';
+
+  @override
+  String get admin_nav_reviews => 'إدارة التقييمات والمراجعات';
+
+  @override
+  String get admin_nav_reviews_desc =>
+      'مراجعة تقييمات العملاء للفنيين والخدمات، والموافقة على التقييمات.';
+
+  @override
+  String get admin_nav_supabase => 'عرض الخدمات (Supabase)';
+
+  @override
+  String get admin_nav_supabase_desc =>
+      'استعراض الخدمات المهاجرة وتفاصيل الفروع والأسعار بدقة.';
+
+  @override
+  String get admin_nav_test => 'أدوات الفحص والتحقق';
+
+  @override
+  String get admin_nav_test_desc =>
+      'فحص جلب البيانات وتكامل قواعد البيانات السحابية مباشرة.';
 }

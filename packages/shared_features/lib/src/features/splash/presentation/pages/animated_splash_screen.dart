@@ -7,6 +7,8 @@ import 'package:shared/core/constants/app_routes.dart';
 import 'package:shared/core/constants/app_assets.dart';
 import 'package:shared_features/src/features/splash/presentation/cubit/splash_cubit.dart';
 
+import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
+
 class AnimatedSplashScreen extends StatefulWidget {
   const AnimatedSplashScreen({super.key});
 
@@ -16,7 +18,7 @@ class AnimatedSplashScreen extends StatefulWidget {
 
 class _AnimatedSplashScreenState extends State<AnimatedSplashScreen> {
   bool _startAnimation = false;
-  bool _navigationTriggered = false; // علشان نضمن مايتنقلش مرتين
+  bool _navigationTriggered = false; // To ensure navigation is not triggered twice
   DateTime? _startTime;
 
   @override
@@ -26,7 +28,7 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen> {
     _startTime = DateTime.now();
     context.read<SplashCubit>().getCurrentUser();
 
-    // نبدأ الأنيميشن بعد ثانيتين
+    // Start the animation after 2 seconds
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _startAnimation = true);
     });
@@ -34,7 +36,7 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen> {
 
   void _navigateAfterDelay(VoidCallback navigate) async {
     final elapsed = DateTime.now().difference(_startTime!).inSeconds;
-    final remaining = 5 - elapsed; // الفرق المتبقي للوصول لـ 5 ثواني
+    final remaining = 5 - elapsed; // The remaining difference to reach 5 seconds
     if (remaining > 0) {
       await Future.delayed(Duration(seconds: remaining));
     }
@@ -46,6 +48,7 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeColor = context.themeColor;
     return BlocListener<SplashCubit, SplashState>(
       listener: (context, state) {
         if (state is SplashErrorState) {
@@ -71,7 +74,7 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFE9F7FE),
+        backgroundColor: themeColor.background,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

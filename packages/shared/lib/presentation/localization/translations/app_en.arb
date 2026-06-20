@@ -587,5 +587,125 @@
   "admin_finance_reports_export_ledger": "Export Ledger to Excel",
   "admin_finance_reports_print_summary": "Print Monthly Summary (PDF)",
   "admin_finance_reports_refresh_btn": "Refresh Financial Reports",
-  "admin_finance_reports_refresh_success": "Financial report data refreshed successfully."
+  "admin_finance_reports_refresh_success": "Financial report data refreshed successfully.",
+  "tech_profile_title": "Technical Profile",
+  "tech_profile_verified": "Verified",
+  "tech_profile_rating": "Rating",
+  "tech_profile_completed_jobs": "Completed Jobs",
+  "tech_profile_bio": "Bio",
+  "tech_profile_bio_empty": "The technician has not written a bio yet.",
+  "tech_profile_skills_capacity": "Specialties & Daily Capacity",
+  "tech_profile_skills_empty_admin": "No capacity pools or specialties have been specified by the administrator yet.",
+  "tech_profile_skills_empty_admin_desc": "Please contact administration to activate your services and define your daily capacity.",
+  "tech_profile_daily_capacity": "Daily Capacity:",
+  "tech_profile_tasks_per_day": "{count} tasks / day",
+  "@tech_profile_tasks_per_day": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "tech_profile_services_provided": "Services Provided:",
+  "tech_profile_skills_empty": "No active services assigned to this pool currently.",
+  "booking_admin_step_1_title": "Service",
+  "booking_admin_step_2_title": "Price",
+  "booking_admin_step_3_title": "Schedule",
+  "booking_admin_step_4_title": "Client",
+  "booking_admin_step_5_title": "Confirm",
+  "booking_admin_step_1_desc": "Select Service",
+  "booking_admin_step_2_desc": "Determine Price",
+  "booking_admin_step_3_desc": "Determine Schedule",
+  "booking_admin_step_4_desc": "Client Details",
+  "booking_admin_step_5_desc": "Confirm Booking",
+  "currency_egp": "EGP",
+  "booking_unit": "unit",
+  "booking_building_val": "Building {num}",
+  "@booking_building_val": {
+    "placeholders": {
+      "num": {}
+    }
+  },
+  "booking_apartment_val": "Apartment {num}",
+  "@booking_apartment_val": {
+    "placeholders": {
+      "num": {}
+    }
+  },
+  "booking_floor_val": "Floor {num}",
+  "@booking_floor_val": {
+    "placeholders": {
+      "num": {}
+    }
+  },
+  "booking_min_required": "Minimum required: {min} {unit}",
+  "@booking_min_required": {
+    "placeholders": {
+      "min": {},
+      "unit": {}
+    }
+  },
+  "booking_select_value": "Select value...",
+  "booking_extra_features": "Extra Features",
+  "booking_autofill_debug": "Autofill for Testing (Debug)",
+  "booking_autofill_success": "Data filled successfully! ✨",
+  "booking_search_region": "Search for region...",
+  "booking_services_of": "{serviceName} Services",
+  "@booking_services_of": {
+    "placeholders": {
+      "serviceName": {}
+    }
+  },
+  "validation_password_required": "Please enter password",
+  "validation_password_min_length": "Password must be at least 6 characters",
+  "validation_confirm_password_required": "Please confirm password",
+  "validation_passwords_match": "Passwords do not match",
+  "validation_retype_password": "Confirm password",
+  "auth_save_new_password": "Save new password",
+  "auth_reset_password_success": "New password set successfully! You can now log in.",
+  "auth_reset_password_subtitle": "Please enter and confirm your new password to reset it.",
+  "auth_reset_password_title": "Reset Password",
+  "auth_pending_title": "Pending Approval",
+  "auth_pending_desc": "Your account is currently pending admin approval. Please contact the manager to activate access privileges for this app.",
+  "auth_retry": "Retry",
+  "auth_sign_out": "Sign Out",
+  "schedule_no_times_available": "No times available on this day",
+  "error_service_repository_unavailable": "ServiceRepository is unavailable",
+  "booking_select_main_service": "Select main service",
+  "reviews_title": "My Reviews & Ratings",
+  "reviews_overall_rating": "Overall Technician Rating",
+  "reviews_summary_desc": "Thank you for your hard work! Calculated based on {count} completed tasks.",
+  "@reviews_summary_desc": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "reviews_latest_feedback": "Latest Customer Feedback",
+  "reviews_no_reviews": "No published reviews for you yet.",
+  "reviews_previous_customer": "Previous Customer",
+  "reviews_load_error": "Failed to load reviews: {message}",
+  "@reviews_load_error": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "admin_dashboard_title": "Admin Dashboard",
+  "admin_welcome_title": "Welcome back!",
+  "admin_welcome_subtitle": "Here is a quick summary to manage data and operations.",
+  "admin_nav_dispatch": "Dispatch Schedule Board",
+  "admin_nav_dispatch_desc": "Live monitoring of team capacity, occupancy metrics, and task dispatching.",
+  "admin_nav_services": "Services Catalog",
+  "admin_nav_services_desc": "Manage and edit service categories, sub-services, and pricing lists.",
+  "admin_nav_pricing": "Pricing Governance",
+  "admin_nav_pricing_desc": "Configure conditional AST pricing rules, discounts, and audit logs.",
+  "admin_nav_bookings": "Bookings Management",
+  "admin_nav_bookings_desc": "Track active bookings, reassign staff, reschedule, and handle cancellations.",
+  "admin_nav_users": "Users Access Management",
+  "admin_nav_users_desc": "View and manage user accounts and system permissions.",
+  "admin_nav_finance": "Financial Control Center",
+  "admin_nav_finance_desc": "Manage staff wallets, manual adjustments, and approve payout requests.",
+  "admin_nav_reviews": "Reviews Moderation Dashboard",
+  "admin_nav_reviews_desc": "Moderate customer feedback, view overall ratings, and approve quarantined logs.",
+  "admin_nav_supabase": "Cloud Services (Supabase)",
+  "admin_nav_supabase_desc": "Browse migrated database services, configurations, and raw cloud data.",
+  "admin_nav_test": "Verification & Diagnostics",
+  "admin_nav_test_desc": "Test real-time data sync and cloud database integration endpoints."
 }

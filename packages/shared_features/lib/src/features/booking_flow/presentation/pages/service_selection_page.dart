@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/domain/service/entities/main_service_entity.dart';
 import 'package:shared/domain/service/entities/sub_service_entity.dart';
+import 'package:shared/presentation/localization/translations/app_localizations.dart';
 import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import '../cubit/booking_flow_cubit.dart';
@@ -39,8 +40,10 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
   Future<void> _loadServices() async {
     final cubit = context.read<BookingFlowCubit>();
     if (cubit.serviceRepository == null) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
-        _error = 'ServiceRepository غير متوفر';
+        _error = l10n.error_service_repository_unavailable;
         _loading = false;
       });
       return;
@@ -82,8 +85,10 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = Theme.of(context).extension<ThemeColorExtension>()!;
+    final themeColor = context.themeColor;
     final themeText = Theme.of(context).extension<AppTextThemeExtension>()!;
+    final l10n = AppLocalizations.of(context)!;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
@@ -92,36 +97,40 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
     if (_error != null) {
       return Center(
         child: Text(_error!,
-            style: const TextStyle(color: Colors.red),
+            style: TextStyle(color: themeColor.error),
             textAlign: TextAlign.center),
       );
     }
 
     return BlocBuilder<BookingFlowCubit, BookingFlowState>(
       builder: (context, state) {
+        final selectedMainTitle = _selectedMain != null
+            ? (_selectedMain!.title[isArabic ? 'ar' : 'en'] ?? _selectedMain!.title['ar'] ?? '')
+            : '';
+
         return ListView(
           controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
           children: [
-            Text('اختر الخدمة الرئيسية',
+            Text(l10n.booking_select_main_service,
                 style: themeText.titleSectionSmall.copyWith(
-                    fontWeight: FontWeight.w900, fontSize: 18, fontFamily: 'Cairo')),
+                    fontWeight: FontWeight.w900, fontSize: 18)),
             const SizedBox(height: 20),
             ..._mainServices
-                .map((s) => _buildMainServiceCard(s, themeColor, themeText)),
+                .map((s) => _buildMainServiceCard(s, themeColor, themeText, isArabic)),
 
             if (_selectedMain != null) ...[
               const SizedBox(height: 40),
               Text(
-                'خدمات ${_selectedMain!.title['ar']}',
+                l10n.booking_services_of(selectedMainTitle),
                 key: _subServicesKey,
                 style: themeText.titleSectionSmall.copyWith(
-                    fontWeight: FontWeight.w900, fontSize: 18, fontFamily: 'Cairo'),
+                    fontWeight: FontWeight.w900, fontSize: 18),
               ),
               const SizedBox(height: 20),
               ..._selectedMain!.subServices
                   .map((sub) =>
-                      _buildSubServiceCard(sub, themeColor, themeText, state)),
+                      _buildSubServiceCard(sub, themeColor, themeText, state, isArabic, l10n)),
             ],
           ],
         );
@@ -130,8 +139,10 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
   }
 
   Widget _buildMainServiceCard(MainServiceEntity service,
-      ThemeColorExtension themeColor, AppTextThemeExtension themeText) {
+      ThemeColorExtension themeColor, AppTextThemeExtension themeText, bool isArabic) {
     final isSelected = _selectedMain?.id == service.id;
+    final title = service.title[isArabic ? 'ar' : 'en'] ?? service.title['ar'] ?? '';
+
     return GestureDetector(
       onTap: () => _onMainServiceSelected(service),
       child: AnimatedContainer(
@@ -139,7 +150,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : themeColor.cardBackground,
+          color: isSelected ? themeColor.cardBackground : themeColor.nestedCardBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
               color: isSelected ? themeColor.primary : Colors.transparent,
@@ -170,11 +181,10 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
           const SizedBox(width: 16),
           Expanded(
             child: Text(
-              service.title['ar'] ?? '',
+              title,
               style: themeText.textBodyPrimary.copyWith(
                 fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold,
                 fontSize: 16,
-                fontFamily: 'Cairo',
               ),
             ),
           ),
@@ -187,8 +197,10 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
 
   Widget _buildSubServiceCard(SubServiceEntity sub,
       ThemeColorExtension themeColor, AppTextThemeExtension themeText,
-      BookingFlowState state) {
+      BookingFlowState state, bool isArabic, AppLocalizations l10n) {
     final isSelected = state.service?.subServiceId == sub.id;
+    final title = sub.title[isArabic ? 'ar' : 'en'] ?? sub.title['ar'] ?? '';
+
     return GestureDetector(
       onTap: () {
         context.read<BookingFlowCubit>().selectService(sub);
@@ -198,7 +210,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.5),
+          color: isSelected ? themeColor.cardBackground : themeColor.cardBackground.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
               color: isSelected ? themeColor.primary : themeColor.unselectedItem.withValues(alpha: 0.1),
@@ -218,10 +230,9 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(sub.title['ar'] ?? '',
+                Text(title,
                     style: themeText.textBodyPrimary.copyWith(
                       fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold,
-                      fontFamily: 'Cairo',
                     )),
                 const SizedBox(height: 6),
                 Container(
@@ -231,12 +242,11 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '${sub.price} ج.م',
+                    '${sub.price} ${l10n.pricing_currency_short}',
                     style: themeText.textCaption.copyWith(
                         color: themeColor.primary,
                         fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                        fontFamily: 'Cairo'),
+                        fontSize: 12),
                   ),
                 ),
               ],

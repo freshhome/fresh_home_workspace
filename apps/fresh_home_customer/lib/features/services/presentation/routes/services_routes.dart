@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/core/constants/app_routes.dart';
 import 'package:fresh_home_customer/core/injection/injection_container.dart' as di;
 import 'package:fresh_home_customer/features/services/presentation/cubit/services_cubit.dart';
+import 'package:fresh_home_customer/features/services/presentation/cubit/service_reviews_cubit.dart';
 import 'package:fresh_home_customer/features/services/presentation/pages/services_page.dart';
 import 'package:fresh_home_customer/features/services/presentation/pages/service_details_page.dart';
 
@@ -25,13 +26,21 @@ class ServicesRoutes {
           builder: (context, state) {
             final serviceId = state.uri.queryParameters['serviceId'] ?? '';
             final subServiceId = state.uri.queryParameters['subServiceId'] ?? '';
-            return BlocProvider<ServicesCubit>(
-              create: (context) => di.getIt<ServicesCubit>()
-                ..getServiceDetails(
-                  mainServiceId: serviceId,
-                  subserviceId: subServiceId,
-                  forceRemote: true,
+            return MultiBlocProvider(
+              providers: [
+                BlocProvider<ServicesCubit>(
+                  create: (context) => di.getIt<ServicesCubit>()
+                    ..getServiceDetails(
+                      mainServiceId: serviceId,
+                      subserviceId: subServiceId,
+                      forceRemote: true,
+                    ),
                 ),
+                BlocProvider<ServiceReviewsCubit>(
+                  create: (context) => di.getIt<ServiceReviewsCubit>()
+                    ..fetchReviews(serviceId: subServiceId),
+                ),
+              ],
               child: ServiceDetailsPage(
                 serviceId: serviceId,
                 subServiceId: subServiceId,
@@ -43,3 +52,4 @@ class ServicesRoutes {
     ),
   ];
 }
+

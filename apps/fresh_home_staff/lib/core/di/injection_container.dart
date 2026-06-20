@@ -18,6 +18,9 @@ import '../../features/home/presentation/cubit/home_cubit.dart';
 import '../../features/home/presentation/routes/home_routes.dart';
 import '../../features/technician_schedule/presentation/routes/technician_schedule_routes.dart';
 import '../../features/technician_schedule/presentation/cubit/smart_schedule_cubit.dart';
+import '../../features/reviews/presentation/routes/technician_reviews_routes.dart';
+import '../../features/reviews/presentation/cubit/technician_reviews_cubit.dart';
+import '../../features/reviews/domain/use_cases/fetch_technician_reviews_use_case.dart';
 
 final getIt = GetIt.instance;
 
@@ -31,6 +34,7 @@ Future<void> initAppDI() async {
       ...TechnicianOrdersRoutes.routes,
       ...HomeRoutes.routes,
       ...TechnicianScheduleRoutes.routes,
+      ...TechnicianReviewsRoutes.routes,
     ],
     navigationConfig: NavigationConfig(
       items: [
@@ -122,6 +126,18 @@ Future<void> initAppDI() async {
     () => TechnicianFinanceCubit(getIt<TechnicianFinanceRepository>()),
   );
 
+  // Technician Reviews Feature
+  getIt.registerLazySingleton<FetchTechnicianReviewsUseCase>(
+    () => FetchTechnicianReviewsUseCase(getIt<ReviewsRepository>()),
+  );
+
+  getIt.registerFactory<TechnicianReviewsCubit>(
+    () => TechnicianReviewsCubit(
+      fetchTechnicianReviewsUseCase: getIt<FetchTechnicianReviewsUseCase>(),
+    ),
+  );
+
   // Register local home feature
   await initHomeDI(getIt);
 }
+

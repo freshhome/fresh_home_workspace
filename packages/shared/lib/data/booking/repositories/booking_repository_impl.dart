@@ -196,6 +196,20 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
+  Future<Either<Failure, void>> adminConfirmWhatsappBooking({
+    required String bookingId,
+  }) async {
+    try {
+      await remoteDataSource.adminConfirmWhatsappBooking(bookingId);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> updateBookingSchedule({
     required String bookingId,
     required DateTime newDay,

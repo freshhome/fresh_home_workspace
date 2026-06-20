@@ -6,4 +6,3 @@ export 'use_cases/update_address.dart';
 export 'use_cases/update_phone_number.dart';
 export 'use_cases/update_user_name.dart';
 export 'use_cases/update_profile.dart';
-export 'entities/user_with_profile.dart';

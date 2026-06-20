@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared/domain/user/entities/user/address.dart';
-import 'package:shared/presentation/localization/translations/app_localizations.dart';
-import 'package:shared/presentation/theme/components/colors/theme_colors.dart';
+import 'package:shared/shared.dart';
 
 class AddressCard extends StatelessWidget {
   final Address address;
@@ -18,20 +16,17 @@ class AddressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final themeColor = context.themeColor;
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: themeColor.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF0F0F0)),
+        border: Border.fromBorderSide(themeColor.cardBorder),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+          themeColor.cardShadow,
         ],
       ),
       child: Row(
@@ -40,12 +35,12 @@ class AddressCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: ThemeColors.primaryLight.withValues(alpha: 0.1),
+              color: themeColor.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.location_on_rounded,
-              color: ThemeColors.primaryLight,
+              color: themeColor.primary,
               size: 20,
             ),
           ),
@@ -56,10 +51,10 @@ class AddressCard extends StatelessWidget {
               children: [
                 Text(
                   "${address.city}, ${address.governorate}",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Colors.black87,
+                    color: themeColor.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -67,7 +62,7 @@ class AddressCard extends StatelessWidget {
                   "${address.street}, ${l10n.address_building_label} ${address.buildingNumber}",
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: themeColor.secondaryText,
                   ),
                 ),
                 if ((address.floorNumber != null && address.floorNumber!.isNotEmpty) || (address.apartmentNumber != null && address.apartmentNumber!.isNotEmpty))
@@ -77,7 +72,7 @@ class AddressCard extends StatelessWidget {
                       "${l10n.address_floor_label} ${address.floorNumber?.isNotEmpty == true ? address.floorNumber : '-'}, ${l10n.address_apartment_label} ${address.apartmentNumber?.isNotEmpty == true ? address.apartmentNumber : '-'}",
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey[500],
+                        color: themeColor.secondaryText,
                       ),
                     ),
                   ),
@@ -88,7 +83,7 @@ class AddressCard extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: onEdit,
-                icon: const Icon(Icons.edit_outlined, color: ThemeColors.primaryLight, size: 20),
+                icon: Icon(Icons.edit_outlined, color: themeColor.primary, size: 20),
                 constraints: const BoxConstraints(),
                 padding: const EdgeInsets.all(8),
               ),

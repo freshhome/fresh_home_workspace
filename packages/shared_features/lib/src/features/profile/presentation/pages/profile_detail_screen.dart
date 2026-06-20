@@ -3,9 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared/shared.dart';
-import 'package:shared/domain/user/entities/user/phone.dart';
-import 'package:shared_features/src/features/profile/domain/entities/user_with_profile.dart';
-import 'package:shared/presentation/theme/components/colors/theme_colors.dart';
 import '../cubit/profile_cubit.dart';
 import '../widgets/address_card.dart';
 
@@ -16,6 +13,8 @@ class PremiumSnackBar {
     String message, {
     bool isError = true,
   }) {
+    final themeColor = context.themeColor;
+    final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         elevation: 0,
@@ -25,11 +24,11 @@ class PremiumSnackBar {
           padding: const EdgeInsets.all(16),
           height: 80,
           decoration: BoxDecoration(
-            color: isError ? Colors.red[400] : ThemeColors.primaryLight,
+            color: isError ? Colors.red[400] : themeColor.primary,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: (isError ? Colors.red : ThemeColors.primaryLight)
+                color: (isError ? Colors.red : themeColor.primary)
                     .withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
@@ -52,7 +51,7 @@ class PremiumSnackBar {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      isError ? 'Error Occurred' : 'Success',
+                      isError ? l10n.general_error : l10n.general_success,
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -114,17 +113,17 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     super.dispose();
   }
 
-  void _initializeControllers(UserWithProfile profile) {
+  void _initializeControllers(UserProfile profile) {
     if (_firstNameController.text.isEmpty)
-      _firstNameController.text = profile.user.firstName;
+      _firstNameController.text = profile.firstName;
     if (_lastNameController.text.isEmpty)
-      _lastNameController.text = profile.user.lastName;
+      _lastNameController.text = profile.lastName;
 
     if (_emailController.text.isEmpty)
-      _emailController.text = profile.user.email;
-    _selectedGender = profile.user.gender;
+      _emailController.text = profile.email;
+    _selectedGender = profile.gender;
 
-    final currentPhones = profile.clientProfile?.phoneNumbers ?? [];
+    final currentPhones = profile.phoneNumbers;
     final primaryPhone = currentPhones.isNotEmpty
         ? currentPhones
               .firstWhere((p) => p.isPrimary, orElse: () => currentPhones.first)
@@ -138,27 +137,28 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final themeColor = context.themeColor;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFBFBFB),
+      backgroundColor: themeColor.background,
       appBar: AppBar(
         title: Text(
           l10n.profile_title,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: themeColor.textPrimary,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: Colors.black,
+            color: themeColor.textPrimary,
             size: 20,
           ),
           onPressed: () => context.go(GetIt.I<NavigationConfig>().initialPath),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: themeColor.cardBackground,
         elevation: 0,
       ),
       body: BlocConsumer<ProfileCubit, ProfileState>(
@@ -177,8 +177,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         },
         builder: (context, state) {
           if (state is ProfileLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: ThemeColors.primaryLight),
+            return Center(
+              child: CircularProgressIndicator(color: themeColor.primary),
             );
           }
 
@@ -198,11 +198,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
   }
 
-  Widget _buildProfileContent(UserWithProfile profile, ProfileState state) {
+  Widget _buildProfileContent(UserProfile profile, ProfileState state) {
     final l10n = AppLocalizations.of(context)!;
-    final clientProfile = profile.clientProfile;
-    final additionalPhones = clientProfile?.phoneNumbers ?? [];
-    final addresses = clientProfile?.addresses ?? [];
+    final themeColor = context.themeColor;
+    final additionalPhones = profile.phoneNumbers;
+    final addresses = profile is CustomerProfile ? profile.addresses : const <Address>[];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
@@ -215,17 +215,17 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundColor: ThemeColors.primaryLight.withValues(
+                  backgroundColor: themeColor.primary.withValues(
                     alpha: 0.1,
                   ),
-                  backgroundImage: profile.user.avatarUrl != null
-                      ? NetworkImage(profile.user.avatarUrl!)
+                  backgroundImage: profile.avatarUrl != null
+                      ? NetworkImage(profile.avatarUrl!)
                       : null,
-                  child: profile.user.avatarUrl == null
-                      ? const Icon(
+                  child: profile.avatarUrl == null
+                      ? Icon(
                           Icons.person_rounded,
                           size: 60,
-                          color: ThemeColors.primaryLight,
+                          color: themeColor.primary,
                         )
                       : null,
                 ),
@@ -234,8 +234,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   right: 0,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: ThemeColors.primaryLight,
+                    decoration: BoxDecoration(
+                      color: themeColor.primary,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -258,9 +258,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: themeColor.cardBackground,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFF0F0F0)),
+                border: Border.fromBorderSide(themeColor.cardBorder),
               ),
               child: Column(
                 children: [
@@ -306,13 +306,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         ),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFF0F0F0)),
+                          border: Border.fromBorderSide(themeColor.cardBorder),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.wc_rounded,
-                              color: ThemeColors.primaryLight.withValues(
+                              color: themeColor.primary.withValues(
                                 alpha: 0.7,
                               ),
                               size: 20,
@@ -321,7 +321,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             Text(
                               l10n.profile_gender_label,
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: themeColor.secondaryText,
                                 fontSize: 13,
                               ),
                             ),
@@ -329,8 +329,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             DropdownButton<String>(
                               value: _selectedGender,
                               underline: const SizedBox(),
-                              icon: const Icon(
+                              dropdownColor: themeColor.cardBackground,
+                              icon: Icon(
                                 Icons.keyboard_arrow_down_rounded,
+                                color: themeColor.textPrimary,
                               ),
                               onChanged: (val) {
                                 if (val != null) {
@@ -341,15 +343,24 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                               items: [
                                 DropdownMenuItem(
                                   value: 'unspecified',
-                                  child: Text(l10n.gender_unspecified),
+                                  child: Text(
+                                    l10n.gender_unspecified,
+                                    style: TextStyle(color: themeColor.textPrimary),
+                                  ),
                                 ),
                                 DropdownMenuItem(
                                   value: 'male',
-                                  child: Text(l10n.gender_male),
+                                  child: Text(
+                                    l10n.gender_male,
+                                    style: TextStyle(color: themeColor.textPrimary),
+                                  ),
                                 ),
                                 DropdownMenuItem(
                                   value: 'female',
-                                  child: Text(l10n.gender_female),
+                                  child: Text(
+                                    l10n.gender_female,
+                                    style: TextStyle(color: themeColor.textPrimary),
+                                  ),
                                 ),
                               ],
                             ),
@@ -377,7 +388,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: ThemeColors.primaryLight,
+                backgroundColor: themeColor.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -397,7 +408,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           const SizedBox(height: 32),
 
           // Technician Section
-          if (profile.technicianProfile != null) ...[
+          if (profile is TechnicianProfile) ...[
             _buildTechnicianSection(profile),
             const SizedBox(height: 32),
           ],
@@ -451,29 +462,30 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   Widget _buildSectionHeader(String title, {VoidCallback? onAdd}) {
+    final themeColor = context.themeColor;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: themeColor.textPrimary,
           ),
         ),
         if (onAdd != null)
           TextButton.icon(
             onPressed: onAdd,
-            icon: const Icon(
+            icon: Icon(
               Icons.add_circle_outline_rounded,
               size: 20,
-              color: ThemeColors.primaryLight,
+              color: themeColor.primary,
             ),
             label: Text(
               AppLocalizations.of(context)!.general_add,
-              style: const TextStyle(
-                color: ThemeColors.primaryLight,
+              style: TextStyle(
+                color: themeColor.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -483,18 +495,19 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   Widget _buildEmptyState(String message) {
+    final themeColor = context.themeColor;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: themeColor.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF0F0F0)),
+        border: Border.fromBorderSide(themeColor.cardBorder),
       ),
       child: Center(
         child: Text(
           message,
-          style: TextStyle(color: Colors.grey[400], fontSize: 14),
+          style: TextStyle(color: themeColor.secondaryText, fontSize: 14),
         ),
       ),
     );
@@ -505,21 +518,26 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     Phone phone,
     List<Phone> currentPhones,
   ) {
+    final themeColor = context.themeColor;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: themeColor.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF0F0F0)),
+        border: Border.fromBorderSide(themeColor.cardBorder),
       ),
       child: Row(
         children: [
-          const Icon(Icons.phone_android_rounded, size: 20, color: Colors.grey),
+          Icon(Icons.phone_android_rounded, size: 20, color: themeColor.secondaryText),
           const SizedBox(width: 12),
           Text(
             phone.phoneNumber,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: themeColor.textPrimary,
+            ),
           ),
           const Spacer(),
           IconButton(
@@ -544,14 +562,19 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     final phoneController = TextEditingController();
     final l10n = AppLocalizations.of(context)!;
     final phoneFormKey = GlobalKey<FormState>();
+    final themeColor = context.themeColor;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: themeColor.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           l10n.phone_add_button,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: themeColor.textPrimary,
+          ),
         ),
         content: Form(
           key: phoneFormKey,
@@ -569,7 +592,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               l10n.general_cancel,
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: themeColor.secondaryText),
             ),
           ),
           ElevatedButton(
@@ -582,7 +605,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: ThemeColors.primaryLight,
+              backgroundColor: themeColor.primary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -603,6 +626,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     int? index,
   }) {
     final l10n = AppLocalizations.of(context)!;
+    final themeColor = context.themeColor;
 
     // Governorate & City Data
     final governoratesList = [l10n.address_gov_cairo, l10n.address_gov_giza];
@@ -669,6 +693,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: themeColor.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -692,7 +717,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: themeColor.secondaryText.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -702,21 +727,26 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     address == null
                         ? l10n.add_new_address
                         : l10n.address_edit_title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: themeColor.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 20),
 
                   // Governorate
                   DropdownButtonFormField<String>(
+                    dropdownColor: themeColor.cardBackground,
                     initialValue: governoratesList.contains(selectedGov)
                         ? selectedGov
                         : null,
                     decoration: _inputDecoration(l10n.address_governorate),
                     items: governoratesList
-                        .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                        .map((g) => DropdownMenuItem(
+                              value: g,
+                              child: Text(g, style: TextStyle(color: themeColor.textPrimary)),
+                            ))
                         .toList(),
                     onChanged: (val) {
                       setModalState(() {
@@ -729,12 +759,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           val,
                           l10n: l10n,
                         ),
-                    hint: Text(l10n.address_governorate),
+                    hint: Text(l10n.address_governorate, style: TextStyle(color: themeColor.secondaryText)),
                   ),
                   const SizedBox(height: 12),
 
                   // City
                   DropdownButtonFormField<String>(
+                    dropdownColor: themeColor.cardBackground,
                     initialValue:
                         (selectedGov != null &&
                             (citiesMap[selectedGov]?.contains(selectedCity) ??
@@ -753,7 +784,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             .map<DropdownMenuItem<String>>(
                               (c) => DropdownMenuItem<String>(
                                 value: c,
-                                child: Text(c),
+                                child: Text(c, style: TextStyle(color: themeColor.textPrimary)),
                               ),
                             )
                             .toList(),
@@ -767,8 +798,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           val,
                           l10n: l10n,
                         ),
-                    hint: Text(l10n.address_city),
-                    disabledHint: Text(l10n.address_select_governorate_first),
+                    hint: Text(l10n.address_city, style: TextStyle(color: themeColor.secondaryText)),
+                    disabledHint: Text(l10n.address_select_governorate_first, style: TextStyle(color: themeColor.secondaryText)),
                   ),
                   const SizedBox(height: 12),
 
@@ -861,7 +892,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: ThemeColors.primaryLight,
+                        backgroundColor: themeColor.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -891,34 +922,35 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
+    final themeColor = context.themeColor;
     return TextFormField(
       controller: controller,
       readOnly: readOnly,
       keyboardType: keyboardType,
       validator: validator,
-      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: themeColor.textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
+        labelStyle: TextStyle(color: themeColor.secondaryText, fontSize: 13),
         prefixIcon: Icon(
           icon,
-          color: ThemeColors.primaryLight.withValues(alpha: 0.7),
+          color: themeColor.primary.withValues(alpha: 0.7),
           size: 20,
         ),
         filled: true,
-        fillColor: readOnly ? const Color(0xFFF9F9F9) : Colors.white,
+        fillColor: readOnly ? themeColor.nestedCardBackground : themeColor.cardBackground,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFF0F0F0)),
+          borderSide: BorderSide(color: themeColor.cardBorder.color),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFF0F0F0)),
+          borderSide: BorderSide(color: themeColor.cardBorder.color),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: ThemeColors.primaryLight,
+          borderSide: BorderSide(
+            color: themeColor.primary,
             width: 1.5,
           ),
         ),
@@ -932,6 +964,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   Widget _buildErrorView(BuildContext context, String message) {
     final l10n = AppLocalizations.of(context)!;
+    final themeColor = context.themeColor;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -942,13 +975,17 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             const SizedBox(height: 24),
             Text(
               l10n.general_error,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: themeColor.textPrimary,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600], fontSize: 15),
+              style: TextStyle(color: themeColor.secondaryText, fontSize: 15),
             ),
             const SizedBox(height: 32),
             SizedBox(
@@ -958,7 +995,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 icon: const Icon(Icons.refresh_rounded),
                 label: Text(l10n.general_retry),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: ThemeColors.primaryLight,
+                  backgroundColor: themeColor.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
@@ -975,22 +1012,24 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   InputDecoration _inputDecoration(String hint) {
+    final themeColor = context.themeColor;
     return InputDecoration(
       hintText: hint,
+      hintStyle: TextStyle(color: themeColor.secondaryText),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: themeColor.cardBackground,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFF0F0F0)),
+        borderSide: BorderSide(color: themeColor.cardBorder.color),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFF0F0F0)),
+        borderSide: BorderSide(color: themeColor.cardBorder.color),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(
-          color: ThemeColors.primaryLight,
+        borderSide: BorderSide(
+          color: themeColor.primary,
           width: 1.5,
         ),
       ),
@@ -998,21 +1037,24 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
   }
 
-  Widget _buildTechnicianSection(UserWithProfile profile) {
-    final tech = profile.technicianProfile!;
+  Widget _buildTechnicianSection(UserProfile profile) {
+    if (profile is! TechnicianProfile) return const SizedBox.shrink();
+    final tech = profile;
+    final l10n = AppLocalizations.of(context)!;
+    final themeColor = context.themeColor;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'الملف الفني',
+            Text(
+              l10n.tech_profile_title,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
-                fontFamily: 'Cairo',
+                color: themeColor.textPrimary,
               ),
             ),
             if (tech.isVerified)
@@ -1025,17 +1067,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.verified_rounded, color: Colors.green, size: 16),
-                    SizedBox(width: 4),
+                    const Icon(Icons.verified_rounded, color: Colors.green, size: 16),
+                    const SizedBox(width: 4),
                     Text(
-                      'موثق',
-                      style: TextStyle(
+                      l10n.tech_profile_verified,
+                      style: const TextStyle(
                         color: Colors.green,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        fontFamily: 'Cairo',
                       ),
                     ),
                   ],
@@ -1048,7 +1089,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           children: [
             Expanded(
               child: _buildTechStatCard(
-                title: 'التقييم',
+                title: l10n.tech_profile_rating,
                 value: tech.rating.toStringAsFixed(1),
                 icon: Icons.star_rounded,
                 color: Colors.amber,
@@ -1057,10 +1098,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: _buildTechStatCard(
-                title: 'المهام المنجزة',
+                title: l10n.tech_profile_completed_jobs,
                 value: tech.completedJobs.toString(),
                 icon: Icons.task_alt_rounded,
-                color: ThemeColors.primaryLight,
+                color: themeColor.primary,
               ),
             ),
           ],
@@ -1070,52 +1111,49 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: themeColor.cardBackground,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFF0F0F0)),
+            border: Border.fromBorderSide(themeColor.cardBorder),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
                   Icon(
                     Icons.info_outline_rounded,
-                    color: Colors.grey,
+                    color: themeColor.secondaryText,
                     size: 20,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
-                    'النبذة التعريفية',
+                    l10n.tech_profile_bio,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontFamily: 'Cairo',
-                      color: Colors.black87,
+                      color: themeColor.textPrimary,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               Text(
-                tech.bio ?? 'لم يقم الفني بكتابة نبذة تعريفية بعد.',
+                tech.bio ?? l10n.tech_profile_bio_empty,
                 style: TextStyle(
-                  color: tech.bio != null ? Colors.black87 : Colors.grey[500],
+                  color: tech.bio != null ? themeColor.textPrimary : themeColor.secondaryText,
                   fontSize: 14,
                   height: 1.5,
-                  fontFamily: 'Cairo',
                 ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
-        const Text(
-          'التخصصات والقدرة اليومية',
+        Text(
+          l10n.tech_profile_skills_capacity,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
-            fontFamily: 'Cairo',
+            color: themeColor.textPrimary,
           ),
         ),
         const SizedBox(height: 16),
@@ -1124,16 +1162,21 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
   }
 
-  Widget _buildCapacityPoolsSection(UserWithProfile profile) {
-    final pools = profile.capacityPools ?? [];
+  Widget _buildCapacityPoolsSection(UserProfile profile) {
+    if (profile is! TechnicianProfile) return const SizedBox.shrink();
+    final tech = profile;
+    final pools = tech.capacityPools;
+    final l10n = AppLocalizations.of(context)!;
+    final themeColor = context.themeColor;
+
     if (pools.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: themeColor.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF0F0F0)),
+          border: Border.fromBorderSide(themeColor.cardBorder),
         ),
         child: Column(
           children: [
@@ -1143,24 +1186,22 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               size: 40,
             ),
             const SizedBox(height: 12),
-            const Text(
-              'لم يتم تحديد خزانات القدرة أو التخصصات بعد من قبل المسؤول.',
+            Text(
+              l10n.tech_profile_skills_empty_admin,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.black54,
+                color: themeColor.textPrimary,
                 fontSize: 14,
-                fontFamily: 'Cairo',
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 6),
             Text(
-              'يرجى التواصل مع الإدارة لتفعيل خدماتك وتحديد طاقتك الاستيعابية اليومية.',
+              l10n.tech_profile_skills_empty_admin_desc,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.grey[500],
+                color: themeColor.secondaryText,
                 fontSize: 12,
-                fontFamily: 'Cairo',
               ),
             ),
           ],
@@ -1170,24 +1211,19 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
     return Column(
       children: pools.map((pool) {
-        final poolSkills = profile.technicianSkills
-                ?.where((s) => s.capacityPoolId == pool.id && s.isActive)
-                .toList() ??
-            [];
+        final poolSkills = tech.technicianSkills
+            .where((s) => s.capacityPoolId == pool.id && s.isActive)
+            .toList();
 
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: themeColor.cardBackground,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFF0F0F0)),
+            border: Border.fromBorderSide(themeColor.cardBorder),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
+              themeColor.cardShadow,
             ],
           ),
           child: Column(
@@ -1198,12 +1234,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: ThemeColors.primaryLight.withValues(alpha: 0.1),
+                      color: themeColor.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.work_history_rounded,
-                      color: ThemeColors.primaryLight,
+                      color: themeColor.primary,
                       size: 20,
                     ),
                   ),
@@ -1211,28 +1247,26 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   Expanded(
                     child: Text(
                       pool.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        fontFamily: 'Cairo',
-                        color: Colors.black87,
+                        color: themeColor.textPrimary,
                       ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              Divider(color: Colors.grey[100]),
+              Divider(color: themeColor.cardBorder.color),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'القدرة اليومية:',
+                    l10n.tech_profile_daily_capacity,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[600],
-                      fontFamily: 'Cairo',
+                      color: themeColor.secondaryText,
                     ),
                   ),
                   Container(
@@ -1242,12 +1276,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '${pool.maxDailyCapacity} مهام / يوم',
+                      l10n.tech_profile_tasks_per_day(pool.maxDailyCapacity.toString()),
                       style: const TextStyle(
                         color: Colors.green,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        fontFamily: 'Cairo',
                       ),
                     ),
                   ),
@@ -1255,22 +1288,20 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'الخدمات المقدمة:',
+                l10n.tech_profile_services_provided,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
-                  fontFamily: 'Cairo',
+                  color: themeColor.secondaryText,
                 ),
               ),
               const SizedBox(height: 8),
               if (poolSkills.isEmpty)
                 Text(
-                  'لا توجد خدمات نشطة مسندة لهذا الخزان حالياً.',
+                  l10n.tech_profile_skills_empty,
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: themeColor.secondaryText,
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
-                    fontFamily: 'Cairo',
                   ),
                 )
               else
@@ -1278,30 +1309,29 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: poolSkills.map((skill) {
-                    final subServiceName = profile.subServiceNames?[skill.subServiceId] ?? skill.subServiceId;
+                    final subServiceName = tech.subServiceNames[skill.subServiceId] ?? skill.subServiceId;
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.blueGrey.withValues(alpha: 0.05),
-                        border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.15)),
+                        color: themeColor.nestedCardBackground,
+                        border: Border.fromBorderSide(themeColor.cardBorder),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.check_circle_outline_rounded,
-                            color: Colors.blueGrey,
+                            color: themeColor.primary,
                             size: 14,
                           ),
                           const SizedBox(width: 6),
                           Text(
                             subServiceName,
-                            style: const TextStyle(
-                              color: Colors.blueGrey,
+                            style: TextStyle(
+                              color: themeColor.textPrimary,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              fontFamily: 'Cairo',
                             ),
                           ),
                         ],
@@ -1322,18 +1352,15 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     required IconData icon,
     required Color color,
   }) {
+    final themeColor = context.themeColor;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: themeColor.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF0F0F0)),
+        border: Border.fromBorderSide(themeColor.cardBorder),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+          themeColor.cardShadow,
         ],
       ),
       child: Column(
@@ -1350,14 +1377,17 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: themeColor.textPrimary,
+            ),
           ),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Colors.grey,
-              fontFamily: 'Cairo',
+              color: themeColor.secondaryText,
             ),
           ),
         ],

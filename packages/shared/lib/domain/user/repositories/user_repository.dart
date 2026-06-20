@@ -1,17 +1,13 @@
 import 'package:fpdart/fpdart.dart';
-
-import 'package:shared/domain/user/entities/user/user.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 import 'package:shared/core/error/failures.dart';
 
 abstract class UserRepository {
-  // ! تسجيل المستخدم
   Future<Either<Failure, void>> createUser({
-    required User user,
+    required UserProfile user,
   });
 
-  // ! الحصول على المستخدم بـ uid
-  Future<Either<Failure, User>> getUserById({required String uid});
+  Future<Either<Failure, UserProfile>> getUserById({required String uid});
 
-  // ! تحديث المستخدم
-  Future<Either<Failure, void>> updateUser({required User user});
+  Future<Either<Failure, void>> updateUser({required UserProfile user});
 }

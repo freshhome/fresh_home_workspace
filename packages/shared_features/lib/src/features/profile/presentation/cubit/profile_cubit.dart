@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/domain/user/entities/user/address.dart';
 import 'package:shared/domain/user/entities/user/phone.dart';
 import 'package:shared/core/error/failures.dart';
-import '../../domain/entities/user_with_profile.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 import '../../domain/use_cases/add_address.dart';
 import '../../domain/use_cases/delete_address.dart';
 import '../../domain/use_cases/load_profile.dart';
@@ -72,7 +72,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       },
       (profileAfterCore) async {
         // 2. Check and Update Phone if changed
-        final currentPhones = profileAfterCore.clientProfile?.phoneNumbers ?? [];
+        final currentPhones = profileAfterCore.phoneNumbers;
         
         final hasPrimary = currentPhones.any((p) => p.isPrimary);
         Phone? primaryPhone = hasPrimary 
@@ -97,7 +97,7 @@ class ProfileCubit extends Cubit<ProfileState> {
                (finalProfile) => emit(ProfileLoaded(finalProfile))
            );
         } else if (primaryPhone == null && phone.isNotEmpty) {
-           final updatedPhones = [Phone(id: null, userId: profileAfterCore.user.uid, phoneNumber: phone, isPrimary: true, isVerified: false, createdAt: DateTime.now())];
+           final updatedPhones = [Phone(id: null, userId: profileAfterCore.uid, phoneNumber: phone, isPrimary: true, isVerified: false, createdAt: DateTime.now())];
            final resPhone = await updatePhoneNumbersUseCase(updatedPhones);
            if (isClosed) return;
            resPhone.fold(
@@ -119,7 +119,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     final current = state is ProfileLoaded ? (state as ProfileLoaded).profile : null;
     if (current == null) return;
     
-    final currentPhones = current.clientProfile?.phoneNumbers ?? [];
+    final currentPhones = current.phoneNumbers;
     final primaryPhone = currentPhones.isNotEmpty 
         ? currentPhones.firstWhere((p) => p.isPrimary, orElse: () => currentPhones.first).phoneNumber 
         : '';
@@ -128,8 +128,8 @@ class ProfileCubit extends Cubit<ProfileState> {
       firstName: firstName,
       lastName: lastName,
       phone: primaryPhone,
-      gender: current.user.gender,
-      avatarUrl: current.user.avatarUrl,
+      gender: current.gender,
+      avatarUrl: current.avatarUrl,
     );
   }
 
@@ -138,13 +138,13 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (state is ProfileLoaded) {
       final currentProfile = (state as ProfileLoaded).profile;
       
-        final currentList = currentProfile.clientProfile?.phoneNumbers ?? [];
+        final currentList = currentProfile.phoneNumbers;
         bool phoneExists = currentList.any((p) => p.phoneNumber == phone);
         if (!phoneExists) {
           final updatedList = List<Phone>.from(currentList)
             ..add(Phone(
               id: null,
-              userId: currentProfile.user.uid,
+              userId: currentProfile.uid,
               phoneNumber: phone,
               isPrimary: currentList.isEmpty,
               isVerified: false,

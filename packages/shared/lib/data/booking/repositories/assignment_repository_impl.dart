@@ -3,7 +3,7 @@ import 'package:shared/core/error/failures.dart';
 import 'package:shared/data/booking/datasources/assignment_remote_data_source.dart';
 import 'package:shared/domain/booking/entities/availability/day_availability.dart';
 import 'package:shared/domain/booking/repositories/assignment_repository.dart';
-import 'package:shared/domain/user/entities/user/technician_profile.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 
 class AssignmentRepositoryImpl implements AssignmentRepository {
   final AssignmentRemoteDataSource _remoteDataSource;

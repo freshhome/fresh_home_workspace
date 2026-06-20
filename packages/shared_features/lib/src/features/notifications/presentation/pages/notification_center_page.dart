@@ -20,7 +20,7 @@ class NotificationCenterPage extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: themeColor.background,
         appBar: AppBar(
           title: Text(
             l10n.notifications_title,
@@ -29,7 +29,7 @@ class NotificationCenterPage extends StatelessWidget {
             ),
           ),
           centerTitle: true,
-          backgroundColor: Colors.white,
+          backgroundColor: themeColor.cardBackground,
           elevation: 0,
           actions: [
             IconButton(
@@ -227,7 +227,7 @@ class _NotificationTile extends StatelessWidget {
     final themeText = Theme.of(context).extension<AppTextThemeExtension>()!;
     final timeStr = DateFormat(
       'hh:mm a - dd/MM',
-      'ar',
+      Localizations.localeOf(context).languageCode,
     ).format(notification.createdAt);
 
     return AnimatedContainer(
@@ -244,21 +244,17 @@ class _NotificationTile extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: notification.isRead
-                ? Colors.white
+                ? themeColor.cardBackground
                 : themeColor.primary.withValues(alpha: 0.03),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: notification.isRead
-                  ? Colors.white
+                  ? themeColor.cardBackground
                   : themeColor.primary.withValues(alpha: 0.1),
               width: 1,
             ),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
+              themeColor.cardShadow,
             ],
           ),
           child: Row(

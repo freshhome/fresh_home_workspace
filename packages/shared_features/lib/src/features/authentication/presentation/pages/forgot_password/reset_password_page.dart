@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/presentation/dialogs/dialog_helper.dart';
 import 'package:shared/presentation/extensions/failure_extension.dart';
 import 'package:shared/presentation/localization/translations/app_localizations.dart';
+import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
 import 'package:shared/presentation/widget/animated_background/animated_background.dart';
 import 'package:shared/presentation/widget/custom_text_form_field/base_text_form_field.dart';
 import 'package:shared/presentation/widget/glass_container.dart';
@@ -34,6 +35,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final themeColor = context.themeColor;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -42,29 +44,22 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         elevation: 0,
         leading: Navigator.of(context).canPop()
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+                icon: Icon(Icons.arrow_back_ios_new, color: themeColor.textPrimary),
                 onPressed: () => Navigator.of(context).pop(),
               )
             : null,
-        title: const Text(
-          'استعادة كلمة المرور',
+        title: Text(
+          l10n.auth_reset_password_title,
           style: TextStyle(
-            color: Colors.black87,
+            color: themeColor.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
       body: Stack(
         children: [
-          // Subtle Gradient Background (matching AuthScreen)
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFE0F2F1), Colors.white, Color(0xFFE3F2FD)],
-              ),
-            ),
+            color: themeColor.background,
           ),
           const AnimatedBackground(),
 
@@ -73,9 +68,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               if (state is UpdatePasswordSuccess) {
                 DialogHelper.showSuccess(
                   context,
-                  message: 'تم تعيين كلمة المرور الجديدة بنجاح! يمكنك الآن تسجيل الدخول بها.',
+                  message: l10n.auth_reset_password_success,
                   onOkPress: () {
-                    // Navigate to Login screen and clear the navigation stack
                     context.go('/login');
                   },
                 );
@@ -93,7 +87,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     children: [
                       const SizedBox(height: 20),
                       BuildHeader(
-                        subtitle: 'الرجاء إدخال كلمة المرور الجديدة الخاصة بحسابك وتأكيدها لتغييرها.',
+                        subtitle: l10n.auth_reset_password_subtitle,
                       ),
                       const SizedBox(height: 20),
                       GlassContainer(
@@ -111,7 +105,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 l10n.login_password_label,
                                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
+                                      color: themeColor.textPrimary,
                                     ),
                               ),
                               const SizedBox(height: 10),
@@ -120,24 +114,24 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 obscureText: _obscurePassword,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return 'الرجاء إدخال كلمة المرور';
+                                    return l10n.validation_password_required;
                                   }
                                   if (value.length < 6) {
-                                    return 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل';
+                                    return l10n.validation_password_min_length;
                                   }
                                   return null;
                                 },
                                 hint: l10n.login_password_label,
-                                prefixIcon: const Icon(
+                                prefixIcon: Icon(
                                   Icons.lock_outline_rounded,
-                                  color: Color(0xFF6B7280),
+                                  color: themeColor.secondaryText,
                                 ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscurePassword
                                         ? Icons.visibility_off_outlined
                                         : Icons.visibility_outlined,
-                                    color: const Color(0xFF6B7280),
+                                    color: themeColor.secondaryText,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -145,15 +139,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                     });
                                   },
                                 ),
-                                fillColor: Colors.white,
+                                fillColor: themeColor.cardBackground,
                                 radius: 16,
                               ),
                               const SizedBox(height: 20),
                               Text(
-                                'تأكيد كلمة المرور الجديدة',
+                                l10n.validation_retype_password,
                                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
+                                      color: themeColor.textPrimary,
                                     ),
                               ),
                               const SizedBox(height: 10),
@@ -162,24 +156,24 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 obscureText: _obscureConfirmPassword,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return 'الرجاء تأكيد كلمة المرور';
+                                    return l10n.validation_confirm_password_required;
                                   }
                                   if (value != passwordController.text) {
-                                    return 'كلمتا المرور غير متطابقتين';
+                                    return l10n.validation_passwords_match;
                                   }
                                   return null;
                                 },
-                                hint: 'أعد كتابة كلمة المرور',
-                                prefixIcon: const Icon(
+                                hint: l10n.validation_retype_password,
+                                prefixIcon: Icon(
                                   Icons.lock_outline_rounded,
-                                  color: Color(0xFF6B7280),
+                                  color: themeColor.secondaryText,
                                 ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscureConfirmPassword
                                         ? Icons.visibility_off_outlined
                                         : Icons.visibility_outlined,
-                                    color: const Color(0xFF6B7280),
+                                    color: themeColor.secondaryText,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -187,12 +181,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                     });
                                   },
                                 ),
-                                fillColor: Colors.white,
+                                fillColor: themeColor.cardBackground,
                                 radius: 16,
                               ),
                               const SizedBox(height: 30),
                               MyCustomButton(
-                                text: 'حفظ كلمة المرور الجديدة',
+                                text: l10n.auth_save_new_password,
                                 isLoading: state is AuthLoadingState,
                                 onPressed: () {
                                   if (_formKey.currentState!.validate()) {

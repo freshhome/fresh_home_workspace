@@ -33,6 +33,7 @@ abstract class BookingRemoteDataSource {
     required String actorId,
   });
   Future<void> cancelBooking(String bookingId);
+  Future<void> adminConfirmWhatsappBooking(String bookingId);
   Future<Map<String, dynamic>> calculateBookingPrice({
     required String subServiceId,
     required Map<String, dynamic> pricingInputs,
@@ -192,6 +193,18 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       actorRole: 'customer',
       reason: 'User cancelled via app',
     );
+  }
+
+  @override
+  Future<void> adminConfirmWhatsappBooking(String bookingId) async {
+    try {
+      await _supabase.rpc(
+        'admin_confirm_whatsapp_booking',
+        params: {'p_booking_id': bookingId},
+      );
+    } catch (e) {
+      throw SupabaseExceptionApp(e.toString(), code: 'supabase_error');
+    }
   }
 
   @override

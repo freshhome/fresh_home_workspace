@@ -18,6 +18,7 @@ class Booking extends Equatable {
   final String? readableId;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isWhatsappConfirmed;
 
   final DateTime? assignedAt;
   final DateTime? acceptedAt;
@@ -50,6 +51,7 @@ class Booking extends Equatable {
     required this.contact,
     required this.createdAt,
     required this.updatedAt,
+    this.isWhatsappConfirmed = true,
     this.addressId,
     this.serviceId,
     this.readableId,
@@ -80,6 +82,7 @@ class Booking extends Equatable {
     Contact? contact,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isWhatsappConfirmed,
     String? addressId,
     String? serviceId,
     String? readableId,
@@ -118,6 +121,7 @@ class Booking extends Equatable {
       contact: contact ?? this.contact,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isWhatsappConfirmed: isWhatsappConfirmed ?? this.isWhatsappConfirmed,
       addressId: addressId ?? this.addressId,
       serviceId: serviceId ?? this.serviceId,
       readableId: readableId ?? this.readableId,
@@ -153,6 +157,7 @@ class Booking extends Equatable {
     readableId,
     createdAt,
     updatedAt,
+    isWhatsappConfirmed,
     assignedAt,
     acceptedAt,
     dispatchedAt,

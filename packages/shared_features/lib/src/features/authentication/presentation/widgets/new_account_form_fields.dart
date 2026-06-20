@@ -3,6 +3,7 @@ import 'package:shared/presentation/localization/translations/app_localizations.
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:shared/presentation/validators/input_validator.dart';
 import 'package:shared/presentation/widget/custom_text_form_field/base_text_form_field.dart';
+import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
 
 class NewAccountFormFields extends StatefulWidget {
   final TextEditingController firstNameController;
@@ -29,6 +30,7 @@ class _NewAccountFormFieldsState extends State<NewAccountFormFields> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final textStyle = Theme.of(context).extension<AppTextThemeExtension>()!;
+    final themeColor = context.themeColor;
 
     return Padding(
       padding: EdgeInsets.zero,
@@ -46,19 +48,19 @@ class _NewAccountFormFieldsState extends State<NewAccountFormFields> {
                 child: BaseTextFormField(
                   prefixIcon: Container(
                     padding: const EdgeInsets.all(12),
-                    child: const Icon(
+                    child: Icon(
                       Icons.person_outline,
-                      color: Color(0xFF6B7280),
+                      color: themeColor.secondaryText,
                       size: 24,
                     ),
                   ),
-                  fillColor: Colors.white,
+                  fillColor: themeColor.cardBackground,
                   radius: 16,
                   controller: widget.firstNameController,
                   validator: InputValidator.validateEmpty,
                   hint: l10n.profile_first_name,
-                  hintStyle: const TextStyle(
-                    color: Color(0xFFB0B8C1),
+                  hintStyle: TextStyle(
+                    color: themeColor.secondaryText.withValues(alpha: 0.5),
                     fontSize: 16,
                   ),
                 ),
@@ -68,19 +70,19 @@ class _NewAccountFormFieldsState extends State<NewAccountFormFields> {
                 child: BaseTextFormField(
                   prefixIcon: Container(
                     padding: const EdgeInsets.all(12),
-                    child: const Icon(
+                    child: Icon(
                       Icons.person_outline,
-                      color: Color(0xFF6B7280),
+                      color: themeColor.secondaryText,
                       size: 24,
                     ),
                   ),
-                  fillColor: Colors.white,
+                  fillColor: themeColor.cardBackground,
                   radius: 16,
                   controller: widget.lastNameController,
                   validator: InputValidator.validateEmpty,
                   hint: l10n.profile_last_name,
-                  hintStyle: const TextStyle(
-                    color: Color(0xFFB0B8C1),
+                  hintStyle: TextStyle(
+                    color: themeColor.secondaryText.withValues(alpha: 0.5),
                     fontSize: 16,
                   ),
                 ),
@@ -93,20 +95,20 @@ class _NewAccountFormFieldsState extends State<NewAccountFormFields> {
           BaseTextFormField(
             prefixIcon: Container(
               padding: const EdgeInsets.all(12),
-              child: const Icon(
+              child: Icon(
                 Icons.email_outlined,
-                color: Color(0xFF6B7280),
+                color: themeColor.secondaryText,
                 size: 24,
               ),
             ),
-            fillColor: Colors.white,
+            fillColor: themeColor.cardBackground,
             radius: 16,
             controller: widget.emailController,
             keyboardType: TextInputType.emailAddress,
             validator: InputValidator.validateEmail,
             hint: l10n.login_email_label,
-            hintStyle: const TextStyle(
-              color: Color(0xFFB0B8C1),
+            hintStyle: TextStyle(
+              color: themeColor.secondaryText.withValues(alpha: 0.5),
               fontSize: 16,
             ),
           ),
@@ -118,20 +120,20 @@ class _NewAccountFormFieldsState extends State<NewAccountFormFields> {
             validator: InputValidator.validateEmpty,
             hint: l10n.login_password_label,
             obscureText: _obscurePassword,
-            fillColor: Colors.white,
+            fillColor: themeColor.cardBackground,
             radius: 16,
             prefixIcon: Container(
               padding: const EdgeInsets.all(12),
-              child: const Icon(
+              child: Icon(
                 Icons.lock_outline,
-                color: Color(0xFF6B7280),
+                color: themeColor.secondaryText,
                 size: 24,
               ),
             ),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                color: const Color(0xFF6B7280),
+                color: themeColor.secondaryText,
               ),
               onPressed: () {
                 setState(() {
@@ -139,8 +141,8 @@ class _NewAccountFormFieldsState extends State<NewAccountFormFields> {
                 });
               },
             ),
-            hintStyle: const TextStyle(
-              color: Color(0xFFB0B8C1),
+            hintStyle: TextStyle(
+              color: themeColor.secondaryText.withValues(alpha: 0.5),
               fontSize: 16,
             ),
           ),

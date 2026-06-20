@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:shared/core/error/failures.dart';
-import 'package:shared/domain/user/entities/user/user.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 import 'package:shared_features/src/features/authentication/domain/authentication_domain.dart';
 
 class SignOutUseCase {
@@ -11,7 +11,7 @@ class SignOutUseCase {
     return userRepositories.signOut();
   }
 
-  Future<User?> getCurrentUser() async {
+  Future<UserProfile?> getCurrentUser() async {
     return userRepositories.getCurrentUser();
   }
 }

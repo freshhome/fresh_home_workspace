@@ -5,6 +5,7 @@ import 'package:shared/di/counter_di.dart';
 import 'package:shared/di/service_di.dart';
 import 'package:shared/di/user_di.dart';
 import 'package:shared/di/technician_di.dart';
+import 'package:shared/di/reviews_di.dart';
 
 Future<void> initSharedDI(GetIt getIt) async {
   // Core
@@ -16,4 +17,5 @@ Future<void> initSharedDI(GetIt getIt) async {
   setupServiceDI(getIt);
   setupBookingDI(getIt);
   setupTechnicianDI(getIt);
+  setupReviewsDI(getIt);
 }

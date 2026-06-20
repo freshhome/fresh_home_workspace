@@ -26,7 +26,6 @@ void setupUserDI(GetIt getIt) {
   getIt.registerLazySingleton<CreateUserUseCase>(
     () => CreateUserUseCase(
       userRepository: getIt<UserRepository>(),
-      getNextIdUseCase: getIt<GetNextIdUseCase>(),
     ),
   );
 

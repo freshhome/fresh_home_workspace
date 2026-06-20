@@ -739,5 +739,125 @@
   "admin_finance_reports_export_ledger": "تصدير دفتر الأستاذ (Excel)",
   "admin_finance_reports_print_summary": "طباعة تقرير الشهر (PDF)",
   "admin_finance_reports_refresh_btn": "تحديث البيانات المحاسبية",
-  "admin_finance_reports_refresh_success": "تم تحديث البيانات المحاسبية بنجاح."
+  "admin_finance_reports_refresh_success": "تم تحديث البيانات المحاسبية بنجاح.",
+  "tech_profile_title": "الملف الفني",
+  "tech_profile_verified": "موثق",
+  "tech_profile_rating": "التقييم",
+  "tech_profile_completed_jobs": "المهام المنجزة",
+  "tech_profile_bio": "النبذة التعريفية",
+  "tech_profile_bio_empty": "لم يقم الفني بكتابة نبذة تعريفية بعد.",
+  "tech_profile_skills_capacity": "التخصصات والقدرة اليومية",
+  "tech_profile_skills_empty_admin": "لم يتم تحديد خزانات القدرة أو التخصصات بعد من قبل المسؤول.",
+  "tech_profile_skills_empty_admin_desc": "يرجى التواصل مع الإدارة لتفعيل خدماتك وتحديد طاقتك الاستيعابية اليومية.",
+  "tech_profile_daily_capacity": "القدرة اليومية:",
+  "tech_profile_tasks_per_day": "{count} مهام / يوم",
+  "@tech_profile_tasks_per_day": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "tech_profile_services_provided": "الخدمات المقدمة:",
+  "tech_profile_skills_empty": "لا توجد خدمات نشطة مسندة لهذا الخزان حالياً.",
+  "booking_admin_step_1_title": "الخدمة",
+  "booking_admin_step_2_title": "السعر",
+  "booking_admin_step_3_title": "الموعد",
+  "booking_admin_step_4_title": "العميل",
+  "booking_admin_step_5_title": "تأكيد",
+  "booking_admin_step_1_desc": "اختيار الخدمة",
+  "booking_admin_step_2_desc": "تحديد السعر",
+  "booking_admin_step_3_desc": "تحديد الموعد",
+  "booking_admin_step_4_desc": "بيانات العميل",
+  "booking_admin_step_5_desc": "تأكيد الحجز",
+  "currency_egp": "ج.م",
+  "booking_unit": "وحدة",
+  "booking_building_val": "عمارة {num}",
+  "@booking_building_val": {
+    "placeholders": {
+      "num": {}
+    }
+  },
+  "booking_apartment_val": "شقة {num}",
+  "@booking_apartment_val": {
+    "placeholders": {
+      "num": {}
+    }
+  },
+  "booking_floor_val": "دور {num}",
+  "@booking_floor_val": {
+    "placeholders": {
+      "num": {}
+    }
+  },
+  "booking_min_required": "الحد الأدنى المطلوب: {min} {unit}",
+  "@booking_min_required": {
+    "placeholders": {
+      "min": {},
+      "unit": {}
+    }
+  },
+  "booking_select_value": "اختر قيمة...",
+  "booking_extra_features": "خيارات إضافية",
+  "booking_autofill_debug": "تعبئة تلقائية للتجربة (Debug)",
+  "booking_autofill_success": "تم ملء البيانات بنجاح! ✨",
+  "booking_search_region": "بحث عن المنطقة...",
+  "booking_services_of": "خدمات {serviceName}",
+  "@booking_services_of": {
+    "placeholders": {
+      "serviceName": {}
+    }
+  },
+  "validation_password_required": "الرجاء إدخال كلمة المرور",
+  "validation_password_min_length": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
+  "validation_confirm_password_required": "الرجاء تأكيد كلمة المرور",
+  "validation_passwords_match": "كلمتا المرور غير متطابقتين",
+  "validation_retype_password": "أعد كتابة كلمة المرور",
+  "auth_save_new_password": "حفظ كلمة المرور الجديدة",
+  "auth_reset_password_success": "تم تعيين كلمة المرور الجديدة بنجاح! يمكنك الآن تسجيل الدخول بها.",
+  "auth_reset_password_subtitle": "الرجاء إدخال كلمة المرور الجديدة الخاصة بحسابك وتأكيدها لتغييرها.",
+  "auth_reset_password_title": "استعادة كلمة المرور",
+  "auth_pending_title": "في انتظار التأكيد",
+  "auth_pending_desc": "حسابك حالياً في انتظار تأكيد الإدارة. يرجى التواصل مع المدير لتفعيل صلاحيات الوصول لهذا التطبيق.",
+  "auth_retry": "إعادة المحاولة",
+  "auth_sign_out": "تسجيل الخروج",
+  "schedule_no_times_available": "لا توجد مواعيد متاحة في هذا اليوم",
+  "error_service_repository_unavailable": "ServiceRepository غير متوفر",
+  "booking_select_main_service": "اختر الخدمة الرئيسية",
+  "reviews_title": "تقييماتي وآراء العملاء",
+  "reviews_overall_rating": "التقييم العام للفني",
+  "reviews_summary_desc": "شكراً لجهودك! تم احتساب هذا التقييم بناءً على المهام المنجزة البالغ عددها {count} مهمة.",
+  "@reviews_summary_desc": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "reviews_latest_feedback": "آخر تعليقات ومراجعات العملاء",
+  "reviews_no_reviews": "لا توجد مراجعات منشورة لك بعد.",
+  "reviews_previous_customer": "عميل سابق",
+  "reviews_load_error": "فشل جلب المراجعات: {message}",
+  "@reviews_load_error": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "admin_dashboard_title": "لوحة التحكم للإدارة",
+  "admin_welcome_title": "مرحباً بك مجدداً!",
+  "admin_welcome_subtitle": "إليك ملخص سريع لإدارة البيانات والعمليات.",
+  "admin_nav_dispatch": "إدارة جدول الحجز",
+  "admin_nav_dispatch_desc": "متابعة حية لسعة الفريق، إحصائيات الإشغال وإعادة توجيه المهام.",
+  "admin_nav_services": "إدارة الخدمات",
+  "admin_nav_services_desc": "إدارة وتعديل الفئات، الخدمات الفرعية، وتفاصيل الأسعار.",
+  "admin_nav_pricing": "إدارة أسعار الخدمات",
+  "admin_nav_pricing_desc": "تعديل قوانين AST الشرطية، إدارة الخصومات التراكمية، ومراجعة سجل التدقيق.",
+  "admin_nav_bookings": "إدارة الحجوزات",
+  "admin_nav_bookings_desc": "تتبع الحجوزات، إعادة التعيين، الجدولة وإلغاء الطلبات.",
+  "admin_nav_users": "إدارة المستخدمين",
+  "admin_nav_users_desc": "عرض وإدارة بيانات المستخدمين والأدوار في المنصة.",
+  "admin_nav_finance": "المركز المحاسبي للإدارة",
+  "admin_nav_finance_desc": "إدارة أرصدة الفنيين، التسويات اليدوية، وطلبات تسوية المستحقات.",
+  "admin_nav_reviews": "إدارة التقييمات والمراجعات",
+  "admin_nav_reviews_desc": "مراجعة تقييمات العملاء للفنيين والخدمات، والموافقة على التقييمات.",
+  "admin_nav_supabase": "عرض الخدمات (Supabase)",
+  "admin_nav_supabase_desc": "استعراض الخدمات المهاجرة وتفاصيل الفروع والأسعار بدقة.",
+  "admin_nav_test": "أدوات الفحص والتحقق",
+  "admin_nav_test_desc": "فحص جلب البيانات وتكامل قواعد البيانات السحابية مباشرة."
 }

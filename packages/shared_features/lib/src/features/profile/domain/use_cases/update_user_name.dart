@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:shared/core/error/failures.dart';
-import '../entities/user_with_profile.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 import '../repositories/profile_repository.dart';
 
 class UpdateUserNameUseCase {
@@ -8,7 +8,7 @@ class UpdateUserNameUseCase {
 
   UpdateUserNameUseCase(this.repository);
 
-  Future<Either<Failure, UserWithProfile>> call(String firstName, String lastName) {
+  Future<Either<Failure, UserProfile>> call(String firstName, String lastName) {
     return repository.updateUserName(firstName: firstName, lastName: lastName);
   }
 }

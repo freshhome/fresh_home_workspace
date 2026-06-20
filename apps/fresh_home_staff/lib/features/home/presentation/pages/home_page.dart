@@ -10,6 +10,7 @@ import '../../../technician_orders/presentation/cubit/technician_orders_cubit.da
 import '../../../technician_orders/presentation/cubit/technician_orders_state.dart';
 import '../../../../features/finance/presentation/cubit/technician_finance_cubit.dart';
 import '../../../../features/finance/presentation/cubit/technician_finance_state.dart';
+import '../../../reviews/presentation/routes/technician_reviews_routes.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -44,8 +45,8 @@ class HomePage extends StatelessWidget {
                   String userName = '';
                   String? avatarUrl;
                   if (state is ProfileLoaded) {
-                    userName = state.profile.user.firstName;
-                    avatarUrl = state.profile.user.avatarUrl;
+                    userName = state.profile.firstName;
+                    avatarUrl = state.profile.avatarUrl;
                   } else if (state is ProfileLoading) {
                     userName = '...';
                   }
@@ -204,7 +205,8 @@ class HomePage extends StatelessWidget {
                       String rating = '5.0';
 
                       if (profileState is ProfileLoaded) {
-                        rating = profileState.profile.technicianProfile?.rating.toString() ?? '5.0';
+                        final prof = profileState.profile;
+                        rating = prof is TechnicianProfile ? prof.rating.toString() : '5.0';
                       }
 
                       final isAr = Localizations.localeOf(context).languageCode == 'ar';
@@ -411,6 +413,7 @@ class HomePage extends StatelessWidget {
                     context,
                     Icons.star_outline_rounded,
                     l10n.tech_tool_reviews,
+                    onTap: () => context.pushNamed(TechnicianReviewsRoutes.technicianReviews),
                   ),
                   _buildToolItem(
                     context,

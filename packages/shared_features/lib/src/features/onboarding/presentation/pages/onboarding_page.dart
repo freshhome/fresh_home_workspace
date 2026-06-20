@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:shared/core/constants/app_assets.dart';
 import 'package:shared/core/constants/app_routes.dart';
 import 'package:shared/presentation/localization/translations/app_localizations.dart';
+import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
 import 'package:shared/presentation/widget/my_custom_button.dart';
 import 'package:shared_features/src/features/onboarding/presentation/onboarding_presentation.dart';
 
@@ -16,6 +17,8 @@ class OnboardingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final themeColor = context.themeColor;
+
     final List<Widget> screens = [
       OnboardingScreen(
         title: l10n.onboarding_title_1,
@@ -45,13 +48,7 @@ class OnboardingPage extends StatelessWidget {
       create: (_) => GetIt.instance<OnboardingCubit>(),
       child: Scaffold(
         body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment(0.50, -0.00),
-              end: Alignment(0.50, 1.00),
-              colors: [const Color(0xFF9EE0F4), const Color(0xFF8BD5AF)],
-            ),
-          ),
+          color: themeColor.background,
 
           child: BlocConsumer<OnboardingCubit, OnboardingState>(
             listener: (context, state) {
@@ -83,8 +80,8 @@ class OnboardingPage extends StatelessWidget {
                         height: 10,
                         decoration: BoxDecoration(
                           color: state.currentPage == index
-                              ? Colors.blue
-                              : Colors.grey,
+                              ? themeColor.primary
+                              : themeColor.unselectedItem.withValues(alpha: 0.3),
                           shape: BoxShape.circle,
                         ),
                       ),

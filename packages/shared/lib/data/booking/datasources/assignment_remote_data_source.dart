@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared/domain/booking/entities/availability/day_availability.dart';
-import 'package:shared/domain/user/entities/user/technician_profile.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
+import 'package:shared/domain/user/enums/user_role.dart';
+import 'package:shared/domain/user/enums/user_status.dart';
 import 'package:shared/data/user/models/remote/technician_profile_remote_model.dart';
 
 /// Remote data source for all assignment engine RPC calls.
@@ -44,9 +46,32 @@ class AssignmentRemoteDataSourceImpl implements AssignmentRemoteDataSource {
     });
 
     final list = List<Map<String, dynamic>>.from(response as List);
-    return list
-        .map((json) => TechnicianProfileRemoteModel.fromJson(json).toDomain())
-        .toList();
+    return list.map((json) {
+      final techModel = TechnicianProfileRemoteModel.fromJson(json);
+      final firstName = json['first_name'] as String? ?? '';
+      final lastName = json['last_name'] as String? ?? '';
+      final avatarUrl = json['avatar_url'] as String?;
+      
+      return TechnicianProfile(
+        uid: techModel.userId,
+        firstName: firstName,
+        lastName: lastName,
+        email: '',
+        accountStatus: UserStatus.active,
+        gender: 'unspecified',
+        avatarUrl: avatarUrl,
+        roles: const [UserRole.technician],
+        createdAt: techModel.createdAt,
+        updatedAt: techModel.updatedAt,
+        mainServiceId: techModel.mainServiceId,
+        bio: techModel.bio,
+        rating: techModel.rating,
+        completedJobs: techModel.completedJobs,
+        isVerified: techModel.isVerified,
+        isAvailable: techModel.isAvailable,
+        serviceArea: techModel.serviceArea,
+      );
+    }).toList();
   }
 
   @override

@@ -1,4 +1,5 @@
 import 'package:shared/domain/user/entities/user/address.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/booking_components.dart';
 import 'package:shared/domain/service/entities/sub_entities/service_price.dart';
 import 'package:shared/domain/service/entities/sub_entities/computed_field.dart';
@@ -57,7 +58,7 @@ class BookingFlowState {
   final int validateManualClientTrigger;
 
   // ── Profile (Customer) ─────────────────────────────────────────────────────
-  final UserWithProfile? currentUserProfile;
+  final UserProfile? currentUserProfile;
 
   // ── Status ─────────────────────────────────────────────────────────────────
   final BookingStatus status;
@@ -135,7 +136,7 @@ class BookingFlowState {
     String? manualClientFloor,
     String? manualClientApartment,
     int? validateManualClientTrigger,
-    UserWithProfile? currentUserProfile,
+    UserProfile? currentUserProfile,
     BookingStatus? status,
     bool? isCurrentStepValid,
     String? errorMessage,

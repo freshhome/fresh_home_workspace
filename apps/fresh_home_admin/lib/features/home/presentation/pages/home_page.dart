@@ -1,446 +1,397 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart';
-import 'package:get_it/get_it.dart';
-import 'package:shared/data/service/datasources/service_remote_datasource.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-
-
   @override
   Widget build(BuildContext context) {
     final themeColor = context.themeColor;
+    final l10n = context.l10n;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Responsive grid configurations based on viewport width
+    final int crossAxisCount = screenWidth < 600
+        ? 1
+        : screenWidth < 960
+            ? 2
+            : 3;
+
+    final double padding = screenWidth < 600 ? 16.0 : 32.0;
 
     return Scaffold(
       backgroundColor: themeColor.background,
       appBar: AppBar(
-        title: const Text(
-          'الرئيسية (لوحة التحكم)',
-          style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900),
+        title: Text(
+          l10n.admin_dashboard_title,
+          style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         centerTitle: true,
         backgroundColor: themeColor.primary,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'مرحباً بك مجدداً!',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Padding(
+              padding: EdgeInsets.all(padding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Greeting & Header Section
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.admin_welcome_title,
+                              style: TextStyle(
+                                fontSize: screenWidth < 600 ? 24 : 28,
+                                fontWeight: FontWeight.bold,
+                                color: themeColor.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              l10n.admin_welcome_subtitle,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: themeColor.secondaryText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (screenWidth >= 600)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: themeColor.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.admin_panel_settings_rounded,
+                                color: themeColor.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                l10n.settings_section_admin,
+                                style: TextStyle(
+                                  color: themeColor.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'إليك ملخص سريع لإدارة البيانات والخدمات السحابية.',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 14,
-                    color: themeColor.unselectedItem.withValues(alpha: 0.7),
+                  const SizedBox(height: 32),
+
+                  // 📊 KPI Analytics Grid Section
+                  _buildKpiSection(context, screenWidth),
+                  const SizedBox(height: 32),
+
+                  // 🧭 Responsive Feature Grid
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: screenWidth < 600 ? 2.5 : 2.2,
+                    children: [
+                      // Booking Dispatch Board
+                      _buildFeatureCard(
+                        context,
+                        title: l10n.admin_nav_dispatch,
+                        description: l10n.admin_nav_dispatch_desc,
+                        icon: Icons.edit_calendar_rounded,
+                        color: Colors.purple,
+                        onTap: () => GoRouter.of(context).pushNamed('admin_dashboard'),
+                      ),
+                      // Services Management
+                      _buildFeatureCard(
+                        context,
+                        title: l10n.admin_nav_services,
+                        description: l10n.admin_nav_services_desc,
+                        icon: Icons.design_services_rounded,
+                        color: themeColor.primary,
+                        onTap: () => GoRouter.of(context).pushNamed(AppRoutes.servicesManagement),
+                      ),
+                      // Pricing Governance
+                      _buildFeatureCard(
+                        context,
+                        title: l10n.admin_nav_pricing,
+                        description: l10n.admin_nav_pricing_desc,
+                        icon: Icons.gavel_rounded,
+                        color: Colors.amber.shade800,
+                        onTap: () => GoRouter.of(context).push('/pricing-governance'),
+                      ),
+                      // Bookings Management
+                      _buildFeatureCard(
+                        context,
+                        title: l10n.admin_nav_bookings,
+                        description: l10n.admin_nav_bookings_desc,
+                        icon: Icons.calendar_month_rounded,
+                        color: Colors.blueAccent,
+                        onTap: () => GoRouter.of(context).push('/admin/bookings'),
+                      ),
+                      // Users Access Management
+                      _buildFeatureCard(
+                        context,
+                        title: l10n.admin_nav_users,
+                        description: l10n.admin_nav_users_desc,
+                        icon: Icons.people_alt_rounded,
+                        color: Colors.orange,
+                        onTap: () => GoRouter.of(context).pushNamed(AppRoutes.adminUserManagement),
+                      ),
+                      // Financial Center
+                      _buildFeatureCard(
+                        context,
+                        title: l10n.admin_nav_finance,
+                        description: l10n.admin_nav_finance_desc,
+                        icon: Icons.account_balance_rounded,
+                        color: Colors.green,
+                        onTap: () => GoRouter.of(context).push('/admin/finance'),
+                      ),
+                      // Reviews Moderation
+                      _buildFeatureCard(
+                        context,
+                        title: l10n.admin_nav_reviews,
+                        description: l10n.admin_nav_reviews_desc,
+                        icon: Icons.rate_review_rounded,
+                        color: const Color(0xFF1E3A8A),
+                        onTap: () => GoRouter.of(context).push('/admin-reviews'),
+                      ),
+                      // Cloud Sync Monitor (Supabase)
+                      _buildFeatureCard(
+                        context,
+                        title: l10n.admin_nav_supabase,
+                        description: l10n.admin_nav_supabase_desc,
+                        icon: Icons.cloud_done_rounded,
+                        color: Colors.teal,
+                        onTap: () => GoRouter.of(context).pushNamed(AppRoutes.adminSupabaseServices),
+                      ),
+                      // WhatsApp Configuration Settings
+                      _buildFeatureCard(
+                        context,
+                        title: 'إعدادات الواتساب',
+                        description: 'التحكم برقم الإرسال والـ API والمهلة الزمنية لتأكيد حجوزات الضيوف',
+                        icon: Icons.chat_bubble_outline_rounded,
+                        color: Colors.green.shade600,
+                        onTap: () => GoRouter.of(context).push('/admin/whatsapp-settings'),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 32),
-
-                //! اداره جدول الحجز
-                _buildFeatureCard(
-                  context,
-                  title: 'إدارة جدول الحجز',
-                  description:
-                      'متابعة حية لسعة الفريق، إحصائيات الإشغال وإعادة توجيه المهام.',
-                  icon: Icons.edit_calendar_rounded,
-                  color: Colors.purple,
-                  onTap: () =>
-                      GoRouter.of(context).pushNamed('admin_dashboard'),
-                ),
-                const SizedBox(height: 16),
-
-                //! اداره الخدمات
-                _buildFeatureCard(
-                  context,
-                  title: 'إدارة الخدمات',
-                  description:
-                      'إدارة وتعديل الفئات، الخدمات الفرعية، وتفاصيل الأسعار.',
-                  icon: Icons.design_services_rounded,
-                  color: themeColor.primary,
-                  onTap: () => GoRouter.of(
-                    context,
-                  ).pushNamed(AppRoutes.servicesManagement),
-                ),
-                const SizedBox(height: 16),
-
-                //! اداره اسعار الخدمات
-                _buildFeatureCard(
-                  context,
-                  title: "اداره اسعار الخدمات",
-                  description:
-                      'تعديل قوانين AST الشرطية، إدارة الخصومات التراكمية، ومراجعة سجل التدقيق.',
-                  icon: Icons.gavel_rounded,
-                  color: Colors.amber.shade800,
-                  onTap: () => GoRouter.of(context).push('/pricing-governance'),
-                ),
-                const SizedBox(height: 16),
-                // ! اداره الحجوزات
-                _buildFeatureCard(
-                  context,
-                  title: 'إدارة الحجوزات',
-                  description:
-                      'تتبع الحجوزات، إعادة التعيين، الجدولة وإلغاء الطلبات.',
-                  icon: Icons.calendar_month_rounded,
-                  color: Colors.blueAccent,
-                  onTap: () => GoRouter.of(context).push('/admin/bookings'),
-                ),
-                const SizedBox(height: 16),
-                // ! اداره المستخدمين
-                _buildFeatureCard(
-                  context,
-                  title: 'إدارة المستخدمين',
-                  description:
-                      'عرض وإدارة بيانات المستخدمين والأدوار في المنصة.',
-                  icon: Icons.people_alt_rounded,
-                  color: Colors.orange,
-                  onTap: () => GoRouter.of(
-                    context,
-                  ).pushNamed(AppRoutes.adminUserManagement),
-                ),
-                const SizedBox(height: 16),
-
-                // ! المركز المحاسبي للإدارة
-                _buildFeatureCard(
-                  context,
-                  title: 'المركز المحاسبي للإدارة',
-                  description:
-                      'إدارة أرصدة الفنيين، التسويات اليدوية، طلبات تسوية المستحقات، وفروقات التحصيل.',
-                  icon: Icons.account_balance_rounded,
-                  color: Colors.green,
-                  onTap: () => GoRouter.of(context).push('/admin/finance'),
-                ),
-                const SizedBox(height: 16),
-
-                //! عرض الخدمات (Supabase)
-                _buildFeatureCard(
-                  context,
-                  title: 'عرض الخدمات (Supabase)',
-                  description:
-                      'استعراض الخدمات المهاجرة وتفاصيل الفروع والأسعار بدقة.',
-                  icon: Icons.cloud_done_rounded,
-                  color: Colors.teal,
-                  onTap: () => GoRouter.of(
-                    context,
-                  ).pushNamed(AppRoutes.adminSupabaseServices),
-                ),
-                const SizedBox(height: 16),
-                // ! تجربه جلب الخدمات
-                _buildFeatureCard(
-                  context,
-                  title: 'تجربه جلب الخدمات',
-                  description: 'تجربه جلب الخدمات',
-                  icon: Icons.architecture_rounded,
-                  color: const Color.fromARGB(255, 245, 131, 2),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => Testpage()),
-                    );
-                  },
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
-}
 
-Widget _buildFeatureCard(
-  BuildContext context, {
-  required String title,
-  required String description,
-  required IconData icon,
-  required Color color,
-  required VoidCallback onTap,
-}) {
-  final themeColor = context.themeColor;
-
-  return Container(
-    decoration: BoxDecoration(
-      color: themeColor.cardBackground,
-      borderRadius: BorderRadius.circular(24),
-      boxShadow: [
-        BoxShadow(
-          color: color.withValues(alpha: 0.1),
-          blurRadius: 20,
-          offset: const Offset(0, 10),
-        ),
-      ],
-    ),
-    child: Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(icon, color: color, size: 32),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 13,
-                        color: themeColor.unselectedItem.withValues(alpha: 0.6),
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: themeColor.unselectedItem.withValues(alpha: 0.3),
-                size: 16,
-              ),
-            ],
-          ),
-        ),
+  Widget _buildKpiSection(BuildContext context, double screenWidth) {
+    final cards = [
+      _buildKpiCard(
+        context,
+        title: 'حجوزات اليوم',
+        value: '24 حجزاً',
+        icon: Icons.trending_up_rounded,
+        color: Colors.green,
       ),
-    ),
-  );
-}
+      _buildKpiCard(
+        context,
+        title: 'الطلبات المعلقة',
+        value: '5 طلبات',
+        icon: Icons.pending_actions_rounded,
+        color: Colors.orange,
+      ),
+      _buildKpiCard(
+        context,
+        title: 'نسبة الإشغال',
+        value: '82%',
+        icon: Icons.pie_chart_rounded,
+        color: Colors.blue,
+      ),
+    ];
 
-class Testpage extends StatefulWidget {
-  const Testpage({super.key});
-
-  @override
-  State<Testpage> createState() => _TestpageState();
-}
-
-class _TestpageState extends State<Testpage> {
-  bool _isLoading = false;
-  int? _serviceCount;
-  String? _error;
-
-  Future<void> _fetchServicesCount() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final dataSource = GetIt.instance<ServiceRemoteDataSource>();
-      final services = await dataSource.getServices();
-      setState(() {
-        _serviceCount = services.length;
-        _isLoading = false;
-      });
-    } catch (e, stackTrace) {
-      debugPrint('❌ [TestPage] Error fetching services: $e');
-      debugPrint('📋 StackTrace: $stackTrace');
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+    if (screenWidth < 600) {
+      return Column(
+        children: cards.map((c) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: c,
+        )).toList(),
+      );
     }
+
+    return Row(
+      children: cards.map((c) => Expanded(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: c,
+        ),
+      )).toList(),
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildKpiCard(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    final themeColor = context.themeColor;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: themeColor.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: themeColor.unselectedItem.withValues(alpha: 0.1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: themeColor.secondaryText,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: themeColor.textPrimary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureCard(
+    BuildContext context, {
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     final themeColor = context.themeColor;
 
-    return Scaffold(
-      backgroundColor: themeColor.background,
-      appBar: AppBar(
-        title: const Text(
-          'اختبار جلب البيانات مباشرة',
-          style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+    return Container(
+      decoration: BoxDecoration(
+        color: themeColor.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: themeColor.unselectedItem.withValues(alpha: 0.05),
         ),
-        centerTitle: true,
-        backgroundColor: themeColor.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ElevatedButton.icon(
-                onPressed: _isLoading ? null : _fetchServicesCount,
-                icon: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Icon(Icons.refresh_rounded, color: Colors.white),
-                label: const Text(
-                  'جلب البيانات مباشرة من Supabase',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: themeColor.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  elevation: 2,
+                  child: Icon(icon, color: color, size: 28),
                 ),
-              ),
-              const SizedBox(height: 32),
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: themeColor.cardBackground,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: themeColor.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: themeColor.secondaryText,
+                          height: 1.3,
+                        ),
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.all(24),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (_isLoading) ...[
-                          CircularProgressIndicator(color: themeColor.primary),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'جاري الاتصال بـ Supabase وجلب البيانات...',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ] else if (_error != null) ...[
-                          const Icon(
-                            Icons.error_outline_rounded,
-                            color: Colors.redAccent,
-                            size: 64,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'حدث خطأ أثناء الاتصال:',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 14,
-                              color: Colors.grey.shade700,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 12,
-                              color: Colors.redAccent,
-                            ),
-                          ),
-                        ] else if (_serviceCount != null) ...[
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: themeColor.primary.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.home_repair_service_rounded,
-                              color: themeColor.primary,
-                              size: 72,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          const Text(
-                            'إجمالي عدد الخدمات في الجدول:',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 16,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '$_serviceCount',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: themeColor.primary,
-                            ),
-                          ),
-                        ] else ...[
-                          Icon(
-                            Icons.cloud_download_outlined,
-                            color: themeColor.primary.withValues(alpha: 0.5),
-                            size: 80,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'اضغط على الزر أعلاه لجلب عدد الخدمات مباشرة من قاعدة البيانات.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: themeColor.unselectedItem.withValues(alpha: 0.25),
+                  size: 14,
+                ),
+              ],
+            ),
           ),
         ),
       ),

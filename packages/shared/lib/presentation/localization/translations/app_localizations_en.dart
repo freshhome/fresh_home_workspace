@@ -1255,7 +1255,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get schedule_status_full => 'Full';
 
   @override
-  String get admin_dashboard_title => 'Fleet Intelligence';
+  String get admin_dashboard_title => 'Admin Dashboard';
 
   @override
   String get utilization => 'Utilization';
@@ -1738,4 +1738,273 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get admin_finance_reports_refresh_success =>
       'Financial report data refreshed successfully.';
+
+  @override
+  String get tech_profile_title => 'Technical Profile';
+
+  @override
+  String get tech_profile_verified => 'Verified';
+
+  @override
+  String get tech_profile_rating => 'Rating';
+
+  @override
+  String get tech_profile_completed_jobs => 'Completed Jobs';
+
+  @override
+  String get tech_profile_bio => 'Bio';
+
+  @override
+  String get tech_profile_bio_empty =>
+      'The technician has not written a bio yet.';
+
+  @override
+  String get tech_profile_skills_capacity => 'Specialties & Daily Capacity';
+
+  @override
+  String get tech_profile_skills_empty_admin =>
+      'No capacity pools or specialties have been specified by the administrator yet.';
+
+  @override
+  String get tech_profile_skills_empty_admin_desc =>
+      'Please contact administration to activate your services and define your daily capacity.';
+
+  @override
+  String get tech_profile_daily_capacity => 'Daily Capacity:';
+
+  @override
+  String tech_profile_tasks_per_day(Object count) {
+    return '$count tasks / day';
+  }
+
+  @override
+  String get tech_profile_services_provided => 'Services Provided:';
+
+  @override
+  String get tech_profile_skills_empty =>
+      'No active services assigned to this pool currently.';
+
+  @override
+  String get booking_admin_step_1_title => 'Service';
+
+  @override
+  String get booking_admin_step_2_title => 'Price';
+
+  @override
+  String get booking_admin_step_3_title => 'Schedule';
+
+  @override
+  String get booking_admin_step_4_title => 'Client';
+
+  @override
+  String get booking_admin_step_5_title => 'Confirm';
+
+  @override
+  String get booking_admin_step_1_desc => 'Select Service';
+
+  @override
+  String get booking_admin_step_2_desc => 'Determine Price';
+
+  @override
+  String get booking_admin_step_3_desc => 'Determine Schedule';
+
+  @override
+  String get booking_admin_step_4_desc => 'Client Details';
+
+  @override
+  String get booking_admin_step_5_desc => 'Confirm Booking';
+
+  @override
+  String get currency_egp => 'EGP';
+
+  @override
+  String get booking_unit => 'unit';
+
+  @override
+  String booking_building_val(Object num) {
+    return 'Building $num';
+  }
+
+  @override
+  String booking_apartment_val(Object num) {
+    return 'Apartment $num';
+  }
+
+  @override
+  String booking_floor_val(Object num) {
+    return 'Floor $num';
+  }
+
+  @override
+  String booking_min_required(Object min, Object unit) {
+    return 'Minimum required: $min $unit';
+  }
+
+  @override
+  String get booking_select_value => 'Select value...';
+
+  @override
+  String get booking_extra_features => 'Extra Features';
+
+  @override
+  String get booking_autofill_debug => 'Autofill for Testing (Debug)';
+
+  @override
+  String get booking_autofill_success => 'Data filled successfully! ✨';
+
+  @override
+  String get booking_search_region => 'Search for region...';
+
+  @override
+  String booking_services_of(Object serviceName) {
+    return '$serviceName Services';
+  }
+
+  @override
+  String get validation_password_required => 'Please enter password';
+
+  @override
+  String get validation_password_min_length =>
+      'Password must be at least 6 characters';
+
+  @override
+  String get validation_confirm_password_required => 'Please confirm password';
+
+  @override
+  String get validation_passwords_match => 'Passwords do not match';
+
+  @override
+  String get validation_retype_password => 'Confirm password';
+
+  @override
+  String get auth_save_new_password => 'Save new password';
+
+  @override
+  String get auth_reset_password_success =>
+      'New password set successfully! You can now log in.';
+
+  @override
+  String get auth_reset_password_subtitle =>
+      'Please enter and confirm your new password to reset it.';
+
+  @override
+  String get auth_reset_password_title => 'Reset Password';
+
+  @override
+  String get auth_pending_title => 'Pending Approval';
+
+  @override
+  String get auth_pending_desc =>
+      'Your account is currently pending admin approval. Please contact the manager to activate access privileges for this app.';
+
+  @override
+  String get auth_retry => 'Retry';
+
+  @override
+  String get auth_sign_out => 'Sign Out';
+
+  @override
+  String get schedule_no_times_available => 'No times available on this day';
+
+  @override
+  String get error_service_repository_unavailable =>
+      'ServiceRepository is unavailable';
+
+  @override
+  String get booking_select_main_service => 'Select main service';
+
+  @override
+  String get reviews_title => 'My Reviews & Ratings';
+
+  @override
+  String get reviews_overall_rating => 'Overall Technician Rating';
+
+  @override
+  String reviews_summary_desc(Object count) {
+    return 'Thank you for your hard work! Calculated based on $count completed tasks.';
+  }
+
+  @override
+  String get reviews_latest_feedback => 'Latest Customer Feedback';
+
+  @override
+  String get reviews_no_reviews => 'No published reviews for you yet.';
+
+  @override
+  String get reviews_previous_customer => 'Previous Customer';
+
+  @override
+  String reviews_load_error(Object message) {
+    return 'Failed to load reviews: $message';
+  }
+
+  @override
+  String get admin_welcome_title => 'Welcome back!';
+
+  @override
+  String get admin_welcome_subtitle =>
+      'Here is a quick summary to manage data and operations.';
+
+  @override
+  String get admin_nav_dispatch => 'Dispatch Schedule Board';
+
+  @override
+  String get admin_nav_dispatch_desc =>
+      'Live monitoring of team capacity, occupancy metrics, and task dispatching.';
+
+  @override
+  String get admin_nav_services => 'Services Catalog';
+
+  @override
+  String get admin_nav_services_desc =>
+      'Manage and edit service categories, sub-services, and pricing lists.';
+
+  @override
+  String get admin_nav_pricing => 'Pricing Governance';
+
+  @override
+  String get admin_nav_pricing_desc =>
+      'Configure conditional AST pricing rules, discounts, and audit logs.';
+
+  @override
+  String get admin_nav_bookings => 'Bookings Management';
+
+  @override
+  String get admin_nav_bookings_desc =>
+      'Track active bookings, reassign staff, reschedule, and handle cancellations.';
+
+  @override
+  String get admin_nav_users => 'Users Access Management';
+
+  @override
+  String get admin_nav_users_desc =>
+      'View and manage user accounts and system permissions.';
+
+  @override
+  String get admin_nav_finance => 'Financial Control Center';
+
+  @override
+  String get admin_nav_finance_desc =>
+      'Manage staff wallets, manual adjustments, and approve payout requests.';
+
+  @override
+  String get admin_nav_reviews => 'Reviews Moderation Dashboard';
+
+  @override
+  String get admin_nav_reviews_desc =>
+      'Moderate customer feedback, view overall ratings, and approve quarantined logs.';
+
+  @override
+  String get admin_nav_supabase => 'Cloud Services (Supabase)';
+
+  @override
+  String get admin_nav_supabase_desc =>
+      'Browse migrated database services, configurations, and raw cloud data.';
+
+  @override
+  String get admin_nav_test => 'Verification & Diagnostics';
+
+  @override
+  String get admin_nav_test_desc =>
+      'Test real-time data sync and cloud database integration endpoints.';
 }

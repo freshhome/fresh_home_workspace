@@ -31,6 +31,7 @@ class BookingRemoteModel {
   final bool isCritical;
   final String? criticalReason;
   final Map<String, dynamic>? pricingInputs;
+  final bool isWhatsappConfirmed;
 
   const BookingRemoteModel({
     required this.id,
@@ -45,6 +46,7 @@ class BookingRemoteModel {
     required this.contact,
     required this.createdAt,
     required this.updatedAt,
+    this.isWhatsappConfirmed = true,
     this.addressId,
     this.serviceId,
     this.readableId,
@@ -82,6 +84,7 @@ class BookingRemoteModel {
       readableId: json['readable_id'] as String?,
       createdAt: const TimestampConverter().fromJson(json['created_at']),
       updatedAt: const TimestampConverter().fromJson(json['updated_at']),
+      isWhatsappConfirmed: json['is_whatsapp_confirmed'] as bool? ?? true,
       assignedAt: json['assigned_at'] != null ? const TimestampConverter().fromJson(json['assigned_at']) : null,
       acceptedAt: json['accepted_at'] != null ? const TimestampConverter().fromJson(json['accepted_at']) : null,
       dispatchedAt: json['dispatched_at'] != null ? const TimestampConverter().fromJson(json['dispatched_at']) : null,
@@ -115,6 +118,7 @@ class BookingRemoteModel {
       if (readableId != null) 'readable_id': readableId,
       'created_at': const TimestampConverter().toJson(createdAt),
       'updated_at': const TimestampConverter().toJson(updatedAt),
+      'is_whatsapp_confirmed': isWhatsappConfirmed,
       if (assignedAt != null) 'assigned_at': const TimestampConverter().toJson(assignedAt!),
       if (acceptedAt != null) 'accepted_at': const TimestampConverter().toJson(acceptedAt!),
       if (dispatchedAt != null) 'dispatched_at': const TimestampConverter().toJson(dispatchedAt!),

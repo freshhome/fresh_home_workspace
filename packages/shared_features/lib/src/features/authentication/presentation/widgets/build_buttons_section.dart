@@ -7,6 +7,8 @@ import 'package:shared/presentation/localization/translations/app_localizations.
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:shared/presentation/widget/my_custom_button.dart';
 
+import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
+
 class BuildButtonsSection extends StatelessWidget {
   final VoidCallback? onBlueButtonPressed;
   final VoidCallback? onGrayButtonPressed;
@@ -31,7 +33,7 @@ class BuildButtonsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    // final themeColor = Theme.of(context).extension<ThemeColorExtension>()!;
+    final themeColor = context.themeColor;
     final textStyle = Theme.of(context).extension<AppTextThemeExtension>()!;
 
     return Container(
@@ -54,7 +56,7 @@ class BuildButtonsSection extends StatelessWidget {
                   child: Text(
                     l10n.general_or,
                     style: textStyle.titleSectionSmall.copyWith(
-                      color: Colors.grey,
+                      color: themeColor.secondaryText,
                     ),
                   ),
                 ),
@@ -65,14 +67,14 @@ class BuildButtonsSection extends StatelessWidget {
             MyCustomButton(
               onPressed: onGoogleSignInPressed!,
               text: l10n.login_sign_in_google,
-              backgroundColor: Colors.white,
-              textStyle: const TextStyle(
-                color: Colors.black87,
+              backgroundColor: themeColor.cardBackground,
+              textStyle: TextStyle(
+                color: themeColor.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
               isOutlined: true,
-              borderColor: Colors.grey.shade300,
+              borderColor: themeColor.cardBorder.color,
               leadingIcon: SvgPicture.asset(
                 AppAssets.icGoogleLogo,
                 width: 24,
@@ -93,7 +95,7 @@ class BuildButtonsSection extends StatelessWidget {
                 Text(
                   authAction,
                   style: textStyle.titleSectionSmall.copyWith(
-                    color: const Color(0xFF0085FF),
+                    color: themeColor.primary,
                   ),
                 ),
               ],

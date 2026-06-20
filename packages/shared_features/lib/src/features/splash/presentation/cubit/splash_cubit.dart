@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared/core/error/failures.dart';
 import 'package:shared/domain/service/use_cases/service/sync_services_use_case.dart';
 import 'package:shared/domain/service/use_cases/service/start_realtime_sync_use_case.dart';
@@ -64,41 +65,32 @@ class SplashCubit extends Cubit<SplashState> {
         },
         (isLoggedIn) async {
           if (isLoggedIn) {
-            // ✅ Customer App (Client Role) doesn't need role verification
-            if (appRole == UserRole.client) {
-              debugPrint('🚀 [SplashCubit] Client App detected - Skipping role verification');
-              emit(SplashUserLoggedInState());
-              return;
+            // ✅ Read role directly from Supabase JWT claims (Zero Round-Trip Verification)
+            final session = Supabase.instance.client.auth.currentSession;
+            final appMetadata = session?.user.appMetadata ?? {};
+            final rolesClaim = appMetadata['roles'];
+            final userRoleClaim = appMetadata['user_role']?.toString();
+
+            debugPrint('🔑 [SplashCubit] JWT app_metadata: $appMetadata');
+            
+            bool hasRole = false;
+            if (rolesClaim is List) {
+              hasRole = rolesClaim.any((r) => r.toString().toLowerCase() == appRole.name.toLowerCase());
+            } else if (rolesClaim is String) {
+              hasRole = rolesClaim.toLowerCase() == appRole.name.toLowerCase();
+            } else if (userRoleClaim != null) {
+              hasRole = userRoleClaim.toLowerCase() == appRole.name.toLowerCase();
             }
 
-            debugPrint('✅ [SplashCubit] User is logged in, verifying role for app: ${appRole.name}');
-            // 3. Verify user has the required role for this specific app with timeout
-            debugPrint('🔵 [SplashCubit] Verifying role: ${appRole.name}...');
-            final roleResult = await verifyRoleUseCase(appRole.name)
-                .timeout(const Duration(seconds: 10), onTimeout: () {
-              debugPrint('⚠️ [SplashCubit] Role verification TIMED OUT');
-              return const Left(NetworkFailure(message: 'Role verification timeout'));
-            });
-            
-            roleResult.fold(
-              (failure) {
-                debugPrint('❌ [SplashCubit] Role verification failed: ${failure.message}');
-                emit(SplashErrorState(failure));
-                // Fallback: if we can't verify role, don't let them in, but don't stay stuck
-                debugPrint('⚠️ [SplashCubit] Falling back to SplashUserPendingApprovalState');
-                emit(SplashUserPendingApprovalState());
-              },
-              (hasRole) {
-                debugPrint('🔍 [SplashCubit] roleResult - Has required role (${appRole.name}): $hasRole');
-                if (hasRole) {
-                  debugPrint('🚀 [SplashCubit] Emitting SplashUserLoggedInState');
-                  emit(SplashUserLoggedInState());
-                } else {
-                  debugPrint('⚠️ [SplashCubit] Emitting SplashUserPendingApprovalState');
-                  emit(SplashUserPendingApprovalState());
-                }
-              },
-            );
+            debugPrint('🎯 [SplashCubit] Required Role: ${appRole.name}, Local JWT verification result: $hasRole');
+
+            if (hasRole) {
+              debugPrint('🚀 [SplashCubit] Emitting SplashUserLoggedInState');
+              emit(SplashUserLoggedInState());
+            } else {
+              debugPrint('⚠️ [SplashCubit] Emitting SplashUserPendingApprovalState');
+              emit(SplashUserPendingApprovalState());
+            }
           } else {
             debugPrint('ℹ️ [SplashCubit] User NOT logged in');
             

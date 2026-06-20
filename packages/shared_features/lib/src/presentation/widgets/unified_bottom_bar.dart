@@ -49,6 +49,7 @@ class UnifiedBottomBar extends StatelessWidget {
       case 'nav_my_orders': return localizations.nav_my_orders;
       case 'technician_orders_title': return localizations.technician_orders_title;
       case 'nav_profile': return localizations.nav_profile;
+      case 'profile_title': return localizations.profile_title;
       case 'nav_user_management': return localizations.nav_user_management;
       case 'settings_title': return localizations.settings_title;
       case 'admin_dashboard_title': return localizations.settings_services_management;

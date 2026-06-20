@@ -1,39 +1,34 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:shared/domain/user/entities/user/technician_profile.dart';
 
 part 'technician_profile_remote_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
-class TechnicianProfileRemoteModel extends TechnicianProfile {
+class TechnicianProfileRemoteModel {
   @JsonKey(name: 'user_id')
-  @override
   final String userId;
 
   @JsonKey(name: 'main_service_id')
-  @override
-  final String? mainServiceId; // NEW: One-service restriction
+  final String? mainServiceId;
 
-  @override
   final String? bio;
-  @override
   final double rating;
+
   @JsonKey(name: 'completed_jobs')
-  @override
   final int completedJobs;
+
   @JsonKey(name: 'is_verified')
-  @override
   final bool isVerified;
+
   @JsonKey(name: 'is_available')
-  @override
   final bool isAvailable;
+
   @JsonKey(name: 'service_area')
-  @override
   final Map<String, dynamic>? serviceArea;
+
   @JsonKey(name: 'created_at')
-  @override
   final DateTime createdAt;
+
   @JsonKey(name: 'updated_at')
-  @override
   final DateTime updatedAt;
 
   const TechnicianProfileRemoteModel({
@@ -47,49 +42,34 @@ class TechnicianProfileRemoteModel extends TechnicianProfile {
     this.serviceArea,
     required this.createdAt,
     required this.updatedAt,
-  }) : super(
-          userId: userId,
-          mainServiceId: mainServiceId,
-          bio: bio,
-          rating: rating,
-          completedJobs: completedJobs,
-          isVerified: isVerified,
-          isAvailable: isAvailable,
-          serviceArea: serviceArea,
-          createdAt: createdAt,
-          updatedAt: updatedAt,
-        );
+  });
 
-  factory TechnicianProfileRemoteModel.fromJson(Map<String, dynamic> json) =>
-      _$TechnicianProfileRemoteModelFromJson(json);
+  factory TechnicianProfileRemoteModel.fromJson(Map<String, dynamic> json) {
+    final techData = json['technician_profiles'] != null
+        ? (json['technician_profiles'] is List
+            ? (json['technician_profiles'] as List).firstOrNull as Map<String, dynamic>?
+            : json['technician_profiles'] as Map<String, dynamic>?)
+        : null;
 
-  Map<String, dynamic> toJson() => _$TechnicianProfileRemoteModelToJson(this);
+    final baseMap = techData ?? json;
 
-  TechnicianProfile toDomain() => TechnicianProfile(
-        userId: userId,
-        mainServiceId: mainServiceId,
-        bio: bio,
-        rating: rating,
-        completedJobs: completedJobs,
-        isVerified: isVerified,
-        isAvailable: isAvailable,
-        serviceArea: serviceArea,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
-
-  factory TechnicianProfileRemoteModel.fromEntity(TechnicianProfile entity) {
     return TechnicianProfileRemoteModel(
-      userId: entity.userId,
-      mainServiceId: entity.mainServiceId,
-      bio: entity.bio,
-      rating: entity.rating,
-      completedJobs: entity.completedJobs,
-      isVerified: entity.isVerified,
-      isAvailable: entity.isAvailable,
-      serviceArea: entity.serviceArea,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
+      userId: json['id'] as String? ?? baseMap['user_id'] as String? ?? '',
+      mainServiceId: baseMap['main_service_id'] as String?,
+      bio: baseMap['bio'] as String?,
+      rating: (baseMap['rating'] as num?)?.toDouble() ?? 5.0,
+      completedJobs: baseMap['completed_jobs'] as int? ?? 0,
+      isVerified: baseMap['is_verified'] as bool? ?? false,
+      isAvailable: baseMap['is_available'] as bool? ?? false,
+      serviceArea: baseMap['service_area'] as Map<String, dynamic>?,
+      createdAt: baseMap['created_at'] != null 
+          ? DateTime.parse(baseMap['created_at']) 
+          : DateTime.now(),
+      updatedAt: baseMap['updated_at'] != null 
+          ? DateTime.parse(baseMap['updated_at']) 
+          : DateTime.now(),
     );
   }
+
+  Map<String, dynamic> toJson() => _$TechnicianProfileRemoteModelToJson(this);
 }

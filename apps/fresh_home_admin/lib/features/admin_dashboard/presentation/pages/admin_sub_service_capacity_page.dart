@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get_it/get_it.dart';
+import 'package:fpdart/fpdart.dart' hide State;
+import 'package:shared/shared.dart';
 import '../cubit/admin_dashboard_cubit.dart';
 import '../cubit/admin_dashboard_state.dart';
 import '../../domain/entities/technician_capacity_entry.dart';
@@ -81,9 +83,9 @@ class AdminSubServiceCapacityPage extends StatelessWidget {
                     ...technicians.map((tech) => Column(
                           children: [
                             _buildTechnicianCard(
+                              technicianId: tech.technicianId,
                               name: tech.technicianName,
                               role: 'فني متخصص', // Generic as not in entity
-                              rating: (4.5 + (tech.technicianId.hashCode % 5) / 10).toStringAsFixed(1),
                               avatarUrl: 'https://i.pravatar.cc/150?u=${tech.technicianId}',
                               status: tech.status,
                               statusColor: _getStatusColor(tech.status),
@@ -136,7 +138,7 @@ class AdminSubServiceCapacityPage extends StatelessWidget {
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A), size: 20),
-        onPressed: () => context.pop(),
+        onPressed: () => Navigator.of(context).pop(),
       ),
       title: const Text(
         'إدارة السعة التشغيلية',
@@ -314,9 +316,9 @@ class AdminSubServiceCapacityPage extends StatelessWidget {
   }
 
   Widget _buildTechnicianCard({
+    required String technicianId,
     required String name,
     required String role,
-    required String rating,
     required String avatarUrl,
     required String status,
     required Color statusColor,
@@ -325,187 +327,206 @@ class AdminSubServiceCapacityPage extends StatelessWidget {
     required int totalSlots,
     required List<Map<String, dynamic>> timeSlots,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE2E8F0).withValues(alpha:0.4),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    final getUserByIdUseCase = GetIt.instance<GetUserByIdUseCase>();
+
+    return FutureBuilder<Either<Failure, UserProfile>>(
+      future: getUserByIdUseCase(uid: technicianId),
+      builder: (context, snapshot) {
+        double ratingVal = 5.0;
+        if (snapshot.hasData) {
+          snapshot.data!.fold(
+            (failure) {},
+            (profile) {
+              if (profile is TechnicianProfile) {
+                ratingVal = profile.rating;
+              }
+            },
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFF1F5F9)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFE2E8F0).withValues(alpha:0.4),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: NetworkImage(avatarUrl),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundImage: NetworkImage(avatarUrl),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF0F172A),
-                              fontFamily: 'Cairo',
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                name,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF0F172A),
+                                  fontFamily: 'Cairo',
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
                             ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: statusBgColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                status,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                  fontFamily: 'Cairo',
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: statusBgColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            status,
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                role,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF64748B),
+                                  fontFamily: 'Cairo',
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              ratingVal.toStringAsFixed(1),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF475569),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'استهلاك السعة',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF334155),
+                      fontFamily: 'Cairo',
+                    ),
+                  ),
+                  Text(
+                    '$bookedSlots / $totalSlots محجوز',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E3A8A),
+                      fontFamily: 'Cairo',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: timeSlots.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final slot = entry.value;
+                  final isBooked = slot['status'] == 'booked';
+                  final isCompleted = slot['status'] == 'completed';
+                  final isAvailable = slot['status'] == 'available';
+
+                  Color slotColor;
+                  Color slotBorderColor;
+                  IconData? slotIcon;
+
+                  if (isBooked) {
+                    slotColor = const Color(0xFFDBEAFE);
+                    slotBorderColor = const Color(0xFF3B82F6);
+                    slotIcon = Icons.schedule_rounded;
+                  } else if (isCompleted) {
+                    slotColor = const Color(0xFFD1FAE5);
+                    slotBorderColor = const Color(0xFF10B981);
+                    slotIcon = Icons.check_circle_outline_rounded;
+                  } else {
+                    slotColor = const Color(0xFFF8FAFC);
+                    slotBorderColor = const Color(0xFFE2E8F0);
+                    slotIcon = null;
+                  }
+
+                  return Expanded(
+                    child: Container(
+                      margin: EdgeInsets.only(left: index == timeSlots.length - 1 ? 0 : 8),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: slotColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: slotBorderColor),
+                      ),
+                      child: Column(
+                        children: [
+                          if (slotIcon != null)
+                            Icon(slotIcon, size: 14, color: slotBorderColor)
+                          else
+                            const SizedBox(height: 14),
+                          const SizedBox(height: 4),
+                          Text(
+                            slot['time']!,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: statusColor,
+                              color: isAvailable ? const Color(0xFF94A3B8) : slotBorderColor,
                               fontFamily: 'Cairo',
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            role,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF64748B),
-                              fontFamily: 'Cairo',
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          rating,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF475569),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'استهلاك السعة',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF334155),
-                  fontFamily: 'Cairo',
-                ),
-              ),
-              Text(
-                '$bookedSlots / $totalSlots محجوز',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E3A8A),
-                  fontFamily: 'Cairo',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: timeSlots.asMap().entries.map((entry) {
-              final index = entry.key;
-              final slot = entry.value;
-              final isBooked = slot['status'] == 'booked';
-              final isCompleted = slot['status'] == 'completed';
-              final isAvailable = slot['status'] == 'available';
-
-              Color slotColor;
-              Color slotBorderColor;
-              IconData? slotIcon;
-
-              if (isBooked) {
-                slotColor = const Color(0xFFDBEAFE);
-                slotBorderColor = const Color(0xFF3B82F6);
-                slotIcon = Icons.schedule_rounded;
-              } else if (isCompleted) {
-                slotColor = const Color(0xFFD1FAE5);
-                slotBorderColor = const Color(0xFF10B981);
-                slotIcon = Icons.check_circle_outline_rounded;
-              } else {
-                slotColor = const Color(0xFFF8FAFC);
-                slotBorderColor = const Color(0xFFE2E8F0);
-                slotIcon = null;
-              }
-
-              return Expanded(
-                child: Container(
-                  margin: EdgeInsets.only(left: index == timeSlots.length - 1 ? 0 : 8),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: slotColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: slotBorderColor),
-                  ),
-                  child: Column(
-                    children: [
-                      if (slotIcon != null)
-                        Icon(slotIcon, size: 14, color: slotBorderColor)
-                      else
-                        const SizedBox(height: 14),
-                      const SizedBox(height: 4),
-                      Text(
-                        slot['time']!,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: isAvailable ? const Color(0xFF94A3B8) : slotBorderColor,
-                          fontFamily: 'Cairo',
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -33,11 +33,11 @@ class BookingProgress extends StatelessWidget {
 
     // Admin steps (5)
     final List<Map<String, dynamic>> adminSteps = [
-      {'title': 'الخدمة', 'icon': Icons.cleaning_services_rounded},
-      {'title': 'السعر', 'icon': Icons.aspect_ratio},
-      {'title': 'الموعد', 'icon': Icons.calendar_today},
-      {'title': 'العميل', 'icon': Icons.person_outline},
-      {'title': 'تأكيد', 'icon': Icons.check_circle},
+      {'title': l10n.booking_admin_step_1_title, 'icon': Icons.cleaning_services_rounded},
+      {'title': l10n.booking_admin_step_2_title, 'icon': Icons.aspect_ratio},
+      {'title': l10n.booking_admin_step_3_title, 'icon': Icons.calendar_today},
+      {'title': l10n.booking_admin_step_4_title, 'icon': Icons.person_outline},
+      {'title': l10n.booking_admin_step_5_title, 'icon': Icons.check_circle},
     ];
 
     final steps = totalSteps == 5 ? adminSteps : customerSteps;
@@ -50,11 +50,11 @@ class BookingProgress extends StatelessWidget {
     ];
 
     final List<String> adminStepDescs = [
-      'اختيار الخدمة',
-      'تحديد السعر',
-      'تحديد الموعد',
-      'بيانات العميل',
-      'تأكيد الحجز',
+      l10n.booking_admin_step_1_desc,
+      l10n.booking_admin_step_2_desc,
+      l10n.booking_admin_step_3_desc,
+      l10n.booking_admin_step_4_desc,
+      l10n.booking_admin_step_5_desc,
     ];
 
     final stepDescs = totalSteps == 5 ? adminStepDescs : customerStepDescs;

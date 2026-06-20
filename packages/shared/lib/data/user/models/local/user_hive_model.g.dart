@@ -17,7 +17,6 @@ class UserHiveModelAdapter extends TypeAdapter<UserHiveModel> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return UserHiveModel(
-      customId: fields[0] as int,
       uid: fields[1] as String,
       firstName: fields[2] as String,
       lastName: fields[3] as String,
@@ -35,9 +34,7 @@ class UserHiveModelAdapter extends TypeAdapter<UserHiveModel> {
   @override
   void write(BinaryWriter writer, UserHiveModel obj) {
     writer
-      ..writeByte(12)
-      ..writeByte(0)
-      ..write(obj.customId)
+      ..writeByte(11)
       ..writeByte(1)
       ..write(obj.uid)
       ..writeByte(2)

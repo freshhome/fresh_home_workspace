@@ -7,6 +7,8 @@ import 'package:shared/presentation/validators/input_validator.dart';
 import 'package:shared/presentation/widget/custom_text_form_field/base_text_form_field.dart';
 
 
+import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
+
 class LoginFormFields extends StatefulWidget {
   final TextEditingController? emailController;
   final TextEditingController? passwordController;
@@ -28,6 +30,8 @@ class _LoginFormFieldsState extends State<LoginFormFields> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).extension<AppTextThemeExtension>()!;
     final l10n = AppLocalizations.of(context)!; 
+    final themeColor = context.themeColor;
+
     return Container(
       padding: EdgeInsets.zero,
       child: Column(
@@ -38,20 +42,20 @@ class _LoginFormFieldsState extends State<LoginFormFields> {
           BaseTextFormField(
             prefixIcon: Container(
               padding: const EdgeInsets.all(12),
-              child: const Icon(
+              child: Icon(
                 Icons.email_outlined,
-                color: Color(0xFF6B7280),
+                color: themeColor.secondaryText,
                 size: 24,
               ),
             ),
-            fillColor: Colors.white,
+            fillColor: themeColor.cardBackground,
             radius: 16,
             controller: widget.emailController,
             keyboardType: TextInputType.emailAddress,
             validator: InputValidator.validateEmail,
             hint: l10n.login_email_label,
-            hintStyle: const TextStyle(
-              color: Color(0xFFB0B8C1),
+            hintStyle: TextStyle(
+              color: themeColor.secondaryText.withValues(alpha: 0.5),
               fontSize: 16,
             ),
           ),
@@ -64,20 +68,20 @@ class _LoginFormFieldsState extends State<LoginFormFields> {
             validator: InputValidator.validateEmpty,
             hint: l10n.login_password_label,
             obscureText: _obscurePassword,
-            fillColor: Colors.white,
+            fillColor: themeColor.cardBackground,
             radius: 16,
             prefixIcon: Container(
               padding: const EdgeInsets.all(12),
-              child: const Icon(
+              child: Icon(
                 Icons.lock_outline,
-                color: Color(0xFF6B7280),
+                color: themeColor.secondaryText,
                 size: 24,
               ),
             ),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                color: const Color(0xFF6B7280),
+                color: themeColor.secondaryText,
               ),
               onPressed: () {
                 setState(() {
@@ -85,8 +89,8 @@ class _LoginFormFieldsState extends State<LoginFormFields> {
                 });
               },
             ),
-            hintStyle: const TextStyle(
-              color: Color(0xFFB0B8C1),
+            hintStyle: TextStyle(
+              color: themeColor.secondaryText.withValues(alpha: 0.5),
               fontSize: 16,
             ),
           ),
@@ -100,7 +104,7 @@ class _LoginFormFieldsState extends State<LoginFormFields> {
               child: Text(
                 l10n.forgot_password,
                 style: textTheme.textBodySecondary.copyWith(
-                  color: const Color(0xFF0085FF),
+                  color: themeColor.primary,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),

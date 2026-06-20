@@ -1,4 +1,4 @@
-import 'package:fpdart/fpdart.dart';
+import 'package:fpdart/fpdart.dart' hide State;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/presentation/theme/components/colors/theme_colors.dart';
@@ -13,19 +13,27 @@ import 'package:get_it/get_it.dart';
 
 import '../cubit/my_orders_cubit.dart';
 import '../cubit/edit_order_cubit.dart';
+import '../cubit/submit_review_cubit.dart';
 import '../widgets/status_badge.dart';
 
-class OrderDetailsScreen extends StatelessWidget {
+class OrderDetailsScreen extends StatefulWidget {
   final Booking? order;
   final String? orderId;
 
   const OrderDetailsScreen({super.key, this.order, this.orderId});
 
   @override
+  State<OrderDetailsScreen> createState() => _OrderDetailsScreenState();
+}
+
+class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
+  bool _reviewPrompted = false;
+
+  @override
   Widget build(BuildContext context) {
     final bookingRepo = GetIt.instance<BookingRepository>();
 
-    final targetId = order?.id ?? orderId;
+    final targetId = widget.order?.id ?? widget.orderId;
 
     if (targetId == null) {
       return const Scaffold(
@@ -33,49 +41,77 @@ class OrderDetailsScreen extends StatelessWidget {
       );
     }
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: StreamBuilder<Either<dynamic, Booking>>(
-        stream: bookingRepo.watchBooking(bookingId: targetId),
-        builder: (context, snapshot) {
-          // Resolve the current order — prefer real-time data
-          Booking? mutableOrder = order;
-          if (snapshot.hasData) {
-            snapshot.data!.fold((_) {}, (liveBooking) {
-              mutableOrder = liveBooking;
-            });
+    return BlocListener<SubmitReviewCubit, SubmitReviewState>(
+      listener: (context, state) {
+        if (state is CheckReviewStatusSuccess) {
+          if (!state.isReviewed) {
+            _showRatingBottomSheet(context, targetId);
           }
-
-          final currentOrder = mutableOrder;
-
-          if (currentOrder == null) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final currentDateTime = currentOrder.scheduledAt;
-          final todayStart = DateTime(
-            DateTime.now().year,
-            DateTime.now().month,
-            DateTime.now().day,
+        } else if (state is SubmitReviewSuccess) {
+          DialogHelper.showSuccess(
+            context,
+            message: 'تم إرسال تقييمك بنجاح. شكراً لك!',
+            onOkPress: () {},
           );
-          final isFutureOrToday = !currentDateTime.isBefore(todayStart);
+        } else if (state is SubmitReviewFailure) {
+          DialogHelper.showError(
+            context,
+            message: 'فشل إرسال التقييم: ${state.message}',
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: StreamBuilder<Either<dynamic, Booking>>(
+          stream: bookingRepo.watchBooking(bookingId: targetId),
+          builder: (context, snapshot) {
+            // Resolve the current order — prefer real-time data
+            Booking? mutableOrder = widget.order;
+            if (snapshot.hasData) {
+              snapshot.data!.fold((_) {}, (liveBooking) {
+                mutableOrder = liveBooking;
+              });
+            }
 
-          // Unified Lifecycle: Can edit/cancel only in early stages (before technician accepts)
-          final canCancelOrEdit =
-              isFutureOrToday &&
-              (currentOrder.status == OrderStatus.created ||
-                  currentOrder.status == OrderStatus.pending ||
-                  currentOrder.status == OrderStatus.assigned);
+            final currentOrder = mutableOrder;
 
-          // Show technician details ONLY if they confirmed attendance (ready) or further
-          final showTechnicianCard =
-              currentOrder.technicianId != null &&
-              (currentOrder.status == OrderStatus.ready ||
-                  currentOrder.status == OrderStatus.onTheWay ||
-                  currentOrder.status == OrderStatus.arrived ||
-                  currentOrder.status == OrderStatus.inProgress);
+            if (currentOrder == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          return BlocListener<EditOrderCubit, EditOrderState>(
+            // Trigger checking review status if order is completed and we haven't prompted yet
+            if (currentOrder.status == OrderStatus.completed && !_reviewPrompted) {
+              _reviewPrompted = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                context.read<SubmitReviewCubit>().checkIfReviewed(bookingId: currentOrder.id);
+              });
+            }
+
+            final currentDateTime = currentOrder.scheduledAt;
+            final todayStart = DateTime(
+              DateTime.now().year,
+              DateTime.now().month,
+              DateTime.now().day,
+            );
+            final isFutureOrToday = !currentDateTime.isBefore(todayStart);
+
+            // Unified Lifecycle: Can edit/cancel only in early stages (before technician accepts)
+            final canCancelOrEdit =
+                isFutureOrToday &&
+                (currentOrder.status == OrderStatus.created ||
+                    currentOrder.status == OrderStatus.pending ||
+                    currentOrder.status == OrderStatus.assigned);
+
+            // Show technician details ONLY if they confirmed attendance (ready) or further
+            final showTechnicianCard =
+                currentOrder.technicianId != null &&
+                (currentOrder.status == OrderStatus.ready ||
+                    currentOrder.status == OrderStatus.onTheWay ||
+                    currentOrder.status == OrderStatus.arrived ||
+                    currentOrder.status == OrderStatus.inProgress ||
+                    currentOrder.status == OrderStatus.completed);
+
+            return BlocListener<EditOrderCubit, EditOrderState>(
             listener: (context, state) {
               if (state is EditOrderSuccess) {
                 DialogHelper.showSuccess(
@@ -302,141 +338,330 @@ class OrderDetailsScreen extends StatelessWidget {
           );
         },
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTechnicianCard(BuildContext context, Booking currentOrder) {
     final themeColor = context.themeColor;
     final statusColor = BookingStatusHelper.getColor(currentOrder.status);
     final statusLabel = BookingStatusHelper.getLabel(currentOrder.status);
+    final technicianId = currentOrder.technicianId;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            statusColor.withValues(alpha: 0.08),
-            statusColor.withValues(alpha: 0.03),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: statusColor.withValues(alpha: 0.25),
-          width: 1.5,
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
+    if (technicianId == null) {
+      return const SizedBox.shrink();
+    }
+
+    final getUserByIdUseCase = GetIt.instance<GetUserByIdUseCase>();
+
+    return FutureBuilder<Either<Failure, UserProfile>>(
+      future: getUserByIdUseCase(uid: technicianId),
+      builder: (context, snapshot) {
+        String technicianName = 'فريش هوم - فني متخصص';
+        double rating = 5.0;
+
+        if (snapshot.hasData) {
+          snapshot.data!.fold(
+            (failure) {},
+            (profile) {
+              if (profile.fullName.isNotEmpty) {
+                technicianName = profile.fullName;
+              }
+              if (profile is TechnicianProfile) {
+                rating = profile.rating;
+              }
+            },
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                statusColor.withValues(alpha: 0.08),
+                statusColor.withValues(alpha: 0.03),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: statusColor.withValues(alpha: 0.25),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.engineering_rounded,
-                  color: statusColor,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'الفني المعين',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: themeColor.secondaryText,
-                        fontFamily: 'Cairo',
-                        fontWeight: FontWeight.w600,
-                      ),
+              Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'فريش هوم - فني متخصص',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: themeColor.textPrimary,
-                        fontFamily: 'Cairo',
-                      ),
+                    child: Icon(
+                      Icons.engineering_rounded,
+                      color: statusColor,
+                      size: 28,
                     ),
-                    const SizedBox(height: 4),
-                    Row(
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: Colors.amber,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
                         Text(
-                          '4.8',
+                          'الفني المعين',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
+                            color: themeColor.secondaryText,
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          technicianName,
+                          style: TextStyle(
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                             color: themeColor.textPrimary,
                             fontFamily: 'Cairo',
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            statusLabel,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: statusColor,
-                              fontFamily: 'Cairo',
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            StarRatingWidget(
+                              initialRating: rating,
+                              isReadOnly: true,
+                              iconSize: 18,
                             ),
-                          ),
+                            const SizedBox(width: 4),
+                            Text(
+                              rating.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: themeColor.textPrimary,
+                                fontFamily: 'Cairo',
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                statusLabel,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                  fontFamily: 'Cairo',
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ContactButton(
+                      icon: Icons.phone_rounded,
+                      label: 'اتصال',
+                      color: themeColor.primary,
+                      onTap: () {},
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ContactButton(
+                      icon: Icons.chat_bubble_rounded,
+                      label: 'واتساب',
+                      color: const Color(0xFF25D366),
+                      onTap: () {},
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showRatingBottomSheet(BuildContext parentContext, String bookingId) {
+    int selectedRating = 0;
+    final feedbackController = TextEditingController();
+    final submitReviewCubit = parentContext.read<SubmitReviewCubit>();
+
+    showModalBottomSheet(
+      context: parentContext,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) {
+        return BlocProvider.value(
+          value: submitReviewCubit,
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              final showFeedbackField = selectedRating > 0 && selectedRating <= 3;
+              
+              return Container(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 24,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                ),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'تقييم الخدمة',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Cairo',
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'كيف كانت تجربتك مع الفني والخدمة المقدمة؟',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Cairo',
+                        color: Color(0xFF6B7280),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    StarRatingWidget(
+                      initialRating: selectedRating.toDouble(),
+                      isReadOnly: false,
+                      iconSize: 40,
+                      onRatingChanged: (rating) {
+                        setModalState(() {
+                          selectedRating = rating;
+                        });
+                      },
+                    ),
+                    if (showFeedbackField) ...[
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: feedbackController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: 'يرجى كتابة ملاحظاتك لتحسين الخدمة...',
+                          hintStyle: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 13,
+                            color: Colors.grey.shade400,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: ThemeColors.primaryLight),
+                          ),
+                        ),
+                        style: const TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    BlocBuilder<SubmitReviewCubit, SubmitReviewState>(
+                      builder: (context, state) {
+                        final isLoading = state is SubmitReviewLoading;
+
+                        return SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: (selectedRating == 0 || isLoading)
+                                ? null
+                                : () {
+                                    context.read<SubmitReviewCubit>().submitReview(
+                                          bookingId: bookingId,
+                                          ratingValue: selectedRating,
+                                          feedbackText: feedbackController.text.trim().isNotEmpty
+                                              ? feedbackController.text.trim()
+                                              : null,
+                                        );
+                                    Navigator.pop(modalContext); // close bottom sheet
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ThemeColors.primaryLight,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              disabledBackgroundColor: Colors.grey.shade300,
+                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    'إرسال التقييم',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Cairo',
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _ContactButton(
-                  icon: Icons.phone_rounded,
-                  label: 'اتصال',
-                  color: themeColor.primary,
-                  onTap: () {},
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _ContactButton(
-                  icon: Icons.chat_bubble_rounded,
-                  label: 'واتساب',
-                  color: const Color(0xFF25D366),
-                  onTap: () {},
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -658,7 +883,12 @@ class OrderDetailsScreen extends StatelessWidget {
         GetIt.instance<AuthLocalDataSource>().getCachedUser()?.uid ?? '';
     context.pushNamed(
       AppRoutes.bookingFlow,
-      extra: {'service': bookedService, 'userId': userId, 'price': null},
+      extra: BookingFlowConfig(
+        mode: BookingFlowMode.customer,
+        actorId: userId,
+        preSelectedService: bookedService,
+        initialServicePrice: null,
+      ),
     );
   }
 }

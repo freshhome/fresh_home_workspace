@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared/core/constants/app_assets.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 
+import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
+
 class OnboardingScreen extends StatelessWidget {
   final String title;
   final String description;
@@ -17,6 +19,7 @@ class OnboardingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final textTheme = Theme.of(context).extension<AppTextThemeExtension>()!;
+    final themeColor = context.themeColor;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -37,7 +40,7 @@ class OnboardingScreen extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: textTheme.titleDisplayLarge.copyWith(
-                color: const Color(0xFF0D327D),
+                color: themeColor.textPrimary,
               ),
             ),
             const SizedBox(height: 24),
@@ -57,7 +60,7 @@ class OnboardingScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF0D327D),
+                  color: themeColor.secondaryText,
                   height: 1.6,
                 ),
               ),

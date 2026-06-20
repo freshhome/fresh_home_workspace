@@ -53,7 +53,7 @@ class ConfirmationPage extends StatelessWidget {
         }
       },
       builder: (context, state) {
-        final themeColor = Theme.of(context).extension<ThemeColorExtension>()!;
+        final themeColor = context.themeColor;
         final themeText = Theme.of(context).extension<AppTextThemeExtension>()!;
         final l10n = AppLocalizations.of(context)!;
         final cubit = context.read<BookingFlowCubit>();
@@ -68,12 +68,20 @@ class ConfirmationPage extends StatelessWidget {
                 state.manualClientCity,
                 state.manualClientStreet,
                 state.manualClientBuilding != null
-                    ? 'عمارة ${state.manualClientBuilding}'
+                    ? l10n.booking_building_val(state.manualClientBuilding!)
                     : null,
               ].whereType<String>().join(', ')
             : address != null
-            ? '${address.governorate}, ${address.city}, ${address.street}, عمارة ${address.buildingNumber}, شقة ${address.apartmentNumber}'
-            : l10n.confirmation_no_address;
+                ? [
+                    address.governorate,
+                    address.city,
+                    address.street,
+                    l10n.booking_building_val(address.buildingNumber),
+                    address.apartmentNumber != null && address.apartmentNumber!.isNotEmpty
+                        ? l10n.booking_apartment_val(address.apartmentNumber!)
+                        : null,
+                  ].whereType<String>().join(', ')
+                : l10n.confirmation_no_address;
 
         final String displayedName = isAdmin
             ? (state.manualClientName ?? '')
@@ -92,7 +100,7 @@ class ConfirmationPage extends StatelessWidget {
                 l10n.confirmation_review_title,
                 style: themeText.titleSectionMedium.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF333333),
+                  color: themeColor.textPrimary,
                 ),
               ),
               const SizedBox(height: 24),
@@ -100,15 +108,9 @@ class ConfirmationPage extends StatelessWidget {
               // Summary card
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: themeColor.cardBackground,
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  boxShadow: [themeColor.cardShadow],
                 ),
                 child: Column(
                   children: [
@@ -142,7 +144,7 @@ class ConfirmationPage extends StatelessWidget {
                                       '',
                                   style: themeText.titleSectionSmall.copyWith(
                                     fontWeight: FontWeight.w900,
-                                    color: const Color(0xFF333333),
+                                    color: themeColor.textPrimary,
                                   ),
                                 ),
                               ],
@@ -163,7 +165,7 @@ class ConfirmationPage extends StatelessWidget {
                                 '${state.price?.total.toStringAsFixed(0)} ${l10n.pricing_currency}',
                                 style: themeText.titleSectionSmall.copyWith(
                                   fontWeight: FontWeight.w900,
-                                  color: const Color(0xFF333333),
+                                  color: themeColor.textPrimary,
                                 ),
                               ),
                             ],
@@ -236,14 +238,14 @@ class ConfirmationPage extends StatelessWidget {
                 l10n.confirmation_payment_method,
                 style: themeText.titleSectionSmall.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF333333),
+                  color: themeColor.textPrimary,
                 ),
               ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: themeColor.cardBackground,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: themeColor.primary.withValues(alpha: 0.2),
@@ -257,7 +259,7 @@ class ConfirmationPage extends StatelessWidget {
                       l10n.confirmation_payment_cash,
                       style: themeText.textBodyPrimary.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF333333),
+                        color: themeColor.textPrimary,
                       ),
                     ),
                     const Spacer(),
@@ -324,7 +326,7 @@ class _DetailRow extends StatelessWidget {
               Text(
                 label,
                 style: themeText.textCaption.copyWith(
-                  color: const Color(0xFF999999),
+                  color: themeColor.secondaryText,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -333,7 +335,7 @@ class _DetailRow extends StatelessWidget {
                 value,
                 style: themeText.textBodyPrimary.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF333333),
+                  color: themeColor.textPrimary,
                 ),
               ),
             ],

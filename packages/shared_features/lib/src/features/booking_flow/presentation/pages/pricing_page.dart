@@ -125,9 +125,7 @@ class _PricingPageState extends State<PricingPage> {
       ],
       child: BlocBuilder<BookingFlowCubit, BookingFlowState>(
         builder: (context, state) {
-          final themeColor = Theme.of(
-            context,
-          ).extension<ThemeColorExtension>()!;
+          final themeColor = context.themeColor;
           final themeText = Theme.of(
             context,
           ).extension<AppTextThemeExtension>()!;
@@ -179,19 +177,19 @@ class _PricingPageState extends State<PricingPage> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: themeColor.error.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.shade200),
+                      border: Border.all(color: themeColor.error.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red),
+                        Icon(Icons.error_outline, color: themeColor.error),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             state.errorMessage!,
                             style: themeText.textBodySecondary.copyWith(
-                              color: Colors.red.shade800,
+                              color: themeColor.error,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -357,7 +355,6 @@ class _PricingPageState extends State<PricingPage> {
               child: Text(
                 '${currentArea.toStringAsFixed(0)} ${l10n.pricing_area_unit}',
                 style: TextStyle(
-                  fontFamily: 'Cairo',
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                   color: themeColor.primary,
@@ -399,7 +396,6 @@ class _PricingPageState extends State<PricingPage> {
                       Text(
                         currentArea.toStringAsFixed(0),
                         style: TextStyle(
-                          fontFamily: 'Cairo',
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
                           color: themeColor.textPrimary,
@@ -408,7 +404,6 @@ class _PricingPageState extends State<PricingPage> {
                       Text(
                         l10n.pricing_area_unit,
                         style: TextStyle(
-                          fontFamily: 'Cairo',
                           fontSize: 12,
                           color: themeColor.secondaryText,
                         ),
@@ -459,9 +454,8 @@ class _PricingPageState extends State<PricingPage> {
                 child: ChoiceChip(
                   label: Text('$preset ${l10n.pricing_unit_meter_short}²'),
                   labelStyle: TextStyle(
-                    fontFamily: 'Cairo',
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? Colors.white : themeColor.secondaryText,
+                    color: isSelected ? themeColor.onPrimary : themeColor.secondaryText,
                   ),
                   selected: isSelected,
                   selectedColor: themeColor.primary,
@@ -568,7 +562,7 @@ class _PricingPageState extends State<PricingPage> {
                         l10n.pricing_calc_from_windows,
                         style: themeText.textCaption.copyWith(
                           color: state.useWindowsCalculator
-                              ? Colors.white
+                              ? themeColor.onPrimary
                               : themeColor.secondaryText,
                           fontWeight: state.useWindowsCalculator
                               ? FontWeight.bold
@@ -599,7 +593,7 @@ class _PricingPageState extends State<PricingPage> {
                         l10n.pricing_direct_linear_meters,
                         style: themeText.textCaption.copyWith(
                           color: !state.useWindowsCalculator
-                              ? Colors.white
+                              ? themeColor.onPrimary
                               : themeColor.secondaryText,
                           fontWeight: !state.useWindowsCalculator
                               ? FontWeight.bold
@@ -654,7 +648,6 @@ class _PricingPageState extends State<PricingPage> {
               child: Text(
                 '${currentLinear.toStringAsFixed(1).replaceAll('.0', '')} ${l10n.pricing_unit_meter_short}',
                 style: TextStyle(
-                  fontFamily: 'Cairo',
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                   color: themeColor.primary,
@@ -696,7 +689,6 @@ class _PricingPageState extends State<PricingPage> {
                       Text(
                         currentLinear.toStringAsFixed(1).replaceAll('.0', ''),
                         style: TextStyle(
-                          fontFamily: 'Cairo',
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
                           color: themeColor.textPrimary,
@@ -705,7 +697,6 @@ class _PricingPageState extends State<PricingPage> {
                       Text(
                         l10n.pricing_unit_meter,
                         style: TextStyle(
-                          fontFamily: 'Cairo',
                           fontSize: 12,
                           color: themeColor.secondaryText,
                         ),
@@ -756,9 +747,8 @@ class _PricingPageState extends State<PricingPage> {
                 child: ChoiceChip(
                   label: Text('$preset ${l10n.pricing_unit_meter_short}'),
                   labelStyle: TextStyle(
-                    fontFamily: 'Cairo',
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? Colors.white : themeColor.secondaryText,
+                    color: isSelected ? themeColor.onPrimary : themeColor.secondaryText,
                   ),
                   selected: isSelected,
                   selectedColor: themeColor.primary,
@@ -1411,7 +1401,7 @@ class _PricingPageState extends State<PricingPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: hasCoupon ? themeColor.error.withValues(alpha: 0.1) : themeColor.primary,
-                              foregroundColor: hasCoupon ? themeColor.error : Colors.white,
+                              foregroundColor: hasCoupon ? themeColor.error : themeColor.onPrimary,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -1420,7 +1410,6 @@ class _PricingPageState extends State<PricingPage> {
                             child: Text(
                               hasCoupon ? l10n.pricing_coupon_cancel : l10n.pricing_coupon_apply,
                               style: const TextStyle(
-                                fontFamily: 'Cairo',
                                 fontWeight: FontWeight.bold,
                               ),
                             ),

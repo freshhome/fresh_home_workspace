@@ -6,6 +6,7 @@ import 'package:shared/domain/booking/entities/booking/booking.dart';
 
 import '../cubit/my_orders_cubit.dart';
 import '../cubit/edit_order_cubit.dart';
+import '../cubit/submit_review_cubit.dart';
 import '../pages/my_orders_screen.dart';
 import '../pages/order_details_screen.dart';
 import '../pages/edit_schedule_screen.dart';
@@ -32,6 +33,7 @@ class MyOrdersRoutes {
           providers: [
             BlocProvider.value(value: GetIt.instance<MyOrdersCubit>()),
             BlocProvider(create: (_) => GetIt.instance<EditOrderCubit>()),
+            BlocProvider(create: (_) => GetIt.instance<SubmitReviewCubit>()),
           ],
           child: OrderDetailsScreen(
             order: order,
@@ -40,6 +42,7 @@ class MyOrdersRoutes {
         );
       },
     ),
+
     GoRoute(
       path: AppRoutes.editSchedule,
       name: AppRoutes.editSchedule,

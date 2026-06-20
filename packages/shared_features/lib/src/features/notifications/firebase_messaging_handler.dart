@@ -66,8 +66,8 @@ class FirebaseMessagingHandler {
     // 2. Create High Importance Android Channel
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'fresh_home_notifications', // id
-      'إشعارات فريش هوم', // title
-      description: 'هذه القناة مخصصة لإشعارات الطلبات والرسائل المهمة.', // description
+      'Fresh Home Notifications', // title
+      description: 'This channel is dedicated to order notifications and important messages.', // description
       importance: Importance.max,
       playSound: true,
       enableVibration: true,

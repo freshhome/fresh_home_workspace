@@ -1,7 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:shared/core/error/failures.dart';
 import 'package:shared/domain/booking/entities/availability/day_availability.dart';
-import 'package:shared/domain/user/entities/user/technician_profile.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 
 /// Contract for the assignment engine — all technician availability
 /// and atomic booking operations go through this repository.

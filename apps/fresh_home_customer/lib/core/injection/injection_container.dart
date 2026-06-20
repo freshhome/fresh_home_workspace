@@ -6,6 +6,8 @@ import 'package:shared/shared.dart';
 import 'package:shared_features/shared_features.dart';
 
 import 'package:fresh_home_customer/features/services/presentation/cubit/services_cubit.dart';
+import 'package:fresh_home_customer/features/services/presentation/cubit/service_reviews_cubit.dart';
+import 'package:fresh_home_customer/features/services/domain/use_cases/fetch_service_reviews_use_case.dart';
 import 'package:fresh_home_customer/features/services/presentation/routes/services_routes.dart';
 import 'package:fresh_home_customer/features/my_orders/di/my_orders_di.dart';
 import 'package:fresh_home_customer/features/my_orders/presentation/cubit/my_orders_cubit.dart';
@@ -114,4 +116,16 @@ Future<void> initAppDI() async {
       getSubServiceByIdUseCase: getIt<GetSubServiceByIdUseCase>(),
     ),
   );
+
+  // Services Reviews
+  getIt.registerLazySingleton<FetchServiceReviewsUseCase>(
+    () => FetchServiceReviewsUseCase(getIt<ReviewsRepository>()),
+  );
+
+  getIt.registerFactory<ServiceReviewsCubit>(
+    () => ServiceReviewsCubit(
+      fetchServiceReviewsUseCase: getIt<FetchServiceReviewsUseCase>(),
+    ),
+  );
 }
+

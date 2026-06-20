@@ -7,6 +7,7 @@ import 'package:shared/domain/booking/use_cases/booking/update_booking_schedule_
 import 'package:shared/domain/booking/use_cases/booking/update_booking_address_use_case.dart';
 import 'package:shared/domain/user/entities/user/address.dart';
 import 'package:shared/domain/user/entities/user/phone.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 import 'package:shared_features/shared_features.dart';
 
 part 'edit_order_state.dart';
@@ -89,8 +90,9 @@ class EditOrderCubit extends Cubit<EditOrderState> {
     final usedPhone = usedContact.phone.firstOrNull;
     if (usedPhone == null) return usedAddress;
 
-    final addresses = profile.clientProfile?.addresses ?? [];
-    final phones = profile.clientProfile?.phoneNumbers ?? [];
+    if (profile is! CustomerProfile) return usedAddress;
+    final addresses = profile.addresses;
+    final phones = profile.phoneNumbers;
 
     bool isNewAddress = !addresses.any((a) =>
         a.governorate == usedAddress.governorate &&
@@ -119,7 +121,7 @@ class EditOrderCubit extends Cubit<EditOrderState> {
       final updatedPhones = List<Phone>.from(phones)
         ..add(Phone(
           id: '',
-          userId: profile.user.uid,
+          userId: profile.uid,
           phoneNumber: usedPhone,
           isPrimary: phones.isEmpty,
           isVerified: false,
@@ -131,7 +133,7 @@ class EditOrderCubit extends Cubit<EditOrderState> {
     Address? finalAddress = usedAddress;
     final updatedResult = await profileRepository.loadProfile();
     updatedResult.fold((_) => null, (updatedProfile) {
-      final updatedAddresses = updatedProfile.clientProfile?.addresses ?? [];
+      final updatedAddresses = updatedProfile is CustomerProfile ? updatedProfile.addresses : const <Address>[];
       finalAddress = updatedAddresses.firstWhere(
         (a) =>
             a.governorate == usedAddress.governorate &&

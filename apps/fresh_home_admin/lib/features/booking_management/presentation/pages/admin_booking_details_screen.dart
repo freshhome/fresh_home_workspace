@@ -65,8 +65,8 @@ class _AdminBookingDetailsScreenState extends State<AdminBookingDetailsScreen> {
 
 class _AdminBookingDetailsContent extends StatelessWidget {
   final Booking booking;
-  final User? customer;
-  final User? technician;
+  final UserProfile? customer;
+  final UserProfile? technician;
 
   const _AdminBookingDetailsContent({
     required this.booking,
@@ -132,6 +132,95 @@ class _AdminBookingDetailsContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (!booking.isWhatsappConfirmed) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB), // Amber 50
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: const Color(0xFFFDE68A)), // Amber 200
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF59E0B), // Amber 500
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'حجز معلق - بانتظار التأكيد عبر واتساب ⚠️',
+                                    style: TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 14,
+                                      color: Color(0xFF78350F), // Amber 900
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'لم يتم تأكيد هذا الحجز من العميل عبر الواتساب بعد.',
+                                    style: TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontSize: 12,
+                                      color: Color(0xFF92400E), // Amber 800
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            context.read<AdminBookingDetailsCubit>().confirmWhatsappBooking(bookingId: booking.id);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981), // Emerald 500
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                          label: const Text(
+                            'تأكيد حجز العميل وتنشيط الطلب',
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (booking.isCritical) ...[
                   Container(
                     margin: const EdgeInsets.only(bottom: 24),
@@ -332,7 +421,7 @@ class _AdminBookingDetailsContent extends StatelessWidget {
     }
   }
 
-  Widget _buildCustomerCard(User? customer) {
+  Widget _buildCustomerCard(UserProfile? customer) {
     final address = booking.address;
     final fullAddress =
         '${address.city}، ${address.street}، عمارة ${address.buildingNumber}${address.apartmentNumber != null ? '، شقة ${address.apartmentNumber}' : ''}${address.floorNumber != null ? '، دور ${address.floorNumber}' : ''}';
@@ -354,8 +443,8 @@ class _AdminBookingDetailsContent extends StatelessWidget {
         }
 
         // If profile has phones, use them as they might be more up-to-date
-        if (customer.phones.isNotEmpty) {
-          displayPhone = customer.phones.first;
+        if (customer.phoneNumbers.isNotEmpty) {
+          displayPhone = customer.phoneNumbers.first.phoneNumber;
         }
       } else {
         // Admin Profile: This was a manual booking.
@@ -392,9 +481,9 @@ class _AdminBookingDetailsContent extends StatelessWidget {
     );
   }
 
-  Widget _buildTechnicianCard(User? technician) {
-    final techPhone = technician?.phones.isNotEmpty == true
-        ? technician!.phones.first
+  Widget _buildTechnicianCard(UserProfile? technician) {
+    final techPhone = technician?.phoneNumbers.isNotEmpty == true
+        ? technician!.phoneNumbers.first.phoneNumber
         : '';
 
     return _InfoCard(

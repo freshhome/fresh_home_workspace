@@ -132,7 +132,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = Theme.of(context).extension<ThemeColorExtension>()!;
+    final themeColor = context.themeColor;
     final l10n = AppLocalizations.of(context)!;
 
     final governorates = EgyptRegions.getGovernorates(l10n);
@@ -345,15 +345,9 @@ class _ManualClientPageState extends State<ManualClientPage> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: themeColor.cardBackground,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: [themeColor.cardShadow],
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -375,7 +369,6 @@ class _ManualClientPageState extends State<ManualClientPage> {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
-                  fontFamily: 'Cairo',
                 ),
               ),
             ],
@@ -388,6 +381,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
   }
 
   Widget _buildLabeledField({required String label, required Widget child}) {
+    final themeColor = context.themeColor;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -398,8 +392,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
-              color: Colors.black.withValues(alpha: 0.6),
-              fontFamily: 'Cairo',
+              color: themeColor.secondaryText,
             ),
           ),
         ),
@@ -457,9 +450,8 @@ class _ManualClientPageState extends State<ManualClientPage> {
               label,
               style: TextStyle(
                 fontSize: 11,
-                color: hasError ? Colors.red : themeColor.secondaryText,
+                color: hasError ? themeColor.error : themeColor.secondaryText,
                 fontWeight: FontWeight.bold,
-                fontFamily: 'Cairo',
               ),
             ),
             const SizedBox(height: 8),
@@ -475,24 +467,22 @@ class _ManualClientPageState extends State<ManualClientPage> {
               hint: "00",
               radius: 12,
               fillColor: hasError 
-                  ? Colors.red.withValues(alpha: 0.05) 
-                  : Colors.white,
-              errorBorderColor: Colors.red,
+                  ? themeColor.error.withValues(alpha: 0.05) 
+                  : themeColor.cardBackground,
+              errorBorderColor: themeColor.error,
               enabledBorderColor: themeColor.unselectedItem.withValues(alpha: 0.1),
               focusedBorderColor: themeColor.primary,
             ),
-                ],
-              );
-            },
-          );
-        }
-      
-    
-  
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildAutoFillButton(ThemeColorExtension themeColor) {
+    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
-      onTap: _autoFill,
+      onTap: () => _autoFill(l10n),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -508,18 +498,17 @@ class _ManualClientPageState extends State<ManualClientPage> {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.auto_fix_high_rounded, color: Colors.white, size: 20),
-            SizedBox(width: 8),
+            const Icon(Icons.auto_fix_high_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
             Text(
-              "تعبئة تلقائية للتجربة (Debug)",
-              style: TextStyle(
+              l10n.booking_autofill_debug,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
-                fontFamily: 'Cairo',
               ),
             ),
           ],
@@ -528,13 +517,13 @@ class _ManualClientPageState extends State<ManualClientPage> {
     );
   }
 
-  void _autoFill() {
+  void _autoFill(AppLocalizations l10n) {
     setState(() {
-      _nameController.text = "عميل تجربة";
+      _nameController.text = l10n.role_client;
       _phoneController.text = "01012345678";
-      _selectedGovernorate = "القاهرة";
-      _selectedCity = "التجمع الخامس";
-      _streetController.text = "شارع التسعين";
+      _selectedGovernorate = l10n.address_gov_cairo;
+      _selectedCity = l10n.address_city_fifth_settlement;
+      _streetController.text = "90 Street";
       _buildingController.text = "10";
       _floorController.text = "2";
       _apartmentController.text = "5";
@@ -542,10 +531,10 @@ class _ManualClientPageState extends State<ManualClientPage> {
     _syncToState();
     
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("تم ملء البيانات بنجاح! ✨", style: TextStyle(fontFamily: 'Cairo')),
+      SnackBar(
+        content: Text(l10n.booking_autofill_success),
         backgroundColor: Colors.green,
-        duration: Duration(seconds: 1),
+        duration: const Duration(seconds: 1),
       ),
     );
   }

@@ -30,3 +30,5 @@ export 'widgets/pricing/commission_breakdown_card.dart';
 export 'widgets/pricing/bonus_highlight_card.dart';
 export 'widgets/pricing/customer_paid_summary.dart';
 export 'widgets/pricing/interactive_quote_lock_timeline.dart';
+export 'widgets/star_rating_widget.dart';
+

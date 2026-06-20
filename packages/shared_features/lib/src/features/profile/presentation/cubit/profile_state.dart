@@ -7,12 +7,12 @@ class ProfileInitial extends ProfileState {}
 class ProfileLoading extends ProfileState {}
 
 class ProfileLoaded extends ProfileState {
-  final UserWithProfile profile;
+  final UserProfile profile;
   ProfileLoaded(this.profile);
 }
 
 class ProfileError extends ProfileState {
   final Failure failure;
-  final UserWithProfile? profile;
+  final UserProfile? profile;
   ProfileError(this.failure, {this.profile});
 }

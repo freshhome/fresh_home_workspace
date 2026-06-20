@@ -22,6 +22,13 @@ import '../../features/pricing_governance/di/pricing_governance_di.dart';
 import '../../features/pricing_governance/presentation/routes/pricing_governance_routes.dart';
 import '../../features/finance/di/admin_finance_di.dart';
 import '../../features/finance/presentation/routes/admin_finance_routes.dart';
+import '../../features/reviews_management/domain/use_cases/fetch_admin_reviews_use_case.dart';
+import '../../features/reviews_management/domain/use_cases/approve_review_use_case.dart';
+import '../../features/reviews_management/presentation/cubit/reviews_moderation_cubit.dart';
+import '../../features/reviews_management/presentation/routes/reviews_moderation_routes.dart';
+import '../../features/whatsapp_settings/domain/repositories/whatsapp_settings_repository.dart';
+import '../../features/whatsapp_settings/data/repositories/whatsapp_settings_repository_impl.dart';
+import '../../features/whatsapp_settings/presentation/cubit/whatsapp_settings_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -40,6 +47,7 @@ Future<void> initAppDI() async {
       ...AdminDashboardRoutes.routes,
       ...PricingGovernanceRoutes.routes,
       ...AdminFinanceRoutes.routes,
+      ...ReviewsModerationRoutes.routes,
     ],
     navigationConfig: NavigationConfig(
       items: [
@@ -134,4 +142,30 @@ Future<void> initAppDI() async {
   // ADMIN FINANCE FEATURE
   // --------------------------------------------------------------------------
   initAdminFinanceDI(getIt);
+
+  // --------------------------------------------------------------------------
+  // REVIEWS MODERATION FEATURE
+  // --------------------------------------------------------------------------
+  getIt.registerLazySingleton<FetchAdminReviewsUseCase>(
+    () => FetchAdminReviewsUseCase(repository: getIt()),
+  );
+  getIt.registerLazySingleton<ApproveReviewUseCase>(
+    () => ApproveReviewUseCase(repository: getIt()),
+  );
+  getIt.registerFactory<ReviewsModerationCubit>(
+    () => ReviewsModerationCubit(
+      fetchAdminReviewsUseCase: getIt(),
+      approveReviewUseCase: getIt(),
+    ),
+  );
+
+  // --------------------------------------------------------------------------
+  // WHATSAPP SETTINGS FEATURE
+  // --------------------------------------------------------------------------
+  getIt.registerLazySingleton<WhatsAppSettingsRepository>(
+    () => WhatsAppSettingsRepositoryImpl(),
+  );
+  getIt.registerFactory<WhatsAppSettingsCubit>(
+    () => WhatsAppSettingsCubit(repository: getIt()),
+  );
 }

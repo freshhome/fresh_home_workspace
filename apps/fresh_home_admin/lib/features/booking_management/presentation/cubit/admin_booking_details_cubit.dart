@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared/domain/user/entities/user/user.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 import 'package:shared/domain/booking/entities/booking/booking.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/booking_components.dart';
 import 'package:shared/domain/booking/repositories/booking_repository.dart';
@@ -18,8 +18,8 @@ class AdminBookingDetailsLoading extends AdminBookingDetailsState {}
 
 class AdminBookingDetailsLoaded extends AdminBookingDetailsState {
   final Booking? booking;
-  final User? customer;
-  final User? technician;
+  final UserProfile? customer;
+  final UserProfile? technician;
   AdminBookingDetailsLoaded({this.booking, this.customer, this.technician});
 }
 
@@ -75,8 +75,8 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
         (updatedBooking) async {
           debugPrint('🔄 [AdminBookingDetailsCubit] Booking Updated: ${updatedBooking.status}');
           
-          User? customer;
-          User? technician;
+          UserProfile? customer;
+          UserProfile? technician;
 
           // If we already have data, we might want to preserve customer/tech to avoid flickering
           if (state is AdminBookingDetailsLoaded) {
@@ -168,6 +168,21 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     result.fold(
       (l) => emit(AdminBookingDetailsError(l.message)),
       (r) => emit(AdminBookingDetailsSuccess('تم إلغاء الطلب بنجاح')),
+    );
+  }
+
+  Future<void> confirmWhatsappBooking({
+    required String bookingId,
+  }) async {
+    emit(AdminBookingDetailsLoading());
+    
+    final result = await bookingRepository.adminConfirmWhatsappBooking(
+      bookingId: bookingId,
+    );
+
+    result.fold(
+      (l) => emit(AdminBookingDetailsError(l.message)),
+      (r) => emit(AdminBookingDetailsSuccess('تم تأكيد حجز الواتساب يدوياً بنجاح وتنشيط الحجز!')),
     );
   }
 }

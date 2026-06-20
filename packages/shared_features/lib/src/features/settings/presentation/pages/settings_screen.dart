@@ -111,7 +111,6 @@ class SettingsScreen extends StatelessWidget {
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
-                      fontFamily: 'Cairo',
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -121,7 +120,6 @@ class SettingsScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.white.withValues(alpha:0.7),
-                      fontFamily: 'Cairo',
                       fontWeight: FontWeight.w400,
                     ),
                   ),
@@ -152,7 +150,6 @@ class SettingsScreen extends StatelessWidget {
               fontSize: 16,
               fontWeight: FontWeight.w800,
               color: themeColor.textPrimary,
-              fontFamily: 'Cairo',
             ),
           ),
         ],
@@ -195,7 +192,6 @@ class SettingsScreen extends StatelessWidget {
                   context.l10n.settings_theme,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontFamily: 'Cairo',
                     fontSize: 15,
                     color: themeColor.textPrimary,
                   ),
@@ -223,7 +219,6 @@ class SettingsScreen extends StatelessWidget {
                       dropdownColor: themeColor.cardBackground,
                       style: TextStyle(
                         color: themeColor.textPrimary,
-                        fontFamily: 'Cairo',
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),
@@ -281,7 +276,6 @@ class SettingsScreen extends StatelessWidget {
                   context.l10n.settings_language,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontFamily: 'Cairo',
                     fontSize: 15,
                     color: themeColor.textPrimary,
                   ),
@@ -309,7 +303,6 @@ class SettingsScreen extends StatelessWidget {
                       dropdownColor: themeColor.cardBackground,
                       style: TextStyle(
                         color: themeColor.textPrimary,
-                        fontFamily: 'Cairo',
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),
@@ -372,7 +365,6 @@ class SettingsScreen extends StatelessWidget {
               context.l10n.notifications_title,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontFamily: 'Cairo',
                 fontSize: 15,
                 color: themeColor.textPrimary,
               ),
@@ -410,7 +402,6 @@ class SettingsScreen extends StatelessWidget {
               context.l10n.settings_section_about,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontFamily: 'Cairo',
                 fontSize: 15,
                 color: themeColor.textPrimary,
               ),
@@ -460,7 +451,6 @@ class SettingsScreen extends StatelessWidget {
           textStyle: const TextStyle(
             color: Colors.redAccent,
             fontWeight: FontWeight.w800,
-            fontFamily: 'Cairo',
             fontSize: 15,
           ),
         );

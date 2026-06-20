@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared/presentation/localization/translations/app_localizations.dart';
 import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 
@@ -62,11 +63,11 @@ class _SelectionFieldState extends State<SelectionField> {
                 duration: const Duration(milliseconds: 300),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 decoration: BoxDecoration(
-                  color: hasValue ? Colors.white : themeColor.cardBackground,
+                  color: hasValue ? themeColor.cardBackground : themeColor.nestedCardBackground,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: state.hasError
-                        ? Colors.red.shade300
+                        ? themeColor.error
                         : (hasValue ? themeColor.primary : themeColor.unselectedItem.withValues(alpha: 0.1)),
                     width: hasValue ? 1.5 : 1,
                   ),
@@ -109,7 +110,6 @@ class _SelectionFieldState extends State<SelectionField> {
                               color: hasValue ? themeColor.textPrimary : themeColor.textPrimary.withValues(alpha: 0.5),
                               fontWeight: hasValue ? FontWeight.w900 : FontWeight.bold,
                               fontSize: hasValue ? 14 : 13,
-                              fontFamily: 'Cairo',
                               height: 1.2,
                             ),
                           ),
@@ -131,7 +131,7 @@ class _SelectionFieldState extends State<SelectionField> {
                 padding: const EdgeInsets.only(top: 8, right: 16),
                 child: Text(
                   state.errorText ?? '',
-                  style: const TextStyle(color: Colors.red, fontSize: 12, fontFamily: 'Cairo'),
+                  style: TextStyle(color: themeColor.error, fontSize: 12),
                 ),
               ),
           ],
@@ -179,6 +179,7 @@ class _SelectionSheetState extends State<SelectionSheet> {
   Widget build(BuildContext context) {
     final themeColor = context.themeColor;
     final themeText = context.themeText;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
@@ -209,7 +210,6 @@ class _SelectionSheetState extends State<SelectionSheet> {
                   widget.title,
                   style: themeText.titleSectionMedium.copyWith(
                     fontWeight: FontWeight.w900,
-                    fontFamily: 'Cairo',
                   ),
                 ),
                 const Spacer(),
@@ -234,10 +234,8 @@ class _SelectionSheetState extends State<SelectionSheet> {
             child: TextField(
               controller: _searchController,
               onChanged: _filter,
-              style: const TextStyle(fontFamily: 'Cairo'),
               decoration: InputDecoration(
-                hintText: "بحث عن المنطقة...",
-                hintStyle: const TextStyle(fontFamily: 'Cairo'),
+                hintText: l10n.booking_search_region,
                 prefixIcon: const Icon(Icons.search_rounded),
                 filled: true,
                 fillColor: themeColor.unselectedItem.withValues(alpha: 0.05),
@@ -275,7 +273,7 @@ class _SelectionSheetState extends State<SelectionSheet> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      color: isSelected ? themeColor.primary : Colors.white,
+                      color: isSelected ? themeColor.primary : themeColor.cardBackground,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected ? themeColor.primary : themeColor.unselectedItem.withValues(alpha: 0.1),
@@ -305,7 +303,7 @@ class _SelectionSheetState extends State<SelectionSheet> {
                             left: -10,
                             child: Icon(
                               Icons.check_circle_rounded,
-                              color: Colors.white.withValues(alpha: 0.1),
+                              color: themeColor.onPrimary.withValues(alpha: 0.1),
                               size: 60,
                             ),
                           ),
@@ -317,20 +315,19 @@ class _SelectionSheetState extends State<SelectionSheet> {
                               textAlign: TextAlign.center,
                               style: themeText.textBodyPrimary.copyWith(
                                 fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold,
-                                color: isSelected ? Colors.white : themeColor.textPrimary,
+                                color: isSelected ? themeColor.onPrimary : themeColor.textPrimary,
                                 fontSize: 13,
-                                fontFamily: 'Cairo',
                               ),
                             ),
                           ),
                         ),
                         if (isSelected)
-                          const Positioned(
+                          Positioned(
                             top: 8,
                             left: 8,
                             child: Icon(
                               Icons.check_circle_rounded,
-                              color: Colors.white,
+                              color: themeColor.onPrimary,
                               size: 16,
                             ),
                           ),

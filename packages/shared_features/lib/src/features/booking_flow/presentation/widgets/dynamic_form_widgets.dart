@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
 import 'package:shared/domain/service/entities/sub_entities/service_price.dart';
+import 'package:shared/presentation/localization/translations/app_localizations.dart';
 import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:shared/presentation/widget/custom_text_form_field/base_text_form_field.dart';
@@ -26,7 +27,7 @@ class DynamicFormRenderer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = Theme.of(context).extension<ThemeColorExtension>()!;
+    final themeColor = context.themeColor;
     final themeText = Theme.of(context).extension<AppTextThemeExtension>()!;
     final locale = Localizations.localeOf(context).languageCode;
 
@@ -177,6 +178,7 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -223,7 +225,7 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'الحد الأدنى المطلوب: ${widget.field.min!.toStringAsFixed(0)} ${widget.field.unit ?? ''}',
+                  l10n.booking_min_required(widget.field.min!.toStringAsFixed(0), widget.field.unit ?? ''),
                   style: widget.themeText.textCaption.copyWith(
                     color: widget.themeColor.primary.withValues(alpha: 0.7),
                     fontSize: 12,
@@ -261,6 +263,7 @@ class DynamicToggleField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
+    final l10n = AppLocalizations.of(context)!;
     
     // Retrieve custom options labels
     final optTrue = field.options != null && field.options!.isNotEmpty
@@ -291,7 +294,6 @@ class DynamicToggleField extends StatelessWidget {
                 color: themeColor.textPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
-                fontFamily: 'Cairo',
               ),
             ),
             if (field.required) ...[
@@ -299,7 +301,7 @@ class DynamicToggleField extends StatelessWidget {
               Text(
                 '*',
                 style: TextStyle(
-                  color: Colors.red.shade700,
+                  color: themeColor.error,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -325,7 +327,7 @@ class DynamicToggleField extends StatelessWidget {
                     border: Border.all(
                       color: isTrueSelected
                           ? themeColor.primary
-                          : (hasError ? Colors.red.shade300 : Colors.grey.shade200),
+                          : (hasError ? themeColor.error : themeColor.unselectedItem.withValues(alpha: 0.2)),
                       width: isTrueSelected ? 2.0 : 1.5,
                     ),
                     boxShadow: isTrueSelected
@@ -347,7 +349,7 @@ class DynamicToggleField extends StatelessWidget {
                             : Icons.radio_button_off_rounded,
                         color: isTrueSelected
                             ? themeColor.primary
-                            : (hasError ? Colors.red.shade400 : Colors.grey.shade400),
+                            : (hasError ? themeColor.error : themeColor.unselectedItem),
                         size: 20,
                       ),
                       const SizedBox(width: 10),
@@ -357,7 +359,6 @@ class DynamicToggleField extends StatelessWidget {
                           style: themeText.textBodyPrimary.copyWith(
                             fontWeight: isTrueSelected ? FontWeight.bold : FontWeight.w600,
                             color: isTrueSelected ? themeColor.primary : themeColor.textPrimary,
-                            fontFamily: 'Cairo',
                             fontSize: 13,
                           ),
                           textAlign: TextAlign.center,
@@ -384,7 +385,7 @@ class DynamicToggleField extends StatelessWidget {
                     border: Border.all(
                       color: isFalseSelected
                           ? themeColor.primary
-                          : (hasError ? Colors.red.shade300 : Colors.grey.shade200),
+                          : (hasError ? themeColor.error : themeColor.unselectedItem.withValues(alpha: 0.2)),
                       width: isFalseSelected ? 2.0 : 1.5,
                     ),
                     boxShadow: isFalseSelected
@@ -406,7 +407,7 @@ class DynamicToggleField extends StatelessWidget {
                             : Icons.radio_button_off_rounded,
                         color: isFalseSelected
                             ? themeColor.primary
-                            : (hasError ? Colors.red.shade400 : Colors.grey.shade400),
+                            : (hasError ? themeColor.error : themeColor.unselectedItem),
                         size: 20,
                       ),
                       const SizedBox(width: 10),
@@ -416,7 +417,6 @@ class DynamicToggleField extends StatelessWidget {
                           style: themeText.textBodyPrimary.copyWith(
                             fontWeight: isFalseSelected ? FontWeight.bold : FontWeight.w600,
                             color: isFalseSelected ? themeColor.primary : themeColor.textPrimary,
-                            fontFamily: 'Cairo',
                             fontSize: 13,
                           ),
                           textAlign: TextAlign.center,
@@ -437,15 +437,14 @@ class DynamicToggleField extends StatelessWidget {
                 Icon(
                   Icons.error_outline_rounded,
                   size: 14,
-                  color: Colors.red.shade700,
+                  color: themeColor.error,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  locale == 'ar' ? 'هذا الحقل مطلوب، يرجى اختيار أحد الخيارات.' : 'This field is required. Please select an option.',
+                  l10n.validation_selection_required,
                   style: TextStyle(
-                    fontFamily: 'Cairo',
                     fontSize: 11,
-                    color: Colors.red.shade700,
+                    color: themeColor.error,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -480,6 +479,7 @@ class DynamicDropdownField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
+    final l10n = AppLocalizations.of(context)!;
     final options = field.options ?? [];
     final bool isValidValue = options.any((opt) => opt.id == value);
     final String? effectiveVal = isValidValue ? value : null;
@@ -493,7 +493,6 @@ class DynamicDropdownField extends StatelessWidget {
             color: themeColor.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 15,
-            fontFamily: 'Cairo',
           ),
         ),
         const SizedBox(height: 10),
@@ -510,7 +509,6 @@ class DynamicDropdownField extends StatelessWidget {
           dropdownColor: themeColor.cardBackground,
           style: themeText.textBodyPrimary.copyWith(
             color: themeColor.textPrimary,
-            fontFamily: 'Cairo',
             fontSize: 14,
           ),
           decoration: InputDecoration(
@@ -524,9 +522,8 @@ class DynamicDropdownField extends StatelessWidget {
               color: themeColor.primary.withValues(alpha: 0.6),
               size: 20,
             ),
-            hintText: locale == 'ar' ? 'اختر قيمة...' : 'Select value...',
+            hintText: l10n.booking_select_value,
             hintStyle: themeText.textCaption.copyWith(
-              fontFamily: 'Cairo',
               fontSize: 13,
               color: themeColor.unselectedItem.withValues(alpha: 0.4),
             ),
@@ -557,7 +554,6 @@ class DynamicDropdownField extends StatelessWidget {
               child: Text(
                 opt.label[locale] ?? opt.label['ar'] ?? opt.id,
                 style: TextStyle(
-                  fontFamily: 'Cairo',
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: themeColor.textPrimary,
@@ -593,11 +589,12 @@ class DynamicOptionsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          locale == 'ar' ? 'خيارات إضافية' : 'Extra Features',
+          l10n.booking_extra_features,
           style: themeText.titleSectionSmall.copyWith(
             color: themeColor.textPrimary,
             fontWeight: FontWeight.bold,
@@ -629,7 +626,7 @@ class DynamicOptionsGroup extends StatelessWidget {
                   border: Border.all(
                     color: isSelected
                         ? themeColor.primary
-                        : Colors.grey.shade200,
+                        : themeColor.unselectedItem.withValues(alpha: 0.2),
                     width: 1.5,
                   ),
                   boxShadow: [themeColor.cardShadow],
@@ -642,7 +639,7 @@ class DynamicOptionsGroup extends StatelessWidget {
                           : Icons.check_box_outline_blank,
                       color: isSelected
                           ? themeColor.primary
-                          : Colors.grey.shade400,
+                          : themeColor.unselectedItem,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -831,17 +828,20 @@ class DynamicCardStepper extends StatelessWidget {
                         color: themeColor.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
-                        locale == 'ar'
-                            ? '${field.priceModifier!.toStringAsFixed(0)} ج.م / ${field.unit ?? "وحدة"}'
-                            : '${field.priceModifier!.toStringAsFixed(0)} EGP / ${field.unit ?? "unit"}',
-                        style: themeText.textCaption.copyWith(
-                          color: themeColor.primary,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 11,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: Builder(
+                        builder: (context) {
+                          final l10n = AppLocalizations.of(context)!;
+                          return Text(
+                            '${field.priceModifier!.toStringAsFixed(0)} ${l10n.pricing_currency_short} / ${field.unit ?? l10n.booking_unit}',
+                            style: themeText.textCaption.copyWith(
+                              color: themeColor.primary,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 11,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        }
                       ),
                     ),
                   ),
@@ -1007,15 +1007,18 @@ class DynamicCardToggle extends StatelessWidget {
                           color: themeColor.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          locale == 'ar'
-                              ? '+ ${field.priceModifier!.toStringAsFixed(0)} ج.م'
-                              : '+ ${field.priceModifier!.toStringAsFixed(0)} EGP',
-                          style: themeText.textCaption.copyWith(
-                            color: themeColor.primary,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 11,
-                          ),
+                        child: Builder(
+                          builder: (context) {
+                            final l10n = AppLocalizations.of(context)!;
+                            return Text(
+                              '+ ${field.priceModifier!.toStringAsFixed(0)} ${l10n.pricing_currency_short}',
+                              style: themeText.textCaption.copyWith(
+                                color: themeColor.primary,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                              ),
+                            );
+                          }
                         ),
                       ),
                     ],

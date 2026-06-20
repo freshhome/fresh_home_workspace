@@ -5,10 +5,14 @@ import 'package:shared/domain/booking/repositories/booking_repository.dart';
 import 'package:shared/domain/booking/use_cases/booking/transition_booking_use_case.dart';
 import 'package:shared/domain/booking/use_cases/booking/update_booking_schedule_use_case.dart';
 import 'package:shared/domain/booking/use_cases/booking/update_booking_address_use_case.dart';
+import 'package:shared/domain/reviews/repositories/reviews_repository.dart';
 
 import '../domain/use_cases/get_my_orders.dart';
+import '../domain/use_cases/submit_review_use_case.dart';
+import '../domain/use_cases/check_booking_reviewed_use_case.dart';
 import '../presentation/cubit/my_orders_cubit.dart';
 import '../presentation/cubit/edit_order_cubit.dart';
+import '../presentation/cubit/submit_review_cubit.dart';
 
 Future<void> initMyOrdersDI(GetIt getIt) async {
   // Use Cases
@@ -26,6 +30,14 @@ Future<void> initMyOrdersDI(GetIt getIt) async {
 
   getIt.registerLazySingleton<UpdateBookingAddressUseCase>(
     () => UpdateBookingAddressUseCase(getIt<BookingRepository>()),
+  );
+
+  getIt.registerLazySingleton<SubmitReviewUseCase>(
+    () => SubmitReviewUseCase(getIt<ReviewsRepository>()),
+  );
+
+  getIt.registerLazySingleton<CheckBookingReviewedUseCase>(
+    () => CheckBookingReviewedUseCase(getIt<ReviewsRepository>()),
   );
 
   // Cubits
@@ -46,4 +58,12 @@ Future<void> initMyOrdersDI(GetIt getIt) async {
       updateBookingAddressUseCase: getIt<UpdateBookingAddressUseCase>(),
     ),
   );
+
+  getIt.registerFactory<SubmitReviewCubit>(
+    () => SubmitReviewCubit(
+      submitReviewUseCase: getIt<SubmitReviewUseCase>(),
+      checkBookingReviewedUseCase: getIt<CheckBookingReviewedUseCase>(),
+    ),
+  );
 }
+

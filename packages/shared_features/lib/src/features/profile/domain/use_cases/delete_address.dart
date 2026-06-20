@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:shared/core/error/failures.dart';
-import '../entities/user_with_profile.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 import '../repositories/profile_repository.dart';
 
 class DeleteAddressUseCase {
@@ -8,7 +8,7 @@ class DeleteAddressUseCase {
 
   DeleteAddressUseCase(this.repository);
 
-  Future<Either<Failure, UserWithProfile>> call(int index) {
+  Future<Either<Failure, UserProfile>> call(int index) {
     return repository.deleteAddress(index: index);
   }
 }

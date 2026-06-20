@@ -117,6 +117,7 @@ class BookingMapper {
       serviceId: model.serviceId,
       createdAt: model.createdAt,
       updatedAt: model.updatedAt,
+      isWhatsappConfirmed: model.isWhatsappConfirmed,
       assignedAt: model.assignedAt,
       acceptedAt: model.acceptedAt,
       dispatchedAt: model.dispatchedAt,
@@ -149,6 +150,7 @@ class BookingMapper {
       serviceId: entity.serviceId,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+      isWhatsappConfirmed: entity.isWhatsappConfirmed,
       assignedAt: entity.assignedAt,
       acceptedAt: entity.acceptedAt,
       dispatchedAt: entity.dispatchedAt,
@@ -205,6 +207,7 @@ class BookingMapper {
       serviceId: model.serviceId,
       createdAt: model.createdAt,
       updatedAt: model.updatedAt,
+      isWhatsappConfirmed: true, // Defaults to true for local cache
       assignedAt: model.assignedAt,
       acceptedAt: model.acceptedAt,
       dispatchedAt: model.dispatchedAt,

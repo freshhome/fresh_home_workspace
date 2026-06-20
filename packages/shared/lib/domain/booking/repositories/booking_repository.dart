@@ -23,6 +23,7 @@ abstract class BookingRepository {
     Map<String, dynamic>? metadata,
   });
   Future<Either<Failure, void>> cancelBooking({required String bookingId});
+  Future<Either<Failure, void>> adminConfirmWhatsappBooking({required String bookingId});
   Future<Either<Failure, void>> updateBookingSchedule({
     required String bookingId,
     required DateTime newDay,

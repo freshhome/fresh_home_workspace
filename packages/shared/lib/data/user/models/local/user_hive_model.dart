@@ -4,8 +4,6 @@ part 'user_hive_model.g.dart';
 
 @HiveType(typeId: HiveTypeIds.user)
 class UserHiveModel {
-  @HiveField(0)
-  final int customId;
   @HiveField(1)
   final String uid;
   @HiveField(2)
@@ -30,7 +28,6 @@ class UserHiveModel {
   final List<String> phones;
 
   UserHiveModel({
-    required this.customId,
     required this.uid,
     required this.firstName,
     required this.lastName,

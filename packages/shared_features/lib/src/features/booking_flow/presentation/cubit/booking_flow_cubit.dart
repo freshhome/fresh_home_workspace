@@ -626,8 +626,8 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     final usedPhone = usedContact.phone.firstOrNull;
     if (usedPhone == null) return usedAddress;
 
-    final addresses = profile.clientProfile?.addresses ?? [];
-    final phones = profile.clientProfile?.phoneNumbers ?? [];
+    final addresses = profile is CustomerProfile ? profile.addresses : const <Address>[];
+    final phones = profile.phoneNumbers;
 
     final isNewAddress = !addresses.any(
       (a) =>
@@ -659,7 +659,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         ..add(
           Phone(
             id: '',
-            userId: profile.user.uid,
+            userId: profile.uid,
             phoneNumber: usedPhone,
             isPrimary: phones.isEmpty,
             isVerified: false,
@@ -674,7 +674,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     updatedResult.fold((_) => null, (updatedProfile) {
       if (isClosed) return;
       emit(state.copyWith(currentUserProfile: updatedProfile));
-      final updatedAddresses = updatedProfile.clientProfile?.addresses ?? [];
+      final updatedAddresses = updatedProfile is CustomerProfile ? updatedProfile.addresses : const <Address>[];
       finalAddress = updatedAddresses.firstWhere(
         (a) =>
             a.governorate == usedAddress.governorate &&

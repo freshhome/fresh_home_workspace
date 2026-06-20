@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/booking_components.dart';
 import 'package:shared/domain/user/entities/user/address.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 import 'package:shared/presentation/localization/translations/app_localizations.dart';
 import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
@@ -94,7 +95,7 @@ class _AddressPageState extends State<AddressPage> {
     );
 
     final contactName = state.currentUserProfile != null
-        ? '${state.currentUserProfile!.user.firstName} ${state.currentUserProfile!.user.lastName}'
+        ? '${state.currentUserProfile!.firstName} ${state.currentUserProfile!.lastName}'
         : '';
 
     final contact = Contact(name: contactName, phone: [_phoneController.text]);
@@ -111,10 +112,11 @@ class _AddressPageState extends State<AddressPage> {
 
     final cubit = context.read<BookingFlowCubit>();
     final state = cubit.state;
-    final hasAddresses =
-        state.currentUserProfile?.clientProfile?.addresses.isNotEmpty ?? false;
+    final hasAddresses = state.currentUserProfile is CustomerProfile
+        ? (state.currentUserProfile as CustomerProfile).addresses.isNotEmpty
+        : false;
     final phones =
-        state.currentUserProfile?.clientProfile?.phoneNumbers
+        state.currentUserProfile?.phoneNumbers
             .map((e) => e.phoneNumber)
             .toList() ??
         [];
@@ -142,9 +144,7 @@ class _AddressPageState extends State<AddressPage> {
 
     if (_selectedAddressIndex != -1 && _selectedAddressIndex != null) {
       cubit.updateAddress(
-        state
-            .currentUserProfile!
-            .clientProfile!
+        (state.currentUserProfile as CustomerProfile)
             .addresses[_selectedAddressIndex!],
       );
     }
@@ -155,7 +155,7 @@ class _AddressPageState extends State<AddressPage> {
 
     cubit.updateContact(
       Contact(
-        name: state.currentUserProfile?.user.firstName ?? '',
+        name: state.currentUserProfile?.firstName ?? '',
         phone: [selectedPhone],
       ),
     );
@@ -165,7 +165,7 @@ class _AddressPageState extends State<AddressPage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = Theme.of(context).extension<ThemeColorExtension>()!;
+    final themeColor = context.themeColor;
     final themeText = Theme.of(context).extension<AppTextThemeExtension>()!;
     final l10n = AppLocalizations.of(context)!;
 
@@ -175,10 +175,11 @@ class _AddressPageState extends State<AddressPage> {
       listener: (context, state) => _validateAndProceed(l10n),
       child: BlocBuilder<BookingFlowCubit, BookingFlowState>(
         builder: (context, state) {
-          final addressesList =
-              state.currentUserProfile?.clientProfile?.addresses ?? [];
+          final addressesList = state.currentUserProfile is CustomerProfile
+              ? (state.currentUserProfile as CustomerProfile).addresses
+              : const <Address>[];
           final phoneList =
-              state.currentUserProfile?.clientProfile?.phoneNumbers ?? [];
+              state.currentUserProfile?.phoneNumbers ?? [];
           final bool showSavedAddresses = addressesList.isNotEmpty;
 
           return SingleChildScrollView(
@@ -251,15 +252,9 @@ class _AddressPageState extends State<AddressPage> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: themeColor.cardBackground,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: [themeColor.cardShadow],
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -281,7 +276,6 @@ class _AddressPageState extends State<AddressPage> {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
-                  fontFamily: 'Cairo',
                 ),
               ),
             ],
@@ -302,22 +296,21 @@ class _AddressPageState extends State<AddressPage> {
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.05),
+        color: themeColor.error.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
+        border: Border.all(color: themeColor.error.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: Colors.red, size: 20),
+          Icon(Icons.error_outline_rounded, color: themeColor.error, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                color: Colors.red,
+              style: TextStyle(
+                color: themeColor.error,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                fontFamily: 'Cairo',
               ),
             ),
           ),
@@ -514,8 +507,9 @@ class _AddressPageState extends State<AddressPage> {
     AppTextThemeExtension themeText,
     AppLocalizations l10n,
   ) {
-    final addressesList =
-        state.currentUserProfile?.clientProfile?.addresses ?? [];
+    final addressesList = state.currentUserProfile is CustomerProfile
+        ? (state.currentUserProfile as CustomerProfile).addresses
+        : const <Address>[];
     final activeColor = themeColor.primary;
 
     return Container(
@@ -550,7 +544,7 @@ class _AddressPageState extends State<AddressPage> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? activeColor.withValues(alpha: 0.04)
-                    : Colors.white,
+                    : themeColor.cardBackground,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isSelected
@@ -583,7 +577,6 @@ class _AddressPageState extends State<AddressPage> {
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            fontFamily: 'Cairo',
                           ),
                         ),
                       ],
@@ -607,10 +600,9 @@ class _AddressPageState extends State<AddressPage> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 14,
-                                  fontFamily: 'Cairo',
                                   color: isSelected
                                       ? activeColor
-                                      : Colors.black87,
+                                      : themeColor.textPrimary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -624,8 +616,7 @@ class _AddressPageState extends State<AddressPage> {
                           style: TextStyle(
                             fontSize: 11,
                             height: 1.4,
-                            fontFamily: 'Cairo',
-                            color: Colors.black.withValues(alpha: 0.5),
+                            color: themeColor.secondaryText,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -645,7 +636,7 @@ class _AddressPageState extends State<AddressPage> {
     AppTextThemeExtension themeText,
     AppLocalizations l10n,
   ) {
-    final phones = state.currentUserProfile?.clientProfile?.phoneNumbers ?? [];
+    final phones = state.currentUserProfile?.phoneNumbers ?? [];
     final activeColor = themeColor.primary;
 
     return Container(
@@ -681,7 +672,7 @@ class _AddressPageState extends State<AddressPage> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? activeColor.withValues(alpha: 0.04)
-                    : Colors.white,
+                    : themeColor.cardBackground,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isSelected
@@ -720,8 +711,7 @@ class _AddressPageState extends State<AddressPage> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
-                            fontFamily: 'Cairo',
-                            color: isSelected ? activeColor : Colors.black87,
+                            color: isSelected ? activeColor : themeColor.textPrimary,
                           ),
                         ),
                       ],
@@ -747,6 +737,7 @@ class _AddressPageState extends State<AddressPage> {
   }
 
   Widget _buildLabeledField({required String label, required Widget child}) {
+    final themeColor = context.themeColor;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -757,8 +748,7 @@ class _AddressPageState extends State<AddressPage> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
-              color: Colors.black.withValues(alpha: 0.6),
-              fontFamily: 'Cairo',
+              color: themeColor.secondaryText,
             ),
           ),
         ),
@@ -794,9 +784,8 @@ class _AddressPageState extends State<AddressPage> {
               label,
               style: TextStyle(
                 fontSize: 11,
-                color: hasError ? Colors.red : themeColor.secondaryText,
+                color: hasError ? themeColor.error : themeColor.secondaryText,
                 fontWeight: FontWeight.bold,
-                fontFamily: 'Cairo',
               ),
             ),
             const SizedBox(height: 8),
@@ -811,9 +800,9 @@ class _AddressPageState extends State<AddressPage> {
               hint: "00",
               radius: 12,
               fillColor: hasError
-                  ? Colors.red.withValues(alpha: 0.05)
-                  : Colors.white,
-              errorBorderColor: Colors.red,
+                  ? themeColor.error.withValues(alpha: 0.05)
+                  : themeColor.cardBackground,
+              errorBorderColor: themeColor.error,
               enabledBorderColor: themeColor.unselectedItem.withValues(
                 alpha: 0.1,
               ),

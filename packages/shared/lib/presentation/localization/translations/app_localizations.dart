@@ -2507,7 +2507,7 @@ abstract class AppLocalizations {
   /// No description provided for @admin_dashboard_title.
   ///
   /// In ar, this message translates to:
-  /// **'متابعة أسطول العمليات'**
+  /// **'لوحة التحكم للإدارة'**
   String get admin_dashboard_title;
 
   /// No description provided for @utilization.
@@ -3409,6 +3409,474 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تم تحديث البيانات المحاسبية بنجاح.'**
   String get admin_finance_reports_refresh_success;
+
+  /// No description provided for @tech_profile_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف الفني'**
+  String get tech_profile_title;
+
+  /// No description provided for @tech_profile_verified.
+  ///
+  /// In ar, this message translates to:
+  /// **'موثق'**
+  String get tech_profile_verified;
+
+  /// No description provided for @tech_profile_rating.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقييم'**
+  String get tech_profile_rating;
+
+  /// No description provided for @tech_profile_completed_jobs.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهام المنجزة'**
+  String get tech_profile_completed_jobs;
+
+  /// No description provided for @tech_profile_bio.
+  ///
+  /// In ar, this message translates to:
+  /// **'النبذة التعريفية'**
+  String get tech_profile_bio;
+
+  /// No description provided for @tech_profile_bio_empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يقم الفني بكتابة نبذة تعريفية بعد.'**
+  String get tech_profile_bio_empty;
+
+  /// No description provided for @tech_profile_skills_capacity.
+  ///
+  /// In ar, this message translates to:
+  /// **'التخصصات والقدرة اليومية'**
+  String get tech_profile_skills_capacity;
+
+  /// No description provided for @tech_profile_skills_empty_admin.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يتم تحديد خزانات القدرة أو التخصصات بعد من قبل المسؤول.'**
+  String get tech_profile_skills_empty_admin;
+
+  /// No description provided for @tech_profile_skills_empty_admin_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى التواصل مع الإدارة لتفعيل خدماتك وتحديد طاقتك الاستيعابية اليومية.'**
+  String get tech_profile_skills_empty_admin_desc;
+
+  /// No description provided for @tech_profile_daily_capacity.
+  ///
+  /// In ar, this message translates to:
+  /// **'القدرة اليومية:'**
+  String get tech_profile_daily_capacity;
+
+  /// No description provided for @tech_profile_tasks_per_day.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مهام / يوم'**
+  String tech_profile_tasks_per_day(Object count);
+
+  /// No description provided for @tech_profile_services_provided.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخدمات المقدمة:'**
+  String get tech_profile_services_provided;
+
+  /// No description provided for @tech_profile_skills_empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد خدمات نشطة مسندة لهذا الخزان حالياً.'**
+  String get tech_profile_skills_empty;
+
+  /// No description provided for @booking_admin_step_1_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخدمة'**
+  String get booking_admin_step_1_title;
+
+  /// No description provided for @booking_admin_step_2_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر'**
+  String get booking_admin_step_2_title;
+
+  /// No description provided for @booking_admin_step_3_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموعد'**
+  String get booking_admin_step_3_title;
+
+  /// No description provided for @booking_admin_step_4_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'العميل'**
+  String get booking_admin_step_4_title;
+
+  /// No description provided for @booking_admin_step_5_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد'**
+  String get booking_admin_step_5_title;
+
+  /// No description provided for @booking_admin_step_1_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار الخدمة'**
+  String get booking_admin_step_1_desc;
+
+  /// No description provided for @booking_admin_step_2_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد السعر'**
+  String get booking_admin_step_2_desc;
+
+  /// No description provided for @booking_admin_step_3_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد الموعد'**
+  String get booking_admin_step_3_desc;
+
+  /// No description provided for @booking_admin_step_4_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيانات العميل'**
+  String get booking_admin_step_4_desc;
+
+  /// No description provided for @booking_admin_step_5_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الحجز'**
+  String get booking_admin_step_5_desc;
+
+  /// No description provided for @currency_egp.
+  ///
+  /// In ar, this message translates to:
+  /// **'ج.م'**
+  String get currency_egp;
+
+  /// No description provided for @booking_unit.
+  ///
+  /// In ar, this message translates to:
+  /// **'وحدة'**
+  String get booking_unit;
+
+  /// No description provided for @booking_building_val.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمارة {num}'**
+  String booking_building_val(Object num);
+
+  /// No description provided for @booking_apartment_val.
+  ///
+  /// In ar, this message translates to:
+  /// **'شقة {num}'**
+  String booking_apartment_val(Object num);
+
+  /// No description provided for @booking_floor_val.
+  ///
+  /// In ar, this message translates to:
+  /// **'دور {num}'**
+  String booking_floor_val(Object num);
+
+  /// No description provided for @booking_min_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى المطلوب: {min} {unit}'**
+  String booking_min_required(Object min, Object unit);
+
+  /// No description provided for @booking_select_value.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر قيمة...'**
+  String get booking_select_value;
+
+  /// No description provided for @booking_extra_features.
+  ///
+  /// In ar, this message translates to:
+  /// **'خيارات إضافية'**
+  String get booking_extra_features;
+
+  /// No description provided for @booking_autofill_debug.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعبئة تلقائية للتجربة (Debug)'**
+  String get booking_autofill_debug;
+
+  /// No description provided for @booking_autofill_success.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم ملء البيانات بنجاح! ✨'**
+  String get booking_autofill_success;
+
+  /// No description provided for @booking_search_region.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث عن المنطقة...'**
+  String get booking_search_region;
+
+  /// No description provided for @booking_services_of.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدمات {serviceName}'**
+  String booking_services_of(Object serviceName);
+
+  /// No description provided for @validation_password_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرجاء إدخال كلمة المرور'**
+  String get validation_password_required;
+
+  /// No description provided for @validation_password_min_length.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل'**
+  String get validation_password_min_length;
+
+  /// No description provided for @validation_confirm_password_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرجاء تأكيد كلمة المرور'**
+  String get validation_confirm_password_required;
+
+  /// No description provided for @validation_passwords_match.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمتا المرور غير متطابقتين'**
+  String get validation_passwords_match;
+
+  /// No description provided for @validation_retype_password.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعد كتابة كلمة المرور'**
+  String get validation_retype_password;
+
+  /// No description provided for @auth_save_new_password.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ كلمة المرور الجديدة'**
+  String get auth_save_new_password;
+
+  /// No description provided for @auth_reset_password_success.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعيين كلمة المرور الجديدة بنجاح! يمكنك الآن تسجيل الدخول بها.'**
+  String get auth_reset_password_success;
+
+  /// No description provided for @auth_reset_password_subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرجاء إدخال كلمة المرور الجديدة الخاصة بحسابك وتأكيدها لتغييرها.'**
+  String get auth_reset_password_subtitle;
+
+  /// No description provided for @auth_reset_password_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة كلمة المرور'**
+  String get auth_reset_password_title;
+
+  /// No description provided for @auth_pending_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'في انتظار التأكيد'**
+  String get auth_pending_title;
+
+  /// No description provided for @auth_pending_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابك حالياً في انتظار تأكيد الإدارة. يرجى التواصل مع المدير لتفعيل صلاحيات الوصول لهذا التطبيق.'**
+  String get auth_pending_desc;
+
+  /// No description provided for @auth_retry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get auth_retry;
+
+  /// No description provided for @auth_sign_out.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الخروج'**
+  String get auth_sign_out;
+
+  /// No description provided for @schedule_no_times_available.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مواعيد متاحة في هذا اليوم'**
+  String get schedule_no_times_available;
+
+  /// No description provided for @error_service_repository_unavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'ServiceRepository غير متوفر'**
+  String get error_service_repository_unavailable;
+
+  /// No description provided for @booking_select_main_service.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر الخدمة الرئيسية'**
+  String get booking_select_main_service;
+
+  /// No description provided for @reviews_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقييماتي وآراء العملاء'**
+  String get reviews_title;
+
+  /// No description provided for @reviews_overall_rating.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقييم العام للفني'**
+  String get reviews_overall_rating;
+
+  /// No description provided for @reviews_summary_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'شكراً لجهودك! تم احتساب هذا التقييم بناءً على المهام المنجزة البالغ عددها {count} مهمة.'**
+  String reviews_summary_desc(Object count);
+
+  /// No description provided for @reviews_latest_feedback.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر تعليقات ومراجعات العملاء'**
+  String get reviews_latest_feedback;
+
+  /// No description provided for @reviews_no_reviews.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مراجعات منشورة لك بعد.'**
+  String get reviews_no_reviews;
+
+  /// No description provided for @reviews_previous_customer.
+  ///
+  /// In ar, this message translates to:
+  /// **'عميل سابق'**
+  String get reviews_previous_customer;
+
+  /// No description provided for @reviews_load_error.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشل جلب المراجعات: {message}'**
+  String reviews_load_error(Object message);
+
+  /// No description provided for @admin_welcome_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرحباً بك مجدداً!'**
+  String get admin_welcome_title;
+
+  /// No description provided for @admin_welcome_subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إليك ملخص سريع لإدارة البيانات والعمليات.'**
+  String get admin_welcome_subtitle;
+
+  /// No description provided for @admin_nav_dispatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة جدول الحجز'**
+  String get admin_nav_dispatch;
+
+  /// No description provided for @admin_nav_dispatch_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة حية لسعة الفريق، إحصائيات الإشغال وإعادة توجيه المهام.'**
+  String get admin_nav_dispatch_desc;
+
+  /// No description provided for @admin_nav_services.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة الخدمات'**
+  String get admin_nav_services;
+
+  /// No description provided for @admin_nav_services_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة وتعديل الفئات، الخدمات الفرعية، وتفاصيل الأسعار.'**
+  String get admin_nav_services_desc;
+
+  /// No description provided for @admin_nav_pricing.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة أسعار الخدمات'**
+  String get admin_nav_pricing;
+
+  /// No description provided for @admin_nav_pricing_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل قوانين AST الشرطية، إدارة الخصومات التراكمية، ومراجعة سجل التدقيق.'**
+  String get admin_nav_pricing_desc;
+
+  /// No description provided for @admin_nav_bookings.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة الحجوزات'**
+  String get admin_nav_bookings;
+
+  /// No description provided for @admin_nav_bookings_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع الحجوزات، إعادة التعيين، الجدولة وإلغاء الطلبات.'**
+  String get admin_nav_bookings_desc;
+
+  /// No description provided for @admin_nav_users.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة المستخدمين'**
+  String get admin_nav_users;
+
+  /// No description provided for @admin_nav_users_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض وإدارة بيانات المستخدمين والأدوار في المنصة.'**
+  String get admin_nav_users_desc;
+
+  /// No description provided for @admin_nav_finance.
+  ///
+  /// In ar, this message translates to:
+  /// **'المركز المحاسبي للإدارة'**
+  String get admin_nav_finance;
+
+  /// No description provided for @admin_nav_finance_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة أرصدة الفنيين، التسويات اليدوية، وطلبات تسوية المستحقات.'**
+  String get admin_nav_finance_desc;
+
+  /// No description provided for @admin_nav_reviews.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة التقييمات والمراجعات'**
+  String get admin_nav_reviews;
+
+  /// No description provided for @admin_nav_reviews_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'مراجعة تقييمات العملاء للفنيين والخدمات، والموافقة على التقييمات.'**
+  String get admin_nav_reviews_desc;
+
+  /// No description provided for @admin_nav_supabase.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الخدمات (Supabase)'**
+  String get admin_nav_supabase;
+
+  /// No description provided for @admin_nav_supabase_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعراض الخدمات المهاجرة وتفاصيل الفروع والأسعار بدقة.'**
+  String get admin_nav_supabase_desc;
+
+  /// No description provided for @admin_nav_test.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدوات الفحص والتحقق'**
+  String get admin_nav_test;
+
+  /// No description provided for @admin_nav_test_desc.
+  ///
+  /// In ar, this message translates to:
+  /// **'فحص جلب البيانات وتكامل قواعد البيانات السحابية مباشرة.'**
+  String get admin_nav_test_desc;
 }
 
 class _AppLocalizationsDelegate

@@ -6,22 +6,23 @@ import 'package:shared/core/error/failures.dart';
 import 'package:shared/core/error/error_mapper.dart';
 import 'package:shared/domain/user/entities/user/address.dart';
 import 'package:shared/domain/user/entities/user/phone.dart';
+import 'package:shared/domain/user/entities/user/user_profile.dart';
 import 'package:shared/data/user/mappers/address_mapper.dart';
-import 'package:shared/data/user/mappers/user_mapper.dart';
-import 'package:shared/data/user/mappers/client_profile_mapper.dart';
 import 'package:shared/data/user/mappers/phone_mapper.dart';
+import 'package:shared/data/user/mappers/user_profile_mapper.dart';
+import 'package:shared/data/user/mappers/user_roles_mappers.dart';
 import 'package:shared/data/user/models/local/client_profile_hive_model.dart';
-import 'package:shared/data/user/models/remote/client_profile_remote_model.dart';
+import 'package:shared/data/user/models/local/technician_profile_hive_model.dart';
+import 'package:shared/data/user/models/remote/customer_profile_remote_model.dart';
 import 'package:shared/data/user/models/remote/user_remote_model.dart';
 import 'package:shared/data/user/datasources/user_remote_datasource.dart';
 
 import 'package:shared_features/src/features/authentication/data/authentication_data.dart';
 import 'package:shared/domain/user/enums/user_role.dart';
-import 'package:shared/data/user/mappers/technician_profile_mapper.dart';
+import 'package:shared/domain/user/enums/user_status.dart';
 import 'package:shared/data/user/models/remote/technician_profile_remote_model.dart';
 import 'package:shared_features/src/features/profile/data/data_sources/technician_profile_remote_data_source.dart';
 import 'package:shared_features/src/features/profile/data/data_sources/client_profile_remote_data_source.dart';
-import 'package:shared_features/src/features/profile/domain/entities/user_with_profile.dart';
 import 'package:shared_features/src/features/profile/domain/repositories/profile_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared/data/technician/models/remote/capacity_pool_remote_model.dart';
@@ -62,13 +63,14 @@ class ProfileRepositoryImpl implements ProfileRepository {
     return model;
   }
 
-  Future<ClientProfileRemoteModel> _requireClientProfile(String uid) async {
+  Future<CustomerProfileRemoteModel> _requireClientProfile(String uid) async {
     final profile = await clientProfileRemoteDataSource.getClientProfile(uid);
     if (profile == null) {
-      final newProfile = ClientProfileRemoteModel(
-        uid: uid,
-        addresses: [],
-        phoneNumbers: [],
+      final newProfile = CustomerProfileRemoteModel(
+        userId: uid,
+        preferredPaymentMethod: 'cash',
+        addresses: const [],
+        phoneNumbers: const [],
       );
       await clientProfileRemoteDataSource.saveClientProfile(newProfile);
       return newProfile;
@@ -87,52 +89,126 @@ class ProfileRepositoryImpl implements ProfileRepository {
     return techProfile;
   }
 
-  UserWithProfile? _fromCache() {
+  UserProfile? _fromCache() {
     final cachedUser = localDataSource.getCachedUser();
     final cachedProfile = localDataSource.getCachedClientProfile();
     final cachedTechProfile = localDataSource.getCachedTechnicianProfile();
 
     if (cachedUser != null) {
-      return UserWithProfile(
-        user: UserMapper.hiveToEntity(cachedUser),
-        clientProfile: cachedProfile != null
-            ? ClientProfileMapper.fromHive(cachedProfile)
-            : null,
-        technicianProfile: cachedTechProfile != null
-            ? TechnicianProfileMapper.fromHive(cachedTechProfile)
-            : null,
-      );
+      final roles = userRoleFromCode(codes: cachedUser.rolesCodes);
+      final phoneNumbers = cachedUser.phones.map((p) => Phone(
+        userId: cachedUser.uid,
+        phoneNumber: p,
+        isPrimary: false,
+        isVerified: false,
+        createdAt: DateTime.now(),
+      )).toList();
+
+      if (roles.contains(UserRole.admin)) {
+        return AdminProfile(
+          uid: cachedUser.uid,
+          firstName: cachedUser.firstName,
+          lastName: cachedUser.lastName,
+          email: cachedUser.email,
+          accountStatus: UserStatus.values.firstWhere(
+            (e) => e.name == cachedUser.accountStatus,
+            orElse: () => UserStatus.active,
+          ),
+          gender: cachedUser.gender,
+          avatarUrl: cachedUser.avatarUrl,
+          roles: roles,
+          phoneNumbers: phoneNumbers,
+          createdAt: cachedUser.createdAt,
+          updatedAt: cachedUser.updatedAt,
+          adminPermissions: const [],
+        );
+      } else if (roles.contains(UserRole.technician)) {
+        final tech = cachedTechProfile;
+        return TechnicianProfile(
+          uid: cachedUser.uid,
+          firstName: cachedUser.firstName,
+          lastName: cachedUser.lastName,
+          email: cachedUser.email,
+          accountStatus: UserStatus.values.firstWhere(
+            (e) => e.name == cachedUser.accountStatus,
+            orElse: () => UserStatus.active,
+          ),
+          gender: cachedUser.gender,
+          avatarUrl: cachedUser.avatarUrl,
+          roles: roles,
+          phoneNumbers: phoneNumbers,
+          createdAt: cachedUser.createdAt,
+          updatedAt: cachedUser.updatedAt,
+          mainServiceId: null,
+          bio: tech?.bio,
+          rating: tech?.rating ?? 5.0,
+          completedJobs: tech?.completedJobs ?? 0,
+          isVerified: tech?.isVerified ?? false,
+          isAvailable: tech?.isAvailable ?? false,
+          serviceArea: tech?.serviceArea,
+        );
+      } else {
+        final client = cachedProfile;
+        return CustomerProfile(
+          uid: cachedUser.uid,
+          firstName: cachedUser.firstName,
+          lastName: cachedUser.lastName,
+          email: cachedUser.email,
+          accountStatus: UserStatus.values.firstWhere(
+            (e) => e.name == cachedUser.accountStatus,
+            orElse: () => UserStatus.active,
+          ),
+          gender: cachedUser.gender,
+          avatarUrl: cachedUser.avatarUrl,
+          roles: roles,
+          phoneNumbers: phoneNumbers,
+          createdAt: cachedUser.createdAt,
+          updatedAt: cachedUser.updatedAt,
+          preferredPaymentMethod: 'cash',
+          addresses: client?.addresses.map((a) => AddressMapper.fromModel(a)).toList() ?? const [],
+        );
+      }
     }
     return null;
   }
 
   Future<void> _syncToCache(
     UserRemoteModel userModel,
-    ClientProfileRemoteModel clientProfileModel,
+    CustomerProfileRemoteModel clientProfileModel,
     TechnicianProfileRemoteModel? technicianProfileModel,
   ) async {
-    await localDataSource.cacheUser(UserMapper.remoteToHive(userModel));
+    await localDataSource.cacheUser(UserProfileMapper.remoteToHive(userModel));
     await localDataSource.cacheClientProfile(
       ClientProfileHiveModel(
-        uid: clientProfileModel.uid,
+        uid: clientProfileModel.userId,
         addresses: clientProfileModel.addresses,
         phoneNumbers: clientProfileModel.phoneNumbers,
       ),
     );
     if (technicianProfileModel != null) {
       await localDataSource.cacheTechnicianProfile(
-        TechnicianProfileMapper.toHive(technicianProfileModel),
+        TechnicianProfileHiveModel(
+          userId: technicianProfileModel.userId,
+          bio: technicianProfileModel.bio,
+          rating: technicianProfileModel.rating,
+          completedJobs: technicianProfileModel.completedJobs,
+          isVerified: technicianProfileModel.isVerified,
+          isAvailable: technicianProfileModel.isAvailable,
+          serviceArea: technicianProfileModel.serviceArea,
+          createdAt: technicianProfileModel.createdAt,
+          updatedAt: technicianProfileModel.updatedAt,
+        ),
       );
     }
   }
 
-  Future<UserWithProfile> _getUnifiedProfile(
+  Future<UserProfile> _getUnifiedProfile(
     String uid, {
     bool forceRemote = false,
   }) async {
     if (!forceRemote) {
       final cached = _fromCache();
-      if (cached != null && cached.user.uid == uid) {
+      if (cached != null && cached.uid == uid) {
         return cached;
       }
     }
@@ -156,19 +232,15 @@ class ProfileRepositoryImpl implements ProfileRepository {
       techProfileRemoteModel,
     );
 
-    final profile = UserWithProfile(
-      user: UserMapper.remoteToEntity(userModel),
-      clientProfile: ClientProfileMapper.fromRemote(clientProfileRemoteModel),
-      technicianProfile: techProfileRemoteModel != null
-          ? TechnicianProfileMapper.fromRemote(techProfileRemoteModel)
-          : null,
+    return UserProfileMapper.remoteToEntity(
+      userModel: userModel,
+      customerModel: clientProfileRemoteModel,
+      technicianModel: techProfileRemoteModel,
     );
-
-    return profile;
   }
 
   @override
-  Future<Either<Failure, UserWithProfile>> loadProfile() async {
+  Future<Either<Failure, UserProfile>> loadProfile() async {
     try {
       final uid = supabase.auth.currentUser?.id;
       if (uid == null) {
@@ -178,24 +250,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
       }
 
       final cached = _fromCache();
-      if (cached != null && cached.user.uid == uid) {
-        if (cached.clientProfile != null) {
-          return Right(await _enrichTechnicianProfile(cached));
-        } else {
-          final clientProfile = await _requireClientProfile(uid);
-          final userRemote = UserMapper.entityToRemote(cached.user);
-          final techProfile = await _fetchTechnicianProfile(uid, userRemote);
-          await _syncToCache(userRemote, clientProfile, techProfile);
-
-          final profileEntity = UserWithProfile(
-            user: cached.user,
-            clientProfile: ClientProfileMapper.fromRemote(clientProfile),
-            technicianProfile: techProfile != null
-                ? TechnicianProfileMapper.fromRemote(techProfile)
-                : null,
-          );
-          return Right(await _enrichTechnicianProfile(profileEntity));
-        }
+      if (cached != null && cached.uid == uid) {
+        return Right(await _enrichTechnicianProfile(cached));
       }
 
       final unified = await _getUnifiedProfile(uid);
@@ -208,7 +264,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<Either<Failure, UserWithProfile>> updateUserName({
+  Future<Either<Failure, UserProfile>> updateUserName({
     required String firstName,
     required String lastName,
   }) async {
@@ -225,7 +281,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
       final techProfile = await _fetchTechnicianProfile(current.id, updated);
       await _syncToCache(updated, clientProfile, techProfile);
 
-      return Right(await _enrichTechnicianProfile(await _getUnifiedProfile(current.id)));
+      final unified = await _getUnifiedProfile(current.id, forceRemote: true);
+      return Right(await _enrichTechnicianProfile(unified));
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExternalServiceError(e));
     } catch (e) {
@@ -234,7 +291,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<Either<Failure, UserWithProfile>> updateProfile({
+  Future<Either<Failure, UserProfile>> updateProfile({
     String? firstName,
     String? lastName,
     String? gender,
@@ -255,7 +312,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
       final techProfile = await _fetchTechnicianProfile(current.id, updated);
       await _syncToCache(updated, clientProfile, techProfile);
 
-      return Right(await _enrichTechnicianProfile(await _getUnifiedProfile(current.id)));
+      final unified = await _getUnifiedProfile(current.id, forceRemote: true);
+      return Right(await _enrichTechnicianProfile(unified));
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExternalServiceError(e));
     } catch (e) {
@@ -265,8 +323,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   Future<UserRemoteModel> _getOrFetchUserRemote(String uid) async {
     final cached = _fromCache();
-    if (cached != null && cached.user.uid == uid) {
-      return UserMapper.entityToRemote(cached.user);
+    if (cached != null && cached.uid == uid) {
+      return UserProfileMapper.entityToRemote(cached);
     }
     final model = await userRemoteDataSource.getUserById(uid);
     if (model == null) {
@@ -279,7 +337,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<Either<Failure, UserWithProfile>> updatePhoneNumbers({
+  Future<Either<Failure, UserProfile>> updatePhoneNumbers({
     required List<Phone> phoneNumbers,
   }) async {
     try {
@@ -292,29 +350,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
       }
 
       final profile = await _requireClientProfile(uid);
-      final updated = ClientProfileRemoteModel(
-        uid: uid,
+      final updated = CustomerProfileRemoteModel(
+        userId: uid,
+        preferredPaymentMethod: profile.preferredPaymentMethod,
         addresses: profile.addresses,
         phoneNumbers: phoneNumbers.map((e) => PhoneMapper.toModel(e)).toList(),
       );
       await clientProfileRemoteDataSource.saveClientProfile(updated);
 
-      final freshProfile = await _requireClientProfile(uid);
-      final userModel = await _getOrFetchUserRemote(uid);
-      final techProfile = await _fetchTechnicianProfile(uid, userModel);
-      await _syncToCache(userModel, freshProfile, techProfile);
-
-      return Right(
-        await _enrichTechnicianProfile(
-          UserWithProfile(
-            user: UserMapper.remoteToEntity(userModel),
-            clientProfile: ClientProfileMapper.fromRemote(freshProfile),
-            technicianProfile: techProfile != null
-                ? TechnicianProfileMapper.fromRemote(techProfile)
-                : null,
-          ),
-        ),
-      );
+      final unified = await _getUnifiedProfile(uid, forceRemote: true);
+      return Right(await _enrichTechnicianProfile(unified));
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExternalServiceError(e));
     } catch (e) {
@@ -323,7 +368,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<Either<Failure, UserWithProfile>> addAddress({
+  Future<Either<Failure, UserProfile>> addAddress({
     required Address address,
   }) async {
     try {
@@ -339,29 +384,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
       final updatedAddresses = List.of(profile.addresses)
         ..add(AddressMapper.toModel(address));
 
-      final updated = ClientProfileRemoteModel(
-        uid: uid,
+      final updated = CustomerProfileRemoteModel(
+        userId: uid,
+        preferredPaymentMethod: profile.preferredPaymentMethod,
         addresses: updatedAddresses,
         phoneNumbers: profile.phoneNumbers,
       );
       await clientProfileRemoteDataSource.saveClientProfile(updated);
 
-      final freshProfile = await _requireClientProfile(uid);
-      final userModel = await _getOrFetchUserRemote(uid);
-      final techProfile = await _fetchTechnicianProfile(uid, userModel);
-      await _syncToCache(userModel, freshProfile, techProfile);
-
-      return Right(
-        await _enrichTechnicianProfile(
-          UserWithProfile(
-            user: UserMapper.remoteToEntity(userModel),
-            clientProfile: ClientProfileMapper.fromRemote(freshProfile),
-            technicianProfile: techProfile != null
-                ? TechnicianProfileMapper.fromRemote(techProfile)
-                : null,
-          ),
-        ),
-      );
+      final unified = await _getUnifiedProfile(uid, forceRemote: true);
+      return Right(await _enrichTechnicianProfile(unified));
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExternalServiceError(e));
     } catch (e) {
@@ -370,7 +402,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<Either<Failure, UserWithProfile>> updateAddress({
+  Future<Either<Failure, UserProfile>> updateAddress({
     required int index,
     required Address address,
   }) async {
@@ -393,29 +425,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
       final updatedAddresses = List.of(profile.addresses);
       updatedAddresses[index] = AddressMapper.toModel(address);
 
-      final updated = ClientProfileRemoteModel(
-        uid: uid,
+      final updated = CustomerProfileRemoteModel(
+        userId: uid,
+        preferredPaymentMethod: profile.preferredPaymentMethod,
         addresses: updatedAddresses,
         phoneNumbers: profile.phoneNumbers,
       );
       await clientProfileRemoteDataSource.saveClientProfile(updated);
 
-      final freshProfile = await _requireClientProfile(uid);
-      final userModel = await _getOrFetchUserRemote(uid);
-      final techProfile = await _fetchTechnicianProfile(uid, userModel);
-      await _syncToCache(userModel, freshProfile, techProfile);
-
-      return Right(
-        await _enrichTechnicianProfile(
-          UserWithProfile(
-            user: UserMapper.remoteToEntity(userModel),
-            clientProfile: ClientProfileMapper.fromRemote(freshProfile),
-            technicianProfile: techProfile != null
-                ? TechnicianProfileMapper.fromRemote(techProfile)
-                : null,
-          ),
-        ),
-      );
+      final unified = await _getUnifiedProfile(uid, forceRemote: true);
+      return Right(await _enrichTechnicianProfile(unified));
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExternalServiceError(e));
     } catch (e) {
@@ -424,7 +443,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<Either<Failure, UserWithProfile>> deleteAddress({
+  Future<Either<Failure, UserProfile>> deleteAddress({
     required int index,
   }) async {
     try {
@@ -444,35 +463,23 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
       final updatedAddresses = List.of(profile.addresses)..removeAt(index);
 
-      final updated = ClientProfileRemoteModel(
-        uid: uid,
+      final updated = CustomerProfileRemoteModel(
+        userId: uid,
+        preferredPaymentMethod: profile.preferredPaymentMethod,
         addresses: updatedAddresses,
         phoneNumbers: profile.phoneNumbers,
       );
       await clientProfileRemoteDataSource.saveClientProfile(updated);
 
-      final freshProfile = await _requireClientProfile(uid);
-      final userModel = await _getOrFetchUserRemote(uid);
-      final techProfile = await _fetchTechnicianProfile(uid, userModel);
-      await _syncToCache(userModel, freshProfile, techProfile);
-
-      return Right(
-        await _enrichTechnicianProfile(
-          UserWithProfile(
-            user: UserMapper.remoteToEntity(userModel),
-            clientProfile: ClientProfileMapper.fromRemote(freshProfile),
-            technicianProfile: techProfile != null
-                ? TechnicianProfileMapper.fromRemote(techProfile)
-                : null,
-          ),
-        ),
-      );
+      final unified = await _getUnifiedProfile(uid, forceRemote: true);
+      return Right(await _enrichTechnicianProfile(unified));
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExternalServiceError(e));
     } catch (e) {
       return Left(UnknownFailure(message: e.toString()));
     }
   }
+
   Future<List<CapacityPool>> _fetchRemoteCapacityPools(String uid) async {
     try {
       final response = await supabase
@@ -526,16 +533,31 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
   }
 
-  Future<UserWithProfile> _enrichTechnicianProfile(UserWithProfile profile) async {
-    if (profile.user.roles.contains(UserRole.technician)) {
-      final pools = await _fetchRemoteCapacityPools(profile.user.uid);
-      final skills = await _fetchRemoteTechnicianSkills(profile.user.uid);
+  Future<UserProfile> _enrichTechnicianProfile(UserProfile profile) async {
+    if (profile is TechnicianProfile) {
+      final pools = await _fetchRemoteCapacityPools(profile.uid);
+      final skills = await _fetchRemoteTechnicianSkills(profile.uid);
       final names = await _fetchSubServiceNames(skills.map((s) => s.subServiceId).toList());
       
-      return UserWithProfile(
-        user: profile.user,
-        clientProfile: profile.clientProfile,
-        technicianProfile: profile.technicianProfile,
+      return TechnicianProfile(
+        uid: profile.uid,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: profile.email,
+        accountStatus: profile.accountStatus,
+        gender: profile.gender,
+        avatarUrl: profile.avatarUrl,
+        roles: profile.roles,
+        phoneNumbers: profile.phoneNumbers,
+        createdAt: profile.createdAt,
+        updatedAt: profile.updatedAt,
+        mainServiceId: profile.mainServiceId,
+        bio: profile.bio,
+        rating: profile.rating,
+        completedJobs: profile.completedJobs,
+        isVerified: profile.isVerified,
+        isAvailable: profile.isAvailable,
+        serviceArea: profile.serviceArea,
         capacityPools: pools,
         technicianSkills: skills,
         subServiceNames: names,

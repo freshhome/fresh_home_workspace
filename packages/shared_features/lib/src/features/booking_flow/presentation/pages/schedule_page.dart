@@ -16,7 +16,7 @@ class SchedulePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<BookingFlowCubit, BookingFlowState>(
       builder: (context, state) {
-        final themeColor = Theme.of(context).extension<ThemeColorExtension>()!;
+        final themeColor = context.themeColor;
         final themeText =
             Theme.of(context).extension<AppTextThemeExtension>()!;
         final l10n = AppLocalizations.of(context)!;
@@ -303,12 +303,12 @@ class SchedulePage extends StatelessWidget {
     }
 
     if (timeSlots.isEmpty) {
-
+      final l10n = AppLocalizations.of(context)!;
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Text(
-            'لا توجد مواعيد متاحة في هذا اليوم',
+            l10n.schedule_no_times_available,
             style: themeText.textBodyPrimary.copyWith(color: themeColor.textPrimary.withValues(alpha: 0.5)),
           ),
         ),
@@ -364,7 +364,7 @@ class SchedulePage extends StatelessWidget {
               time,
               style: themeText.textBodyPrimary.copyWith(
                 color: isSelected
-                    ? Colors.white
+                    ? themeColor.buttonText
                     : themeColor.textPrimary,
                 fontWeight: isSelected
                     ? FontWeight.bold

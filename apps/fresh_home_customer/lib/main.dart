@@ -64,18 +64,21 @@ class MyApp extends StatelessWidget {
                       // Initialize foreground notification handling
                       GetIt.instance<FirebaseMessagingHandler>()
                           .initializeForegroundHandling();
-                          
+
                       return MaterialApp.router(
-                        scaffoldMessengerKey: GetIt.instance<NavigationService>().scaffoldMessengerKey,
+                        scaffoldMessengerKey:
+                            GetIt.instance<NavigationService>()
+                                .scaffoldMessengerKey,
                         title: 'Fresh Home',
                         debugShowCheckedModeBanner: false,
                         routerConfig: routerConfig.router,
-                        localizationsDelegates: AppLocalizations.localizationsDelegates,
+                        localizationsDelegates:
+                            AppLocalizations.localizationsDelegates,
                         supportedLocales: AppLocalizations.supportedLocales,
                         locale: locale,
                         theme: isDark ? AppTheme.dark : AppTheme.light,
                       );
-                    }
+                    },
                   ),
                 ),
               );
