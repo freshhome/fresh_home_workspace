@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { 
   ShieldCheck, ArrowLeft, ArrowRight, CheckCircle2, 
-  MapPin, Calendar, CreditCard, Clock, Check, ShieldAlert
+  MapPin, Calendar, CreditCard, Clock, Check, ShieldAlert, Sparkles
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -13,6 +13,35 @@ import { supabase } from "@/lib/supabase";
 
 // Step titles
 const STEPS = ["حساب السعر", "اختيار الموعد", "العنوان", "المراجعة والتأكيد"];
+
+const REGIONS_MAP: Record<string, string[]> = {
+  "القاهرة": [
+    "الزمالك",
+    "جاردن سيتي",
+    "المعادي",
+    "مصر الجديدة",
+    "التجمع الخامس",
+    "القاهرة الجديدة",
+    "الرحاب",
+    "مدينتي",
+    "مدينة نصر",
+    "المقطم",
+    "الشروق",
+    "أخرى"
+  ],
+  "الجيزة": [
+    "الشيخ زايد",
+    "6 أكتوبر",
+    "المهندسين",
+    "الدقي",
+    "العجوزة",
+    "حدائق الأهرام",
+    "الهرم",
+    "فيصل",
+    "إمبابة",
+    "أخرى"
+  ]
+};
 
 function BookingFlowContent() {
   const router = useRouter();
@@ -42,7 +71,7 @@ function BookingFlowContent() {
   const [scheduledTime, setScheduledTime] = useState("");
   const [address, setAddress] = useState({
     governorate: "القاهرة",
-    city: "المعادي",
+    city: "الزمالك",
     street: "",
     building: "",
     floor: "",
@@ -52,10 +81,12 @@ function BookingFlowContent() {
   const [name, setName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
 
+  // Availability states
+  const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+
   // OTP Verification States
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [isServiceLocked, setIsServiceLocked] = useState(!!initialSubServiceId);
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
 
   // DB Final Pricing Output State
@@ -122,6 +153,42 @@ function BookingFlowContent() {
     }
     fetchSubServices();
   }, [serviceId]);
+
+  // 2.5 Fetch availability for the sub-service
+  useEffect(() => {
+    async function fetchAvailability() {
+      if (!subServiceId || subServiceId.includes("mock")) return;
+      setIsLoadingAvailability(true);
+      try {
+        const today = new Date();
+        const startDateStr = today.toISOString().split("T")[0];
+        const endDate = new Date();
+        endDate.setDate(today.getDate() + 30); // next 30 days
+        const endDateStr = endDate.toISOString().split("T")[0];
+
+        const { data, error } = await supabase.rpc("get_available_days", {
+          p_sub_service_id: subServiceId,
+          p_start_date: startDateStr,
+          p_end_date: endDateStr
+        });
+
+        if (error) throw error;
+        
+        const availability: Record<string, boolean> = {};
+        if (data) {
+          data.forEach((item: any) => {
+            availability[item.available_date] = item.is_available;
+          });
+        }
+        setAvailabilityMap(availability);
+      } catch (err) {
+        console.error("Error fetching availability:", err);
+      } finally {
+        setIsLoadingAvailability(false);
+      }
+    }
+    fetchAvailability();
+  }, [subServiceId]);
 
   // 3. Initialize pricing input schema defaults when sub-service changes
   useEffect(() => {
@@ -215,37 +282,34 @@ function BookingFlowContent() {
     }
   };
 
+  const handleGovernorateChange = (gov: string) => {
+    const defaultCity = REGIONS_MAP[gov]?.[0] || "";
+    setAddress({
+      ...address,
+      governorate: gov,
+      city: defaultCity
+    });
+  };
+
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   };
 
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   };
 
-  // Mock SMS verification
-  const handleSendOtp = () => {
-    const phoneRegex = /^(010|011|012|015)\d{8}$/;
-    if (!phoneRegex.test(phone.trim())) {
-      alert("يرجى إدخال رقم هاتف مصري صحيح مكون من 11 رقم (يبدأ بـ 010 أو 011 أو 012 أو 015)");
-      return;
-    }
-    setIsOtpSent(true);
-    alert("تم إرسال كود تفعيل تجريبي (1234) لهاتفك بنجاح!");
-  };
 
-  const handleVerifyOtp = () => {
-    if (otpCode === "1234") {
-      setIsPhoneVerified(true);
-      alert("تم تفعيل رقم الهاتف بنجاح!");
-    } else {
-      alert("كود التفعيل خاطئ. يرجى إدخال (1234) للتجربة.");
-    }
-  };
 
   // Complete Booking flow calling create_atomic_booking
   const handleCompleteBooking = async () => {
@@ -323,6 +387,9 @@ function BookingFlowContent() {
       if (bookingError) throw bookingError;
 
       if (bookingId) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`booking_created_${bookingId}`, new Date().toISOString());
+        }
         router.push(`/orders?bookingId=${bookingId}&success=true`);
       } else {
         throw new Error("فشلت عملية إدراج الحجز في قاعدة البيانات.");
@@ -342,7 +409,7 @@ function BookingFlowContent() {
       <main className="flex-1 bg-slate-50 py-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Stepper progress */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm mb-8">
+          <div className="bg-white/85 backdrop-blur-md rounded-3xl p-6 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] mb-8">
             <div className="flex justify-between items-center relative">
               {STEPS.map((stepText, idx) => {
                 const isCompleted = idx < currentStep;
@@ -375,7 +442,7 @@ function BookingFlowContent() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Step Content */}
-            <div className="lg:col-span-8 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm min-h-[400px] flex flex-col justify-between">
+            <div className="lg:col-span-8 bg-white/90 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] min-h-[420px] flex flex-col justify-between">
               
               {/* STEP 1: PRICING */}
               {currentStep === 0 && (
@@ -385,18 +452,46 @@ function BookingFlowContent() {
                     <p className="text-slate-400 text-xs">أدخل المقاسات الحقيقية والتفاصيل للحصول على سعر نهائي موثوق.</p>
                   </div>
                   
-                  {/* Category switcher */}
-                  <div className="grid grid-cols-3 gap-3">
-                    {mainServices.map((serve) => (
+                  {isServiceLocked && selectedSubService ? (
+                    <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-5 flex justify-between items-center text-right shadow-sm mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-bold">
+                          <Sparkles className="w-6 h-6 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-extrabold text-slate-800 text-sm">
+                            {selectedSubService.title?.ar || selectedSubService.title}
+                          </h3>
+                          <p className="text-slate-400 text-[10px] mt-0.5 font-light">
+                            {selectedSubService.description?.ar || selectedSubService.description}
+                          </p>
+                        </div>
+                      </div>
                       <button 
-                        key={serve.id}
-                        onClick={() => { setServiceId(serve.id); }}
-                        className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${serviceId === serve.id ? "border-primary bg-primary/5 text-primary" : "border-slate-200 text-slate-500"}`}
+                        type="button"
+                        onClick={() => setIsServiceLocked(false)}
+                        className="text-[11px] font-bold text-primary hover:text-secondary border border-primary/20 hover:border-secondary/20 px-3 py-1.5 rounded-lg transition-colors bg-white shadow-sm"
                       >
-                        {serve.title?.ar || serve.title}
+                        تغيير الخدمة
                       </button>
-                    ))}
-                  </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Category switcher */}
+                      <div className="grid grid-cols-3 gap-3">
+                        {mainServices.map((serve) => (
+                          <button 
+                            type="button"
+                            key={serve.id}
+                            onClick={() => { setServiceId(serve.id); }}
+                            className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${serviceId === serve.id ? "border-primary bg-primary/5 text-primary" : "border-slate-200 text-slate-500"}`}
+                          >
+                            {serve.title?.ar || serve.title}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
 
                   {loadingServices ? (
                     <div className="py-12 flex justify-center">
@@ -405,21 +500,24 @@ function BookingFlowContent() {
                   ) : (
                     <div className="space-y-6 pt-4 border-t border-slate-100">
                       {/* Sub-service Selection */}
-                      <div className="space-y-2">
-                        <label className="block text-sm font-bold text-slate-700">نوع الخدمة الفرعية</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {subServices.map((sub) => (
-                            <button
-                              key={sub.id}
-                              onClick={() => { setSelectedSubService(sub); setSubServiceId(sub.id); }}
-                              className={`p-3 rounded-xl border text-xs font-bold text-right transition-all ${subServiceId === sub.id ? "border-primary bg-primary/5 text-primary" : "border-slate-200 text-slate-600"}`}
-                            >
-                              <span className="block font-black">{sub.title?.ar || sub.title}</span>
-                              <span className="block text-[9px] text-slate-400 font-normal mt-0.5 leading-normal">{sub.description?.ar || sub.description}</span>
-                            </button>
-                          ))}
+                      {!isServiceLocked && (
+                        <div className="space-y-2 pb-4 border-b border-slate-100">
+                          <label className="block text-sm font-bold text-slate-700">نوع الخدمة الفرعية</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {subServices.map((sub) => (
+                              <button
+                                type="button"
+                                key={sub.id}
+                                onClick={() => { setSelectedSubService(sub); setSubServiceId(sub.id); }}
+                                className={`p-3 rounded-xl border text-xs font-bold text-right transition-all ${subServiceId === sub.id ? "border-primary bg-primary/5 text-primary" : "border-slate-200 text-slate-600"}`}
+                              >
+                                <span className="block font-black">{sub.title?.ar || sub.title}</span>
+                                <span className="block text-[9px] text-slate-400 font-normal mt-0.5 leading-normal">{sub.description?.ar || sub.description}</span>
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {/* Dynamic price input fields based on active catalog schema */}
                       {selectedSubService?.price_config?.fields && selectedSubService.price_config.fields.length > 0 ? (
@@ -437,21 +535,37 @@ function BookingFlowContent() {
                                   </div>
                                   
                                   {field.id === "area" ? (
-                                    <div className="space-y-1.5">
-                                      <input 
-                                        type="range" 
-                                        min={field.min || 50} 
-                                        max={field.max || 400} 
-                                        step={10}
-                                        value={val}
-                                        onChange={(e) => handleFieldChange(field.id, parseInt(e.target.value))}
-                                        className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-primary"
-                                      />
-                                      <div className="flex justify-between text-[10px] text-slate-400 font-bold">
-                                        <span>{field.min || 50} {field.unit || "م²"}</span>
-                                        <span>{(field.max || 400) / 2} {field.unit || "م²"}</span>
-                                        <span>{field.max || 400} {field.unit || "م²"}</span>
+                                    <div className="flex items-center gap-3">
+                                      <button 
+                                        type="button"
+                                        onClick={() => handleFieldChange(field.id, Math.max(field.min || 50, val - 10))}
+                                        className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/60 font-extrabold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors"
+                                      >
+                                        -
+                                      </button>
+                                      <div className="relative flex items-center max-w-[140px]">
+                                        <input 
+                                          type="number" 
+                                          min={field.min || 50} 
+                                          max={field.max || 400} 
+                                          value={val || ""}
+                                          onChange={(e) => {
+                                            const parsed = parseInt(e.target.value);
+                                            handleFieldChange(field.id, isNaN(parsed) ? 0 : parsed);
+                                          }}
+                                          className="w-full p-2 pl-8 rounded-xl border border-slate-200 text-center text-xs font-black focus:border-primary focus:outline-none bg-white font-sans [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        />
+                                        <span className="absolute left-2.5 text-[9px] font-extrabold text-slate-400 pointer-events-none">
+                                          {field.unit || "م²"}
+                                        </span>
                                       </div>
+                                      <button 
+                                        type="button"
+                                        onClick={() => handleFieldChange(field.id, Math.min(field.max || 400, val + 10))}
+                                        className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/60 font-extrabold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors"
+                                      >
+                                        +
+                                      </button>
                                     </div>
                                   ) : (
                                     <div className="flex items-center gap-4">
@@ -556,19 +670,29 @@ function BookingFlowContent() {
                         const dayName = dateObj.toLocaleDateString("ar-EG", { weekday: "long" });
                         const dateLabel = dateObj.toLocaleDateString("ar-EG", { day: "numeric", month: "short" });
 
+                        const isAvailable = availabilityMap[formatted] !== false;
+                        const isSelected = scheduledDate === formatted;
+
                         return (
-                          <div
+                          <button
+                            type="button"
                             key={formatted}
+                            disabled={!isAvailable}
                             onClick={() => setScheduledDate(formatted)}
-                            className={`p-3 rounded-xl border text-center cursor-pointer transition-all flex flex-col justify-center gap-1 ${
-                              scheduledDate === formatted 
-                                ? "bg-primary border-primary text-white shadow-md shadow-primary/10" 
-                                : "bg-white border-slate-200 hover:border-slate-300 text-slate-600"
+                            className={`p-3.5 rounded-2xl border text-center transition-all flex flex-col justify-center gap-1 select-none ${
+                              isSelected 
+                                ? "bg-primary border-primary text-white shadow-md shadow-primary/10 scale-[1.02]" 
+                                : isAvailable
+                                  ? "bg-emerald-50/30 border-emerald-200/50 hover:border-emerald-400 text-emerald-700 hover:bg-emerald-50/60 cursor-pointer"
+                                  : "bg-rose-50/20 border-rose-200/20 text-rose-400/80 cursor-not-allowed opacity-60"
                             }`}
                           >
                             <span className="text-[10px] block opacity-85 font-bold">{dayName}</span>
                             <span className="text-xs block font-black">{dateLabel}</span>
-                          </div>
+                            <span className="text-[9px] font-black block mt-0.5">
+                              {isAvailable ? "متاح" : "غير متاح"}
+                            </span>
+                          </button>
                         );
                       })}
                     </div>
@@ -604,39 +728,31 @@ function BookingFlowContent() {
                     <p className="text-slate-400 text-xs">يرجى كتابة تفاصيل العنوان بدقة لسهولة وصول الفني.</p>
                   </div>
 
-                  {/* Map Mock UI */}
-                  <div className="w-full h-44 rounded-2xl bg-slate-200 border border-slate-300 overflow-hidden relative flex items-center justify-center text-slate-500 shadow-inner">
-                    <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px]"></div>
-                    <div className="absolute w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary scale-125 z-10 animate-bounce">
-                      <MapPin className="w-4 h-4 fill-primary" />
-                    </div>
-                    <span className="text-[10px] font-black z-10 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-full shadow-sm">
-                      تم تحديد الموقع تلقائياً بالـ GPS كضيف
-                    </span>
-                  </div>
-
                   {/* Manual form input fields */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-bold text-slate-600">المحافظة</label>
                       <select 
                         value={address.governorate}
-                        onChange={(e) => setAddress({...address, governorate: e.target.value})}
+                        onChange={(e) => handleGovernorateChange(e.target.value)}
                         className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:border-primary focus:outline-none"
                       >
-                        <option>القاهرة</option>
-                        <option>الجيزة</option>
-                        <option>القليوبية</option>
+                        {Object.keys(REGIONS_MAP).map((gov) => (
+                          <option key={gov} value={gov}>{gov}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-bold text-slate-600">المنطقة / المدينة</label>
-                      <input 
-                        type="text"
+                      <select 
                         value={address.city}
                         onChange={(e) => setAddress({...address, city: e.target.value})}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white"
-                      />
+                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:border-primary focus:outline-none"
+                      >
+                        {(REGIONS_MAP[address.governorate] || []).map((city) => (
+                          <option key={city} value={city}>{city}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
@@ -789,7 +905,7 @@ function BookingFlowContent() {
 
             {/* Price invoice details block */}
             <div className="lg:col-span-4 space-y-6">
-              <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] space-y-4">
                 <h3 className="font-extrabold text-slate-800 text-base border-b border-slate-100 pb-3">ملخص الفاتورة المعتمدة</h3>
                 
                 <div className="space-y-3.5 text-xs text-slate-600">
@@ -885,7 +1001,7 @@ function BookingFlowContent() {
               </div>
 
               {/* Security guarantee box */}
-              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 flex gap-3 text-xs text-slate-600">
+              <div className="bg-emerald-500/5 border border-emerald-500/10 backdrop-blur-sm rounded-3xl p-5 flex gap-3 text-xs text-slate-600 shadow-[0_4px_16px_rgba(16,185,129,0.02)]">
                 <ShieldAlert className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <strong className="block text-slate-800">ضمان الأسعار المعتمد</strong>

@@ -41,6 +41,42 @@ function OrderTrackingContent() {
   const [activeStep, setActiveStep] = useState(2); // Accepted as default fallback
   const [whatsappNumber, setWhatsappNumber] = useState("+201012345678");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!booking || booking.is_whatsapp_confirmed) {
+      setTimeLeft(null);
+      return;
+    }
+
+    let createdTimeStr = booking.created_at;
+    if (!createdTimeStr && typeof window !== "undefined") {
+      createdTimeStr = localStorage.getItem(`booking_created_${bookingId}`);
+    }
+
+    const createdAt = createdTimeStr ? new Date(createdTimeStr).getTime() : Date.now();
+    const expiryTime = createdAt + 60 * 60 * 1000; // 60 minutes
+
+    const updateTimer = () => {
+      const remainingMs = expiryTime - Date.now();
+      if (remainingMs <= 0) {
+        setTimeLeft(0);
+      } else {
+        setTimeLeft(Math.floor(remainingMs / 1000));
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [booking, bookingId]);
+
+  const formatTimeLeft = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
 
   useEffect(() => {
     async function fetchWhatsappSettings() {
@@ -212,16 +248,40 @@ function OrderTrackingContent() {
           
           {/* WhatsApp Pending Confirmation Banner */}
           {booking?.is_whatsapp_confirmed === false && (
-            <div className="bg-amber-50 border border-amber-200 rounded-3xl p-6 text-center space-y-4 shadow-sm">
-              <div className="w-14 h-14 bg-amber-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg shadow-amber-500/20">
-                <Clock className="w-8 h-8 stroke-[2.5] animate-pulse" />
+            <div className="relative overflow-hidden bg-white/70 backdrop-blur-md border border-amber-250/30 rounded-3xl p-6 sm:p-8 text-center space-y-6 shadow-[0_8px_32px_0_rgba(245,158,11,0.06)]">
+              {/* Decorative gradient blur background blobs */}
+              <div className="absolute -left-12 -top-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -z-10"></div>
+              <div className="absolute -right-12 -bottom-12 w-32 h-32 bg-amber-600/10 rounded-full blur-2xl -z-10"></div>
+
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-full flex items-center justify-center shadow-inner animate-pulse">
+                  <Clock className="w-8 h-8 stroke-[2.5]" />
+                </div>
+                
+                {timeLeft !== null && (
+                  <div className={`px-4 py-1.5 rounded-full text-xs font-black font-mono border tracking-wider transition-all duration-300 shadow-sm ${
+                    timeLeft === 0 
+                      ? "bg-rose-50 border-rose-200/50 text-rose-600" 
+                      : timeLeft < 600 
+                        ? "bg-rose-50 border-rose-200/50 text-rose-500 animate-pulse" 
+                        : "bg-amber-50 border-amber-250/50 text-amber-600"
+                  }`}>
+                    {timeLeft === 0 ? (
+                      "انتهت صلاحية مهلة التأكيد التلقائي ⚠️"
+                    ) : (
+                      `الوقت المتبقي للتأكيد: ${formatTimeLeft(timeLeft)}`
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="space-y-1">
-                <h1 className="text-xl sm:text-2xl font-black text-amber-800">طلبك في انتظار التأكيد عبر واتساب</h1>
-                <p className="text-amber-700 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
-                  تم استلام طلبك بنجاح. تم إرسال رسالة تأكيد إلى واتساب. يرجى تأكيد الطلب خلال <strong>60 دقيقة</strong> حتى يتم الاحتفاظ بالموعد وتجنب إلغائه تلقائياً.
+
+              <div className="space-y-2">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-800">طلبك في انتظار التأكيد عبر واتساب</h1>
+                <p className="text-slate-500 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
+                  تم تسجيل حجزك بنجاح كضيف. يرجى إرسال رسالة التأكيد عبر واتساب للحفاظ على موعد الزيارة وتجنب إلغاء الحجز تلقائياً خلال 60 دقيقة.
                 </p>
               </div>
+
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                 <a 
                   href={`https://wa.me/${whatsappNumber.replace("+", "").replace(/\s/g, "").trim()}?text=${encodeURIComponent(
@@ -234,14 +294,14 @@ function OrderTrackingContent() {
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba56] text-white font-bold px-6 py-2.5 rounded-xl text-xs transition-all shadow-md shadow-emerald-500/10"
+                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold px-8 py-3 rounded-2xl text-xs transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 duration-200"
                 >
                   <Send className="w-4 h-4 fill-white" />
                   <span>تأكيد سريع عبر واتساب الشركة</span>
                 </a>
                 <Link 
                   href="/"
-                  className="bg-white border border-amber-200 text-amber-800 hover:bg-amber-50 font-bold px-6 py-2.5 rounded-xl text-xs"
+                  className="inline-flex items-center justify-center bg-white border border-slate-250 hover:bg-slate-50 text-slate-700 font-extrabold px-8 py-3 rounded-2xl text-xs transition-all duration-200 shadow-sm"
                 >
                   العودة للرئيسية
                 </Link>
@@ -437,21 +497,44 @@ function OrderTrackingContent() {
       
       {/* WhatsApp Confirmation Dialog Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" dir="rtl">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6 transform transition-all scale-100 relative text-right">
-            <div className="w-16 h-16 bg-amber-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg shadow-amber-500/20">
-              <Clock className="w-8 h-8 stroke-[2.5] animate-pulse" />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-all duration-300" dir="rtl">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 max-w-md w-full border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.15)] space-y-6 transform transition-all scale-100 relative text-right">
+            
+            {/* Decorative colored glow in modal */}
+            <div className="absolute -right-8 -top-8 w-24 h-24 bg-amber-500/15 rounded-full blur-2xl -z-10"></div>
+            <div className="absolute -left-8 -bottom-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -z-10"></div>
+
+            <div className="w-16 h-16 bg-amber-500/10 text-amber-600 rounded-full flex items-center justify-center mx-auto shadow-inner border border-amber-500/20 animate-pulse">
+              <Clock className="w-8 h-8 stroke-[2.5]" />
             </div>
             
-            <div className="space-y-2 text-center">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-800">خطوة أخيرة لتأكيد حجزك ⚠️</h2>
-              <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">
-                يرجى إرسال تفاصيل حجزك عبر الواتساب لتأكيد الموعد مع الإدارة.
+            <div className="space-y-3 text-center">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-800">تأكيد حجزك عبر الواتساب ⚠️</h2>
+              
+              {timeLeft !== null && (
+                <div className={`inline-block px-4 py-1.5 rounded-full text-xs font-black font-mono border tracking-wider transition-all duration-300 shadow-sm ${
+                  timeLeft === 0 
+                    ? "bg-rose-50 border-rose-200/50 text-rose-600" 
+                    : timeLeft < 600 
+                      ? "bg-rose-50 border-rose-200/50 text-rose-500 animate-pulse" 
+                      : "bg-amber-50 border-amber-250/50 text-amber-600"
+                }`}>
+                  {timeLeft === 0 ? (
+                    "انتهت صلاحية مهلة التأكيد ⚠️"
+                  ) : (
+                    `الوقت المتبقي للتأكيد: ${formatTimeLeft(timeLeft)}`
+                  )}
+                </div>
+              )}
+              
+              <p className="text-slate-500 text-xs sm:text-sm leading-relaxed max-w-xs mx-auto">
+                يرجى إرسال تفاصيل حجزك عبر الواتساب لتأكيد الموعد مع الإدارة خلال المهلة الزمنية.
               </p>
-              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-[11px] sm:text-xs text-amber-800 text-right space-y-1">
+              
+              <div className="bg-amber-500/5 border border-amber-200/40 rounded-2xl p-4 text-[11px] sm:text-xs text-amber-800 text-right space-y-1">
                 <strong>لماذا هذه الخطوة؟</strong>
-                <p className="leading-relaxed">
-                  لحجز الموعد وتأكيده وضمان عدم إلغائه تلقائياً بعد مرور 60 دقيقة.
+                <p className="leading-relaxed text-slate-600">
+                  لحجز الموعد وتأكيده وضمان عدم إلغائه تلقائياً بعد مرور 60 دقيقة من تسجيل الطلب.
                 </p>
               </div>
             </div>
@@ -469,15 +552,16 @@ function OrderTrackingContent() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setShowConfirmModal(false)}
-                className="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba56] text-white font-extrabold py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition-all shadow-md shadow-emerald-500/10 text-center"
+                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition-all shadow-md shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99] text-center"
               >
                 <Send className="w-4 h-4 fill-white" />
                 <span>إرسال تفاصيل الحجز وتأكيده عبر واتساب</span>
               </a>
               
               <button
+                type="button"
                 onClick={() => setShowConfirmModal(false)}
-                className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold py-3.5 px-6 rounded-2xl text-xs transition-colors"
+                className="w-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-650 font-bold py-3.5 px-6 rounded-2xl text-xs transition-colors"
               >
                 سأقوم بالتأكيد لاحقاً (خلال المهلة)
               </button>
