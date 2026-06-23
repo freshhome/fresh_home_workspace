@@ -197,7 +197,7 @@ function ServiceDetailsContent() {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <Header />
 
-      <main className="flex-1 py-10">
+      <main className="flex-1 py-10 pb-28 lg:pb-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Breadcrumb / Back button */}
@@ -457,6 +457,25 @@ function ServiceDetailsContent() {
 
         </div>
       </main>
+
+      {/* Floating Bottom Booking Bar for Mobile */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-xl border-t border-slate-200/60 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] px-5 py-4 flex items-center justify-between gap-4">
+        <div className="text-right font-sans">
+          <span className="text-[10px] font-bold text-slate-400 block leading-tight">السعر التقريبي يبدأ من</span>
+          <div className="flex items-baseline gap-1 mt-0.5">
+            <span className="text-xl font-black text-primary">{startingPrice}</span>
+            <span className="text-[10px] font-bold text-slate-500">{unitText}</span>
+          </div>
+        </div>
+        
+        <Link
+          href={`/booking?serviceId=${serviceId}&subServiceId=${subServiceId}`}
+          className="flex-1 max-w-[200px] flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-extrabold py-3 px-4 rounded-xl text-center shadow-md shadow-primary/20 active:scale-95 transition-all text-xs"
+        >
+          <Calendar className="w-4 h-4" />
+          <span>احجز الخدمة الآن</span>
+        </Link>
+      </div>
 
       <Footer />
     </div>

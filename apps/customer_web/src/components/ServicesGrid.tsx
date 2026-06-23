@@ -101,7 +101,8 @@ export default function ServicesGrid() {
                 <Link 
                   key={serve.id}
                   href={`/services?serviceId=${serve.id}`}
-                  className="bg-white rounded-[22px] border border-slate-100 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all duration-300 flex flex-col justify-between group transform hover:-translate-y-1 cursor-pointer text-right block"
+                  data-track="service-card-main"
+                  className="bg-white rounded-[22px] border border-slate-100 hover:border-secondary p-6 shadow-[0_8px_40px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all duration-300 flex flex-col justify-between group transform hover:-translate-y-1 cursor-pointer text-right block"
                 >
                   <div className="space-y-4">
                     {/* Image Icon & Badge */}
@@ -131,20 +132,19 @@ export default function ServicesGrid() {
                         {/* Secondary colored bar below title */}
                         <div className="w-8 h-1 bg-secondary rounded-full mt-2 transition-all duration-300 group-hover:w-14"></div>
                       </div>
-                      <span className="block text-[10px] text-slate-400 font-bold mt-1.5 tracking-wider uppercase">
+                      <span className="block text-xs text-slate-400 font-bold mt-1.5 tracking-wider uppercase">
                         {theme.englishTitle}
                       </span>
-                      <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 pt-2">
+                      <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 pt-2 font-sans font-light">
                         {arDesc}
                       </p>
                     </div>
                   </div>
 
-                  {/* Quick CTA */}
-                  <div className="mt-8 pt-4 border-t border-slate-50 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400">تصفح الخدمات الفرعية</span>
-                    <span className="flex items-center gap-1 text-sm font-bold text-primary group-hover:text-secondary transition-all">
-                      <span>تصفح</span>
+                  {/* Quick CTA - Simplified and merged */}
+                  <div className="mt-8 pt-4 border-t border-slate-100/60 flex justify-end">
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400 group-hover:text-secondary transition-colors">
+                      <span>تصفح الخدمات الفرعية</span>
                       <ChevronLeft className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" />
                     </span>
                   </div>

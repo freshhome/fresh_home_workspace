@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Star, Check, Sparkles } from "lucide-react";
+import { Star, Check, Sparkles, ChevronLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function PopularServices() {
@@ -114,7 +114,8 @@ export default function PopularServices() {
                 <Link 
                   key={sub.id}
                   href={`/services/details?serviceId=${sub.parent_id}&subServiceId=${sub.id}`}
-                  className="bg-white rounded-[20px] border border-slate-100/60 shadow-[0_8px_40px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all duration-300 flex flex-col justify-between group overflow-hidden transform hover:-translate-y-1 text-right block"
+                  data-track="service-card-popular"
+                  className="bg-white rounded-[20px] border border-slate-100/60 hover:border-secondary shadow-[0_8px_40px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all duration-300 flex flex-col justify-between group overflow-hidden transform hover:-translate-y-1 text-right block"
                 >
                   {/* Top Image Container */}
                   <div className="relative h-[140px] w-full bg-service-bg border-b border-primary/5 flex items-center justify-center p-4">
@@ -150,7 +151,7 @@ export default function PopularServices() {
                       </h3>
 
                       {/* Highlights */}
-                      <ul className="space-y-1 text-[11px] text-slate-500 pt-2">
+                      <ul className="space-y-1 text-[11px] text-slate-500 pt-2 font-sans font-light">
                         {highlights.map((hl, i) => (
                           <li key={i} className="flex items-center gap-1.5">
                             <Check className="w-3.5 h-3.5 text-secondary shrink-0" />
@@ -167,9 +168,10 @@ export default function PopularServices() {
                         <span className="text-secondary font-black text-sm block">{priceLabel}</span>
                       </div>
                       <span 
-                        className="bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md shadow-primary/20 transition-all duration-300"
+                        className="text-xs font-bold text-primary group-hover:text-secondary flex items-center gap-1 transition-colors"
                       >
-                        تفاصيل الخدمة
+                        <span>التفاصيل</span>
+                        <ChevronLeft className="w-3.5 h-3.5 transform group-hover:-translate-x-0.5 transition-transform" />
                       </span>
                     </div>
                   </div>

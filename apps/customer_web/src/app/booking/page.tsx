@@ -450,47 +450,27 @@ function BookingFlowContent() {
                   <div>
                     <h2 className="text-xl font-black text-slate-800">تعديل مواصفات وحساب تسعير الخدمة</h2>
                     <p className="text-slate-400 text-xs">أدخل المقاسات الحقيقية والتفاصيل للحصول على سعر نهائي موثوق.</p>
+                    {isServiceLocked && selectedSubService && (
+                      <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                        <Sparkles className="w-3.5 h-3.5 text-primary" />
+                        <span>الخدمة المحددة: {selectedSubService.title?.ar || selectedSubService.title}</span>
+                      </div>
+                    )}
                   </div>
                   
-                  {isServiceLocked && selectedSubService ? (
-                    <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-5 flex justify-between items-center text-right shadow-sm mb-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-bold">
-                          <Sparkles className="w-6 h-6 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-extrabold text-slate-800 text-sm">
-                            {selectedSubService.title?.ar || selectedSubService.title}
-                          </h3>
-                          <p className="text-slate-400 text-[10px] mt-0.5 font-light">
-                            {selectedSubService.description?.ar || selectedSubService.description}
-                          </p>
-                        </div>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => setIsServiceLocked(false)}
-                        className="text-[11px] font-bold text-primary hover:text-secondary border border-primary/20 hover:border-secondary/20 px-3 py-1.5 rounded-lg transition-colors bg-white shadow-sm"
-                      >
-                        تغيير الخدمة
-                      </button>
+                  {!isServiceLocked && (
+                    <div className="grid grid-cols-3 gap-3">
+                      {mainServices.map((serve) => (
+                        <button 
+                          type="button"
+                          key={serve.id}
+                          onClick={() => { setServiceId(serve.id); }}
+                          className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${serviceId === serve.id ? "border-primary bg-primary/5 text-primary" : "border-slate-200 text-slate-500"}`}
+                        >
+                          {serve.title?.ar || serve.title}
+                        </button>
+                      ))}
                     </div>
-                  ) : (
-                    <>
-                      {/* Category switcher */}
-                      <div className="grid grid-cols-3 gap-3">
-                        {mainServices.map((serve) => (
-                          <button 
-                            type="button"
-                            key={serve.id}
-                            onClick={() => { setServiceId(serve.id); }}
-                            className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${serviceId === serve.id ? "border-primary bg-primary/5 text-primary" : "border-slate-200 text-slate-500"}`}
-                          >
-                            {serve.title?.ar || serve.title}
-                          </button>
-                        ))}
-                      </div>
-                    </>
                   )}
 
                   {loadingServices ? (
