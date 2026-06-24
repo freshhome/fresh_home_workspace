@@ -285,12 +285,22 @@ function OrderTrackingContent() {
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                 <a 
                   href={`https://wa.me/${whatsappNumber.replace("+", "").replace(/\s/g, "").trim()}?text=${encodeURIComponent(
-                    `مرحباً، أود تأكيد حجزي الجديد كضيف عبر موقع فريش هوم:
-- رقم الطلب: ${booking?.readable_id || finalBookingId}
-- الاسم: ${booking?.contact_name || ""}
-- الخدمة: ${booking?.service_snapshot?.title || "خدمة منزلية"}
-- التاريخ: ${displayDay}
-- الموعد: ${displayTime}`
+                    `مرحباً،
+
+أرغب في تأكيد الحجز التالي:
+
+📋 رقم الطلب: ${booking?.readable_id || finalBookingId}
+🏠 الخدمة: ${booking?.service_snapshot?.title || "خدمة منزلية"}
+💰 السعر: ${booking?.price_snapshot?.total || ""} جنيه
+📅 التاريخ: ${displayDay.includes('T') ? displayDay.split('T')[0] : displayDay}
+⏰ الموعد: ${booking?.start_time_slot ? booking.start_time_slot.substring(0, 5) : "09:00"}
+👤 الاسم: ${booking?.contact_name || ""}
+📞 الهاتف: ${booking?.contact_phones?.[0] || ""}
+📍 المحافظة: ${addressSnap.governorate || ""}
+📍 المدينة: ${addressSnap.city || ""}
+
+بإرسال هذه الرسالة أؤكد صحة بيانات الحجز ورغبتي في تنفيذ الخدمة بالسعر الموضح أعلاه. 
+شكراً لكم.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -542,12 +552,22 @@ function OrderTrackingContent() {
             <div className="space-y-3">
               <a
                 href={`https://wa.me/${whatsappNumber.replace("+", "").replace(/\s/g, "").trim()}?text=${encodeURIComponent(
-                  `مرحباً، أود تأكيد حجزي الجديد كضيف عبر موقع فريش هوم:
-- رقم الطلب: ${booking?.readable_id || finalBookingId}
-- الاسم: ${booking?.contact_name || ""}
-- الخدمة: ${booking?.service_snapshot?.title || "خدمة منزلية"}
-- التاريخ: ${displayDay}
-- الموعد: ${displayTime}`
+                  `مرحباً،
+
+أرغب في تأكيد الحجز التالي:
+
+📋 رقم الطلب: ${booking?.readable_id || finalBookingId}
+🏠 الخدمة: ${booking?.service_snapshot?.title || "خدمة منزلية"}
+💰 السعر: ${booking?.price_snapshot?.total || ""} جنيه
+📅 التاريخ: ${displayDay.includes('T') ? displayDay.split('T')[0] : displayDay}
+⏰ الموعد: ${booking?.start_time_slot ? booking.start_time_slot.substring(0, 5) : "09:00"}
+👤 الاسم: ${booking?.contact_name || ""}
+📞 الهاتف: ${booking?.contact_phones?.[0] || ""}
+📍 المحافظة: ${addressSnap.governorate || ""}
+📍 المدينة: ${addressSnap.city || ""}
+
+بإرسال هذه الرسالة أؤكد صحة بيانات الحجز ورغبتي في تنفيذ الخدمة بالسعر الموضح أعلاه. 
+شكراً لكم.`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"

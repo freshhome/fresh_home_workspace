@@ -396,12 +396,14 @@ class ServiceRepositoryImpl implements ServiceRepository {
     if (hasConnection) {
       try {
         final syncMetadata = await localDataSource.getSyncMetadata('services');
-        final lastSync = forceFull ? null : syncMetadata?.lastUpdatedAt;
+        final localServices = await localDataSource.getAllServices();
+        final isLocalCacheEmpty = localServices.isEmpty;
+        final lastSync = (forceFull || isLocalCacheEmpty) ? null : syncMetadata?.lastUpdatedAt;
 
         List<ServiceRemoteModel> remoteModels;
         if (lastSync == null) {
-          print('🌐 [ServiceRepository] Doing FULL fetch from services...');
-          if (forceFull) {
+          print('🌐 [ServiceRepository] Doing FULL fetch from services (forceFull: $forceFull, isLocalCacheEmpty: $isLocalCacheEmpty)...');
+          if (forceFull || isLocalCacheEmpty) {
             await localDataSource.clearAndReopenServicesBox();
           }
           remoteModels = await remoteDataSource.getServices();

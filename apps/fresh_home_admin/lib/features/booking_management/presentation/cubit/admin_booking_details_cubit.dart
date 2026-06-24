@@ -86,9 +86,11 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
           }
 
           // Load users if they are missing or if IDs changed
-          if (customer == null || customer.uid != updatedBooking.userId) {
-             final customerResult = await userRepository.getUserById(uid: updatedBooking.userId);
+          if (updatedBooking.userId != null && (customer == null || customer.uid != updatedBooking.userId)) {
+             final customerResult = await userRepository.getUserById(uid: updatedBooking.userId!);
              customer = customerResult.getOrElse((_) => customer!);
+          } else if (updatedBooking.userId == null) {
+             customer = null;
           }
 
           if (updatedBooking.technicianId != null && (technician == null || technician.uid != updatedBooking.technicianId)) {

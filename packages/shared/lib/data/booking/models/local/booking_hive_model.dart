@@ -12,7 +12,7 @@ class BookingHiveModel {
   @HiveField(0)
   final String id;
   @HiveField(1)
-  final String userId;
+  final String? userId;
   @HiveField(2)
   final BookedServiceHiveModel service;
   @HiveField(3)
@@ -62,7 +62,7 @@ class BookingHiveModel {
 
   const BookingHiveModel({
     required this.id,
-    required this.userId,
+    this.userId,
     required this.service,
     required this.address,
     required this.scheduledAt,

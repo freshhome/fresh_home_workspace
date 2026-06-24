@@ -18,7 +18,7 @@ class BookingHiveModelAdapter extends TypeAdapter<BookingHiveModel> {
     };
     return BookingHiveModel(
       id: fields[0] as String,
-      userId: fields[1] as String,
+      userId: fields[1] as String?,
       service: fields[2] as BookedServiceHiveModel,
       address: fields[3] as AddressModel,
       scheduledAt: fields[4] as DateTime,

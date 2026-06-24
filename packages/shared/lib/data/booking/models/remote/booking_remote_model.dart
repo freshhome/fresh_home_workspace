@@ -5,7 +5,7 @@ import 'package:shared/data/booking/models/remote/sub_models/booking_components_
 @TimestampConverter()
 class BookingRemoteModel {
   final String id;
-  final String userId;
+  final String? userId;
   final String? technicianId;
   final ServiceSnapshotModel service;
   final AddressSnapshotModel address;
@@ -35,7 +35,7 @@ class BookingRemoteModel {
 
   const BookingRemoteModel({
     required this.id,
-    required this.userId,
+    this.userId,
     this.technicianId,
     required this.service,
     required this.address,
@@ -67,7 +67,7 @@ class BookingRemoteModel {
   factory BookingRemoteModel.fromJson(Map<String, dynamic> json) {
     return BookingRemoteModel(
       id: json['id'] as String,
-      userId: json['user_id'] as String,
+      userId: json['user_id'] as String?,
       technicianId: json['technician_id'] as String?,
       service: ServiceSnapshotModel.fromJson(json['service_snapshot'] as Map<String, dynamic>),
       address: AddressSnapshotModel.fromJson(json['address_snapshot'] as Map<String, dynamic>),

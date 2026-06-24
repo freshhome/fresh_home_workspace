@@ -4,7 +4,7 @@ import 'package:shared/domain/user/entities/user/address.dart';
 
 class Booking extends Equatable {
   final String id;
-  final String userId;
+  final String? userId;
   final String? technicianId;
   final BookedService service;
   final Address address;
@@ -40,7 +40,7 @@ class Booking extends Equatable {
 
   const Booking({
     required this.id,
-    required this.userId,
+    this.userId,
     this.technicianId,
     required this.service,
     required this.address,

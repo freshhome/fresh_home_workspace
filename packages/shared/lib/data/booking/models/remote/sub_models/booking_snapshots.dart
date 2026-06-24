@@ -16,8 +16,18 @@ class ServiceSnapshotModel {
     required this.image,
   });
 
-  factory ServiceSnapshotModel.fromJson(Map<String, dynamic> json) =>
-      _$ServiceSnapshotModelFromJson(json);
+  factory ServiceSnapshotModel.fromJson(Map<String, dynamic> json) {
+    final title = json['title'] as String?;
+    final nameMap = json['name'] != null 
+        ? Map<String, String>.from(json['name'] as Map) 
+        : {'ar': title ?? 'خدمة', 'en': title ?? 'Service'};
+    return ServiceSnapshotModel(
+      id: (json['id'] ?? json['subServiceId'] ?? '') as String,
+      subServiceId: (json['subServiceId'] ?? json['id'] ?? '') as String,
+      name: nameMap,
+      image: (json['image'] ?? '') as String,
+    );
+  }
 
   Map<String, dynamic> toJson() => _$ServiceSnapshotModelToJson(this);
 }
@@ -44,8 +54,18 @@ class AddressSnapshotModel {
     this.longitude,
   });
 
-  factory AddressSnapshotModel.fromJson(Map<String, dynamic> json) =>
-      _$AddressSnapshotModelFromJson(json);
+  factory AddressSnapshotModel.fromJson(Map<String, dynamic> json) {
+    return AddressSnapshotModel(
+      governorate: (json['governorate'] ?? '') as String,
+      city: (json['city'] ?? '') as String,
+      street: (json['street'] ?? '') as String,
+      buildingNumber: (json['buildingNumber'] ?? json['building_number'] ?? '') as String,
+      apartmentNumber: (json['apartmentNumber'] ?? json['apartment'] ?? json['apartment_number']) as String?,
+      floorNumber: (json['floorNumber'] ?? json['floor'] ?? json['floor_number']) as String?,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+    );
+  }
 
   Map<String, dynamic> toJson() => _$AddressSnapshotModelToJson(this);
 }
@@ -66,8 +86,15 @@ class PriceSnapshotModel {
     this.metadata,
   });
 
-  factory PriceSnapshotModel.fromJson(Map<String, dynamic> json) =>
-      _$PriceSnapshotModelFromJson(json);
+  factory PriceSnapshotModel.fromJson(Map<String, dynamic> json) {
+    return PriceSnapshotModel(
+      basePrice: (json['basePrice'] as num? ?? 0.0).toDouble(),
+      extraFees: (json['extraFees'] as num? ?? 0.0).toDouble(),
+      discount: (json['discount'] as num? ?? 0.0).toDouble(),
+      total: (json['total'] as num? ?? 0.0).toDouble(),
+      metadata: json['metadata'] as Map<String, dynamic>?,
+    );
+  }
 
   Map<String, dynamic> toJson() => _$PriceSnapshotModelToJson(this);
 }

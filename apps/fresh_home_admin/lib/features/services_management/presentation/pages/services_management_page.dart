@@ -32,14 +32,18 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
     _loadTree();
   }
 
-  Future<void> _loadTree() async {
+  Future<void> _loadTree({bool forceRefresh = false}) async {
     setState(() {
       _isLoadingTree = true;
     });
 
     final getRoots = di.getIt<GetRootServicesUseCase>();
     final getChildren = di.getIt<GetChildrenUseCase>();
-    final adj = await TreeHelpers.loadFullActiveTree(getRoots, getChildren);
+    final adj = await TreeHelpers.loadFullActiveTree(
+      getRoots,
+      getChildren,
+      forceRefresh: forceRefresh,
+    );
 
     if (!mounted) return;
 
@@ -249,7 +253,7 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadTree,
+      onRefresh: () => _loadTree(forceRefresh: true),
       color: themeColor.primary,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
@@ -1845,36 +1849,67 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
 
   Widget _buildEmptyState(BuildContext context) {
     final themeColor = context.themeColor;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.category_outlined,
-            size: 70,
-            color: themeColor.unselectedItem.withValues(alpha: 0.3),
+    return RefreshIndicator(
+      onRefresh: () => _loadTree(forceRefresh: true),
+      color: themeColor.primary,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.category_outlined,
+                size: 70,
+                color: themeColor.unselectedItem.withValues(alpha: 0.3),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "لا توجد فئات أو خدمات حالياً",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "اسحب للأسفل للتحديث أو اضغط على الزر أدناه لمزامنة شجرة الخدمات من الخادم.",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontFamily: 'Cairo',
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => _loadTree(forceRefresh: true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: themeColor.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.sync_rounded, size: 18),
+                label: const Text(
+                  "تحديث ومزامنة البيانات",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            "لا توجد فئات أو خدمات حالياً",
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
-              fontFamily: 'Cairo',
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            "اضغط على زر الإضافة لإنشاء تصنيفات وبناء شجرة الخدمات الخاصة بك.",
-            style: TextStyle(
-              color: Colors.grey,
-              fontFamily: 'Cairo',
-              fontSize: 12,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
     );
   }

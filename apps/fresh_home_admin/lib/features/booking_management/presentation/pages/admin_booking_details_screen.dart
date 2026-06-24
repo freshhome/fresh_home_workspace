@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/shared.dart';
 import 'package:shared_features/shared_features.dart';
@@ -112,7 +114,11 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                 backgroundColor: const Color(0xFF10B981),
               ),
             );
-            Navigator.pop(context);
+            if (state.message.contains('الواتساب')) {
+              _showCopyMessageDialog(context);
+            } else {
+              Navigator.pop(context);
+            }
           }
           if (state is AdminBookingDetailsError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -293,6 +299,174 @@ class _AdminBookingDetailsContent extends StatelessWidget {
         },
       ),
       bottomSheet: _buildBottomActions(context),
+    );
+  }
+
+  void _showCopyMessageDialog(BuildContext context) {
+    final String customerName = booking.contact.name.isNotEmpty 
+        ? booking.contact.name 
+        : (customer?.fullName ?? 'عميل فريش هوم');
+    final String orderNumber = booking.readableId ?? booking.displayId;
+    final String serviceName = booking.service.name['ar'] ?? booking.service.name['en'] ?? 'خدمة منزلية';
+    final String bookingDate = DateFormat('yyyy-MM-dd').format(booking.scheduledAt);
+    final String bookingTime = booking.startTimeSlot.length >= 5 ? booking.startTimeSlot.substring(0, 5) : booking.startTimeSlot;
+    final String trackingUrl = 'https://freshhome-egypt.com/orders?bookingId=${booking.id}';
+
+    final String messageText = 'مرحباً $customerName 👋\n\n'
+        'تم تأكيد حجزكم بنجاح لدى فريش هوم ✅\n\n'
+        '📋 رقم الطلب: $orderNumber\n'
+        '🏠 الخدمة: $serviceName\n'
+        '📅 موعد الزيارة: $bookingDate\n'
+        '⏰ الوقت: $bookingTime\n\n'
+        'يمكنكم متابعة حالة الطلب والاطلاع على آخر التحديثات من خلال الرابط التالي:\n\n'
+        '🔗 $trackingUrl\n\n'
+        'شكراً لاختياركم فريش هوم، ونسعد بخدمتكم دائماً.';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          elevation: 10,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.copy_rounded,
+                        color: Color(0xFF059669),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Text(
+                        'رسالة تأكيد الحجز للعميل',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'تم تأكيد حجز العميل وتنشيط الطلب بنجاح. يمكنك نسخ الرسالة التالية لإرسالها للعميل عبر واتساب:',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 13,
+                    height: 1.5,
+                    color: Color(0xFF475569),
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      messageText,
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 13,
+                        height: 1.6,
+                        color: Color(0xFF334155),
+                      ),
+                      textDirection: ui.TextDirection.rtl,
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(dialogContext); // Close dialog
+                          Navigator.pop(context); // Go back to orders list
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          'إغلاق',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: messageText));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'تم نسخ الرسالة إلى الحافظة بنجاح ✅',
+                                style: TextStyle(fontFamily: 'Cairo'),
+                              ),
+                              backgroundColor: Color(0xFF10B981),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E3A8A),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        icon: const Icon(Icons.content_copy_rounded, size: 16),
+                        label: const Text(
+                          'نسخ الرسالة',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

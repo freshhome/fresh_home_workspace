@@ -3,10 +3,11 @@ import 'package:shared/shared.dart';
 class TreeHelpers {
   static Future<Map<String?, List<ServiceEntity>>> loadFullActiveTree(
     GetRootServicesUseCase getRoots,
-    GetChildrenUseCase getChildren,
-  ) async {
+    GetChildrenUseCase getChildren, {
+    bool forceRefresh = false,
+  }) async {
     final Map<String?, List<ServiceEntity>> adjacencyList = {};
-    final rootsResult = await getRoots();
+    final rootsResult = await getRoots(forceRefresh: forceRefresh);
     
     await rootsResult.fold(
       (failure) async {},
@@ -14,7 +15,7 @@ class TreeHelpers {
         adjacencyList[null] = roots;
         for (final root in roots) {
           if (!root.isBookable) {
-            await _loadDescendants(root.id, getChildren, adjacencyList);
+            await _loadDescendants(root.id, getChildren, adjacencyList, forceRefresh: forceRefresh);
           }
         }
       },
@@ -25,9 +26,10 @@ class TreeHelpers {
   static Future<void> _loadDescendants(
     String parentId,
     GetChildrenUseCase getChildren,
-    Map<String?, List<ServiceEntity>> adjacencyList,
-  ) async {
-    final result = await getChildren(parentId);
+    Map<String?, List<ServiceEntity>> adjacencyList, {
+    bool forceRefresh = false,
+  }) async {
+    final result = await getChildren(parentId, forceRefresh: forceRefresh);
     await result.fold(
       (failure) async {},
       (children) async {
@@ -35,7 +37,7 @@ class TreeHelpers {
           adjacencyList[parentId] = children;
           for (final child in children) {
             if (!child.isBookable) {
-              await _loadDescendants(child.id, getChildren, adjacencyList);
+              await _loadDescendants(child.id, getChildren, adjacencyList, forceRefresh: forceRefresh);
             }
           }
         }
