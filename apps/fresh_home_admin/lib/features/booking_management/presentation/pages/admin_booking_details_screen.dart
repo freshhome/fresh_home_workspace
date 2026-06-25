@@ -16,11 +16,7 @@ class AdminBookingDetailsScreen extends StatefulWidget {
   final Booking? booking;
   final String? bookingId;
 
-  const AdminBookingDetailsScreen({
-    super.key,
-    this.booking,
-    this.bookingId,
-  });
+  const AdminBookingDetailsScreen({super.key, this.booking, this.bookingId});
 
   @override
   State<AdminBookingDetailsScreen> createState() =>
@@ -40,23 +36,52 @@ class _AdminBookingDetailsScreenState extends State<AdminBookingDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AdminBookingDetailsCubit, AdminBookingDetailsState>(
+      buildWhen: (previous, current) {
+        if (previous is AdminBookingDetailsLoaded ||
+            previous is AdminBookingDetailsSuccess ||
+            previous is AdminBookingDetailsError) {
+          return current is AdminBookingDetailsLoaded;
+        }
+        return true;
+      },
       builder: (context, state) {
-        if (state is AdminBookingDetailsLoading || state is AdminBookingDetailsInitial) {
+        if (state is AdminBookingDetailsLoading ||
+            state is AdminBookingDetailsInitial) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
+
+        Booking? displayBooking;
+        UserProfile? displayCustomer;
+        UserProfile? displayTechnician;
+
+        if (state is AdminBookingDetailsLoaded) {
+          displayBooking = state.booking;
+          displayCustomer = state.customer;
+          displayTechnician = state.technician;
+        } else if (state is AdminBookingDetailsSuccess) {
+          displayBooking = state.booking;
+          displayCustomer = state.customer;
+          displayTechnician = state.technician;
+        } else if (state is AdminBookingDetailsError) {
+          displayBooking = state.booking;
+          displayCustomer = state.customer;
+          displayTechnician = state.technician;
+        }
+
+        if (displayBooking != null) {
+          return _AdminBookingDetailsContent(
+            booking: displayBooking,
+            customer: displayCustomer,
+            technician: displayTechnician,
+          );
+        }
+
         if (state is AdminBookingDetailsError) {
           return Scaffold(
             appBar: AppBar(),
             body: Center(child: Text(state.message)),
-          );
-        }
-        if (state is AdminBookingDetailsLoaded) {
-          return _AdminBookingDetailsContent(
-            booking: state.booking!,
-            customer: state.customer,
-            technician: state.technician,
           );
         }
         return const Scaffold(body: Center(child: Text('Unknown State')));
@@ -115,7 +140,7 @@ class _AdminBookingDetailsContent extends StatelessWidget {
               ),
             );
             if (state.message.contains('الواتساب')) {
-              _showCopyMessageDialog(context);
+              _showCopyMessageDialog(context, isAutomatic: true);
             } else {
               Navigator.pop(context);
             }
@@ -145,10 +170,14 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFFBEB), // Amber 50
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: const Color(0xFFFDE68A)), // Amber 200
+                      border: Border.all(
+                        color: const Color(0xFFFDE68A),
+                      ), // Amber 200
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
+                          color: const Color(
+                            0xFFF59E0B,
+                          ).withValues(alpha: 0.08),
                           blurRadius: 16,
                           offset: const Offset(0, 4),
                         ),
@@ -202,10 +231,14 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () {
-                            context.read<AdminBookingDetailsCubit>().confirmWhatsappBooking(bookingId: booking.id);
+                            context
+                                .read<AdminBookingDetailsCubit>()
+                                .confirmWhatsappBooking(bookingId: booking.id);
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF10B981), // Emerald 500
+                            backgroundColor: const Color(
+                              0xFF10B981,
+                            ), // Emerald 500
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -213,7 +246,10 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             elevation: 0,
                           ),
-                          icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                          icon: const Icon(
+                            Icons.check_circle_outline_rounded,
+                            size: 20,
+                          ),
                           label: const Text(
                             'تأكيد حجز العميل وتنشيط الطلب',
                             style: TextStyle(
@@ -246,7 +282,11 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.warning_rounded, color: Color(0xFFEF4444), size: 28),
+                        const Icon(
+                          Icons.warning_rounded,
+                          color: Color(0xFFEF4444),
+                          size: 28,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -263,7 +303,8 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                booking.criticalReason ?? 'يوجد تأخير غير محدد في هذا الطلب، يرجى المتابعة فوراً.',
+                                booking.criticalReason ??
+                                    'يوجد تأخير غير محدد في هذا الطلب، يرجى المتابعة فوراً.',
                                 style: const TextStyle(
                                   fontFamily: 'Cairo',
                                   fontSize: 13,
@@ -285,7 +326,7 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                 _buildServiceCard(),
                 const SizedBox(height: 32),
                 _buildSectionHeader('معلومات العميل', Icons.person_pin_rounded),
-                _buildCustomerCard(customer),
+                _buildCustomerCard(context, customer),
                 const SizedBox(height: 32),
                 _buildSectionHeader('الفني المسؤول', Icons.engineering_rounded),
                 _buildTechnicianCard(technician),
@@ -302,17 +343,32 @@ class _AdminBookingDetailsContent extends StatelessWidget {
     );
   }
 
-  void _showCopyMessageDialog(BuildContext context) {
-    final String customerName = booking.contact.name.isNotEmpty 
-        ? booking.contact.name 
+  void _showCopyMessageDialog(BuildContext context, {bool isAutomatic = false}) {
+    final String customerName = booking.contact.name.isNotEmpty
+        ? booking.contact.name
         : (customer?.fullName ?? 'عميل فريش هوم');
+    String customerPhone = booking.contact.phone.isNotEmpty
+        ? booking.contact.phone.first
+        : '';
+    if (customer != null && !customer!.isAdmin && customer!.phoneNumbers.isNotEmpty) {
+      customerPhone = customer!.phoneNumbers.first.phoneNumber;
+    }
     final String orderNumber = booking.readableId ?? booking.displayId;
-    final String serviceName = booking.service.name['ar'] ?? booking.service.name['en'] ?? 'خدمة منزلية';
-    final String bookingDate = DateFormat('yyyy-MM-dd').format(booking.scheduledAt);
-    final String bookingTime = booking.startTimeSlot.length >= 5 ? booking.startTimeSlot.substring(0, 5) : booking.startTimeSlot;
-    final String trackingUrl = 'https://freshhome-egypt.com/orders?bookingId=${booking.id}';
+    final String serviceName =
+        booking.service.name['ar'] ??
+        booking.service.name['en'] ??
+        'خدمة منزلية';
+    final String bookingDate = DateFormat(
+      'yyyy-MM-dd',
+    ).format(booking.scheduledAt);
+    final String bookingTime = booking.startTimeSlot.length >= 5
+        ? booking.startTimeSlot.substring(0, 5)
+        : booking.startTimeSlot;
+    final String trackingUrl =
+        'https://freshhome-egypt.com/orders?bookingId=${booking.id}';
 
-    final String messageText = 'مرحباً $customerName 👋\n\n'
+    final String messageText =
+        'مرحباً $customerName 👋\n\n'
         'تم تأكيد حجزكم بنجاح لدى فريش هوم ✅\n\n'
         '📋 رقم الطلب: $orderNumber\n'
         '🏠 الخدمة: $serviceName\n'
@@ -401,13 +457,46 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: customerPhone.isNotEmpty ? () async {
+                    String cleanPhone = customerPhone.replaceAll(RegExp(r'[\+\s\-]'), '');
+                    if (cleanPhone.startsWith('0') && cleanPhone.startsWith('01')) {
+                      cleanPhone = '20${cleanPhone.substring(1)}';
+                    }
+                    final String whatsappUrl = 'https://wa.me/$cleanPhone?text=${Uri.encodeComponent(messageText)}';
+                    final Uri url = Uri.parse(whatsappUrl);
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    }
+                  } : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF25D366),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  icon: const Icon(Icons.send_rounded, size: 16),
+                  label: const Text(
+                    'إرسال مباشرة عبر الواتساب',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
                           Navigator.pop(dialogContext); // Close dialog
-                          Navigator.pop(context); // Go back to orders list
+                          if (isAutomatic) {
+                            Navigator.pop(context); // Go back to orders list
+                          }
                         },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -595,7 +684,7 @@ class _AdminBookingDetailsContent extends StatelessWidget {
     }
   }
 
-  Widget _buildCustomerCard(UserProfile? customer) {
+  Widget _buildCustomerCard(BuildContext context, UserProfile? customer) {
     final address = booking.address;
     final fullAddress =
         '${address.city}، ${address.street}، عمارة ${address.buildingNumber}${address.apartmentNumber != null ? '، شقة ${address.apartmentNumber}' : ''}${address.floorNumber != null ? '، دور ${address.floorNumber}' : ''}';
@@ -648,7 +737,33 @@ class _AdminBookingDetailsContent extends StatelessWidget {
           _InfoRow(
             label: 'عنوان الموقع بالتفصيل',
             value: fullAddress,
-            isLast: true,
+            isLast: false,
+          ),
+          const Divider(height: 24, color: Color(0xFFF1F5F9)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: () => _showCopyMessageDialog(context),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                icon: const Icon(
+                  Icons.share_rounded,
+                  size: 16,
+                  color: Color(0xFF1E3A8A),
+                ),
+                label: const Text(
+                  'رسالة تأكيد الحجز (واتساب)',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E3A8A),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -752,11 +867,7 @@ class _AdminBookingDetailsContent extends StatelessWidget {
         'label': 'الفني في الطريق',
         'time': booking.dispatchedAt,
       },
-      {
-        'status': 'arrived',
-        'label': 'وصل للموقع',
-        'time': booking.arrivedAt,
-      },
+      {'status': 'arrived', 'label': 'وصل للموقع', 'time': booking.arrivedAt},
       {
         'status': 'in_progress',
         'label': 'بدء العمل الفعلي',
@@ -789,7 +900,9 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                             : const Color(0xFFE2E8F0),
                         border: isPast
                             ? Border.all(
-                                color: const Color(0xFF1E3A8A).withValues(alpha:0.2),
+                                color: const Color(
+                                  0xFF1E3A8A,
+                                ).withValues(alpha: 0.2),
                                 width: 4,
                               )
                             : null,
@@ -878,7 +991,8 @@ class _AdminBookingDetailsContent extends StatelessWidget {
           children: [
             // Drag handle
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
                 color: const Color(0xFFE2E8F0),
@@ -891,7 +1005,9 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                   child: _ActionButton(
                     label: 'إعادة جدولة',
                     icon: Icons.calendar_today_rounded,
-                    onPressed: canAction ? () => _showRescheduleSheet(context) : null,
+                    onPressed: canAction
+                        ? () => _showRescheduleSheet(context)
+                        : null,
                     color: const Color(0xFF1E3A8A),
                   ),
                 ),
@@ -900,7 +1016,9 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                   child: _ActionButton(
                     label: 'تغيير الفني',
                     icon: Icons.swap_horiz_rounded,
-                    onPressed: canAction ? () => _showReassignSheet(context) : null,
+                    onPressed: canAction
+                        ? () => _showReassignSheet(context)
+                        : null,
                     color: const Color(0xFFF59E0B),
                   ),
                 ),
@@ -909,7 +1027,9 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                   child: _ActionButton(
                     label: 'إلغاء الطلب',
                     icon: Icons.cancel_outlined,
-                    onPressed: canAction ? () => _showCancelDialog(context) : null,
+                    onPressed: canAction
+                        ? () => _showCancelDialog(context)
+                        : null,
                     color: const Color(0xFFEF4444),
                     isOutline: true,
                   ),
@@ -930,12 +1050,32 @@ class _AdminBookingDetailsContent extends StatelessWidget {
     final authCubit = context.read<AuthCubit>();
 
     final reasons = [
-      {'code': 'admin_decision',     'label': 'قرار إداري',              'icon': Icons.admin_panel_settings_rounded},
-      {'code': 'customer_request',   'label': 'طلب العميل',              'icon': Icons.person_outline_rounded},
-      {'code': 'technician_unavailable', 'label': 'الفني غير متاح',     'icon': Icons.engineering_rounded},
-      {'code': 'duplicate_booking',  'label': 'حجز مكرر',               'icon': Icons.content_copy_rounded},
-      {'code': 'payment_issue',      'label': 'مشكلة في الدفع',         'icon': Icons.payment_rounded},
-      {'code': 'other',              'label': 'سبب آخر',                'icon': Icons.more_horiz_rounded},
+      {
+        'code': 'admin_decision',
+        'label': 'قرار إداري',
+        'icon': Icons.admin_panel_settings_rounded,
+      },
+      {
+        'code': 'customer_request',
+        'label': 'طلب العميل',
+        'icon': Icons.person_outline_rounded,
+      },
+      {
+        'code': 'technician_unavailable',
+        'label': 'الفني غير متاح',
+        'icon': Icons.engineering_rounded,
+      },
+      {
+        'code': 'duplicate_booking',
+        'label': 'حجز مكرر',
+        'icon': Icons.content_copy_rounded,
+      },
+      {
+        'code': 'payment_issue',
+        'label': 'مشكلة في الدفع',
+        'icon': Icons.payment_rounded,
+      },
+      {'code': 'other', 'label': 'سبب آخر', 'icon': Icons.more_horiz_rounded},
     ];
 
     showModalBottomSheet(
@@ -946,7 +1086,9 @@ class _AdminBookingDetailsContent extends StatelessWidget {
         builder: (ctx, setSheetState) => Container(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-            top: 24, left: 24, right: 24,
+            top: 24,
+            left: 24,
+            right: 24,
           ),
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(ctx).size.height * 0.85,
@@ -963,7 +1105,8 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                 // Drag handle
                 Center(
                   child: Container(
-                    width: 48, height: 5,
+                    width: 48,
+                    height: 5,
                     decoration: BoxDecoration(
                       color: const Color(0xFFE2E8F0),
                       borderRadius: BorderRadius.circular(10),
@@ -981,7 +1124,11 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                         color: const Color(0xFFFEF2F2),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.cancel_rounded, color: Color(0xFFEF4444), size: 28),
+                      child: const Icon(
+                        Icons.cancel_rounded,
+                        color: Color(0xFFEF4444),
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Column(
@@ -990,14 +1137,18 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                         const Text(
                           'إلغاء الطلب',
                           style: TextStyle(
-                            fontFamily: 'Cairo', fontWeight: FontWeight.w900,
-                            fontSize: 20, color: Color(0xFF0F172A),
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.w900,
+                            fontSize: 20,
+                            color: Color(0xFF0F172A),
                           ),
                         ),
                         Text(
                           '#${booking.displayId}',
                           style: const TextStyle(
-                            fontFamily: 'Cairo', color: Color(0xFF64748B), fontSize: 14,
+                            fontFamily: 'Cairo',
+                            color: Color(0xFF64748B),
+                            fontSize: 14,
                           ),
                         ),
                       ],
@@ -1016,14 +1167,20 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.warning_amber_rounded, color: Color(0xFFF59E0B), size: 20),
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Color(0xFFF59E0B),
+                        size: 20,
+                      ),
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'هذا الإجراء لا يمكن التراجع عنه. سيتم إخطار الفني والعميل بالإلغاء.',
                           style: TextStyle(
-                            fontFamily: 'Cairo', fontSize: 12,
-                            color: Color(0xFF92400E), fontWeight: FontWeight.bold,
+                            fontFamily: 'Cairo',
+                            fontSize: 12,
+                            color: Color(0xFF92400E),
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -1036,24 +1193,35 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                 const Text(
                   'سبب الإلغاء',
                   style: TextStyle(
-                    fontFamily: 'Cairo', fontWeight: FontWeight.w900,
-                    fontSize: 15, color: Color(0xFF1E293B),
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                    color: Color(0xFF1E293B),
                   ),
                 ),
                 const SizedBox(height: 12),
                 ...reasons.map((r) {
                   final isSelected = selectedReasonCode == r['code'];
                   return GestureDetector(
-                    onTap: () => setSheetState(() => selectedReasonCode = r['code'] as String),
+                    onTap: () => setSheetState(
+                      () => selectedReasonCode = r['code'] as String,
+                    ),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFFFEF2F2) : const Color(0xFFF8FAFC),
+                        color: isSelected
+                            ? const Color(0xFFFEF2F2)
+                            : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isSelected ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
+                          color: isSelected
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFFE2E8F0),
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -1062,7 +1230,9 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                           Icon(
                             r['icon'] as IconData,
                             size: 20,
-                            color: isSelected ? const Color(0xFFEF4444) : const Color(0xFF64748B),
+                            color: isSelected
+                                ? const Color(0xFFEF4444)
+                                : const Color(0xFF64748B),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1070,14 +1240,22 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                               r['label'] as String,
                               style: TextStyle(
                                 fontFamily: 'Cairo',
-                                fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold,
-                                color: isSelected ? const Color(0xFFEF4444) : const Color(0xFF1E293B),
+                                fontWeight: isSelected
+                                    ? FontWeight.w900
+                                    : FontWeight.bold,
+                                color: isSelected
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF1E293B),
                                 fontSize: 14,
                               ),
                             ),
                           ),
                           if (isSelected)
-                            const Icon(Icons.check_circle_rounded, color: Color(0xFFEF4444), size: 20),
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              color: Color(0xFFEF4444),
+                              size: 20,
+                            ),
                         ],
                       ),
                     ),
@@ -1090,8 +1268,10 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                 const Text(
                   'ملاحظات إضافية (اختياري)',
                   style: TextStyle(
-                    fontFamily: 'Cairo', fontWeight: FontWeight.bold,
-                    fontSize: 14, color: Color(0xFF1E293B),
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Color(0xFF1E293B),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1101,7 +1281,10 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                   style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'أي ملاحظات إضافية...',
-                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontFamily: 'Cairo'),
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontFamily: 'Cairo',
+                    ),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(
@@ -1121,7 +1304,9 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                     label: const Text(
                       'تأكيد إلغاء الطلب',
                       style: TextStyle(
-                        fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 16,
+                        fontFamily: 'Cairo',
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
                       ),
                     ),
                     onPressed: () {
@@ -1130,14 +1315,18 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                         bookingId: booking.id,
                         adminId: adminId,
                         reasonCode: selectedReasonCode,
-                        notes: reasonController.text.isNotEmpty ? reasonController.text : null,
+                        notes: reasonController.text.isNotEmpty
+                            ? reasonController.text
+                            : null,
                       );
                       Navigator.pop(ctx);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFEF4444),
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       elevation: 0,
                     ),
                   ),
@@ -1238,173 +1427,175 @@ class _AdminBookingDetailsContent extends StatelessWidget {
             ),
             child: SingleChildScrollView(
               child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 48,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE2E8F0),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'إعادة جدولة الطلب',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.w900,
-                    fontSize: 20,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'اختر الموعد الجديد المناسب من المواعيد المتاحة',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    color: Color(0xFF64748B),
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Horizontal Date Picker
-                const Text(
-                  'اختر التاريخ الجديد',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (isLoadingAvailability)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF1E3A8A),
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 48,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                  )
-                else
-                  HorizontalDatePicker(
-                    selectedDate: selectedDate,
-                    selectedService: booking.service.name['en'] ?? 'Service',
-                    availabilityMap: availabilityMap,
-                    firstDate: startDate,
-                    daysCount: 30,
-                    onDateSelected: (date, _) =>
-                        setSheetState(() => selectedDate = date),
                   ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'إعادة جدولة الطلب',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.w900,
+                      fontSize: 20,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'اختر الموعد الجديد المناسب من المواعيد المتاحة',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      color: Color(0xFF64748B),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
-                const SizedBox(height: 24),
-
-                // Time Selection
-                _buildSelectionTile(
-                  context: context,
-                  label: 'وقت الخدمة الجديد',
-                  value: selectedTime.format(context),
-                  icon: Icons.access_time_filled_rounded,
-                  onTap: () async {
-                    final time = await showTimePicker(
-                      context: context,
-                      initialTime: selectedTime,
-                      builder: (context, child) => Theme(
-                        data: Theme.of(context).copyWith(
-                          colorScheme: const ColorScheme.light(
-                            primary: Color(0xFF1E3A8A),
-                          ),
+                  // Horizontal Date Picker
+                  const Text(
+                    'اختر التاريخ الجديد',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (isLoadingAvailability)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF1E3A8A),
                         ),
-                        child: child!,
                       ),
-                    );
-                    if (time != null) setSheetState(() => selectedTime = time);
-                  },
-                ),
-                const SizedBox(height: 24),
+                    )
+                  else
+                    HorizontalDatePicker(
+                      selectedDate: selectedDate,
+                      selectedService: booking.service.name['en'] ?? 'Service',
+                      availabilityMap: availabilityMap,
+                      firstDate: startDate,
+                      daysCount: 30,
+                      onDateSelected: (date, _) =>
+                          setSheetState(() => selectedDate = date),
+                    ),
 
-                // Reason
-                const Text(
-                  'سبب إعادة الجدولة (اختياري)',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Color(0xFF1E293B),
+                  const SizedBox(height: 24),
+
+                  // Time Selection
+                  _buildSelectionTile(
+                    context: context,
+                    label: 'وقت الخدمة الجديد',
+                    value: selectedTime.format(context),
+                    icon: Icons.access_time_filled_rounded,
+                    onTap: () async {
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: selectedTime,
+                        builder: (context, child) => Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: Color(0xFF1E3A8A),
+                            ),
+                          ),
+                          child: child!,
+                        ),
+                      );
+                      if (time != null) {
+                        setSheetState(() => selectedTime = time);
+                      }
+                    },
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: reasonController,
-                  maxLines: 3,
-                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: 'اكتب ملاحظاتك هنا...',
-                    hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
+                  const SizedBox(height: 24),
+
+                  // Reason
+                  const Text(
+                    'سبب إعادة الجدولة (اختياري)',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Color(0xFF1E293B),
                     ),
                   ),
-                ),
-                const SizedBox(height: 32),
-
-                // Submit
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: () {
-                            final newDateTime = DateTime(
-                              selectedDate.year,
-                              selectedDate.month,
-                              selectedDate.day,
-                              selectedTime.hour,
-                              selectedTime.minute,
-                            );
-                            final adminId = authCubit.userId ?? '';
-                            bookingCubit.reschedule(
-                              bookingId: booking.id,
-                              newDateTime: newDateTime,
-                              adminId: adminId,
-                              reason: reasonController.text,
-                            );
-                            Navigator.pop(context);
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3A8A),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: reasonController,
+                    maxLines: 3,
+                    style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'اكتب ملاحظاتك هنا...',
+                      hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'تأكيد الموعد الجديد',
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        borderSide: BorderSide.none,
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 32),
+
+                  // Submit
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final newDateTime = DateTime(
+                          selectedDate.year,
+                          selectedDate.month,
+                          selectedDate.day,
+                          selectedTime.hour,
+                          selectedTime.minute,
+                        );
+                        final adminId = authCubit.userId ?? '';
+                        bookingCubit.reschedule(
+                          bookingId: booking.id,
+                          newDateTime: newDateTime,
+                          adminId: adminId,
+                          reason: reasonController.text,
+                        );
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'تأكيد الموعد الجديد',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    ),
-  ); 
-}
+          );
+        },
+      ),
+    );
+  }
 
   Widget _buildSelectionTile({
     required BuildContext context,
@@ -1521,207 +1712,207 @@ class _AdminBookingDetailsContent extends StatelessWidget {
             ),
             child: SingleChildScrollView(
               child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 48,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE2E8F0),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'تغيير الفني المسؤول',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.w900,
-                    fontSize: 20,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'اختر الفني الجديد الذي سيقوم بتنفيذ هذا الطلب',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    color: Color(0xFF64748B),
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                if (isLoadingTechs)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(40),
-                      child: CircularProgressIndicator(
-                        color: Color(0xFFF59E0B),
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 48,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                  )
-                else
-                  Container(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.3,
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'تغيير الفني المسؤول',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.w900,
+                      fontSize: 20,
+                      color: Color(0xFF0F172A),
                     ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: technicians.length,
-                      itemBuilder: (context, index) {
-                        final tech = technicians[index];
-                        final isSelected = selectedTechId == tech.uid;
-                        return GestureDetector(
-                          onTap: () => setSheetState(() {
-                            selectedTechId = tech.uid;
-                          }),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? const Color(0xFFFFF7ED)
-                                  : const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'اختر الفني الجديد الذي سيقوم بتنفيذ هذا الطلب',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      color: Color(0xFF64748B),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  if (isLoadingTechs)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(40),
+                        child: CircularProgressIndicator(
+                          color: Color(0xFFF59E0B),
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.3,
+                      ),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: technicians.length,
+                        itemBuilder: (context, index) {
+                          final tech = technicians[index];
+                          final isSelected = selectedTechId == tech.uid;
+                          return GestureDetector(
+                            onTap: () => setSheetState(() {
+                              selectedTechId = tech.uid;
+                            }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
                                 color: isSelected
-                                    ? const Color(0xFFF59E0B)
-                                    : const Color(0xFFE2E8F0),
-                                width: isSelected ? 2 : 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: isSelected
+                                    ? const Color(0xFFFFF7ED)
+                                    : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected
                                       ? const Color(0xFFF59E0B)
-                                      : const Color(0xFFCBD5E1),
-                                  radius: 18,
-                                  child: Text(
-                                    tech.fullName.isNotEmpty
-                                        ? tech.fullName[0].toUpperCase()
-                                        : 'T',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
+                                      : const Color(0xFFE2E8F0),
+                                  width: isSelected ? 2 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor: isSelected
+                                        ? const Color(0xFFF59E0B)
+                                        : const Color(0xFFCBD5E1),
+                                    radius: 18,
+                                    child: Text(
+                                      tech.fullName.isNotEmpty
+                                          ? tech.fullName[0].toUpperCase()
+                                          : 'T',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        tech.fullName,
-                                        style: TextStyle(
-                                          fontFamily: 'Cairo',
-                                          fontWeight: isSelected
-                                              ? FontWeight.w900
-                                              : FontWeight.bold,
-                                          color: const Color(0xFF1E293B),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          tech.fullName,
+                                          style: TextStyle(
+                                            fontFamily: 'Cairo',
+                                            fontWeight: isSelected
+                                                ? FontWeight.w900
+                                                : FontWeight.bold,
+                                            color: const Color(0xFF1E293B),
+                                          ),
                                         ),
-                                      ),
-                                      Text(
-                                        tech.email,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Color(0xFF64748B),
+                                        Text(
+                                          tech.email,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Color(0xFF64748B),
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                if (isSelected)
-                                  const Icon(
-                                    Icons.check_circle_rounded,
-                                    color: Color(0xFFF59E0B),
-                                  ),
-                              ],
+                                  if (isSelected)
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      color: Color(0xFFF59E0B),
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
+                    ),
+
+                  const SizedBox(height: 24),
+                  const Text(
+                    'سبب تغيير الفني (اختياري)',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Color(0xFF1E293B),
                     ),
                   ),
-
-                const SizedBox(height: 24),
-                const Text(
-                  'سبب تغيير الفني (اختياري)',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: reasonController,
-                  maxLines: 2,
-                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: 'لماذا تريد تغيير الفني؟',
-                    hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Submit
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: (selectedTechId != null)
-                        ? () {
-                            final adminId = authCubit.userId ?? '';
-                            bookingCubit.reassign(
-                              bookingId: booking.id,
-                              newTechnicianId: selectedTechId!,
-                              adminId: adminId,
-                              reason: reasonController.text,
-                            );
-                            Navigator.pop(context);
-                          }
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF59E0B),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: reasonController,
+                    maxLines: 2,
+                    style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'لماذا تريد تغيير الفني؟',
+                      hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'تأكيد تعيين الفني',
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        borderSide: BorderSide.none,
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 32),
+
+                  // Submit
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: (selectedTechId != null)
+                          ? () {
+                              final adminId = authCubit.userId ?? '';
+                              bookingCubit.reassign(
+                                bookingId: booking.id,
+                                newTechnicianId: selectedTechId!,
+                                adminId: adminId,
+                                reason: reasonController.text,
+                              );
+                              Navigator.pop(context);
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF59E0B),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'تأكيد تعيين الفني',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    ),
-  );
-}
+          );
+        },
+      ),
+    );
+  }
 }
 
 class _InfoCard extends StatelessWidget {
@@ -1801,7 +1992,7 @@ class _InfoRow extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: (valueColor ?? const Color(0xFF1E3A8A))
-                              .withValues(alpha:0.1),
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -1866,17 +2057,25 @@ class _ActionButton extends StatelessWidget {
         child: OutlinedButton.icon(
           onPressed: onPressed,
           style: OutlinedButton.styleFrom(
-            foregroundColor: onPressed == null ? const Color(0xFF94A3B8) : color,
+            foregroundColor: onPressed == null
+                ? const Color(0xFF94A3B8)
+                : color,
             side: BorderSide(
-              color: onPressed == null ? const Color(0xFFE2E8F0) : color.withValues(alpha:0.5),
+              color: onPressed == null
+                  ? const Color(0xFFE2E8F0)
+                  : color.withValues(alpha: 0.5),
             ),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
           icon: Icon(icon, size: 16),
           label: Text(
             label,
             style: const TextStyle(
-              fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 12,
+              fontFamily: 'Cairo',
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
             ),
           ),
         ),
@@ -1893,13 +2092,17 @@ class _ActionButton extends StatelessWidget {
           disabledBackgroundColor: const Color(0xFFF1F5F9),
           disabledForegroundColor: const Color(0xFF94A3B8),
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
         icon: Icon(icon, size: 16),
         label: Text(
           label,
           style: const TextStyle(
-            fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 12,
+            fontFamily: 'Cairo',
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
           ),
         ),
       ),

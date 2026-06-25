@@ -233,11 +233,21 @@ function OrderTrackingContent() {
   }
 
   // Formatting final date displays
-  const displayDay = booking?.scheduled_day || "قيد التعيين";
+  const rawDisplayDay = booking?.scheduled_day || "قيد التعيين";
+  const displayDay = rawDisplayDay.includes('T') ? rawDisplayDay.split('T')[0] : rawDisplayDay;
   const displayTime = booking?.start_time_slot ? `${booking.start_time_slot.substring(0, 5)}` : "بين الساعة 09:00 ص";
-  const finalBookingId = booking?.id || bookingId || "FH-894723";
+  const finalBookingId = booking?.readable_id || bookingId || "FH-894723";
   const finalTech = technician || DEFAULT_TECH;
   const addressSnap = booking?.address_snapshot || {};
+
+  const getServiceTitle = (snapshot: any) => {
+    if (!snapshot) return "خدمة منزلية";
+    if (typeof snapshot.title === "string") return snapshot.title;
+    if (snapshot.title && typeof snapshot.title === "object") {
+      return snapshot.title.ar || snapshot.title.en || "خدمة منزلية";
+    }
+    return "خدمة منزلية";
+  };
 
   return (
     <>
@@ -467,6 +477,66 @@ function OrderTrackingContent() {
                     <span className="text-slate-500 font-bold">موعد الوصول:</span>
                     <span className="font-extrabold text-slate-800">ساعة {displayTime}</span>
                   </div>
+
+                  <div className="flex justify-between border-t border-slate-100 pt-3">
+                    <span className="text-slate-500 font-bold">الخدمة المطلوبة:</span>
+                    <span className="font-extrabold text-primary">{getServiceTitle(booking.service_snapshot)}</span>
+                  </div>
+
+                  {/* مواصفات الخدمة والمدخلات */}
+                  {booking.price_config?.fields && (() => {
+                    const fieldsToRender = booking.price_config.fields.filter((field: any) => {
+                      const val = booking.pricing_inputs?.[field.id];
+                      if (field.type === "toggle") return !!val;
+                      if (field.type === "number") return val !== undefined && val > 0;
+                      return val !== undefined && val !== "";
+                    });
+
+                    if (fieldsToRender.length === 0) return null;
+
+                    return (
+                      <div className="border-t border-slate-100 pt-3 space-y-2">
+                        <span className="text-slate-500 font-bold block mb-1">المواصفات والتفاصيل:</span>
+                        <div className="grid grid-cols-1 gap-1.5">
+                          {fieldsToRender.map((field: any) => {
+                            const val = booking.pricing_inputs?.[field.id];
+                            const label = field.label?.ar || field.label?.en || field.label;
+                            const unit = field.unit || "";
+                            
+                            return (
+                              <div key={field.id} className="flex justify-between text-[11px] bg-slate-50/70 px-2.5 py-1.5 rounded-lg border border-slate-100/80">
+                                <span className="text-slate-550 font-medium">{label}:</span>
+                                <span className="font-bold text-slate-850">
+                                  {field.type === "toggle" ? "نعم" : `${val} ${unit}`}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* الخدمات الإضافية */}
+                  {booking.pricing_inputs?.selected_options && booking.pricing_inputs.selected_options.length > 0 && (
+                    <div className="border-t border-slate-100 pt-3 space-y-2">
+                      <span className="text-slate-500 font-bold block mb-1">الخدمات الإضافية:</span>
+                      <div className="space-y-1.5">
+                        {booking.pricing_inputs.selected_options.map((addonKey: string, idx: number) => {
+                          const optionObj = booking.price_config?.options?.find((opt: any) => opt.key === addonKey);
+                          const addonPrice = optionObj ? ` (+${optionObj.value} ج.م)` : "";
+                          
+                          return (
+                            <div key={idx} className="flex justify-between text-[11px] bg-emerald-50/30 text-emerald-800 px-2.5 py-1.5 rounded-lg border border-emerald-100/40">
+                              <span className="font-semibold">✨ {addonKey}</span>
+                              {addonPrice && <span className="font-bold text-emerald-600">{addonPrice}</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {addressSnap.street && (
                     <div className="border-t border-slate-100 pt-3 space-y-1">
                       <span className="text-slate-500 font-bold block">العنوان المسجل للخدمة:</span>

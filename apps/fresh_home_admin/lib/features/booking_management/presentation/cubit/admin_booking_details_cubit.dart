@@ -25,12 +25,28 @@ class AdminBookingDetailsLoaded extends AdminBookingDetailsState {
 
 class AdminBookingDetailsSuccess extends AdminBookingDetailsState {
   final String message;
-  AdminBookingDetailsSuccess(this.message);
+  final Booking? booking;
+  final UserProfile? customer;
+  final UserProfile? technician;
+  AdminBookingDetailsSuccess(
+    this.message, {
+    this.booking,
+    this.customer,
+    this.technician,
+  });
 }
 
 class AdminBookingDetailsError extends AdminBookingDetailsState {
   final String message;
-  AdminBookingDetailsError(this.message);
+  final Booking? booking;
+  final UserProfile? customer;
+  final UserProfile? technician;
+  AdminBookingDetailsError(
+    this.message, {
+    this.booking,
+    this.customer,
+    this.technician,
+  });
 }
 
 class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
@@ -116,6 +132,16 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     required String adminId,
     String? reason,
   }) async {
+    Booking? currentBooking;
+    UserProfile? currentCustomer;
+    UserProfile? currentTechnician;
+    if (state is AdminBookingDetailsLoaded) {
+      final loaded = state as AdminBookingDetailsLoaded;
+      currentBooking = loaded.booking;
+      currentCustomer = loaded.customer;
+      currentTechnician = loaded.technician;
+    }
+
     emit(AdminBookingDetailsLoading());
     final result = await reassignBooking(
       bookingId: bookingId,
@@ -125,8 +151,8 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     );
 
     result.fold(
-      (l) => emit(AdminBookingDetailsError(l.message)),
-      (r) => emit(AdminBookingDetailsSuccess('تم إعادة تعيين الفني بنجاح')),
+      (l) => emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
+      (r) => emit(AdminBookingDetailsSuccess('تم إعادة تعيين الفني بنجاح', booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
     );
   }
 
@@ -136,6 +162,16 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     required String adminId,
     String? reason,
   }) async {
+    Booking? currentBooking;
+    UserProfile? currentCustomer;
+    UserProfile? currentTechnician;
+    if (state is AdminBookingDetailsLoaded) {
+      final loaded = state as AdminBookingDetailsLoaded;
+      currentBooking = loaded.booking;
+      currentCustomer = loaded.customer;
+      currentTechnician = loaded.technician;
+    }
+
     emit(AdminBookingDetailsLoading());
     final result = await rescheduleBooking(
       bookingId: bookingId,
@@ -145,8 +181,8 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     );
 
     result.fold(
-      (l) => emit(AdminBookingDetailsError(l.message)),
-      (r) => emit(AdminBookingDetailsSuccess('تم إعادة جدولة الموعد بنجاح')),
+      (l) => emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
+      (r) => emit(AdminBookingDetailsSuccess('تم إعادة جدولة الموعد بنجاح', booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
     );
   }
 
@@ -156,6 +192,16 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     required String reasonCode,
     String? notes,
   }) async {
+    Booking? currentBooking;
+    UserProfile? currentCustomer;
+    UserProfile? currentTechnician;
+    if (state is AdminBookingDetailsLoaded) {
+      final loaded = state as AdminBookingDetailsLoaded;
+      currentBooking = loaded.booking;
+      currentCustomer = loaded.customer;
+      currentTechnician = loaded.technician;
+    }
+
     emit(AdminBookingDetailsLoading());
     
     final result = await bookingRepository.transitionBooking(
@@ -168,14 +214,24 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     );
 
     result.fold(
-      (l) => emit(AdminBookingDetailsError(l.message)),
-      (r) => emit(AdminBookingDetailsSuccess('تم إلغاء الطلب بنجاح')),
+      (l) => emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
+      (r) => emit(AdminBookingDetailsSuccess('تم إلغاء الطلب بنجاح', booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
     );
   }
 
   Future<void> confirmWhatsappBooking({
     required String bookingId,
   }) async {
+    Booking? currentBooking;
+    UserProfile? currentCustomer;
+    UserProfile? currentTechnician;
+    if (state is AdminBookingDetailsLoaded) {
+      final loaded = state as AdminBookingDetailsLoaded;
+      currentBooking = loaded.booking;
+      currentCustomer = loaded.customer;
+      currentTechnician = loaded.technician;
+    }
+
     emit(AdminBookingDetailsLoading());
     
     final result = await bookingRepository.adminConfirmWhatsappBooking(
@@ -183,8 +239,8 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     );
 
     result.fold(
-      (l) => emit(AdminBookingDetailsError(l.message)),
-      (r) => emit(AdminBookingDetailsSuccess('تم تأكيد حجز الواتساب يدوياً بنجاح وتنشيط الحجز!')),
+      (l) => emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
+      (r) => emit(AdminBookingDetailsSuccess('تم تأكيد حجز الواتساب يدوياً بنجاح وتنشيط الحجز!', booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
     );
   }
 }
