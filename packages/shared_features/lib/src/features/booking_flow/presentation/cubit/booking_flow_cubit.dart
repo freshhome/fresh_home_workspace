@@ -389,8 +389,11 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     );
   }
 
-  void updateSchedule(DateTime scheduledAt) {
-    emit(state.copyWith(scheduledAt: scheduledAt));
+  void updateSchedule(DateTime? scheduledAt) {
+    emit(state.copyWith(
+      scheduledAt: scheduledAt,
+      clearScheduledAt: scheduledAt == null,
+    ));
     _validateCurrentStep();
   }
 

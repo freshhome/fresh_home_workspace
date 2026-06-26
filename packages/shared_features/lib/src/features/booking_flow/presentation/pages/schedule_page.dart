@@ -9,8 +9,161 @@ import '../cubit/booking_flow_cubit.dart';
 import '../cubit/booking_flow_state.dart';
 import '../../domain/booking_flow_config.dart';
 
-class SchedulePage extends StatelessWidget {
+class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
+
+  @override
+  State<SchedulePage> createState() => _SchedulePageState();
+}
+
+class _SchedulePageState extends State<SchedulePage> {
+  final TextEditingController _dateController = TextEditingController();
+  String? dateWarningText;
+  DateTime? nextAvailableSuggestion;
+  bool _isInit = false;
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    super.dispose();
+  }
+
+  DateTime? _parseManualDate(String text) {
+    final clean = text.trim();
+    final parts = clean.split(RegExp(r'[-\/]'));
+    if (parts.length == 3) {
+      int? day = int.tryParse(parts[0]);
+      int? month = int.tryParse(parts[1]);
+      int? year = int.tryParse(parts[2]);
+
+      if (parts[0].length == 4) {
+        year = int.tryParse(parts[0]);
+        day = int.tryParse(parts[2]);
+      }
+
+      if (day != null && month != null && year != null) {
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 1000) {
+          try {
+            final date = DateTime(year, month, day);
+            if (date.year == year && date.month == month && date.day == day) {
+              return date;
+            }
+          } catch (_) {}
+        }
+      }
+    }
+    return null;
+  }
+
+  void _validateManualDate(String text, BookingFlowState state) {
+    if (text.trim().isEmpty) {
+      setState(() {
+        dateWarningText = null;
+        nextAvailableSuggestion = null;
+      });
+      _updateSchedule(context, null);
+      return;
+    }
+
+    final parsedDate = _parseManualDate(text);
+    if (parsedDate == null) {
+      setState(() {
+        dateWarningText = "صيغة التاريخ غير صحيحة. يرجى الإدخال بصيغة (يوم-شهر-سنة) مثل: 27-06-2026";
+        nextAvailableSuggestion = null;
+      });
+      _updateSchedule(context, null);
+      return;
+    }
+
+    final now = DateTime.now();
+    final todayDate = DateTime(now.year, now.month, now.day);
+
+    if (parsedDate.isBefore(todayDate)) {
+      setState(() {
+        dateWarningText = "يرجى اختيار تاريخ اليوم أو تاريخ في المستقبل.";
+        nextAvailableSuggestion = null;
+      });
+      _updateSchedule(context, null);
+      return;
+    }
+
+    final diffDays = parsedDate.difference(todayDate).inDays;
+    if (diffDays > 30) {
+      setState(() {
+        dateWarningText = "لا يمكن اختيار تاريخ بعد أكثر من شهر (30 يوماً) من تاريخ اليوم.";
+        nextAvailableSuggestion = null;
+      });
+      _updateSchedule(context, null);
+      return;
+    }
+
+    bool? isAvailable;
+    for (final key in state.availabilityMap.keys) {
+      if (key.year == parsedDate.year && key.month == parsedDate.month && key.day == parsedDate.day) {
+        isAvailable = state.availabilityMap[key];
+        break;
+      }
+    }
+
+    if (isAvailable == false) {
+      DateTime? foundNext;
+      for (int d = 1; d <= 30; d++) {
+        final searchDate = parsedDate.add(Duration(days: d));
+        final diffFromToday = searchDate.difference(todayDate).inDays;
+        if (diffFromToday > 30) {
+          break;
+        }
+
+        bool? searchAvailable;
+        for (final key in state.availabilityMap.keys) {
+          if (key.year == searchDate.year && key.month == searchDate.month && key.day == searchDate.day) {
+            searchAvailable = state.availabilityMap[key];
+            break;
+          }
+        }
+
+        if (searchAvailable != false) {
+          foundNext = searchDate;
+          break;
+        }
+      }
+
+      setState(() {
+        dateWarningText = "عذراً، هذا اليوم غير متوفر حالياً من قبل الفنيين.";
+        nextAvailableSuggestion = foundNext;
+      });
+      _updateSchedule(context, null);
+    } else {
+      setState(() {
+        dateWarningText = null;
+        nextAvailableSuggestion = null;
+      });
+      _updateSchedule(context, parsedDate);
+    }
+  }
+
+  void _updateSchedule(BuildContext context, DateTime? date, {String? time}) {
+    final cubit = context.read<BookingFlowCubit>();
+    if (date == null) {
+      cubit.updateSchedule(null);
+      return;
+    }
+    if (time == null) {
+      final current = cubit.state.scheduledAt;
+      final hour = current?.hour ?? 9;
+      final minute = current?.minute ?? 0;
+      cubit.updateSchedule(
+          DateTime(date.year, date.month, date.day, hour, minute));
+      return;
+    }
+    try {
+      final timeDate = DateFormat('hh:mm a').parse(time);
+      cubit.updateSchedule(DateTime(
+          date.year, date.month, date.day, timeDate.hour, timeDate.minute));
+    } catch (_) {
+      cubit.updateSchedule(date);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +173,13 @@ class SchedulePage extends StatelessWidget {
         final themeText =
             Theme.of(context).extension<AppTextThemeExtension>()!;
         final l10n = AppLocalizations.of(context)!;
-        final DateTime selectedDate = state.scheduledAt ?? DateTime(1900);
+        final DateTime? dbDate = state.scheduledAt;
+        final DateTime selectedDate = dbDate ?? DateTime(1900);
+
+        if (!_isInit && dbDate != null) {
+          _dateController.text = DateFormat('dd-MM-yyyy').format(dbDate);
+          _isInit = true;
+        }
 
         final String serviceLower =
             state.service?.name['en']?.toLowerCase().replaceAll(' ', '') ??
@@ -57,29 +216,12 @@ class SchedulePage extends StatelessWidget {
                 const SizedBox(height: 32),
 
                 // Choose day
-                Row(
-                  children: [
-                    Text(
-                      l10n.schedule_choose_day,
-                      style: themeText.titleSectionSmall.copyWith(
-                          color: themeColor.textPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18),
-                    ),
-                    const Spacer(),
-                    TextButton.icon(
-                      onPressed: () =>
-                          _showManualDatePicker(context, selectedDate),
-                      icon: Icon(Icons.calendar_month,
-                          size: 16, color: themeColor.primary),
-                      label: Text(
-                        l10n.schedule_choose_manually,
-                        style: themeText.textCaption.copyWith(
-                            color: themeColor.primary,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
+                Text(
+                  l10n.schedule_choose_day,
+                  style: themeText.titleSectionSmall.copyWith(
+                      color: themeColor.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18),
                 ),
                 const SizedBox(height: 16),
 
@@ -92,16 +234,127 @@ class SchedulePage extends StatelessWidget {
                         style: const TextStyle(color: Colors.red),
                         textAlign: TextAlign.center),
                   )
-                else
+                else ...[
                   HorizontalDatePicker(
                     selectedDate: selectedDate,
                     firstDate: context.read<BookingFlowCubit>().config.earliestSelectableDate,
                     selectedService:
                         state.service?.name['en'] ?? 'Service',
                     availabilityMap: availabilityMap,
-                    onDateSelected: (date, _) =>
-                        _updateSchedule(context, date),
+                    onDateSelected: (date, _) {
+                      _updateSchedule(context, date);
+                      _dateController.text = DateFormat('dd-MM-yyyy').format(date);
+                      setState(() {
+                        dateWarningText = null;
+                        nextAvailableSuggestion = null;
+                      });
+                    },
                   ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'أو اكتب تاريخاً مخصصاً (يوم-شهر-سنة):',
+                    style: themeText.textBodyPrimary.copyWith(
+                      color: themeColor.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _dateController,
+                    decoration: InputDecoration(
+                      hintText: 'مثال: 28-06-2026',
+                      hintStyle: TextStyle(color: themeColor.textPrimary.withValues(alpha: 0.3)),
+                      prefixIcon: Icon(Icons.edit_calendar_rounded, color: themeColor.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.2)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.2)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: themeColor.primary, width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                    style: const TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    onChanged: (val) => _validateManualDate(val, state),
+                  ),
+                  if (dateWarningText != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.15)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  dateWarningText!,
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    color: Colors.red.shade700,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (nextAvailableSuggestion != null) ...[
+                            const SizedBox(height: 10),
+                            InkWell(
+                              onTap: () {
+                                final formatted = DateFormat('dd-MM-yyyy').format(nextAvailableSuggestion!);
+                                _dateController.text = formatted;
+                                _validateManualDate(formatted, state);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 16),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'أقرب موعد تالي متاح: ${DateFormat('EEEE، d MMMM', 'ar').format(nextAvailableSuggestion!)} (اختر هذا الموعد)',
+                                      style: const TextStyle(
+                                        fontFamily: 'Cairo',
+                                        color: Color(0xFF10B981),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
 
                 // Validation error
                 if (state.errorMessage == 'error_select_schedule' &&
@@ -180,41 +433,6 @@ class SchedulePage extends StatelessWidget {
     );
   }
 
-  void _updateSchedule(BuildContext context, DateTime date,
-      {String? time}) {
-    final cubit = context.read<BookingFlowCubit>();
-    if (time == null) {
-      final current = cubit.state.scheduledAt;
-      final hour = current?.hour ?? 9;
-      final minute = current?.minute ?? 0;
-      cubit.updateSchedule(
-          DateTime(date.year, date.month, date.day, hour, minute));
-      return;
-    }
-    try {
-      final timeDate = DateFormat('hh:mm a').parse(time);
-      cubit.updateSchedule(DateTime(
-          date.year, date.month, date.day, timeDate.hour, timeDate.minute));
-    } catch (_) {
-      cubit.updateSchedule(date);
-    }
-  }
-
-  Future<void> _showManualDatePicker(
-      BuildContext context, DateTime initialDate) async {
-    final cubit = context.read<BookingFlowCubit>();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate.isBefore(cubit.config.earliestSelectableDate) 
-          ? cubit.config.earliestSelectableDate 
-          : initialDate,
-      firstDate: cubit.config.earliestSelectableDate,
-      lastDate: DateTime.now().add(const Duration(days: 90)),
-    );
-    if (picked != null && context.mounted) {
-      _updateSchedule(context, picked);
-    }
-  }
 
   Widget _servicePriceSummary({
     required String serviceName,
