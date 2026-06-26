@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:fpdart/fpdart.dart';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared/core/error/failures.dart';
 import 'package:shared/domain/service/use_cases/service/sync_services_use_case.dart';
@@ -35,11 +35,17 @@ class SplashCubit extends Cubit<SplashState> {
       debugPrint('🚀 [SplashCubit] Starting getCurrentUser...');
 
       // 1. Sync Services (Centralized in Splash) - For all roles (client, admin, technician)
-      debugPrint('🔵 [SplashCubit] Syncing services for role ${appRole.name}...');
+      debugPrint(
+        '🔵 [SplashCubit] Syncing services for role ${appRole.name}...',
+      );
       try {
-        final syncResult = await syncServicesUseCase.call().timeout(const Duration(seconds: 20));
+        final syncResult = await syncServicesUseCase.call().timeout(
+          const Duration(seconds: 20),
+        );
         syncResult.fold(
-          (failure) => debugPrint('⚠️ [SplashCubit] Service sync failed: ${failure.message}'),
+          (failure) => debugPrint(
+            '⚠️ [SplashCubit] Service sync failed: ${failure.message}',
+          ),
           (success) {
             debugPrint('✅ [SplashCubit] Service sync completed successfully');
             // Start listening to realtime database changes so UI reflects remote updates
@@ -72,40 +78,49 @@ class SplashCubit extends Cubit<SplashState> {
             final userRoleClaim = appMetadata['user_role']?.toString();
 
             debugPrint('🔑 [SplashCubit] JWT app_metadata: $appMetadata');
-            
+
             bool hasRole = false;
             if (rolesClaim is List) {
-              hasRole = rolesClaim.any((r) => r.toString().toLowerCase() == appRole.name.toLowerCase());
+              hasRole = rolesClaim.any(
+                (r) => r.toString().toLowerCase() == appRole.name.toLowerCase(),
+              );
             } else if (rolesClaim is String) {
               hasRole = rolesClaim.toLowerCase() == appRole.name.toLowerCase();
             } else if (userRoleClaim != null) {
-              hasRole = userRoleClaim.toLowerCase() == appRole.name.toLowerCase();
+              hasRole =
+                  userRoleClaim.toLowerCase() == appRole.name.toLowerCase();
             }
 
-            debugPrint('🎯 [SplashCubit] Required Role: ${appRole.name}, Local JWT verification result: $hasRole');
+            debugPrint(
+              '🎯 [SplashCubit] Required Role: ${appRole.name}, Local JWT verification result: $hasRole',
+            );
 
             if (hasRole) {
               debugPrint('🚀 [SplashCubit] Emitting SplashUserLoggedInState');
               emit(SplashUserLoggedInState());
             } else {
-              debugPrint('⚠️ [SplashCubit] Emitting SplashUserPendingApprovalState');
+              debugPrint(
+                '⚠️ [SplashCubit] Emitting SplashUserPendingApprovalState',
+              );
               emit(SplashUserPendingApprovalState());
             }
           } else {
             debugPrint('ℹ️ [SplashCubit] User NOT logged in');
-            
+
             // ✅ Check for Onboarding (Only for Customer App)
             if (appRole == UserRole.client) {
               final onboardingResult = await isOnboardingCompletedUseCase();
               final isCompleted = onboardingResult.getOrElse((_) => true);
-              
+
               if (!isCompleted) {
-                debugPrint('🎨 [SplashCubit] Onboarding NOT completed - Redirecting to Onboarding');
+                debugPrint(
+                  '🎨 [SplashCubit] Onboarding NOT completed - Redirecting to Onboarding',
+                );
                 emit(SplashOnboardingState());
                 return;
               }
             }
-            
+
             emit(SplashUserNotLoggedInState());
           }
         },

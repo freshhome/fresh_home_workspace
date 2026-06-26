@@ -153,6 +153,63 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                 ),
                 child: Column(
                   children: [
+                    if (service.status == ServiceStatus.paused) ...[
+                      Container(
+                        margin: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.amber.shade200),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.amber.shade900.withValues(alpha: 0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.info_outline_rounded,
+                              color: Colors.amber.shade800,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isArabic ? 'تنويه: الخدمة غير متوفرة حالياً' : 'Notice: Service Currently Unavailable',
+                                    style: const TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF7A4F01),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    isArabic
+                                        ? 'عذراً، هذه الخدمة موقوفة مؤقتاً لأعمال الصيانة والتشغيل وسنعاود تقديمها قريباً جداً.'
+                                        : 'Sorry, this service is temporarily suspended for maintenance and will be back soon.',
+                                    style: const TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontSize: 12,
+                                      color: Color(0xFF9E6F13),
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     // Service Header (Icon, Title, Description)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
@@ -505,44 +562,52 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
     ThemeColorExtension themeColor,
     AppTextThemeExtension themeText,
   ) {
+    final isPaused = service.status == ServiceStatus.paused;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: SafeArea(
         child: MyCustomButton(
-          text: isArabic ? 'احجز الآن' : 'Book Now',
-          leadingIcon: const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
-          onPressed: () {
-            final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+          text: isPaused
+              ? (isArabic ? 'الخدمة غير متوفرة حالياً' : 'Service Temporarily Unavailable')
+              : (isArabic ? 'احجز الآن' : 'Book Now'),
+          leadingIcon: isPaused
+              ? const Icon(Icons.lock_clock_rounded, color: Colors.white, size: 20)
+              : const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
+          onPressed: isPaused
+              ? null
+              : () {
+                  final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
 
-            if (userId.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isArabic ? 'يرجى تسجيل الدخول أولاً' : 'Please login first',
-                  ),
-                ),
-              );
-              context.pushNamed(AppRoutes.login);
-              return;
-            }
+                  if (userId.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isArabic ? 'يرجى تسجيل الدخول أولاً' : 'Please login first',
+                        ),
+                      ),
+                    );
+                    context.pushNamed(AppRoutes.login);
+                    return;
+                  }
 
-            final bookedService = BookedService(
-              id: widget.serviceId,
-              subServiceId: widget.subServiceId,
-              name: service.title,
-              image: service.image ?? '',
-            );
+                  final bookedService = BookedService(
+                    id: widget.serviceId,
+                    subServiceId: widget.subServiceId,
+                    name: service.title,
+                    image: service.image ?? '',
+                  );
 
-            context.pushNamed(
-              AppRoutes.bookingFlow,
-              extra: BookingFlowConfig(
-                mode: BookingFlowMode.customer,
-                actorId: userId,
-                preSelectedService: bookedService,
-                initialServicePrice: service.price,
-              ),
-            );
-          },
+                  context.pushNamed(
+                    AppRoutes.bookingFlow,
+                    extra: BookingFlowConfig(
+                      mode: BookingFlowMode.customer,
+                      actorId: userId,
+                      preSelectedService: bookedService,
+                      initialServicePrice: service.price,
+                    ),
+                  );
+                },
           height: 54,
           borderRadius: 27, // Fully pill-shaped borders for a premium floating look
           textStyle: const TextStyle(

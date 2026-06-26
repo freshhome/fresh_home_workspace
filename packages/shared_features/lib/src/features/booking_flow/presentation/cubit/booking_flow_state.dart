@@ -4,12 +4,16 @@ import 'package:shared/domain/booking/entities/booking/sub_entities/booking_comp
 import 'package:shared/domain/service/entities/sub_entities/service_price.dart';
 import 'package:shared/domain/service/entities/sub_entities/computed_field.dart';
 
-import 'package:shared_features/src/features/profile/domain/profile_domain.dart';
-
 enum BookingStep { pricing, schedule, address, confirmation }
 
 /// Admin-specific step inserted between schedule and confirmation.
-enum AdminBookingStep { serviceSelection, pricing, schedule, clientData, confirmation }
+enum AdminBookingStep {
+  serviceSelection,
+  pricing,
+  schedule,
+  clientData,
+  confirmation,
+}
 
 enum BookingStatus { initial, loading, success, failure }
 
@@ -156,27 +160,34 @@ class BookingFlowState {
       price: clearPrice ? null : (price ?? this.price),
       isPriceCalculated: isPriceCalculated ?? this.isPriceCalculated,
       useWindowsCalculator: useWindowsCalculator ?? this.useWindowsCalculator,
-      totalLinearMeters: clearTotalLinearMeters ? null : (totalLinearMeters ?? this.totalLinearMeters),
+      totalLinearMeters: clearTotalLinearMeters
+          ? null
+          : (totalLinearMeters ?? this.totalLinearMeters),
       scheduledAt: clearScheduledAt ? null : (scheduledAt ?? this.scheduledAt),
       availabilityMap: availabilityMap ?? this.availabilityMap,
-      isLoadingAvailability: isLoadingAvailability ?? this.isLoadingAvailability,
+      isLoadingAvailability:
+          isLoadingAvailability ?? this.isLoadingAvailability,
       availabilityError: availabilityError ?? this.availabilityError,
       address: address ?? this.address,
-      validateAddressTrigger: validateAddressTrigger ?? this.validateAddressTrigger,
+      validateAddressTrigger:
+          validateAddressTrigger ?? this.validateAddressTrigger,
       contact: contact ?? this.contact,
       manualClientName: manualClientName ?? this.manualClientName,
       manualClientPhone: manualClientPhone ?? this.manualClientPhone,
-      manualClientGovernorate: manualClientGovernorate ?? this.manualClientGovernorate,
+      manualClientGovernorate:
+          manualClientGovernorate ?? this.manualClientGovernorate,
       manualClientCity: manualClientCity ?? this.manualClientCity,
       manualClientStreet: manualClientStreet ?? this.manualClientStreet,
       manualClientBuilding: manualClientBuilding ?? this.manualClientBuilding,
       manualClientFloor: manualClientFloor ?? this.manualClientFloor,
-      manualClientApartment: manualClientApartment ?? this.manualClientApartment,
-      validateManualClientTrigger: validateManualClientTrigger ?? this.validateManualClientTrigger,
+      manualClientApartment:
+          manualClientApartment ?? this.manualClientApartment,
+      validateManualClientTrigger:
+          validateManualClientTrigger ?? this.validateManualClientTrigger,
       currentUserProfile: currentUserProfile ?? this.currentUserProfile,
       status: status ?? this.status,
       isCurrentStepValid: isCurrentStepValid ?? this.isCurrentStepValid,
-      errorMessage: errorMessage,   // explicitly null-able
+      errorMessage: errorMessage, // explicitly null-able
       generatedBookingId: generatedBookingId ?? this.generatedBookingId,
       hasActiveCoupons: hasActiveCoupons ?? this.hasActiveCoupons,
     );

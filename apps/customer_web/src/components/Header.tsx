@@ -22,9 +22,8 @@ export default function Header() {
     async function fetchAllServices() {
       try {
         const { data, error } = await supabase
-          .from("services")
-          .select("id, title, description, parent_id, status, is_bookable")
-          .eq("status", "active");
+          .from("active_services_tree")
+          .select("id, title, description, parent_id, status, is_bookable");
         if (!error && data) {
           setServices(data);
         }

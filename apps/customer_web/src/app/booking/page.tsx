@@ -105,10 +105,9 @@ function BookingFlowContent() {
     async function fetchMainServices() {
       try {
         const { data, error } = await supabase
-          .from("services")
+          .from("active_services_tree")
           .select("*")
           .is("parent_id", null)
-          .eq("status", "active")
           .order("sort_order", { ascending: true });
         
         if (error) throw error;
@@ -127,11 +126,10 @@ function BookingFlowContent() {
       setLoadingServices(true);
       try {
         const { data, error } = await supabase
-          .from("services")
+          .from("active_services_tree")
           .select("*")
           .eq("parent_id", serviceId)
           .eq("is_bookable", true)
-          .eq("status", "active")
           .order("sort_order", { ascending: true });
         
         if (error) throw error;

@@ -37,10 +37,9 @@ export default function ServicesGrid() {
     async function fetchServices() {
       try {
         const { data, error } = await supabase
-          .from("services")
+          .from("active_services_tree")
           .select("*")
           .is("parent_id", null)
-          .eq("status", "active")
           .order("sort_order", { ascending: true });
 
         if (error) throw error;

@@ -28,9 +28,8 @@ export default function Hero() {
     async function fetchAllServices() {
       try {
         const { data, error } = await supabase
-          .from("services")
-          .select("id, title, description, parent_id, status, is_bookable")
-          .eq("status", "active");
+          .from("active_services_tree")
+          .select("id, title, description, parent_id, status, is_bookable");
         if (error) throw error;
         setServices(data || []);
       } catch (e) {

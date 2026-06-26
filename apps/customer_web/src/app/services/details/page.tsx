@@ -71,6 +71,7 @@ function ServiceDetailsContent() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState("+201000000000");
 
   useEffect(() => {
     if (!subServiceId || !serviceId) {
@@ -87,7 +88,7 @@ function ServiceDetailsContent() {
       try {
         // 1. Fetch subservice details
         const { data, error } = await supabase
-          .from("services")
+          .from("active_services_tree")
           .select("*")
           .eq("id", subServiceId)
           .single();
@@ -105,6 +106,16 @@ function ServiceDetailsContent() {
 
         if (!reviewsError) {
           setReviews(reviewsData || []);
+        }
+
+        // 3. Fetch whatsapp number
+        const { data: wsData } = await supabase
+          .from("system_settings")
+          .select("value")
+          .eq("key", "whatsapp_settings")
+          .single();
+        if (wsData?.value?.business_number) {
+          setWhatsappNumber(wsData.value.business_number);
         }
       } catch (e) {
         console.error("Error fetching details:", e);
@@ -155,6 +166,7 @@ function ServiceDetailsContent() {
     );
   }
 
+  const isPaused = service.status === "paused";
   const arTitle = service.title?.ar || service.title || "تفاصيل الخدمة";
   const arDesc = service.description?.ar || service.description || "";
 
@@ -228,6 +240,19 @@ function ServiceDetailsContent() {
             {/* Left Column: Details, Inclusions, Reviews */}
             <div className="lg:col-span-8 space-y-6">
               
+              {/* Alert for Paused/Suspended Services */}
+              {isPaused && (
+                <div className="bg-amber-50 border border-amber-200/80 text-amber-800 rounded-[22px] p-5 text-right flex items-start gap-3 shadow-[0_8px_40px_rgba(0,0,0,0.02)]">
+                  <Sparkles className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <h3 className="font-extrabold text-sm text-slate-800">تنويه: الخدمة غير متوفرة حالياً</h3>
+                    <p className="text-slate-600 text-xs leading-relaxed font-light">
+                      عذراً، هذه الخدمة موقوفة مؤقتاً لأعمال الصيانة والتشغيل وسنعاود تقديمها قريباً جداً. يمكنك الاستفسار أو طلب التنبيه عند التوفر.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Header Info Card */}
               <div className="bg-white rounded-[22px] border border-slate-100 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.05)] text-right">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -443,13 +468,24 @@ function ServiceDetailsContent() {
                   </div>
                 </div>
 
-                <Link
-                  href={`/booking?serviceId=${serviceId}&subServiceId=${subServiceId}`}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-extrabold py-3.5 rounded-xl text-center shadow-lg shadow-primary/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span>احجز الخدمة الآن</span>
-                </Link>
+                {isPaused ? (
+                  <a
+                    href={`https://wa.me/${whatsappNumber}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:opacity-95 text-white font-extrabold py-3.5 rounded-xl text-center shadow-lg shadow-emerald-500/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
+                  >
+                    <span>أبلغني عند التوفر (واتساب)</span>
+                  </a>
+                ) : (
+                  <Link
+                    href={`/booking?serviceId=${serviceId}&subServiceId=${subServiceId}`}
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-extrabold py-3.5 rounded-xl text-center shadow-lg shadow-primary/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>احجز الخدمة الآن</span>
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -468,13 +504,24 @@ function ServiceDetailsContent() {
           </div>
         </div>
         
-        <Link
-          href={`/booking?serviceId=${serviceId}&subServiceId=${subServiceId}`}
-          className="flex-1 max-w-[200px] flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-extrabold py-3 px-4 rounded-xl text-center shadow-md shadow-primary/20 active:scale-95 transition-all text-xs"
-        >
-          <Calendar className="w-4 h-4" />
-          <span>احجز الخدمة الآن</span>
-        </Link>
+        {isPaused ? (
+          <a
+            href={`https://wa.me/${whatsappNumber}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 max-w-[200px] flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:opacity-95 text-white font-extrabold py-3 px-4 rounded-xl text-center shadow-md shadow-emerald-500/20 active:scale-95 transition-all text-xs"
+          >
+            <span>أبلغني عند التوفر</span>
+          </a>
+        ) : (
+          <Link
+            href={`/booking?serviceId=${serviceId}&subServiceId=${subServiceId}`}
+            className="flex-1 max-w-[200px] flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-extrabold py-3 px-4 rounded-xl text-center shadow-md shadow-primary/20 active:scale-95 transition-all text-xs"
+          >
+            <Calendar className="w-4 h-4" />
+            <span>احجز الخدمة الآن</span>
+          </Link>
+        )}
       </div>
 
       <Footer />

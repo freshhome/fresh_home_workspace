@@ -27,12 +27,16 @@ import '../../features/reviews_management/domain/use_cases/approve_review_use_ca
 import '../../features/reviews_management/presentation/cubit/reviews_moderation_cubit.dart';
 import '../../features/reviews_management/presentation/routes/reviews_moderation_routes.dart';
 import '../../features/whatsapp_settings/domain/repositories/whatsapp_settings_repository.dart';
+import 'package:shared/data/service/repositories/service_repository_impl.dart';
 import '../../features/whatsapp_settings/data/repositories/whatsapp_settings_repository_impl.dart';
 import '../../features/whatsapp_settings/presentation/cubit/whatsapp_settings_cubit.dart';
 
 final getIt = GetIt.instance;
 
 Future<void> initAppDI() async {
+  // تفعيل وضع المسؤول للـ ServiceRepository لمنع فلترة كاش شجرة الخدمات للإدارة
+  ServiceRepositoryImpl.isAdminMode = true;
+
   // Initialize shared features DI with navigation config for Admin
   await initSharedFeaturesDI(
     getIt,

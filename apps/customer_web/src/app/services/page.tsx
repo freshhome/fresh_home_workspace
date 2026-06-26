@@ -16,6 +16,7 @@ function ServicesListContent() {
   const [subServices, setSubServices] = useState<any[]>([]);
   const [parentService, setParentService] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [whatsappNumber, setWhatsappNumber] = useState("+201000000000");
 
   useEffect(() => {
     if (!serviceId) {
@@ -28,7 +29,7 @@ function ServicesListContent() {
       try {
         // 1. Fetch parent service details
         const { data: parentData, error: parentError } = await supabase
-          .from("services")
+          .from("active_services_tree")
           .select("*")
           .eq("id", serviceId)
           .single();
@@ -38,15 +39,24 @@ function ServicesListContent() {
 
         // 2. Fetch sub services
         const { data: subData, error: subError } = await supabase
-          .from("services")
+          .from("active_services_tree")
           .select("*")
           .eq("parent_id", serviceId)
           .eq("is_bookable", true)
-          .eq("status", "active")
           .order("sort_order", { ascending: true });
 
         if (subError) throw subError;
         setSubServices(subData || []);
+
+        // 3. Fetch whatsapp number
+        const { data: wsData } = await supabase
+          .from("system_settings")
+          .select("value")
+          .eq("key", "whatsapp_settings")
+          .single();
+        if (wsData?.value?.business_number) {
+          setWhatsappNumber(wsData.value.business_number);
+        }
       } catch (e) {
         console.error("Error fetching services:", e);
       } finally {
@@ -197,8 +207,30 @@ function ServicesListContent() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm text-slate-400 text-sm">
-                عذراً، لا توجد خدمات فرعية متاحة حالياً في هذا القسم.
+              <div className="text-center py-16 px-6 bg-gradient-to-br from-white to-slate-50 rounded-3xl border border-slate-100/80 shadow-md text-right max-w-2xl mx-auto space-y-6">
+                <div className="w-20 h-20 rounded-2xl bg-secondary/10 flex items-center justify-center mx-auto mb-6 border border-secondary/20">
+                  <Sparkles className="w-10 h-10 text-secondary" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 text-center">ستتوفر هذه الخدمة قريباً!</h3>
+                <p className="text-slate-600 text-sm leading-relaxed text-center font-normal max-w-md mx-auto">
+                  نحن نعمل حالياً على استقطاب وتأهيل أفضل الفنيين المحترفين لتقديم هذه الخدمة لك بأعلى مستويات الجودة والأمان التي عهدتها من فريش هوم.
+                </p>
+                <div className="pt-4 border-t border-slate-200/60 flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <Link
+                    href="/"
+                    className="w-full sm:w-auto bg-primary hover:bg-slate-900 text-white text-xs font-black px-6 py-3.5 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md text-center"
+                  >
+                    استكشف الأقسام الأخرى المتاحة
+                  </Link>
+                  <a
+                    href={`https://wa.me/${whatsappNumber}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto bg-emerald-50 hover:bg-emerald-100 text-emerald-700 hover:text-emerald-800 border border-emerald-200 text-xs font-black px-6 py-3.5 rounded-xl transition-all duration-300 text-center flex items-center justify-center gap-2"
+                  >
+                    أرسل لنا طلب اهتمام عبر واتساب
+                  </a>
+                </div>
               </div>
             )}
           </div>

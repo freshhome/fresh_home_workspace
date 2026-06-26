@@ -99,6 +99,27 @@ class ServiceRepositoryImpl implements ServiceRepository {
     }
   }
 
+  static bool isAdminMode = false;
+
+  bool _isAncestryActive(ServiceEntity service, Map<String, ServiceEntity> idMap, [Set<String>? visited]) {
+    if (service.status != ServiceStatus.active && service.status != ServiceStatus.paused) {
+      return false;
+    }
+    if (service.parentId == null) {
+      return true;
+    }
+    visited ??= {};
+    if (visited.contains(service.id)) {
+      return false; // circular reference check
+    }
+    visited.add(service.id);
+    final parent = idMap[service.parentId];
+    if (parent == null) {
+      return false;
+    }
+    return _isAncestryActive(parent, idMap, visited);
+  }
+
   void _buildTreeCache() {
     _adjacencyList.clear();
     _bookableServices.clear();
@@ -106,10 +127,14 @@ class ServiceRepositoryImpl implements ServiceRepository {
     // Sort all services by order
     _allServices.sort((a, b) => a.order.compareTo(b.order));
 
+    final idMap = {for (final s in _allServices) s.id: s};
+
     for (final service in _allServices) {
-      // Local Filtering: Ensure ALL app logic only uses services where status == 'active'
-      if (service.status != ServiceStatus.active) {
-        continue;
+      // Local Filtering: Ensure customer app logic only uses services where status and all ancestors are active
+      if (!isAdminMode) {
+        if (!_isAncestryActive(service, idMap)) {
+          continue;
+        }
       }
 
       if (service.isBookable) {

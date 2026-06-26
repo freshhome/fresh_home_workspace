@@ -96,13 +96,17 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
     if (cachedUser != null) {
       final roles = userRoleFromCode(codes: cachedUser.rolesCodes);
-      final phoneNumbers = cachedUser.phones.map((p) => Phone(
-        userId: cachedUser.uid,
-        phoneNumber: p,
-        isPrimary: false,
-        isVerified: false,
-        createdAt: DateTime.now(),
-      )).toList();
+      final phoneNumbers = cachedUser.phones
+          .map(
+            (p) => Phone(
+              userId: cachedUser.uid,
+              phoneNumber: p,
+              isPrimary: false,
+              isVerified: false,
+              createdAt: DateTime.now(),
+            ),
+          )
+          .toList();
 
       if (roles.contains(UserRole.admin)) {
         return AdminProfile(
@@ -165,7 +169,11 @@ class ProfileRepositoryImpl implements ProfileRepository {
           createdAt: cachedUser.createdAt,
           updatedAt: cachedUser.updatedAt,
           preferredPaymentMethod: 'cash',
-          addresses: client?.addresses.map((a) => AddressMapper.fromModel(a)).toList() ?? const [],
+          addresses:
+              client?.addresses
+                  .map((a) => AddressMapper.fromModel(a))
+                  .toList() ??
+              const [],
         );
       }
     }
@@ -319,21 +327,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
     } catch (e) {
       return Left(UnknownFailure(message: e.toString()));
     }
-  }
-
-  Future<UserRemoteModel> _getOrFetchUserRemote(String uid) async {
-    final cached = _fromCache();
-    if (cached != null && cached.uid == uid) {
-      return UserProfileMapper.entityToRemote(cached);
-    }
-    final model = await userRemoteDataSource.getUserById(uid);
-    if (model == null) {
-      throw const SupabaseExceptionApp(
-        'User profile not found in database',
-        code: 'profile_not_found',
-      );
-    }
-    return model;
   }
 
   @override
@@ -512,7 +505,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
   }
 
-  Future<Map<String, String>> _fetchSubServiceNames(List<String> subServiceIds) async {
+  Future<Map<String, String>> _fetchSubServiceNames(
+    List<String> subServiceIds,
+  ) async {
     if (subServiceIds.isEmpty) return {};
     try {
       final response = await supabase
@@ -537,8 +532,10 @@ class ProfileRepositoryImpl implements ProfileRepository {
     if (profile is TechnicianProfile) {
       final pools = await _fetchRemoteCapacityPools(profile.uid);
       final skills = await _fetchRemoteTechnicianSkills(profile.uid);
-      final names = await _fetchSubServiceNames(skills.map((s) => s.subServiceId).toList());
-      
+      final names = await _fetchSubServiceNames(
+        skills.map((s) => s.subServiceId).toList(),
+      );
+
       return TechnicianProfile(
         uid: profile.uid,
         firstName: profile.firstName,

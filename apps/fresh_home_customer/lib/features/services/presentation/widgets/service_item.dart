@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared/domain/service/entities/base_service_entity.dart';
+import 'package:shared/domain/service/enums/service_status.dart';
 import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import '../../../../core/presentation/widgets/shimmer_loading.dart';
@@ -76,13 +77,39 @@ class ServiceItem extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        service.title[langCode] ?? '',
-                        style: themeText.titleSectionSmall.copyWith(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: themeColor.textPrimary,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              service.title[langCode] ?? '',
+                              style: themeText.titleSectionSmall.copyWith(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: themeColor.textPrimary,
+                              ),
+                            ),
+                          ),
+                          if (service.status == ServiceStatus.paused) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.amber.shade200),
+                              ),
+                              child: Text(
+                                langCode == 'ar' ? 'متوقف مؤقتاً' : 'Paused',
+                                style: const TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF7A4F01),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 6),
                       Text(

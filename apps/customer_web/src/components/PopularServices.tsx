@@ -13,10 +13,9 @@ export default function PopularServices() {
     async function fetchPopularServices() {
       try {
         const { data, error } = await supabase
-          .from("services")
+          .from("active_services_tree")
           .select("*")
           .eq("is_bookable", true)
-          .eq("status", "active")
           .limit(4);
 
         if (error) throw error;
