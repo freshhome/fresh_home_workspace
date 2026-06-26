@@ -6,10 +6,10 @@ export default function TrustSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-xl mx-auto mb-14 space-y-3">
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">أمانك وثقتك هما أولويتنا القصوى</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">لماذا يختار العملاء فريش هوم؟</h2>
           <div className="w-12 h-1 bg-secondary mx-auto rounded-full"></div>
           <p className="text-slate-500 text-sm">
-            بصفتنا منصة متكاملة ولسنا مجرد وسيط، نحن نتحمل المسؤولية الكاملة عن جودة خدماتنا وسلامة منزلك.
+            نسعى لتقديم تجربة حجز سهلة، وتسعير واضح، ومتابعة مستمرة للطلبات، مع الاهتمام بجودة تنفيذ الخدمة في جميع مراحلها.
           </p>
         </div>
 
@@ -20,9 +20,9 @@ export default function TrustSection() {
             <div className="w-12 h-12 bg-primary/10 text-primary flex items-center justify-center rounded-xl mx-auto">
               <ShieldAlert className="w-6 h-6 stroke-[2]" />
             </div>
-            <h3 className="font-extrabold text-slate-800 text-base">فحص جنائي صارم</h3>
+            <h3 className="font-extrabold text-slate-800 text-base">التحقق من الفنيين</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              جميع الفنيين المسجلين يخضعون لفحص صحيفة الحالة الجنائية والفيش والتشبيه الفعلي لضمان أعلى مستويات الأمان لأهلك ومنزلك.
+              يخضع الفنيون لإجراءات تحقق ومراجعة قبل الانضمام إلى المنصة، لضمان الالتزام بمعايير فريش هوم.
             </p>
           </div>
 
@@ -31,9 +31,9 @@ export default function TrustSection() {
             <div className="w-12 h-12 bg-primary/10 text-primary flex items-center justify-center rounded-xl mx-auto">
               <RefreshCw className="w-6 h-6 stroke-[2]" />
             </div>
-            <h3 className="font-extrabold text-slate-800 text-base">ضمان إعادة العمل مجاناً</h3>
+            <h3 className="font-extrabold text-slate-800 text-base">الجودة</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              إذا لم تكن راضياً عن جودة التنظيف أو الصيانة المنجزة، تلتزم فريش هوم بإرسال فني آخر لإعادة العمل بالكامل مجاناً وبدون أي تكلفة.
+              إذا كانت لديك أي ملاحظات على الخدمة، يعمل فريقنا على مراجعتها والتعامل معها وفق سياسة الجودة الخاصة بفريش هوم.
             </p>
           </div>
 
@@ -42,9 +42,9 @@ export default function TrustSection() {
             <div className="w-12 h-12 bg-primary/10 text-primary flex items-center justify-center rounded-xl mx-auto">
               <Lock className="w-6 h-6 stroke-[2]" />
             </div>
-            <h3 className="font-extrabold text-slate-800 text-base">حماية وأمان الأثاث</h3>
+            <h3 className="font-extrabold text-slate-800 text-base">سلامة المنزل</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              جميع الزيارات والخدمات مغطاة بضمان مالي وتأمين ضد أي تلفيات أو أضرار غير مقصودة قد تحدث لمقتنيات منزلك أثناء الخدمة.
+              نحرص على تنفيذ الخدمات بعناية للمساعدة في الحفاظ على سلامة منزلك ومحتوياته أثناء العمل.
             </p>
           </div>
 
@@ -53,9 +53,9 @@ export default function TrustSection() {
             <div className="w-12 h-12 bg-primary/10 text-primary flex items-center justify-center rounded-xl mx-auto">
               <BadgePercent className="w-6 h-6 stroke-[2]" />
             </div>
-            <h3 className="font-extrabold text-slate-800 text-base">أسعار عادلة ومثبتة</h3>
+            <h3 className="font-extrabold text-slate-800 text-base">الأسعار</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              نظام التسعير لدينا مؤتمت بالكامل ولا مجال للفصال أو التغيير عند الباب؛ الأسعار نهائية وتعتمد على المقاسات والخيارات التي حددتها.
+              يعتمد تسعير الخدمات على البيانات التي تدخلها أثناء الحجز، ويتم مراجعة أي اختلافات قبل بدء التنفيذ عند الحاجة.
             </p>
           </div>
         </div>

@@ -157,11 +157,11 @@ export default function Hero() {
             </div>
             
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black leading-tight sm:leading-tight lg:leading-none tracking-tight">
-              منزلك في أيدٍ أمينة مع محترفي <span className="text-secondary">فريش هوم</span>
+              كل خدمات منزلك... <span className="text-secondary">في مكان واحد</span>
             </h1>
             
             <p className="text-base sm:text-lg text-slate-100 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal font-sans">
-              احجز خدمات التنظيف العميق، مكافحة الآفات، وصيانة التكييفات والسباكة في دقائق معدودة. احصل على تسعير فوري ودقيق دون مفاجآت وبدون اشتراط تسجيل الدخول المسبق.
+              احجز خدمات التنظيف، الصيانة، ومكافحة الحشرات بسهولة. احصل على تسعير فوري، وتابع حالة طلبك حتى اكتمال التنفيذ.
             </p>
 
             {/* Search Bar */}
@@ -170,7 +170,7 @@ export default function Hero() {
                 <Search className="absolute right-4 w-5 h-5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="ما هي الخدمة التي تبحث عنها اليوم؟ (تنظيف، تكييف، سباكة...)"
+                  placeholder="ما الخدمة التي تبحث عنها اليوم؟"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setIsFocused(true)}
@@ -263,7 +263,7 @@ export default function Hero() {
                 data-track="hero-primary-booking"
                 className="flex items-center justify-center gap-2 bg-gradient-to-r from-secondary to-[#2ecc71] hover:opacity-95 text-slate-900 font-extrabold px-8 py-3.5 rounded-xl transition-all shadow-lg shadow-secondary/20 transform hover:-translate-y-0.5"
               >
-                <span>احجز خدمتك فوراً</span>
+                <span>احجز الآن</span>
                 <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
               </Link>
               <Link 
@@ -271,23 +271,29 @@ export default function Hero() {
                 data-track="hero-secondary-browse"
                 className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white font-bold px-8 py-3.5 rounded-xl transition-all border border-white/10"
               >
-                <span>عرض كل الخدمات</span>
+                <span>تصفح الخدمات</span>
               </Link>
             </div>
+            <p className="text-[11px] text-slate-350/90 font-medium text-center lg:text-right mt-1.5">
+              * ابدأ الحجز مباشرة، دون الحاجة إلى إنشاء حساب.
+            </p>
+            <p className="text-[11px] text-slate-400/90 font-medium text-center lg:text-right mt-0.5">
+              * احجز في دقائق من أي جهاز، وتابع حالة طلبك في أي وقت.
+            </p>
 
             {/* Key Trust Factors */}
-            <div className="grid grid-cols-3 gap-4 pt-8 border-t border-white/10 max-w-md mx-auto lg:mx-0">
-              <div className="flex flex-col items-center lg:items-start gap-1">
-                <span className="text-secondary font-black text-xl">100%</span>
-                <span className="text-xs text-slate-300">أمان وموثوقية</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8 border-t border-white/10 max-w-md mx-auto lg:mx-0">
+              <div className="flex items-center gap-2 justify-center lg:justify-start">
+                <span className="text-secondary text-sm">✅</span>
+                <span className="text-xs text-slate-300 font-bold">التحقق من الفنيين</span>
               </div>
-              <div className="flex flex-col items-center lg:items-start gap-1">
-                <span className="text-secondary font-black text-xl">30 يوم</span>
-                <span className="text-xs text-slate-300">ضمان على الصيانة</span>
+              <div className="flex items-center gap-2 justify-center lg:justify-start">
+                <span className="text-secondary text-sm">✅</span>
+                <span className="text-xs text-slate-300 font-bold">ضمان على خدمات الصيانة</span>
               </div>
-              <div className="flex flex-col items-center lg:items-start gap-1">
-                <span className="text-secondary font-black text-xl">فوري</span>
-                <span className="text-xs text-slate-300">تسعير ديناميكي</span>
+              <div className="flex items-center gap-2 justify-center lg:justify-start">
+                <span className="text-secondary text-sm">✅</span>
+                <span className="text-xs text-slate-300 font-bold">تسعير فوري</span>
               </div>
             </div>
           </div>

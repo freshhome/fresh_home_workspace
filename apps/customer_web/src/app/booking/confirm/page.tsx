@@ -15,6 +15,25 @@ function ConfirmBookingContent() {
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("+201000000000");
+
+  useEffect(() => {
+    async function fetchWhatsappSettings() {
+      try {
+        const { data, error } = await supabase
+          .from("system_settings")
+          .select("value")
+          .eq("key", "whatsapp_settings")
+          .single();
+        if (!error && data?.value?.business_number) {
+          setWhatsappNumber(data.value.business_number);
+        }
+      } catch (err) {
+        console.error("Error fetching whatsapp settings in confirm page:", err);
+      }
+    }
+    fetchWhatsappSettings();
+  }, []);
 
   useEffect(() => {
     async function confirmBooking() {
@@ -98,10 +117,12 @@ function ConfirmBookingContent() {
                   العودة للصفحة الرئيسية للحجز من جديد
                 </button>
                 <a
-                  href="tel:19999"
+                  href={`https://wa.me/${whatsappNumber.replace(/\+/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-full border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-2xl text-xs transition-colors inline-block"
                 >
-                  الاتصال بالدعم الفني للمساعدة
+                  التواصل عبر الواتساب للمساعدة
                 </a>
               </div>
             </div>

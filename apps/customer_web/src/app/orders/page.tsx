@@ -558,14 +558,16 @@ function OrderTrackingContent() {
               <div className="bg-primary/5 border border-primary/10 rounded-2xl p-5 space-y-3">
                 <h4 className="font-extrabold text-primary text-sm">هل لديك أي استفسار أو مشكلة؟</h4>
                 <p className="text-slate-500 text-xs leading-relaxed font-light">
-                  خدمة العملاء في فريش هوم متوفرة لمساعدتك في أي وقت. يمكنك الاتصال بخط المساعدة أو النقر على الرابط للتواصل المباشر معنا.
+                  خدمة العملاء في فريش هوم متوفرة لمساعدتك في أي وقت. يمكنك النقر على الرابط للتواصل المباشر معنا عبر الواتساب.
                 </p>
                 <div className="pt-2">
                   <a 
-                    href="tel:19999" 
-                    className="bg-primary hover:bg-primary/95 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md inline-block"
+                    href={`https://wa.me/${whatsappNumber.replace(/\+/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-emerald-650 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-md inline-block transition-colors"
                   >
-                    تواصل مع الدعم الفني
+                    تواصل عبر الواتساب
                   </a>
                 </div>
               </div>

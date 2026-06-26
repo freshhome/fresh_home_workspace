@@ -37,9 +37,9 @@ export default function PopularServices() {
         {/* Section header */}
         <div className="flex flex-col sm:flex-row justify-between items-end gap-4 mb-10 pb-6 border-b border-slate-100">
           <div className="space-y-2 text-right">
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">خدماتنا الشائعة والمطلوبة</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">الخدمات الأكثر طلبًا</h2>
             <p className="text-slate-500 text-sm max-w-lg">
-              الخدمات المفضلة لعملائنا في مصر. اطلب خدماتك الآن كضيف واستمتع بخصم فوري وتعيين أسرع للفنيين.
+              تعرف على الخدمات الأكثر اختيارًا من عملائنا، واحجز الخدمة المناسبة بكل سهولة.
             </p>
           </div>
           <Link 
@@ -101,7 +101,21 @@ export default function PopularServices() {
               }
 
               // Highlights selection
-              let highlights = ["جودة وضمان معتمد", "أمان تام للعائلة", "تجهيز فني متكامل"];
+              let highlights = ["فحص وتشخيص دقيق", "تنفيذ احترافي وسريع", "ضمان جودة الخدمة"];
+              const serviceTitle = (sub.title?.ar || sub.title || "").toLowerCase();
+              
+              if (serviceTitle.includes("كهرباء")) {
+                highlights = ["تشخيص الأعطال وصيانتها", "تركيب واستبدال المكونات", "فحص السلامة قبل الإنهاء"];
+              } else if (serviceTitle.includes("سباكة")) {
+                highlights = ["كشف وتصليح التسريبات", "تركيب الخلطات والأدوات الصحية", "تسليك وصيانة شبكات الصرف"];
+              } else if (serviceTitle.includes("تنظيف") || serviceTitle.includes("نظافة") || serviceTitle.includes("غسيل")) {
+                highlights = ["إزالة الأتربة والبقع الصعبة", "تطهير وتعقيم كامل للأسطح", "استخدام مواد آمنة وصديقة للبيئة"];
+              } else if (serviceTitle.includes("حشرات") || serviceTitle.includes("إبادة") || serviceTitle.includes("آفات")) {
+                highlights = ["إبادة فورية بضمان ممتد", "استخدام أمصال آمنة وبدون رائحة", "مكافحة النمل، الصراصير والقوارض"];
+              } else if (serviceTitle.includes("تكييف") || serviceTitle.includes("تكييفات")) {
+                highlights = ["تنظيف الفلاتر والوحدات", "فحص وشحن مستوى الفريون", "كشف الأعطال وتحسين الكفاءة"];
+              }
+
               if (sub.details && Array.isArray(sub.details) && sub.details.length > 0) {
                 highlights = sub.details.slice(0, 3).map((d: any) => typeof d === "string" ? d : d.ar || d.title || JSON.stringify(d));
               } else if (sub.price_config?.fields && sub.price_config.fields.length > 0) {

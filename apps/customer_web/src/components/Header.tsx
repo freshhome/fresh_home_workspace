@@ -36,7 +36,7 @@ export default function Header() {
     async function fetchWhatsappSettings() {
       try {
         const { data, error } = await supabase
-          .from("settings")
+          .from("system_settings")
           .select("value")
           .eq("key", "whatsapp_settings")
           .single();
