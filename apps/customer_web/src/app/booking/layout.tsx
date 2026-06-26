@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "فريش هوم | احجز خدمتك المنزلية الآن",
-  description: "تدفق حجز الخدمات المنزلية المعتمدة لشركة فريش هوم كضيف.",
+  description: "تدفق حجز الخدمات المنزلية المعتمدة لشركة فريش هوم بسهولة وسرعة.",
   robots: {
     index: false,
     follow: false

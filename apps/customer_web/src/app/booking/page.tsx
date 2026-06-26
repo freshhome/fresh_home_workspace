@@ -295,7 +295,9 @@ function BookingFlowContent() {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
       if (typeof window !== "undefined") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 80);
       }
     }
   };
@@ -304,7 +306,9 @@ function BookingFlowContent() {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
       if (typeof window !== "undefined") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 80);
       }
     }
   };
@@ -407,42 +411,44 @@ function BookingFlowContent() {
       <Header />
       
       <main className="flex-1 bg-slate-50 py-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Stepper progress */}
-          <div className="bg-white/85 backdrop-blur-md rounded-3xl p-6 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] mb-8">
-            <div className="flex justify-between items-center relative">
-              {STEPS.map((stepText, idx) => {
-                const isCompleted = idx < currentStep;
-                const isActive = idx === currentStep;
-                return (
-                  <div key={idx} className="flex flex-col items-center z-10 flex-1 relative">
-                    <div 
-                      className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
-                        isCompleted ? "bg-secondary text-white" : isActive ? "bg-primary text-white scale-110" : "bg-slate-100 text-slate-400"
-                      }`}
-                    >
-                      {isCompleted ? <Check className="w-5 h-5 stroke-[2.5]" /> : idx + 1}
+          <div className="sticky top-[72px] z-30 mb-6">
+            <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur-md rounded-2xl p-4 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)]">
+              <div className="flex justify-between items-center relative">
+                {STEPS.map((stepText, idx) => {
+                  const isCompleted = idx < currentStep;
+                  const isActive = idx === currentStep;
+                  return (
+                    <div key={idx} className="flex flex-col items-center z-10 flex-1 relative">
+                      <div 
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 ${
+                          isCompleted ? "bg-secondary text-white" : isActive ? "bg-primary text-white scale-110" : "bg-slate-100 text-slate-400"
+                        }`}
+                      >
+                        {isCompleted ? <Check className="w-4 h-4 stroke-[2.5]" /> : idx + 1}
+                      </div>
+                      <span className={`text-[10px] font-bold mt-2 hidden sm:block ${isActive ? "text-primary font-black" : "text-slate-400"}`}>
+                        {stepText}
+                      </span>
                     </div>
-                    <span className={`text-[11px] font-bold mt-2 hidden sm:block ${isActive ? "text-primary font-black" : "text-slate-400"}`}>
-                      {stepText}
-                    </span>
-                  </div>
-                );
-              })}
-              
-              {/* Connector line */}
-              <div className="absolute left-6 right-6 top-[18px] h-0.5 bg-slate-100 -z-0">
-                <div 
-                  className="h-full bg-secondary transition-all duration-500" 
-                  style={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
-                ></div>
+                  );
+                })}
+                
+                {/* Connector line */}
+                <div className="absolute left-6 right-6 top-[16px] h-0.5 bg-slate-100 -z-0">
+                  <div 
+                    className="h-full bg-secondary transition-all duration-500" 
+                    style={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Step Content */}
-            <div className="lg:col-span-8 bg-white/90 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] min-h-[420px] flex flex-col justify-between">
+            <div className="lg:col-span-8 bg-white/90 backdrop-blur-md rounded-2xl p-6 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] min-h-[420px] flex flex-col justify-between">
               
               {/* STEP 1: PRICING */}
               {currentStep === 0 && (
@@ -783,8 +789,8 @@ function BookingFlowContent() {
               {currentStep === 3 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-black text-slate-800">مراجعة البيانات والتحقق كضيف</h2>
-                    <p className="text-slate-400 text-xs">يرجى كتابة الاسم ورقم الهاتف لإتمام حجزك كضيف.</p>
+                    <h2 className="text-xl font-black text-slate-800">مراجعة البيانات وتأكيد الطلب</h2>
+                    <p className="text-slate-400 text-xs">يرجى كتابة الاسم ورقم الهاتف لتأكيد وإتمام حجزك.</p>
                   </div>
 
                   {/* Name and Phone Inputs */}
@@ -884,8 +890,8 @@ function BookingFlowContent() {
             </div>
 
             {/* Price invoice details block */}
-            <div className="lg:col-span-4 space-y-6">
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] space-y-4">
+            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-[200px] z-20">
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl p-5 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] space-y-4">
                 <h3 className="font-extrabold text-slate-800 text-base border-b border-slate-100 pb-3">ملخص الفاتورة المعتمدة</h3>
                 
                 <div className="space-y-3.5 text-xs text-slate-600">
@@ -969,10 +975,7 @@ function BookingFlowContent() {
                       <span>-{priceDetails.discount} ج.م</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-xs text-slate-500 font-semibold">
-                    <span>ضريبة القيمة المضافة (14%):</span>
-                    <span>{isCalculating ? "..." : `${Math.round((priceDetails.basePrice + priceDetails.extraFees - priceDetails.discount) * 0.14)} ج.م`}</span>
-                  </div>
+
                   <div className="flex justify-between text-base font-black text-primary border-t border-dashed border-slate-200 pt-3.5">
                     <span>إجمالي القيمة:</span>
                     <span>{isCalculating ? "جاري الحساب..." : `${priceDetails.total} ج.م`}</span>
@@ -981,7 +984,7 @@ function BookingFlowContent() {
               </div>
 
               {/* Security guarantee box */}
-              <div className="bg-emerald-500/5 border border-emerald-500/10 backdrop-blur-sm rounded-3xl p-5 flex gap-3 text-xs text-slate-600 shadow-[0_4px_16px_rgba(16,185,129,0.02)]">
+              <div className="bg-emerald-500/5 border border-emerald-500/10 backdrop-blur-sm rounded-2xl p-4 flex gap-3 text-xs text-slate-600 shadow-[0_4px_16px_rgba(16,185,129,0.02)]">
                 <ShieldAlert className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <strong className="block text-slate-800">ضمان الأسعار المعتمد</strong>
