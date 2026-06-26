@@ -412,34 +412,34 @@ function ServiceDetailsContent() {
             <div className="lg:col-span-4 sticky top-24">
               <div className="bg-white rounded-[22px] border border-slate-100 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.05)] text-right space-y-6">
                 <div>
-                  <span className="text-slate-400 text-[10px] font-black uppercase tracking-wider block">
+                  <span className="text-slate-550 text-[10px] font-black uppercase tracking-wider block">
                     {priceLabel}
                   </span>
                   <div className="flex items-baseline gap-2 mt-1 justify-end">
                     <span className="text-2xl sm:text-3xl font-black text-primary">
                       {startingPrice}
                     </span>
-                    <span className="text-sm font-bold text-slate-500">
+                    <span className="text-sm font-bold text-slate-650">
                       {unitText}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400 block mt-1 leading-normal font-light">
+                  <span className="text-[10px] text-slate-500 block mt-1.5 leading-normal font-light">
                     * يتم حساب السعر النهائي بدقة بناءً على المواصفات في الخطوة التالية.
                   </span>
                 </div>
 
-                <div className="border-t border-slate-100 pt-4 space-y-3 text-xs text-slate-500 leading-relaxed font-light">
+                <div className="border-t border-slate-100 pt-4 space-y-3.5 text-xs text-slate-650 leading-relaxed font-normal">
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-secondary shrink-0" />
-                    <span>تسعير ديناميكي فوري دون مفاجآت</span>
+                    <span>تسعير فوري يعتمد على البيانات التي تدخلها</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-secondary shrink-0" />
-                    <span>ضمان الجودة وإعادة العمل مجاناً</span>
+                    <span>ضمان الجودة الخاص بفريش هوم</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-secondary shrink-0" />
-                    <span>تأمين مالي شامل على الممتلكات</span>
+                    <span>نحرص على سلامة منزلك ومحتوياته أثناء العمل</span>
                   </div>
                 </div>
 
@@ -448,7 +448,7 @@ function ServiceDetailsContent() {
                   className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-extrabold py-3.5 rounded-xl text-center shadow-lg shadow-primary/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
                 >
                   <Calendar className="w-4 h-4" />
-                  <span>احجز الخدمة كضيف</span>
+                  <span>احجز الخدمة الآن</span>
                 </Link>
               </div>
             </div>
