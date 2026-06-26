@@ -65,7 +65,7 @@ function ServicesListContent() {
       <Header />
 
       <main className="flex-1 py-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Back button & title */}
           <div className="mb-8 flex items-center justify-between">
@@ -105,17 +105,24 @@ function ServicesListContent() {
 
             {loading ? (
               // Skeletons
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-[22px] border border-slate-100 p-5 shadow-sm flex items-center gap-6 animate-pulse">
-                  <div className="w-20 h-20 bg-slate-200 rounded-2xl shrink-0"></div>
-                  <div className="flex-1 space-y-3">
-                    <div className="w-1/3 h-5 bg-slate-200 rounded"></div>
-                    <div className="w-2/3 h-4 bg-slate-200 rounded"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-[22px] border border-slate-100 shadow-sm p-5 space-y-6 animate-pulse">
+                    <div className="w-full h-[150px] bg-slate-100 rounded-2xl"></div>
+                    <div className="space-y-3">
+                      <div className="w-2/3 h-5 bg-slate-200 rounded"></div>
+                      <div className="w-full h-4 bg-slate-200 rounded"></div>
+                      <div className="w-5/6 h-4 bg-slate-200 rounded"></div>
+                    </div>
+                    <div className="pt-4 border-t border-slate-100 flex justify-between">
+                      <div className="w-16 h-8 bg-slate-200 rounded"></div>
+                      <div className="w-20 h-8 bg-slate-200 rounded"></div>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             ) : subServices.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {subServices.map((sub) => {
                   const arTitle = sub.title?.ar || sub.title;
                   const arDesc = sub.description?.ar || sub.description;
@@ -137,41 +144,48 @@ function ServicesListContent() {
                     <div 
                       key={sub.id}
                       onClick={() => router.push(`/services/details?serviceId=${serviceId}&subServiceId=${sub.id}`)}
-                      className="bg-white rounded-[22px] border border-slate-100 p-5 shadow-[0_8px_40px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all duration-300 flex flex-col sm:flex-row items-center gap-6 group cursor-pointer text-right transform hover:-translate-y-0.5"
+                      className="bg-white rounded-[22px] border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all duration-300 flex flex-col justify-between group overflow-hidden transform hover:-translate-y-1 cursor-pointer text-right"
                     >
-                      {/* Subservice Image */}
-                      <div className="w-20 h-20 rounded-2xl bg-service-bg border border-primary/5 flex items-center justify-center shrink-0 p-3 transition-transform duration-300 group-hover:scale-105">
+                      {/* Top Image Container */}
+                      <div className="relative h-[150px] w-full bg-slate-50 border-b border-slate-100 flex items-center justify-center p-4">
                         {sub.image ? (
                           <img 
                             src={sub.image} 
                             alt={arTitle} 
-                            className="w-full h-full object-contain"
+                            className="w-20 h-20 object-contain transition-transform duration-300 group-hover:scale-105"
                           />
                         ) : (
-                          <Sparkles className="w-8 h-8 text-primary/45" />
+                          <Sparkles className="w-10 h-10 text-primary/40" />
                         )}
+                        
+                        {/* Rating Overlay */}
+                        <div className="absolute top-3 left-3 bg-white/95 text-amber-500 font-black px-2 py-0.5 rounded-lg text-[10px] flex items-center gap-1 shadow-xs border border-slate-100">
+                          <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                          <span>{rating}</span>
+                          <span className="text-slate-400 font-normal">({reviews})</span>
+                        </div>
                       </div>
 
-                      {/* Info */}
-                      <div className="flex-1 space-y-2 w-full">
-                        <div className="flex items-center gap-3 justify-between sm:justify-start">
-                          <h3 className="font-extrabold text-slate-800 text-base group-hover:text-primary transition-colors">
+                      {/* Card Body */}
+                      <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div className="space-y-2">
+                          <h3 className="font-extrabold text-slate-800 text-sm sm:text-base leading-snug group-hover:text-primary transition-colors min-h-[44px] line-clamp-2">
                             {arTitle}
                           </h3>
-                          <div className="flex items-center gap-1 text-amber-500 text-[11px] font-black bg-amber-50 px-2 py-0.5 rounded-md">
-                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500 animate-pulse" />
-                            <span>{rating}</span>
-                            <span className="text-slate-400 font-normal">({reviews})</span>
-                          </div>
+                          <p className="text-slate-500 text-xs leading-relaxed line-clamp-3 font-light">
+                            {arDesc}
+                          </p>
                         </div>
-                        <p className="text-slate-500 text-xs sm:text-sm leading-relaxed line-clamp-2">
-                          {arDesc}
-                        </p>
-                        <div className="flex items-center justify-between pt-2">
-                          <span className="text-xs text-secondary font-black">{priceText}</span>
-                          <span className="text-xs font-bold text-primary flex items-center gap-1 group-hover:text-secondary transition-colors">
-                            <span>تفاصيل الخدمة والحجز</span>
-                            <ChevronLeft className="w-3.5 h-3.5 transform group-hover:-translate-x-1 transition-transform" />
+
+                        {/* Bottom Info & CTA */}
+                        <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <div>
+                            <span className="text-[9px] text-slate-400 block font-bold uppercase">السعر التقديري</span>
+                            <span className="text-secondary font-black text-xs sm:text-sm block">{priceText}</span>
+                          </div>
+                          <span className="text-xs font-bold text-primary group-hover:text-secondary flex items-center gap-1 transition-colors">
+                            <span>احجز الآن</span>
+                            <ChevronLeft className="w-3.5 h-3.5 transform group-hover:-translate-x-0.5 transition-transform" />
                           </span>
                         </div>
                       </div>
