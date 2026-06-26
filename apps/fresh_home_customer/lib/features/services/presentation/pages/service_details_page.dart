@@ -183,7 +183,7 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    isArabic ? 'تنويه: الخدمة غير متوفرة حالياً' : 'Notice: Service Currently Unavailable',
+                                    isArabic ? 'تنويه: ستتوفر هذه الخدمة قريباً' : 'Notice: Service Available Soon',
                                     style: const TextStyle(
                                       fontFamily: 'Cairo',
                                       fontSize: 14,
@@ -194,8 +194,8 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                                   const SizedBox(height: 4),
                                   Text(
                                     isArabic
-                                        ? 'عذراً، هذه الخدمة موقوفة مؤقتاً لأعمال الصيانة والتشغيل وسنعاود تقديمها قريباً جداً.'
-                                        : 'Sorry, this service is temporarily suspended for maintenance and will be back soon.',
+                                        ? 'نعمل حالياً على تجهيز هذه الخدمة بأعلى معايير الجودة لتكون متاحة لحجزك قريباً جداً.'
+                                        : 'We are currently preparing this service to the highest quality standards to be ready for your booking very soon.',
                                     style: const TextStyle(
                                       fontFamily: 'Cairo',
                                       fontSize: 12,
@@ -569,7 +569,7 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
       child: SafeArea(
         child: MyCustomButton(
           text: isPaused
-              ? (isArabic ? 'الخدمة غير متوفرة حالياً' : 'Service Temporarily Unavailable')
+              ? (isArabic ? 'ستتوفر الخدمة قريباً' : 'Available Soon')
               : (isArabic ? 'احجز الآن' : 'Book Now'),
           leadingIcon: isPaused
               ? const Icon(Icons.lock_clock_rounded, color: Colors.white, size: 20)

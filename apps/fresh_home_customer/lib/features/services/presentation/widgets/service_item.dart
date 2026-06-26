@@ -99,7 +99,7 @@ class ServiceItem extends StatelessWidget {
                                 border: Border.all(color: Colors.amber.shade200),
                               ),
                               child: Text(
-                                langCode == 'ar' ? 'متوقف مؤقتاً' : 'Paused',
+                                langCode == 'ar' ? 'قريباً' : 'Soon',
                                 style: const TextStyle(
                                   fontFamily: 'Cairo',
                                   fontSize: 10,

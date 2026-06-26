@@ -245,9 +245,9 @@ function ServiceDetailsContent() {
                 <div className="bg-amber-50 border border-amber-200/80 text-amber-800 rounded-[22px] p-5 text-right flex items-start gap-3 shadow-[0_8px_40px_rgba(0,0,0,0.02)]">
                   <Sparkles className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <h3 className="font-extrabold text-sm text-slate-800">تنويه: الخدمة غير متوفرة حالياً</h3>
+                    <h3 className="font-extrabold text-sm text-slate-800">تنويه: ستتوفر هذه الخدمة قريباً</h3>
                     <p className="text-slate-600 text-xs leading-relaxed font-light">
-                      عذراً، هذه الخدمة موقوفة مؤقتاً لأعمال الصيانة والتشغيل وسنعاود تقديمها قريباً جداً. يمكنك الاستفسار أو طلب التنبيه عند التوفر.
+                      نعمل حالياً على تجهيز هذه الخدمة بأعلى معايير الجودة لتكون متاحة لحجزك قريباً جداً. يمكنك طلب إعلامك فور توفرها.
                     </p>
                   </div>
                 </div>
