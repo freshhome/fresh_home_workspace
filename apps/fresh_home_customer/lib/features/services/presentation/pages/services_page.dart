@@ -76,13 +76,22 @@ class ServicesPage extends StatelessWidget {
                               return ServiceItem(
                                 service: service,
                                 onTap: () {
-                                  context.pushNamed(
-                                    AppRoutes.serviceDetails,
-                                    queryParameters: {
-                                      'serviceId': serveid,
-                                      'subServiceId': service.id,
-                                    },
-                                  );
+                                  if (service.isBookable) {
+                                    context.pushNamed(
+                                      AppRoutes.serviceDetails,
+                                      queryParameters: {
+                                        'serviceId': serveid,
+                                        'subServiceId': service.id,
+                                      },
+                                    );
+                                  } else {
+                                    context.pushNamed(
+                                      AppRoutes.services,
+                                      queryParameters: {
+                                        'serveid': service.id,
+                                      },
+                                    );
+                                  }
                                 },
                               );
                             },

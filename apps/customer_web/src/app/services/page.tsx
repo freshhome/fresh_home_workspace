@@ -42,7 +42,6 @@ function ServicesListContent() {
           .from("active_services_tree")
           .select("*")
           .eq("parent_id", serviceId)
-          .eq("is_bookable", true)
           .order("sort_order", { ascending: true });
 
         if (subError) throw subError;
@@ -80,11 +79,11 @@ function ServicesListContent() {
           {/* Back button & title */}
           <div className="mb-8 flex items-center justify-between">
             <Link 
-              href="/" 
+              href={parentService?.parent_id ? `/services?serviceId=${parentService.parent_id}` : "/"} 
               className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors text-xs font-bold"
             >
               <ArrowRight className="w-4 h-4" />
-              <span>العودة للرئيسية</span>
+              <span>{parentService?.parent_id ? "العودة للقسم السابق" : "العودة للرئيسية"}</span>
             </Link>
             {parentService && (
               <span className="text-[10px] bg-primary/10 text-primary font-black px-3 py-1 rounded-full">
@@ -156,7 +155,7 @@ function ServicesListContent() {
                   return (
                     <div 
                       key={sub.id}
-                      onClick={() => router.push(`/services/details?serviceId=${serviceId}&subServiceId=${sub.id}`)}
+                      onClick={() => router.push(sub.is_bookable ? `/services/details?serviceId=${serviceId}&subServiceId=${sub.id}` : `/services?serviceId=${sub.id}`)}
                       className="bg-white rounded-3xl border border-slate-100/80 hover:border-primary/10 p-6 shadow-[0_10px_30px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col justify-between group cursor-pointer text-right transform hover:-translate-y-1"
                     >
                       <div>
@@ -193,14 +192,29 @@ function ServicesListContent() {
 
                       {/* Bottom Row: Price & Solid Premium CTA Button */}
                       <div className="mt-6 pt-4 border-t border-slate-100/60 flex items-center justify-between gap-3">
-                        <div>
-                          <span className="text-[10px] text-slate-500 block font-bold">السعر التقديري</span>
-                          <span className="text-secondary font-black text-xs sm:text-sm block">{priceText}</span>
-                        </div>
-                        <span className="bg-primary hover:bg-secondary text-white hover:text-slate-900 text-xs font-extrabold px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-1 shadow-sm hover:shadow-md">
-                          <span>احجز الآن</span>
-                          <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
-                        </span>
+                        {sub.is_bookable ? (
+                          <>
+                            <div>
+                              <span className="text-[10px] text-slate-500 block font-bold">السعر التقديري</span>
+                              <span className="text-secondary font-black text-xs sm:text-sm block">{priceText}</span>
+                            </div>
+                            <span className="bg-primary hover:bg-secondary text-white hover:text-slate-900 text-xs font-extrabold px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-1 shadow-sm hover:shadow-md">
+                              <span>احجز الآن</span>
+                              <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <span className="text-[10px] text-slate-500 block font-bold">نوع الخدمة</span>
+                              <span className="text-slate-600 font-bold text-xs sm:text-sm block">قسم رئيسي</span>
+                            </div>
+                            <span className="bg-slate-100 hover:bg-primary hover:text-white text-slate-700 text-xs font-extrabold px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-1 shadow-sm hover:shadow-md">
+                              <span>تصفح الأقسام</span>
+                              <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
