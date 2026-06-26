@@ -271,7 +271,7 @@ function BookingFlowContent() {
       case 0:
         return subServiceId !== "" && priceDetails.total > 0;
       case 1:
-        return scheduledDate !== "" && scheduledTime !== "";
+        return scheduledDate !== "" && scheduledTime !== "" && availabilityMap[scheduledDate] !== false;
       case 2:
         return address.street.trim() !== "" && address.building.trim() !== "";
       case 3:
@@ -645,11 +645,26 @@ function BookingFlowContent() {
                     <p className="text-slate-400 text-xs">حدد اليوم والفترة الزمنية لتلبية الطلب.</p>
                   </div>
 
-                  {/* Dates list (mocking next 7 days) */}
-                  <div className="space-y-3">
-                    <label className="block text-sm font-bold text-slate-700">الأيام المتاحة للحجز</label>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {Array.from({ length: 8 }).map((_, i) => {
+                  {/* Dates list (Horizontal Scroll + Calendar Date Picker) */}
+                  <div className="space-y-4">
+                    <style dangerouslySetInnerHTML={{__html: `
+                      .no-scrollbar::-webkit-scrollbar {
+                        display: none;
+                      }
+                      .no-scrollbar {
+                        -ms-overflow-style: none;
+                        scrollbar-width: none;
+                      }
+                    `}} />
+                    
+                    <div className="flex justify-between items-center">
+                      <label className="block text-sm font-bold text-slate-700">الأيام المتاحة للحجز</label>
+                      <span className="text-[10px] text-slate-400 hidden sm:inline">اسحب أفقياً لعرض المزيد من الأيام</span>
+                    </div>
+
+                    {/* Horizontal scrollable date strip */}
+                    <div className="flex overflow-x-auto gap-2.5 pb-2 pt-1 snap-x snap-mandatory no-scrollbar">
+                      {Array.from({ length: 14 }).map((_, i) => {
                         const dateObj = new Date();
                         dateObj.setDate(dateObj.getDate() + i + 1);
                         const formatted = dateObj.toISOString().split("T")[0];
@@ -665,7 +680,7 @@ function BookingFlowContent() {
                             key={formatted}
                             disabled={!isAvailable}
                             onClick={() => setScheduledDate(formatted)}
-                            className={`p-3.5 rounded-2xl border text-center transition-all flex flex-col justify-center gap-1 select-none ${
+                            className={`snap-start shrink-0 min-w-[92px] p-2.5 rounded-xl border text-center transition-all flex flex-col justify-center gap-0.5 select-none ${
                               isSelected 
                                 ? "bg-primary border-primary text-white shadow-md shadow-primary/10 scale-[1.02]" 
                                 : isAvailable
@@ -673,15 +688,41 @@ function BookingFlowContent() {
                                   : "bg-rose-50/20 border-rose-200/20 text-rose-400/80 cursor-not-allowed opacity-60"
                             }`}
                           >
-                            <span className="text-[10px] block opacity-85 font-bold">{dayName}</span>
+                            <span className={`text-[9px] block font-bold ${isSelected ? "text-white/80" : "text-slate-400"}`}>{dayName}</span>
                             <span className="text-xs block font-black">{dateLabel}</span>
-                            <span className="text-[9px] font-black block mt-0.5">
+                            <span className={`text-[8px] font-bold block mt-0.5 ${isSelected ? "text-white/90" : isAvailable ? "text-emerald-600" : "text-rose-400"}`}>
                               {isAvailable ? "متاح" : "غير متاح"}
                             </span>
                           </button>
                         );
                       })}
                     </div>
+
+                    {/* Styled Calendar Picker Alternative */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100/80">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-bold text-slate-700 block">أو اختر تاريخاً مخصصاً من التقويم:</span>
+                        <span className="text-[9px] text-slate-400 block">يمكنك تحديد أي يوم خلال الـ 30 يوماً القادمة.</span>
+                      </div>
+                      <div className="relative flex items-center">
+                        <input 
+                          type="date"
+                          min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split("T")[0]}
+                          max={new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split("T")[0]}
+                          value={scheduledDate}
+                          onChange={(e) => setScheduledDate(e.target.value)}
+                          className="w-full sm:w-auto p-2 px-3 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-800 focus:border-primary focus:outline-none cursor-pointer hover:border-slate-350 transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Availability warning message */}
+                    {scheduledDate && availabilityMap[scheduledDate] === false && (
+                      <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold transition-all">
+                        <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
+                        <span>عذراً، هذا اليوم غير متاح حالياً لاستقبال حجوزات. يرجى اختيار تاريخ آخر متاح.</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Time Slots */}
