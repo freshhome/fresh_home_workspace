@@ -69,6 +69,7 @@ function BookingFlowContent() {
   // Schedule Address & Phone States
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
+  const [manualDateText, setManualDateText] = useState("");
   const [address, setAddress] = useState({
     governorate: "القاهرة",
     city: "الزمالك",
@@ -251,6 +252,56 @@ function BookingFlowContent() {
     return () => clearTimeout(timer);
   }, [subServiceId, pricingInputs, selectedAddons]);
 
+  // Helper to parse DD-MM-YYYY or YYYY-MM-DD manually typed dates
+  const parseManualDate = (text: string): Date | null => {
+    const parts = text.trim().split(/[-\/]/);
+    if (parts.length === 3) {
+      let day = parseInt(parts[0]);
+      let month = parseInt(parts[1]);
+      let year = parseInt(parts[2]);
+      
+      if (parts[0].length === 4) {
+        year = parseInt(parts[0]);
+        day = parseInt(parts[2]);
+      }
+      
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 1000) {
+          const date = new Date(year, month - 1, day);
+          if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+            return date;
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  // Sync typed date input to scheduledDate state when valid and available
+  useEffect(() => {
+    if (manualDateText.trim() === "") {
+      setScheduledDate("");
+      return;
+    }
+    const parsedDate = parseManualDate(manualDateText);
+    if (parsedDate) {
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0);
+      if (parsedDate >= todayDate) {
+        const diffTime = parsedDate.getTime() - todayDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays <= 30) {
+          const formatted = parsedDate.toISOString().split("T")[0];
+          if (availabilityMap[formatted] !== false) {
+            setScheduledDate(formatted);
+            return;
+          }
+        }
+      }
+    }
+    setScheduledDate("");
+  }, [manualDateText, availabilityMap]);
+
   const handleToggleAddon = (id: string) => {
     if (selectedAddons.includes(id)) {
       setSelectedAddons(selectedAddons.filter((a) => a !== id));
@@ -281,6 +332,52 @@ function BookingFlowContent() {
         return false;
     }
   };
+
+  // Dynamic validation for manually entered dates
+  let dateWarningText = "";
+  let nextAvailableSuggestion: string | null = null;
+
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+
+  if (manualDateText.trim() !== "") {
+    const parsedDate = parseManualDate(manualDateText);
+    if (!parsedDate) {
+      dateWarningText = "صيغة التاريخ غير صحيحة. يرجى الإدخال بصيغة (يوم-شهر-سنة) مثل: 27-06-2026";
+    } else {
+      if (parsedDate < todayDate) {
+        dateWarningText = "يرجى اختيار تاريخ اليوم أو تاريخ في المستقبل.";
+      } else {
+        const diffTime = parsedDate.getTime() - todayDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 30) {
+          dateWarningText = "لا يمكن اختيار تاريخ بعد أكثر من شهر (30 يوماً) من تاريخ اليوم.";
+        } else {
+          const formatted = parsedDate.toISOString().split("T")[0];
+          if (availabilityMap[formatted] === false) {
+            dateWarningText = "عذراً، هذا اليوم غير متوفر حالياً من قبل الفنيين.";
+            
+            // Find nearest next available day within 30 days limit from today
+            let foundNext = null;
+            const searchDate = new Date(parsedDate);
+            for (let d = 1; d <= 30; d++) {
+              searchDate.setDate(searchDate.getDate() + 1);
+              const diffFromToday = Math.ceil((searchDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+              if (diffFromToday > 30) {
+                break; // Out of range
+              }
+              const searchStr = searchDate.toISOString().split("T")[0];
+              if (availabilityMap[searchStr] !== false) {
+                foundNext = searchStr;
+                break;
+              }
+            }
+            nextAvailableSuggestion = foundNext;
+          }
+        }
+      }
+    }
+  }
 
   const handleGovernorateChange = (gov: string) => {
     const defaultCity = REGIONS_MAP[gov]?.[0] || "";
@@ -645,7 +742,7 @@ function BookingFlowContent() {
                     <p className="text-slate-400 text-xs">حدد اليوم والفترة الزمنية لتلبية الطلب.</p>
                   </div>
 
-                  {/* Dates list (Horizontal Scroll + Calendar Date Picker) */}
+                  {/* Dates list (Horizontal Scroll + Manual Date Input) */}
                   <div className="space-y-4">
                     <style dangerouslySetInnerHTML={{__html: `
                       .no-scrollbar::-webkit-scrollbar {
@@ -679,7 +776,13 @@ function BookingFlowContent() {
                             type="button"
                             key={formatted}
                             disabled={!isAvailable}
-                            onClick={() => setScheduledDate(formatted)}
+                            onClick={() => {
+                              setScheduledDate(formatted);
+                              const parts = formatted.split("-");
+                              if (parts.length === 3) {
+                                setManualDateText(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                              }
+                            }}
                             className={`snap-start shrink-0 min-w-[92px] p-2.5 rounded-xl border text-center transition-all flex flex-col justify-center gap-0.5 select-none ${
                               isSelected 
                                 ? "bg-primary border-primary text-white shadow-md shadow-primary/10 scale-[1.02]" 
@@ -698,29 +801,51 @@ function BookingFlowContent() {
                       })}
                     </div>
 
-                    {/* Styled Calendar Picker Alternative */}
+                    {/* Styled Manual Input Alternative */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100/80">
-                      <div className="space-y-0.5">
-                        <span className="text-xs font-bold text-slate-700 block">أو اختر تاريخاً مخصصاً من التقويم:</span>
-                        <span className="text-[9px] text-slate-400 block">يمكنك تحديد أي يوم خلال الـ 30 يوماً القادمة.</span>
+                      <div className="space-y-0.5 text-right">
+                        <span className="text-xs font-bold text-slate-700 block">أو اكتب تاريخاً مخصصاً (يوم-شهر-سنة):</span>
+                        <span className="text-[9px] text-slate-400 block">مثال: 28-06-2026 (خلال الـ 30 يوماً القادمة)</span>
                       </div>
-                      <div className="relative flex items-center">
+                      <div className="relative flex items-center w-full sm:w-auto">
                         <input 
-                          type="date"
-                          min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split("T")[0]}
-                          max={new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split("T")[0]}
-                          value={scheduledDate}
-                          onChange={(e) => setScheduledDate(e.target.value)}
-                          className="w-full sm:w-auto p-2 px-3 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-800 focus:border-primary focus:outline-none cursor-pointer hover:border-slate-350 transition-colors"
+                          type="text"
+                          placeholder="مثال: 28-06-2026"
+                          value={manualDateText}
+                          onChange={(e) => setManualDateText(e.target.value)}
+                          className="w-full sm:w-[160px] p-2 px-3 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-800 focus:border-primary focus:outline-none hover:border-slate-350 transition-colors placeholder-slate-300"
                         />
                       </div>
                     </div>
 
-                    {/* Availability warning message */}
-                    {scheduledDate && availabilityMap[scheduledDate] === false && (
-                      <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold transition-all">
-                        <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
-                        <span>عذراً، هذا اليوم غير متاح حالياً لاستقبال حجوزات. يرجى اختيار تاريخ آخر متاح.</span>
+                    {/* Error & Warning banners */}
+                    {dateWarningText && (
+                      <div className="flex flex-col gap-2 p-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold transition-all">
+                        <div className="flex items-center gap-2">
+                          <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
+                          <span>{dateWarningText}</span>
+                        </div>
+                        
+                        {/* Nearest available suggestion trigger */}
+                        {nextAvailableSuggestion && (() => {
+                          const nextAvailDateObj = new Date(nextAvailableSuggestion);
+                          const formattedNextLabel = nextAvailDateObj.toLocaleDateString("ar-EG", { weekday: 'long', day: 'numeric', month: 'short' });
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const parts = nextAvailableSuggestion!.split("-");
+                                if (parts.length === 3) {
+                                  setManualDateText(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                                }
+                              }}
+                              className="mt-1 w-full sm:w-auto self-start p-2 px-3.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px] font-black hover:bg-emerald-100 transition-colors flex items-center gap-1.5 justify-center animate-pulse"
+                            >
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>أقرب موعد تالي متاح: {formattedNextLabel} (اضغط هنا لاختياره)</span>
+                            </button>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
