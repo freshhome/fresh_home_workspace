@@ -104,28 +104,28 @@ function ServicesListContent() {
             </div>
 
             {loading ? (
-              // Skeletons
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              // Skeletons with updated spacing
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-2xl border border-slate-100/80 p-5 space-y-4 animate-pulse">
+                  <div key={i} className="bg-white rounded-3xl border border-slate-100/80 p-6 space-y-5 animate-pulse">
                     <div className="flex justify-between items-center">
-                      <div className="w-12 h-12 bg-slate-100 rounded-xl"></div>
-                      <div className="w-14 h-5 bg-slate-100 rounded-lg"></div>
+                      <div className="w-14 h-14 bg-slate-100 rounded-2xl"></div>
+                      <div className="w-16 h-6 bg-slate-100 rounded-lg"></div>
                     </div>
-                    <div className="space-y-2">
-                      <div className="w-1/2 h-4 bg-slate-200 rounded"></div>
-                      <div className="w-full h-3 bg-slate-100 rounded"></div>
-                      <div className="w-5/6 h-3 bg-slate-100 rounded"></div>
+                    <div className="space-y-3">
+                      <div className="w-1/2 h-5 bg-slate-200 rounded"></div>
+                      <div className="w-full h-3.5 bg-slate-100 rounded"></div>
+                      <div className="w-5/6 h-3.5 bg-slate-100 rounded"></div>
                     </div>
-                    <div className="pt-4 border-t border-slate-50 flex justify-between">
-                      <div className="w-16 h-6 bg-slate-100 rounded"></div>
-                      <div className="w-16 h-6 bg-slate-150 rounded-lg"></div>
+                    <div className="pt-5 border-t border-slate-50 flex justify-between items-center">
+                      <div className="w-20 h-8 bg-slate-100 rounded-xl"></div>
+                      <div className="w-24 h-9 bg-slate-150 rounded-xl"></div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : subServices.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                 {subServices.map((sub) => {
                   const arTitle = sub.title?.ar || sub.title;
                   const arDesc = sub.description?.ar || sub.description;
@@ -147,12 +147,12 @@ function ServicesListContent() {
                     <div 
                       key={sub.id}
                       onClick={() => router.push(`/services/details?serviceId=${serviceId}&subServiceId=${sub.id}`)}
-                      className="bg-white rounded-2xl border border-slate-100/80 hover:border-primary/20 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-md transition-all duration-300 flex flex-col justify-between group cursor-pointer text-right transform hover:-translate-y-0.5"
+                      className="bg-white rounded-3xl border border-slate-100/80 hover:border-primary/10 p-6 shadow-[0_10px_30px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col justify-between group cursor-pointer text-right transform hover:-translate-y-1"
                     >
                       <div>
                         {/* Top Row: Icon & Rating */}
-                        <div className="flex justify-between items-center mb-4">
-                          <div className="w-12 h-12 rounded-xl bg-slate-55 border border-primary/5 flex items-center justify-center p-2 group-hover:scale-105 transition-transform duration-300">
+                        <div className="flex justify-between items-center mb-5">
+                          <div className="w-14 h-14 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center p-2.5 group-hover:scale-105 transition-transform duration-300">
                             {sub.image ? (
                               <img 
                                 src={sub.image} 
@@ -160,36 +160,36 @@ function ServicesListContent() {
                                 className="w-full h-full object-contain"
                               />
                             ) : (
-                              <Sparkles className="w-5 h-5 text-primary/45" />
+                              <Sparkles className="w-6 h-6 text-primary/45" />
                             )}
                           </div>
-                          <div className="flex items-center gap-1 text-amber-500 text-[10px] font-black bg-amber-50/70 px-2 py-0.5 rounded-md border border-amber-100/40">
-                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                          <div className="flex items-center gap-1 text-amber-500 text-xs font-black bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100/40">
+                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                             <span>{rating}</span>
                             <span className="text-slate-400 font-normal">({reviews})</span>
                           </div>
                         </div>
                         
-                        {/* Info */}
-                        <div className="space-y-2">
-                          <h3 className="font-extrabold text-slate-800 text-sm group-hover:text-primary transition-colors line-clamp-1">
+                        {/* Info with high contrast colors */}
+                        <div className="space-y-3">
+                          <h3 className="font-extrabold text-slate-900 text-base group-hover:text-primary transition-colors line-clamp-1">
                             {arTitle}
                           </h3>
-                          <p className="text-slate-500 text-[11px] leading-relaxed line-clamp-2 font-light min-h-[34px]">
+                          <p className="text-slate-600 text-xs leading-relaxed line-clamp-3 font-normal min-h-[54px]">
                             {arDesc}
                           </p>
                         </div>
                       </div>
 
-                      {/* Bottom Row: Price & CTA */}
-                      <div className="mt-5 pt-3 border-t border-slate-50 flex items-center justify-between">
+                      {/* Bottom Row: Price & Solid Premium CTA Button */}
+                      <div className="mt-6 pt-4 border-t border-slate-100/60 flex items-center justify-between gap-3">
                         <div>
-                          <span className="text-[9px] text-slate-400 block font-bold">السعر التقديري</span>
+                          <span className="text-[10px] text-slate-500 block font-bold">السعر التقديري</span>
                           <span className="text-secondary font-black text-xs sm:text-sm block">{priceText}</span>
                         </div>
-                        <span className="text-[11px] font-black text-primary group-hover:text-secondary flex items-center gap-0.5 transition-colors">
+                        <span className="bg-primary hover:bg-secondary text-white hover:text-slate-900 text-xs font-extrabold px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-1 shadow-sm hover:shadow-md">
                           <span>احجز الآن</span>
-                          <ChevronLeft className="w-3.5 h-3.5 transform group-hover:-translate-x-0.5 transition-transform" />
+                          <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
                         </span>
                       </div>
                     </div>
@@ -202,7 +202,6 @@ function ServicesListContent() {
               </div>
             )}
           </div>
-
         </div>
       </main>
 
