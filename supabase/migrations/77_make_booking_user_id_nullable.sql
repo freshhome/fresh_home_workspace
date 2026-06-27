@@ -100,7 +100,8 @@ BEGIN
         status,
         is_whatsapp_confirmed,
         whatsapp_confirmation_expires_at,
-        whatsapp_confirmation_token
+        whatsapp_confirmation_token,
+        payment_method
     ) VALUES (
         p_user_id, v_tech_id, p_sub_service_id, p_scheduled_day, p_start_time_slot,
         p_address_snapshot, p_service_snapshot, v_price_snapshot,
@@ -109,7 +110,8 @@ BEGIN
         'created'::public.order_status_v2,
         p_is_whatsapp_confirmed,
         CASE WHEN NOT p_is_whatsapp_confirmed THEN NOW() + (v_expiry_minutes || ' minutes')::interval ELSE NULL END,
-        gen_random_uuid()
+        gen_random_uuid(),
+        COALESCE(p_pricing_inputs ->> 'payment_method', 'cash')
     ) RETURNING id INTO v_booking_id;
 
     -- Set session flag to signal trusted database internal state machine action

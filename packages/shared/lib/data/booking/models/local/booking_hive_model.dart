@@ -60,6 +60,11 @@ class BookingHiveModel {
   @HiveField(23)
   final String? cancelledByRole;
 
+  @HiveField(24)
+  final String? paymentMethod;
+  @HiveField(25)
+  final String? paymentStatus;
+
   const BookingHiveModel({
     required this.id,
     this.userId,
@@ -85,5 +90,7 @@ class BookingHiveModel {
     this.cancelledAt,
     this.cancellationReasonCode,
     this.cancelledByRole,
+    this.paymentMethod,
+    this.paymentStatus,
   });
 }

@@ -339,6 +339,21 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
           ),
           _buildDetailRow(
             context, 
+            Icons.payment_rounded, 
+            "طريقة التحصيل المطلوبة", 
+            order.paymentMethod?.toLowerCase() == 'instapay'
+                ? 'تحويل إنستا باي (InstaPay)'
+                : order.paymentMethod?.toLowerCase() == 'vodafone_cash'
+                    ? 'تحويل فودافون كاش (Vodafone Cash)'
+                    : 'نقداً (كاش)',
+            isHighlighted: false,
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1, thickness: 0.5),
+          ),
+          _buildDetailRow(
+            context, 
             Icons.payments_rounded, 
             "إجمالي السعر التقديري", 
             "${order.price.total.toStringAsFixed(0)} ج.م",

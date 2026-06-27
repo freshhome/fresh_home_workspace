@@ -118,6 +118,8 @@ class BookingMapper {
       createdAt: model.createdAt,
       updatedAt: model.updatedAt,
       isWhatsappConfirmed: model.isWhatsappConfirmed,
+      paymentMethod: model.paymentMethod,
+      paymentStatus: model.paymentStatus,
       assignedAt: model.assignedAt,
       acceptedAt: model.acceptedAt,
       dispatchedAt: model.dispatchedAt,
@@ -151,6 +153,8 @@ class BookingMapper {
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       isWhatsappConfirmed: entity.isWhatsappConfirmed,
+      paymentMethod: entity.paymentMethod,
+      paymentStatus: entity.paymentStatus,
       assignedAt: entity.assignedAt,
       acceptedAt: entity.acceptedAt,
       dispatchedAt: entity.dispatchedAt,
@@ -208,6 +212,8 @@ class BookingMapper {
       createdAt: model.createdAt,
       updatedAt: model.updatedAt,
       isWhatsappConfirmed: true, // Defaults to true for local cache
+      paymentMethod: model.paymentMethod,
+      paymentStatus: model.paymentStatus,
       assignedAt: model.assignedAt,
       acceptedAt: model.acceptedAt,
       dispatchedAt: model.dispatchedAt,
@@ -269,6 +275,8 @@ class BookingMapper {
       cancelledAt: entity.cancelledAt,
       cancellationReasonCode: entity.cancellationReasonCode,
       cancelledByRole: entity.cancelledByRole,
+      paymentMethod: entity.paymentMethod,
+      paymentStatus: entity.paymentStatus,
     );
   }
 

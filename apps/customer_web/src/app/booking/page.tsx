@@ -463,6 +463,7 @@ function BookingFlowContent() {
 
       const pricingPayload = {
         ...pricingInputs,
+        payment_method: paymentMethod,
         selected_options: selectedAddons,
         phone: phone.trim(),
         name: name.trim()

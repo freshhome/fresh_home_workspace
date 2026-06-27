@@ -617,8 +617,23 @@ class _AdminBookingDetailsContent extends StatelessWidget {
           _InfoRow(
             label: 'السعر الإجمالي',
             value: '${booking.price.total} ج.م',
-            isLast: true,
             isPrice: true,
+          ),
+          _InfoRow(
+            label: 'وسيلة التحصيل المحددة',
+            value: booking.paymentMethod?.toLowerCase() == 'instapay'
+                ? 'تحويل إنستا باي (InstaPay)'
+                : booking.paymentMethod?.toLowerCase() == 'vodafone_cash'
+                    ? 'تحويل فودافون كاش (Vodafone Cash)'
+                    : 'نقداً (كاش)',
+          ),
+          _InfoRow(
+            label: 'حالة سداد تحصيل الفني',
+            value: booking.paymentStatus == 'paid' ? 'تمت التسوية' : 'معلّق قيد التحصيل',
+            valueColor: booking.paymentStatus == 'paid'
+                ? const Color(0xFF10B981)
+                : const Color(0xFFF59E0B),
+            isLast: true,
           ),
         ],
       ),

@@ -1,12 +1,132 @@
--- ==============================================================================
--- Fresh Home: Automated Financial Engine (Business Logic Triggers)
--- File: 25_financial_system_logic.sql
--- Description: Automates generation of ledger_entries and updates account balances
---              based on bookings, adjustments, and settlements updates.
--- ==============================================================================
+-- Migration ID: 83_payment_method_technician_collected
+-- Description: Align pricing & payment calculations with Technician-Collected flow. Updates ledger trigger condition and automates case resolution ledger generation.
 
--- ── TASK 1. BOOKING COMPLETION AUTOMATION ────────────────────────────────────
+BEGIN;
 
+-- 1. Update public.create_atomic_booking to insert payment_method column from pricing_inputs JSONB
+CREATE OR REPLACE FUNCTION public.create_atomic_booking(
+    p_user_id                UUID,
+    p_sub_service_id         TEXT,
+    p_technician_id          UUID,
+    p_scheduled_day          DATE,
+    p_address_snapshot       JSONB,
+    p_service_snapshot       JSONB,
+    p_pricing_inputs         JSONB,
+    p_contact_name           TEXT DEFAULT 'Client',
+    p_contact_phones         TEXT[] DEFAULT '{}'::TEXT[],
+    p_start_time_slot        TIME DEFAULT '09:00',
+    p_actor_id               UUID DEFAULT NULL,
+    p_actor_role             TEXT DEFAULT 'admin',
+    p_is_whatsapp_confirmed  BOOLEAN DEFAULT true
+) RETURNS UUID AS $$
+DECLARE
+    v_tech_id        UUID;
+    v_booking_id     UUID;
+    v_lock_key_1     INT;
+    v_lock_key_2     INT;
+    v_pipeline_res   JSONB;
+    v_price_snapshot JSONB;
+    v_price_config   JSONB;
+    v_version_id     UUID;
+    v_is_bookable    BOOLEAN;
+    v_expiry_minutes INT;
+BEGIN
+    -- Verify booking creation authorization (Standard user must only book for themselves)
+    IF auth.uid() IS NOT NULL AND NOT public.is_admin() THEN
+        IF p_user_id != auth.uid() THEN
+            RAISE EXCEPTION 'Unauthorized: Users can only create bookings for themselves.' USING ERRCODE = '42501';
+        END IF;
+    END IF;
+
+    -- Resolve technician (Auto-assign if not specified)
+    IF p_technician_id IS NULL THEN
+        SELECT technician_id INTO v_tech_id
+        FROM public.get_available_technicians(p_sub_service_id, p_scheduled_day)
+        LIMIT 1;
+
+        IF v_tech_id IS NULL THEN
+            RAISE EXCEPTION 'لا يوجد فني متاح لهذا اليوم' USING ERRCODE = 'P0002';
+        END IF;
+    ELSE
+        v_tech_id := p_technician_id;
+    END IF;
+
+    v_lock_key_1 := hashtext(v_tech_id::TEXT);
+    v_lock_key_2 := hashtext(p_scheduled_day::TEXT);
+    PERFORM pg_advisory_xact_lock(v_lock_key_1, v_lock_key_2);
+
+    -- Load price configuration and verify it is bookable
+    SELECT price_config, is_bookable INTO v_price_config, v_is_bookable
+    FROM public.services
+    WHERE id = p_sub_service_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'الخدمة المحددة غير موجودة' USING ERRCODE = 'P0002';
+    END IF;
+
+    IF NOT v_is_bookable THEN
+        RAISE EXCEPTION 'لا يمكن حجز فئة أو قسم غير قابل للحجز' USING ERRCODE = 'P0009';
+    END IF;
+
+    -- Calculate price authoritatively via deterministic execution contract pipeline
+    v_pipeline_res := public.execute_pricing_pipeline(p_sub_service_id, v_price_config, p_pricing_inputs);
+
+    -- Extract version_id and formatted totals snapshot
+    v_version_id := (v_pipeline_res -> 'metadata' ->> 'pricing_version_id')::UUID;
+    v_price_snapshot := jsonb_build_object(
+        'basePrice', (v_pipeline_res ->> 'basePrice')::NUMERIC,
+        'extraFees', (v_pipeline_res ->> 'extraFees')::NUMERIC,
+        'discount', (v_pipeline_res ->> 'discount')::NUMERIC,
+        'total', (v_pipeline_res ->> 'total')::NUMERIC,
+        'metadata', v_pipeline_res -> 'metadata'
+    );
+
+    -- Load confirmation expiry settings
+    SELECT COALESCE((value->>'expiry_minutes')::integer, 60) INTO v_expiry_minutes
+    FROM public.system_settings
+    WHERE key = 'whatsapp_settings';
+
+    INSERT INTO public.bookings (
+        user_id, technician_id, service_id, scheduled_day, start_time_slot,
+        address_snapshot, service_snapshot, price_snapshot,
+        pricing_inputs, pricing_version_id,
+        contact_name, contact_phones,
+        status,
+        is_whatsapp_confirmed,
+        whatsapp_confirmation_expires_at,
+        whatsapp_confirmation_token,
+        payment_method
+    ) VALUES (
+        p_user_id, v_tech_id, p_sub_service_id, p_scheduled_day, p_start_time_slot,
+        p_address_snapshot, p_service_snapshot, v_price_snapshot,
+        COALESCE(p_pricing_inputs, '{}'::JSONB), v_version_id,
+        p_contact_name, p_contact_phones,
+        'created'::public.order_status_v2,
+        p_is_whatsapp_confirmed,
+        CASE WHEN NOT p_is_whatsapp_confirmed THEN NOW() + (v_expiry_minutes || ' minutes')::interval ELSE NULL END,
+        gen_random_uuid(),
+        COALESCE(p_pricing_inputs ->> 'payment_method', 'cash')
+    ) RETURNING id INTO v_booking_id;
+
+    -- Set session flag to signal trusted database internal state machine action
+    PERFORM set_config('app.trusted_internal_call', 'true', true);
+
+    -- Transition to assigned state via official state machine
+    PERFORM public.transition_booking(
+        v_booking_id,
+        'assigned'::public.order_status_v2,
+        COALESCE(p_actor_id, p_user_id),
+        p_actor_role,
+        'BOOKING_CREATION',
+        'تم إنشاء الحجز وتخصيص الفني، في انتظار التأكيد عبر واتساب.'
+    );
+
+    RETURN v_booking_id;
+END;
+$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
+
+
+-- 2. Update public.fn_automate_booking_ledger_entry trigger function to treat instapay and vodafone_cash as cash (technician-collected)
 CREATE OR REPLACE FUNCTION public.fn_automate_booking_ledger_entry()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -19,30 +139,16 @@ DECLARE
     v_collected_amount NUMERIC(12,2);
     v_platform_commission NUMERIC(12,2);
     v_technician_payout NUMERIC(12,2);
+    v_commission_rate NUMERIC;
     
     v_running_balance_1 NUMERIC(12,2);
     v_running_balance_2 NUMERIC(12,2);
     
     v_commission_ref_id UUID;
 BEGIN
-    -- Only run for completed bookings with a assigned technician
+    -- Only run for completed bookings with an assigned technician
     IF NEW.technician_id IS NULL THEN
         RETURN NEW;
-    END IF;
-
-    -- Concurrency Guard: Lock the technician account row for update
-    SELECT id, amount_owed_to_company, amount_owed_to_technician, net_balance
-    INTO v_account_id, v_amount_owed_to_company, v_amount_owed_to_technician, v_net_balance
-    FROM public.technician_financial_accounts
-    WHERE technician_id = NEW.technician_id
-    FOR UPDATE;
-
-    -- Proactive Account Registration: Create account if not exists
-    IF NOT FOUND THEN
-        INSERT INTO public.technician_financial_accounts (technician_id)
-        VALUES (NEW.technician_id)
-        RETURNING id, amount_owed_to_company, amount_owed_to_technician, net_balance
-        INTO v_account_id, v_amount_owed_to_company, v_amount_owed_to_technician, v_net_balance;
     END IF;
 
     -- Securely parse and validate expected price snapshot fields
@@ -69,10 +175,42 @@ BEGIN
     IF v_platform_commission IS NULL THEN v_platform_commission := 0.00; END IF;
     IF v_technician_payout IS NULL THEN v_technician_payout := 0.00; END IF;
 
-    -- Handle cash payments vs online payments
+    -- Fallback calculation if metadata values are missing or zero but expected_amount is greater than zero
+    IF v_expected_amount > 0.00 AND (v_technician_payout = 0.00 OR v_platform_commission = 0.00) THEN
+        SELECT COALESCE(s.commission_rate, 0.20) INTO v_commission_rate
+        FROM public.services s
+        WHERE s.id = NEW.service_id;
+
+        IF v_commission_rate IS NULL THEN v_commission_rate := 0.20; END IF;
+
+        IF v_platform_commission = 0.00 THEN
+            v_platform_commission := v_expected_amount * v_commission_rate;
+        END IF;
+        IF v_technician_payout = 0.00 THEN
+            v_technician_payout := v_expected_amount * (1.0 - v_commission_rate);
+        END IF;
+    END IF;
+
+    -- Bypass zero-value transactions (e.g. 100% discount free coupon codes)
+    IF v_expected_amount = 0.00 AND v_technician_payout = 0.00 THEN
+        RETURN NEW;
+    END IF;
+
+    -- Concurrency Guard: Lock the technician account row for update
+    SELECT id, amount_owed_to_company, amount_owed_to_technician, net_balance
+    INTO v_account_id, v_amount_owed_to_company, v_amount_owed_to_technician, v_net_balance
+    FROM public.technician_financial_accounts
+    WHERE technician_id = NEW.technician_id
+    FOR UPDATE;
+
+    -- Enforce strict architectural flow: raise error if account does not exist
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Technician financial account not found for ID %', NEW.technician_id USING ERRCODE = 'P0002';
+    END IF;
+
+    -- Handle cash payments vs online payments (treating cash, instapay, vodafone_cash identically as technician-collected)
     IF COALESCE(NEW.payment_method, 'cash') IN ('cash', 'instapay', 'vodafone_cash') THEN
-        -- Cash Orders
-        -- Securely parse actual collected amount from pricing_inputs JSONB field
+        -- Cash and other technician-collected orders
         BEGIN
             v_collected_amount := (NEW.pricing_inputs ->> 'collected_amount')::NUMERIC;
         EXCEPTION WHEN OTHERS THEN
@@ -81,7 +219,8 @@ BEGIN
         
         IF v_collected_amount IS NULL THEN v_collected_amount := 0.00; END IF;
 
-        IF v_collected_amount = v_expected_amount THEN
+        -- We compare the truncated values (ignoring decimal fractions) to support technician cash rounding inputs
+        IF TRUNC(v_collected_amount) = TRUNC(v_expected_amount) THEN
             -- Matches perfectly: Generate two ledger entries in order
 
             -- 1. order_earnings (credit = technician_payout)
@@ -95,10 +234,7 @@ BEGIN
             );
 
             -- 2. company_commission_debit (debit = total)
-            -- We debit the total collected cash because they kept the cash.
-            -- This sets a debt liability for the full amount offset by the earnings.
             v_running_balance_2 := v_running_balance_1 - v_expected_amount;
-            -- Generate a unique deterministic UUID based on booking ID for the second entry
             v_commission_ref_id := cast(md5('commission/' || NEW.id::text) as uuid);
             
             INSERT INTO public.ledger_entries (
@@ -130,8 +266,7 @@ BEGIN
         END IF;
 
     ELSE
-        -- Online Orders (online_card, etc.)
-        -- Generate one ledger entry: order_earnings (credit = technician_payout)
+        -- True Online Orders (Direct platform payments, future phase)
         v_running_balance_1 := v_net_balance + v_technician_payout;
         INSERT INTO public.ledger_entries (
             account_id, booking_id, entry_type, debit, credit, running_balance, 
@@ -151,215 +286,10 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
-
--- Attach Booking completion trigger
-DROP TRIGGER IF EXISTS trg_automate_booking_ledger ON public.bookings;
-CREATE TRIGGER trg_automate_booking_ledger
-AFTER UPDATE OF status ON public.bookings
-FOR EACH ROW
-WHEN (NEW.status = 'completed'::public.order_status_v2 AND OLD.status IS DISTINCT FROM 'completed'::public.order_status_v2)
-EXECUTE FUNCTION public.fn_automate_booking_ledger_entry();
+$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public;
 
 
--- ── TASK 2. FINANCIAL ADJUSTMENT AUTOMATION ──────────────────────────────────
-
-CREATE OR REPLACE FUNCTION public.fn_automate_adjustment_ledger_entry()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_account_id UUID;
-    v_amount_owed_to_company NUMERIC(12,2);
-    v_amount_owed_to_technician NUMERIC(12,2);
-    v_net_balance NUMERIC(12,2);
-    
-    v_entry_type public.ledger_entry_type;
-    v_debit NUMERIC(12,2) := 0.00;
-    v_credit NUMERIC(12,2) := 0.00;
-    v_running_balance NUMERIC(12,2);
-    
-    v_new_owed_to_company NUMERIC(12,2);
-    v_new_owed_to_technician NUMERIC(12,2);
-BEGIN
-    -- Concurrency Guard: Lock the technician account for update
-    SELECT id, amount_owed_to_company, amount_owed_to_technician, net_balance
-    INTO v_account_id, v_amount_owed_to_company, v_amount_owed_to_technician, v_net_balance
-    FROM public.technician_financial_accounts
-    WHERE technician_id = NEW.technician_id
-    FOR UPDATE;
-
-    -- Proactive account registration if missing
-    IF NOT FOUND THEN
-        INSERT INTO public.technician_financial_accounts (technician_id)
-        VALUES (NEW.technician_id)
-        RETURNING id, amount_owed_to_company, amount_owed_to_technician, net_balance
-        INTO v_account_id, v_amount_owed_to_company, v_amount_owed_to_technician, v_net_balance;
-    END IF;
-
-    -- Map adjustment_type to ledger entry parameters
-    IF NEW.adjustment_type = 'bonus' THEN
-        v_entry_type := 'manual_bonus'::public.ledger_entry_type;
-        v_credit := NEW.amount;
-        v_debit := 0.00;
-        v_new_owed_to_technician := v_amount_owed_to_technician + NEW.amount;
-        v_new_owed_to_company := v_amount_owed_to_company;
-        
-    ELSIF NEW.adjustment_type = 'penalty' THEN
-        v_entry_type := 'manual_penalty'::public.ledger_entry_type;
-        v_debit := NEW.amount;
-        v_credit := 0.00;
-        v_new_owed_to_company := v_amount_owed_to_company + NEW.amount;
-        v_new_owed_to_technician := v_amount_owed_to_technician;
-        
-    ELSIF NEW.adjustment_type = 'adjustment' THEN
-        v_entry_type := 'manual_adjustment'::public.ledger_entry_type;
-        
-        -- Fallback: inspect the notes/reason text to check if it represents a debit (penalty/deduction)
-        IF LOWER(COALESCE(NEW.reason, '') || ' ' || COALESCE(NEW.notes, '')) LIKE '%debit%' THEN
-            v_debit := NEW.amount;
-            v_credit := 0.00;
-            v_new_owed_to_company := v_amount_owed_to_company + NEW.amount;
-            v_new_owed_to_technician := v_amount_owed_to_technician;
-        ELSE
-            v_credit := NEW.amount;
-            v_debit := 0.00;
-            v_new_owed_to_technician := v_amount_owed_to_technician + NEW.amount;
-            v_new_owed_to_company := v_amount_owed_to_company;
-        END IF;
-    END IF;
-
-    -- Calculate running balance
-    v_running_balance := v_net_balance + v_credit - v_debit;
-
-    -- Insert ledger entry
-    INSERT INTO public.ledger_entries (
-        account_id, adjustment_id, entry_type, debit, credit, running_balance, 
-        description, reference_id, reference_type, created_by
-    ) VALUES (
-        v_account_id, NEW.id, v_entry_type, v_debit, v_credit, v_running_balance,
-        NEW.reason, NEW.id, 'adjustment', NEW.approved_by
-    );
-
-    -- Update technician account
-    UPDATE public.technician_financial_accounts
-    SET 
-        amount_owed_to_company = v_new_owed_to_company,
-        amount_owed_to_technician = v_new_owed_to_technician,
-        updated_at = NOW()
-    WHERE id = v_account_id;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
-
--- Attach Adjustment trigger
-DROP TRIGGER IF EXISTS trg_automate_adjustment_ledger ON public.financial_adjustments;
-CREATE TRIGGER trg_automate_adjustment_ledger
-AFTER UPDATE OF status ON public.financial_adjustments
-FOR EACH ROW
-WHEN (NEW.status = 'approved'::public.adjustment_status AND OLD.status IS DISTINCT FROM 'approved'::public.adjustment_status)
-EXECUTE FUNCTION public.fn_automate_adjustment_ledger_entry();
-
-
--- ── TASK 3. SETTLEMENT APPROVAL AUTOMATION ────────────────────────────────────
-
-CREATE OR REPLACE FUNCTION public.fn_automate_settlement_ledger_entry()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_account_id UUID;
-    v_amount_owed_to_company NUMERIC(12,2);
-    v_amount_owed_to_technician NUMERIC(12,2);
-    v_net_balance NUMERIC(12,2);
-    
-    v_debit NUMERIC(12,2) := 0.00;
-    v_credit NUMERIC(12,2) := 0.00;
-    v_running_balance NUMERIC(12,2);
-    
-    v_new_owed_to_company NUMERIC(12,2);
-    v_new_owed_to_technician NUMERIC(12,2);
-BEGIN
-    -- Concurrency Guard: Lock the technician account for update
-    SELECT id, amount_owed_to_company, amount_owed_to_technician, net_balance
-    INTO v_account_id, v_amount_owed_to_company, v_amount_owed_to_technician, v_net_balance
-    FROM public.technician_financial_accounts
-    WHERE technician_id = NEW.technician_id
-    FOR UPDATE;
-
-    -- Proactive account registration if missing
-    IF NOT FOUND THEN
-        INSERT INTO public.technician_financial_accounts (technician_id)
-        VALUES (NEW.technician_id)
-        RETURNING id, amount_owed_to_company, amount_owed_to_technician, net_balance
-        INTO v_account_id, v_amount_owed_to_company, v_amount_owed_to_technician, v_net_balance;
-    END IF;
-
-    -- Determine settlement direction based on net_balance (amount_owed_to_technician - amount_owed_to_company)
-    IF v_net_balance < 0.00 THEN
-        -- Paying Debt: reduces what they owe to the company
-        v_credit := NEW.amount;
-        v_debit := 0.00;
-        
-        -- Update balances: decrease debt
-        v_new_owed_to_company := GREATEST(0.00, v_amount_owed_to_company - NEW.amount);
-        v_new_owed_to_technician := v_amount_owed_to_technician;
-        
-        -- Rollover excess payment
-        IF NEW.amount > v_amount_owed_to_company THEN
-            v_new_owed_to_technician := v_amount_owed_to_technician + (NEW.amount - v_amount_owed_to_company);
-        END IF;
-    ELSE
-        -- Withdrawing Earnings: reduces what the company owes to the technician
-        v_debit := NEW.amount;
-        v_credit := 0.00;
-        
-        -- Update balances: decrease credit
-        v_new_owed_to_technician := GREATEST(0.00, v_amount_owed_to_technician - NEW.amount);
-        v_new_owed_to_company := v_amount_owed_to_company;
-        
-        -- Rollover excess withdrawal
-        IF NEW.amount > v_amount_owed_to_technician THEN
-            v_new_owed_to_company := v_amount_owed_to_company + (NEW.amount - v_amount_owed_to_technician);
-        END IF;
-    END IF;
-
-    -- Calculate running balance
-    v_running_balance := v_net_balance + v_credit - v_debit;
-
-    -- Insert ledger entry
-    INSERT INTO public.ledger_entries (
-        account_id, entry_type, debit, credit, running_balance, 
-        description, reference_id, reference_type, created_by
-    ) VALUES (
-        v_account_id, 'settlement_reconciliation'::public.ledger_entry_type, v_debit, v_credit, v_running_balance,
-        CASE 
-            WHEN v_net_balance < 0.00 THEN 'سداد مديونية للفني عبر ' || NEW.method::TEXT
-            ELSE 'سحب مستحقات للفني عبر ' || NEW.method::TEXT
-        END,
-        NEW.id, 'settlement', NEW.reviewed_by
-    );
-
-    -- Update technician account
-    UPDATE public.technician_financial_accounts
-    SET 
-        amount_owed_to_company = v_new_owed_to_company,
-        amount_owed_to_technician = v_new_owed_to_technician,
-        updated_at = NOW()
-    WHERE id = v_account_id;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
-
--- Attach Settlement trigger
-DROP TRIGGER IF EXISTS trg_automate_settlement_ledger ON public.settlement_requests;
-CREATE TRIGGER trg_automate_settlement_ledger
-AFTER UPDATE OF status ON public.settlement_requests
-FOR EACH ROW
-WHEN (NEW.status = 'approved'::public.settlement_status AND OLD.status IS DISTINCT FROM 'approved'::public.settlement_status)
-EXECUTE FUNCTION public.fn_automate_settlement_ledger_entry();
-
-
--- ── TASK 4. FINANCIAL CASE RESOLUTION AUTOMATION ──────────────────────────────
-
+-- 3. Create Case Resolution trigger function to automatically write ledger entries when a case is resolved by an admin
 CREATE OR REPLACE FUNCTION public.fn_automate_financial_case_resolution()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -506,3 +436,4 @@ AFTER UPDATE OF status ON public.financial_cases
 FOR EACH ROW
 EXECUTE FUNCTION public.fn_automate_financial_case_resolution();
 
+COMMIT;

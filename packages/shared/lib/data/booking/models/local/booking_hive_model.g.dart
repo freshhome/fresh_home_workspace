@@ -41,13 +41,15 @@ class BookingHiveModelAdapter extends TypeAdapter<BookingHiveModel> {
       cancelledAt: fields[21] as DateTime?,
       cancellationReasonCode: fields[22] as String?,
       cancelledByRole: fields[23] as String?,
+      paymentMethod: fields[24] as String?,
+      paymentStatus: fields[25] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, BookingHiveModel obj) {
     writer
-      ..writeByte(24)
+      ..writeByte(26)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -95,7 +97,11 @@ class BookingHiveModelAdapter extends TypeAdapter<BookingHiveModel> {
       ..writeByte(22)
       ..write(obj.cancellationReasonCode)
       ..writeByte(23)
-      ..write(obj.cancelledByRole);
+      ..write(obj.cancelledByRole)
+      ..writeByte(24)
+      ..write(obj.paymentMethod)
+      ..writeByte(25)
+      ..write(obj.paymentStatus);
   }
 
   @override

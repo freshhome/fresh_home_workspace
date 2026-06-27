@@ -20,6 +20,9 @@ class Booking extends Equatable {
   final DateTime updatedAt;
   final bool isWhatsappConfirmed;
 
+  final String? paymentMethod;
+  final String? paymentStatus;
+
   final DateTime? assignedAt;
   final DateTime? acceptedAt;
   final DateTime? dispatchedAt; 
@@ -55,6 +58,8 @@ class Booking extends Equatable {
     this.addressId,
     this.serviceId,
     this.readableId,
+    this.paymentMethod,
+    this.paymentStatus,
     this.assignedAt,
     this.acceptedAt,
     this.dispatchedAt,
@@ -86,6 +91,8 @@ class Booking extends Equatable {
     String? addressId,
     String? serviceId,
     String? readableId,
+    String? paymentMethod,
+    String? paymentStatus,
     // Nullable lifecycle timestamps — pass a non-null value to set, omit to keep existing
     DateTime? assignedAt,
     DateTime? acceptedAt,
@@ -125,6 +132,8 @@ class Booking extends Equatable {
       addressId: addressId ?? this.addressId,
       serviceId: serviceId ?? this.serviceId,
       readableId: readableId ?? this.readableId,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
       assignedAt: clearAssignedAt ? null : (assignedAt ?? this.assignedAt),
       acceptedAt: clearAcceptedAt ? null : (acceptedAt ?? this.acceptedAt),
       dispatchedAt: clearDispatchedAt ? null : (dispatchedAt ?? this.dispatchedAt),
@@ -158,6 +167,8 @@ class Booking extends Equatable {
     createdAt,
     updatedAt,
     isWhatsappConfirmed,
+    paymentMethod,
+    paymentStatus,
     assignedAt,
     acceptedAt,
     dispatchedAt,
