@@ -19,7 +19,41 @@ export default function PopularServices() {
           .limit(4);
 
         if (error) throw error;
-        setPopularServices(data || []);
+
+        // Fetch real ratings and review counts from reviews table
+        const subIds = (data || []).map((s: any) => s.id);
+        const ratingsMap: Record<string, { avg: number; count: number }> = {};
+        if (subIds.length > 0) {
+          const { data: revs } = await supabase
+            .from("reviews")
+            .select("service_id, rating_value")
+            .eq("status", "published")
+            .in("service_id", subIds);
+          
+          if (revs) {
+            const tempMap: Record<string, { sum: number; count: number }> = {};
+            revs.forEach((r: any) => {
+              if (!tempMap[r.service_id]) {
+                tempMap[r.service_id] = { sum: 0, count: 0 };
+              }
+              tempMap[r.service_id].sum += r.rating_value;
+              tempMap[r.service_id].count += 1;
+            });
+            Object.keys(tempMap).forEach(k => {
+              ratingsMap[k] = {
+                avg: Number((tempMap[k].sum / tempMap[k].count).toFixed(1)),
+                count: tempMap[k].count
+              };
+            });
+          }
+        }
+
+        const updatedServices = (data || []).map((s: any) => ({
+          ...s,
+          rating: ratingsMap[s.id]?.avg ?? 5.0,
+          reviewsCount: ratingsMap[s.id]?.count ?? 0
+        }));
+        setPopularServices(updatedServices);
       } catch (e) {
         console.error("Error fetching popular services:", e);
       } finally {
@@ -72,10 +106,10 @@ export default function PopularServices() {
             ))
           ) : (
             popularServices.map((sub) => {
-              // Deterministic fake ratings and reviews based on ID
               const charSum = sub.id.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-              const rating = (4.5 + (charSum % 5) / 10).toFixed(1);
-              const reviews = 50 + (charSum % 100);
+              // Real reviews info
+              const rating = sub.rating;
+              const reviews = sub.reviewsCount;
 
               // Badge calculation
               const badges = ["الأكثر مبيعاً", "عروض ممتازة", "سرعة تنفيذ", "فنيون معتمدون"];

@@ -1510,7 +1510,7 @@ CREATE POLICY pricing_governance_audit_admin_insert ON public.pricing_governance
 
 -- Sandbox Simulating Pipeline Execution (PL/pgSQL Side-Effect-Free Compiler)
 CREATE OR REPLACE FUNCTION public.simulate_pricing_pipeline(
-    p_sub_service_id UUID,
+    p_sub_service_id TEXT,
     p_price_config JSONB,
     p_rules JSONB,
     p_discounts JSONB,
@@ -1552,7 +1552,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON TABLE public.pricing_governance_audit IS 'Audits admin structural configuration adjustments and sandboxed simulations execution logs.';
-COMMENT ON FUNCTION public.simulate_pricing_pipeline(UUID, JSONB, JSONB, JSONB, JSONB) IS 'Executes complete pricing pipeline in a fully isolated, side-effect-free simulation sandbox.';
+COMMENT ON FUNCTION public.simulate_pricing_pipeline(TEXT, JSONB, JSONB, JSONB, JSONB) IS 'Executes complete pricing pipeline in a fully isolated, side-effect-free simulation sandbox.';
 
 -- ── 16. PRICING GOVERNANCE AUTOMATED AUDIT TRIGGERS ───────────────────────────
 CREATE OR REPLACE FUNCTION public.fn_audit_pricing_changes()

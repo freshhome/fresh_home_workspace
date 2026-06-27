@@ -9,6 +9,7 @@ import 'package:fresh_home_customer/features/services/presentation/cubit/service
 import 'package:fresh_home_customer/features/services/presentation/cubit/service_reviews_state.dart';
 import 'package:fresh_home_customer/features/services/presentation/widgets/details_options_section.dart';
 import 'package:fresh_home_customer/features/services/presentation/widgets/inclusion_exclusion_section.dart';
+import 'package:fresh_home_customer/features/services/presentation/widgets/instructions_section.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:shared/shared.dart';
 import 'package:shared_features/shared_features.dart';
@@ -292,20 +293,11 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
 
                           // Exclusions
                           InclusionExclusionSection(notIncluded: service.notIncluded),
-                          const SizedBox(height: 24),
+
+                          // Instructions
+                          InstructionsSection(instructions: service.instructions),
 
                           // Customer Reviews Section
-                          const Divider(height: 32, thickness: 1.2),
-                          Text(
-                            isArabic ? 'آراء العملاء' : 'Customer Reviews',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: themeColor.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
                           BlocBuilder<ServiceReviewsCubit, ServiceReviewsState>(
                             builder: (context, reviewState) {
                               if (reviewState is ServiceReviewsLoading) {
@@ -324,24 +316,23 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                               } else if (reviewState is ServiceReviewsLoaded) {
                                 final reviews = reviewState.reviews;
                                 if (reviews.isEmpty) {
-                                  return Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(vertical: 24),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      isArabic ? 'لا توجد مراجعات لهذه الخدمة بعد.' : 'No reviews for this service yet.',
-                                      style: TextStyle(
-                                        fontFamily: 'Cairo',
-                                        fontSize: 13,
-                                        color: themeColor.secondaryText,
-                                      ),
-                                    ),
-                                  );
+                                  return const SizedBox.shrink(); // Hide the reviews section completely if empty
                                 }
 
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    const Divider(height: 32, thickness: 1.2),
+                                    Text(
+                                      isArabic ? 'آراء العملاء' : 'Customer Reviews',
+                                      style: TextStyle(
+                                        fontFamily: 'Cairo',
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: themeColor.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
                                     Column(
                                       children: List.generate(reviews.length, (index) {
                                         final review = reviews[index];

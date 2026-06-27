@@ -201,9 +201,12 @@ function ServiceDetailsContent() {
   // Parse exclusions
   const exclusions = Array.isArray(service.not_included)
     ? service.not_included
-    : typeof service.not_included === "object" && service.not_included
-    ? Object.values(service.not_included)
-    : [];
+    : service.not_included?.ar?.points || service.not_included?.en?.points || [];
+
+  // Parse instructions
+  const arInstructions = typeof service.instructions === "string"
+    ? service.instructions
+    : service.instructions?.ar || service.instructions?.en || "";
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -370,18 +373,29 @@ function ServiceDetailsContent() {
                 </div>
               )}
 
+              {/* Service Instructions */}
+              {arInstructions && (
+                <div className="bg-amber-50/30 rounded-[22px] border border-amber-100/70 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.02)] text-right space-y-4">
+                  <h2 className="text-base font-black text-amber-900 mb-2 pb-2 border-b border-amber-150 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-amber-600 shrink-0" />
+                    <span>تعليمات وإرشادات الخدمة</span>
+                  </h2>
+                  <p className="text-sm text-slate-700 leading-relaxed font-light whitespace-pre-line">
+                    {arInstructions}
+                  </p>
+                </div>
+              )}
+
               {/* Reviews Section */}
-              <div className="bg-white rounded-[22px] border border-slate-100 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.05)] text-right">
-                <h2 className="text-base font-black text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
-                  <span>آراء وتقييمات العملاء</span>
-                  {reviews.length > 0 && (
+              {reviews.length > 0 && (
+                <div className="bg-white rounded-[22px] border border-slate-100 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.05)] text-right">
+                  <h2 className="text-base font-black text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+                    <span>آراء وتقييمات العملاء</span>
                     <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">
                       {reviews.length} تقييم
                     </span>
-                  )}
-                </h2>
+                  </h2>
 
-                {reviews.length > 0 ? (
                   <div className="space-y-4">
                     {reviews.slice(0, 5).map((rev: any) => {
                       const custName = `${rev.customer_first_name || "عميل"} ${rev.customer_last_name || ""}`.trim() || "عميل فريش هوم";
@@ -424,12 +438,8 @@ function ServiceDetailsContent() {
                       );
                     })}
                   </div>
-                ) : (
-                  <div className="text-center py-12 text-slate-400 text-xs">
-                    لا توجد مراجعات منشورة لهذه الخدمة بعد.
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
 
             </div>
 
