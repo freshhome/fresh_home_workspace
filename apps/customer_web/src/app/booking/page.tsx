@@ -225,10 +225,11 @@ function BookingFlowContent() {
     if (selectedSubService?.price_config?.fields) {
       selectedSubService.price_config.fields.forEach((field: any) => {
         const val = pricingInputs[field.id];
+        const isRequired = field.required === true || field.required === "true" || field.required === 1 || field.required === "required";
         
-        if (field.required) {
-          if (val === undefined || val === null || val === "") {
-            errors[field.id] = "هذا الحقل مطلوب ولا يمكن تركه فارغاً";
+        if (isRequired) {
+          if (val === undefined || val === null || val === "" || val === 0 || val === "0") {
+            errors[field.id] = "هذا الحقل مطلوب ولا يمكن تركه فارغاً أو بقيمة صفر";
           } else if (field.type === "number") {
             const num = Number(val);
             if (field.min !== undefined && num < field.min) {
@@ -240,7 +241,7 @@ function BookingFlowContent() {
           }
         } else {
           // If not required but entered
-          if (val !== undefined && val !== null && val !== "" && field.type === "number") {
+          if (val !== undefined && val !== null && val !== "" && field.type === "number" && val !== 0 && val !== "0") {
             const num = Number(val);
             if (field.min !== undefined && num < field.min && num > 0) {
               adjustedInputs[field.id] = field.min;
@@ -272,7 +273,14 @@ function BookingFlowContent() {
     setValidationErrors({});
     setIsCalculating(true);
 
+    // Clean up empty fields from the inputs to prevent database casting exceptions
     const inputs = { ...adjustedInputs };
+    Object.keys(inputs).forEach(key => {
+      if (inputs[key] === "" || inputs[key] === undefined || inputs[key] === null) {
+        delete inputs[key];
+      }
+    });
+
     if (selectedAddons.length > 0) {
       inputs.selected_options = selectedAddons;
     }
