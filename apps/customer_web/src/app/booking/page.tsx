@@ -794,24 +794,70 @@ function BookingFlowContent() {
                                 </div>
                               );
                             } else if (field.type === "toggle") {
-                              const checked = !!pricingInputs[field.id];
+                              const val = pricingInputs[field.id];
+                              const hasError = !!validationErrors[field.id];
+                              
+                              const optTrue = field.options && field.options.length > 0
+                                ? field.options.find((o: any) => o.id === "true" || o.id === "yes")
+                                : null;
+                              const optFalse = field.options && field.options.length > 1
+                                ? field.options.find((o: any) => o.id === "false" || o.id === "no")
+                                : null;
+                              
+                              const trueLabel = optTrue?.label?.ar || optTrue?.label || "نعم";
+                              const falseLabel = optFalse?.label?.ar || optFalse?.label || "لا";
+                              
+                              const isTrueSelected = val === true;
+                              const isFalseSelected = val === false;
+                              
                               return (
-                                <div 
-                                  key={field.id}
-                                  onClick={() => handleFieldChange(field.id, !checked)}
-                                  className={`p-3.5 rounded-xl border flex justify-between items-center cursor-pointer transition-all ${
-                                    checked ? "border-primary bg-primary/5 text-primary" : "border-slate-200 hover:border-slate-350"
-                                  }`}
-                                >
-                                  <div className="space-y-0.5 text-right">
-                                    <span className="text-xs font-bold text-slate-700 block">{field.label?.ar || field.label}</span>
-                                    {field.description?.ar && <span className="text-[10px] text-slate-400 block">{field.description.ar}</span>}
+                                <div key={field.id} id={`field-container-${field.id}`} className="space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <label className="block text-xs font-bold text-slate-700">
+                                      {field.label?.ar || field.label}
+                                      {field.required && <span className="text-red-500 mr-1">*</span>}
+                                    </label>
                                   </div>
-                                  <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
-                                    checked ? "bg-primary border-primary text-white" : "border-slate-300 bg-white"
-                                  }`}>
-                                    {checked && <Check className="w-3 h-3 stroke-[3]" />}
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div 
+                                      onClick={() => handleFieldChange(field.id, true)}
+                                      className={`p-3.5 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                                        isTrueSelected 
+                                          ? "border-primary bg-primary/5 text-primary font-bold shadow-sm shadow-primary/10" 
+                                          : `bg-white hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200"}`
+                                      }`}
+                                    >
+                                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                                        isTrueSelected ? "border-primary bg-primary" : "border-slate-300 bg-white"
+                                      }`}>
+                                        {isTrueSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                      </div>
+                                      <span className="text-xs font-bold text-slate-750">{trueLabel}</span>
+                                    </div>
+
+                                    <div 
+                                      onClick={() => handleFieldChange(field.id, false)}
+                                      className={`p-3.5 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                                        isFalseSelected 
+                                          ? "border-primary bg-primary/5 text-primary font-bold shadow-sm shadow-primary/10" 
+                                          : `bg-white hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200"}`
+                                      }`}
+                                    >
+                                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                                        isFalseSelected ? "border-primary bg-primary" : "border-slate-300 bg-white"
+                                      }`}>
+                                        {isFalseSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                      </div>
+                                      <span className="text-xs font-bold text-slate-750">{falseLabel}</span>
+                                    </div>
                                   </div>
+                                  {field.description?.ar && <p className="text-[10px] text-slate-400 leading-normal">{field.description.ar}</p>}
+                                  {hasError && (
+                                    <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1">
+                                      <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
+                                      <span>{validationErrors[field.id]}</span>
+                                    </p>
+                                  )}
                                 </div>
                               );
                             } else if (field.type === "dropdown") {
