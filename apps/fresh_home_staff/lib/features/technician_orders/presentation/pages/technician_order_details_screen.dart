@@ -27,10 +27,12 @@ class TechnicianOrderDetailsScreen extends StatefulWidget {
   });
 
   @override
-  State<TechnicianOrderDetailsScreen> createState() => _TechnicianOrderDetailsScreenState();
+  State<TechnicianOrderDetailsScreen> createState() =>
+      _TechnicianOrderDetailsScreenState();
 }
 
-class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScreen> {
+class _TechnicianOrderDetailsScreenState
+    extends State<TechnicianOrderDetailsScreen> {
   SubServiceEntity? _subService;
   bool _loadingService = false;
   final Map<String, dynamic> _dynamicInputs = {};
@@ -67,7 +69,9 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
         _adminWhatsAppNumber = val['business_number'] as String?;
       }
     } catch (e) {
-      debugPrint('⚠️ [TechnicianOrderDetails] Error loading admin WhatsApp: $e');
+      debugPrint(
+        '⚠️ [TechnicianOrderDetails] Error loading admin WhatsApp: $e',
+      );
     } finally {
       if (mounted) {
         setState(() => _loadingAdminWhatsApp = false);
@@ -79,7 +83,10 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
     if (_adminWhatsAppNumber == null || _adminWhatsAppNumber!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("جاري تحميل رقم الإدارة، يرجى المحاولة بعد قليل...", style: TextStyle(fontFamily: 'Cairo')),
+          content: Text(
+            "جاري تحميل رقم الإدارة، يرجى المحاولة بعد قليل...",
+            style: TextStyle(fontFamily: 'Cairo'),
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -88,9 +95,12 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
 
     final displayId = order.displayId;
     final locale = Localizations.localeOf(context).languageCode;
-    final serviceName = order.service.name[locale] ?? order.service.name['ar'] ?? '';
+    final serviceName =
+        order.service.name[locale] ?? order.service.name['ar'] ?? '';
     final clientName = order.contact.name;
-    final clientPhone = order.contact.phone.isNotEmpty ? order.contact.phone.first : '';
+    final clientPhone = order.contact.phone.isNotEmpty
+        ? order.contact.phone.first
+        : '';
 
     String details = '';
     if (order.pricingInputs != null) {
@@ -101,7 +111,8 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
       });
     }
 
-    final message = "السلام عليكم ورحمة الله وبركاته،\n"
+    final message =
+        "السلام عليكم ورحمة الله وبركاته،\n"
         "أود تقديم طلب مراجعة وتعديل للأوردر رقم: #$displayId\n"
         "نوع الخدمة: $serviceName\n"
         "اسم العميل: $clientName\n"
@@ -112,11 +123,15 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
 
     // Clean admin phone number
     String cleanPhone = _adminWhatsAppNumber!.replaceAll(RegExp(r'[^0-9]'), '');
-    if (!cleanPhone.startsWith('2') && cleanPhone.length == 11 && cleanPhone.startsWith('01')) {
+    if (!cleanPhone.startsWith('2') &&
+        cleanPhone.length == 11 &&
+        cleanPhone.startsWith('01')) {
       cleanPhone = '2$cleanPhone';
     }
 
-    final Uri url = Uri.parse('https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}');
+    final Uri url = Uri.parse(
+      'https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}',
+    );
     try {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (e) {
@@ -132,7 +147,9 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
     final result = await useCase(booking.service.subServiceId);
     result.fold(
       (failure) {
-        debugPrint('❌ [TechnicianOrderDetails] Error loading service: ${failure.message}');
+        debugPrint(
+          '❌ [TechnicianOrderDetails] Error loading service: ${failure.message}',
+        );
         if (mounted) setState(() => _loadingService = false);
       },
       (service) {
@@ -147,7 +164,9 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                 _originalInputs.addAll(booking.pricingInputs!);
               }
               if (booking.pricingInputs!['selected_options'] != null) {
-                final list = List<String>.from(booking.pricingInputs!['selected_options'] as List);
+                final list = List<String>.from(
+                  booking.pricingInputs!['selected_options'] as List,
+                );
                 _selectedOptions.addAll(list);
                 if (_originalSelectedOptions.isEmpty) {
                   _originalSelectedOptions.addAll(list);
@@ -168,10 +187,15 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
     return BlocListener<TechnicianOrdersCubit, TechnicianOrdersState>(
       listener: (context, state) {
         if (state is TechnicianOrdersLoaded && state.transitionError != null) {
-          debugPrint('❌ [TechnicianOrderDetails] Action Failed: ${state.transitionError}');
+          debugPrint(
+            '❌ [TechnicianOrderDetails] Action Failed: ${state.transitionError}',
+          );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.transitionError!, style: const TextStyle(fontFamily: 'Cairo')),
+              content: Text(
+                state.transitionError!,
+                style: const TextStyle(fontFamily: 'Cairo'),
+              ),
               backgroundColor: themeColor.error,
               behavior: SnackBarBehavior.floating,
             ),
@@ -211,11 +235,12 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
           }
 
           // Reveal sensitive data ONLY if 'ready' or further in the lifecycle
-          final bool canShowSensitive = currentOrder.status == OrderStatus.ready || 
-                                       currentOrder.status == OrderStatus.onTheWay || 
-                                       currentOrder.status == OrderStatus.arrived || 
-                                       currentOrder.status == OrderStatus.inProgress ||
-                                       currentOrder.status == OrderStatus.pendingInspection;
+          final bool canShowSensitive =
+              currentOrder.status == OrderStatus.ready ||
+              currentOrder.status == OrderStatus.onTheWay ||
+              currentOrder.status == OrderStatus.arrived ||
+              currentOrder.status == OrderStatus.inProgress ||
+              currentOrder.status == OrderStatus.pendingInspection;
 
           return Stack(
             children: [
@@ -235,8 +260,11 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                   elevation: 0,
                   centerTitle: true,
                   leading: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -250,23 +278,30 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                           // 1. Order Header Card (ID & Status Badge)
                           _buildOrderHeaderCard(context, currentOrder),
                           const SizedBox(height: 16),
-                          
+
                           // 2. Request Details Card
                           _buildRequestDetailsCard(context, currentOrder),
                           const SizedBox(height: 16),
-                          
+
                           _buildInspectionCard(context, currentOrder),
-                          
+
                           // Financial Details & Transparency for Technician
                           // _buildFinancialSection(context, currentOrder),
                           // const SizedBox(height: 16),
-                          
+
                           // 3. Customer Details Card
-                          _buildCustomerInfoCard(context, currentOrder, canShowSensitive),
+                          _buildCustomerInfoCard(
+                            context,
+                            currentOrder,
+                            canShowSensitive,
+                          ),
                           const SizedBox(height: 16),
 
                           // 4. Status Timeline (Vertical at bottom)
-                          StatusTimeline(currentStatus: currentOrder.status, isVertical: true),
+                          StatusTimeline(
+                            currentStatus: currentOrder.status,
+                            isVertical: true,
+                          ),
                         ],
                       ),
                     ),
@@ -275,7 +310,10 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                       left: 0,
                       right: 0,
                       child: _buildActionSection(
-                          context, currentOrder, isTransitioning),
+                        context,
+                        currentOrder,
+                        isTransitioning,
+                      ),
                     ),
                   ],
                 ),
@@ -364,29 +402,31 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
           ),
           const SizedBox(height: 20),
           _buildDetailRow(
-            context, 
-            Icons.cleaning_services_rounded, 
-            "نوع الخدمة", 
-            order.service.name[locale] ?? ''
+            context,
+            Icons.cleaning_services_rounded,
+            "نوع الخدمة",
+            order.service.name[locale] ?? '',
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1, thickness: 0.5),
           ),
           _buildDetailRow(
-            context, 
-            Icons.access_time_rounded, 
-            "موعد الوصول المتوقع", 
-            timeStr
+            context,
+            Icons.access_time_rounded,
+            "موعد الوصول المتوقع",
+            timeStr,
           ),
-          
+
           if (_subService != null) ...[
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Divider(height: 1, thickness: 0.5),
             ),
             Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 iconColor: themeColor.primary,
@@ -400,7 +440,11 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                     fontFamily: 'Cairo',
                   ),
                 ),
-                leading: Icon(Icons.info_outline_rounded, color: themeColor.primary, size: 20),
+                leading: Icon(
+                  Icons.info_outline_rounded,
+                  color: themeColor.primary,
+                  size: 20,
+                ),
                 childrenPadding: const EdgeInsets.only(top: 8, bottom: 12),
                 children: _buildServiceComponentsList(context, order),
               ),
@@ -412,14 +456,14 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
             child: Divider(height: 1, thickness: 0.5),
           ),
           _buildDetailRow(
-            context, 
-            Icons.payment_rounded, 
-            "طريقة التحصيل المطلوبة", 
+            context,
+            Icons.payment_rounded,
+            "طريقة التحصيل المطلوبة",
             order.paymentMethod?.toLowerCase() == 'instapay'
                 ? 'تحويل إنستا باي (InstaPay)'
                 : order.paymentMethod?.toLowerCase() == 'vodafone_cash'
-                    ? 'تحويل فودافون كاش (Vodafone Cash)'
-                    : 'نقداً (كاش)',
+                ? 'تحويل فودافون كاش (Vodafone Cash)'
+                : 'نقداً (كاش)',
             isHighlighted: false,
           ),
           const Padding(
@@ -427,9 +471,9 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
             child: Divider(height: 1, thickness: 0.5),
           ),
           _buildDetailRow(
-            context, 
-            Icons.payments_rounded, 
-            "إجمالي السعر التقديري", 
+            context,
+            Icons.payments_rounded,
+            "إجمالي السعر التقديري",
             "${order.price.total.toStringAsFixed(0)} ج.م",
             isHighlighted: true,
           ),
@@ -438,7 +482,10 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
     );
   }
 
-  List<Widget> _buildServiceComponentsList(BuildContext context, Booking order) {
+  List<Widget> _buildServiceComponentsList(
+    BuildContext context,
+    Booking order,
+  ) {
     final themeColor = context.themeColor;
     final locale = Localizations.localeOf(context).languageCode;
     final List<Widget> items = [];
@@ -459,12 +506,14 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
         } else if (field.type == DynamicFieldType.number) {
           final num numVal = val as num;
           if (numVal > 0) {
-            displayVal = "${field.label[locale] ?? field.label['ar'] ?? field.id}: ${numVal.toStringAsFixed(0)} ${field.unit ?? ''}";
+            displayVal =
+                "${field.label[locale] ?? field.label['ar'] ?? field.id}: ${numVal.toStringAsFixed(0)} ${field.unit ?? ''}";
           } else {
             continue;
           }
         } else {
-          displayVal = "${field.label[locale] ?? field.label['ar'] ?? field.id}: $val";
+          displayVal =
+              "${field.label[locale] ?? field.label['ar'] ?? field.id}: $val";
         }
 
         items.add(
@@ -472,7 +521,11 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
               children: [
-                Icon(Icons.check_circle_outline_rounded, size: 16, color: themeColor.secondary),
+                Icon(
+                  Icons.check_circle_outline_rounded,
+                  size: 16,
+                  color: themeColor.secondary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -502,7 +555,11 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
               children: [
-                Icon(Icons.add_circle_outline_rounded, size: 16, color: themeColor.primary),
+                Icon(
+                  Icons.add_circle_outline_rounded,
+                  size: 16,
+                  color: themeColor.primary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -543,9 +600,15 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
   }
 
   // ── CUSTOMER INFO CARD ──────────────────────────────────────────────────
-  Widget _buildCustomerInfoCard(BuildContext context, Booking order, bool canShowSensitive) {
+  Widget _buildCustomerInfoCard(
+    BuildContext context,
+    Booking order,
+    bool canShowSensitive,
+  ) {
     final themeColor = context.themeColor;
-    final phone = order.contact.phone.isNotEmpty ? order.contact.phone.first : '';
+    final phone = order.contact.phone.isNotEmpty
+        ? order.contact.phone.first
+        : '';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -567,52 +630,69 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
             ),
           ),
           const SizedBox(height: 20),
-          
+
           if (canShowSensitive) ...[
             // Name
-            _buildDetailRow(context, Icons.person_rounded, "اسم العميل", order.contact.name),
+            _buildDetailRow(
+              context,
+              Icons.person_rounded,
+              "اسم العميل",
+              order.contact.name,
+            ),
             const SizedBox(height: 16),
-            
+
             // Address
             _buildDetailRow(
-              context, 
-              Icons.location_on_rounded, 
-              "عنوان العميل", 
+              context,
+              Icons.location_on_rounded,
+              "عنوان العميل",
               "${order.address.city}, ${order.address.street}, مبنى ${order.address.buildingNumber}, دور ${order.address.floorNumber}, شقة ${order.address.apartmentNumber}",
             ),
             const SizedBox(height: 16),
-            
+
             // Phone with Copy
             Row(
               children: [
                 Expanded(
-                  child: _buildDetailRow(context, Icons.phone_iphone_rounded, "رقم الهاتف", phone),
+                  child: _buildDetailRow(
+                    context,
+                    Icons.phone_iphone_rounded,
+                    "رقم الهاتف",
+                    phone,
+                  ),
                 ),
                 Material(
                   color: themeColor.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                   child: InkWell(
                     onTap: () {
-                       Clipboard.setData(ClipboardData(text: phone));
-                       ScaffoldMessenger.of(context).showSnackBar(
-                         const SnackBar(
-                           content: Text("تم نسخ رقم الهاتف بنجاح", style: TextStyle(fontFamily: 'Cairo')),
-                           behavior: SnackBarBehavior.floating,
-                         ),
-                       );
+                      Clipboard.setData(ClipboardData(text: phone));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            "تم نسخ رقم الهاتف بنجاح",
+                            style: TextStyle(fontFamily: 'Cairo'),
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
                     },
                     borderRadius: BorderRadius.circular(10),
                     child: Padding(
                       padding: const EdgeInsets.all(8),
-                      child: Icon(Icons.copy_rounded, size: 18, color: themeColor.primary),
+                      child: Icon(
+                        Icons.copy_rounded,
+                        size: 18,
+                        color: themeColor.primary,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Call & WhatsApp Buttons
             Row(
               children: [
@@ -646,17 +726,31 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
     );
   }
 
-  Widget _buildDetailRow(BuildContext context, IconData icon, String label, String value, {bool isHighlighted = false}) {
+  Widget _buildDetailRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value, {
+    bool isHighlighted = false,
+  }) {
     final themeColor = context.themeColor;
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: isHighlighted ? themeColor.primary.withValues(alpha: 0.1) : themeColor.unselectedItem.withValues(alpha: 0.05),
+            color: isHighlighted
+                ? themeColor.primary.withValues(alpha: 0.1)
+                : themeColor.unselectedItem.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, size: 20, color: isHighlighted ? themeColor.primary : themeColor.secondaryText),
+          child: Icon(
+            icon,
+            size: 20,
+            color: isHighlighted
+                ? themeColor.primary
+                : themeColor.secondaryText,
+          ),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -664,20 +758,22 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                label, 
+                label,
                 style: TextStyle(
-                  fontSize: 11, 
-                  color: themeColor.secondaryText, 
+                  fontSize: 11,
+                  color: themeColor.secondaryText,
                   fontFamily: 'Cairo',
                   fontWeight: FontWeight.bold,
-                )
+                ),
               ),
               Text(
                 value,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: isHighlighted ? FontWeight.w900 : FontWeight.bold,
-                  color: isHighlighted ? themeColor.primary : themeColor.textPrimary,
+                  color: isHighlighted
+                      ? themeColor.primary
+                      : themeColor.textPrimary,
                   fontFamily: 'Cairo',
                 ),
               ),
@@ -688,7 +784,13 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
     );
   }
 
-  Widget _buildContactButton(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildContactButton(
+    BuildContext context,
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return ElevatedButton(
       onPressed: onTap,
       style: ElevatedButton.styleFrom(
@@ -704,12 +806,12 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
           Icon(icon, size: 18),
           const SizedBox(width: 8),
           Text(
-            label, 
+            label,
             style: const TextStyle(
-              fontFamily: 'Cairo', 
+              fontFamily: 'Cairo',
               fontWeight: FontWeight.w900,
               fontSize: 14,
-            )
+            ),
           ),
         ],
       ),
@@ -733,10 +835,10 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
           Text(
             "بيانات العميل مخفية",
             style: TextStyle(
-              fontSize: 16, 
-              color: themeColor.warning, 
-              fontWeight: FontWeight.w900, 
-              fontFamily: 'Cairo'
+              fontSize: 16,
+              color: themeColor.warning,
+              fontWeight: FontWeight.w900,
+              fontFamily: 'Cairo',
             ),
           ),
           const SizedBox(height: 4),
@@ -744,10 +846,10 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
             "سيتم فتح بيانات التواصل والعنوان الكامل بمجرد تأكيد موعد الطلب لليوم.",
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 12, 
-              color: themeColor.warning.withValues(alpha: 0.8), 
-              fontWeight: FontWeight.bold, 
-              fontFamily: 'Cairo'
+              fontSize: 12,
+              color: themeColor.warning.withValues(alpha: 0.8),
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Cairo',
             ),
           ),
         ],
@@ -756,7 +858,11 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
   }
 
   // ── ACTION SECTION ─────────────────────────────────────────────────────
-  Widget _buildActionSection(BuildContext context, Booking currentOrder, bool isLoading) {
+  Widget _buildActionSection(
+    BuildContext context,
+    Booking currentOrder,
+    bool isLoading,
+  ) {
     final themeColor = context.themeColor;
     final l10n = AppLocalizations.of(context)!;
 
@@ -764,7 +870,6 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
     OrderStatus? nextStatus;
     IconData actionIcon = Icons.help_outline;
     Color actionColor = themeColor.primary;
-
 
     switch (currentOrder.status) {
       case OrderStatus.assigned:
@@ -774,7 +879,10 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
         actionColor = const Color(0xFF10B981);
         break;
       case OrderStatus.accepted:
-        final bool isToday = DateUtils.isSameDay(currentOrder.scheduledAt, DateTime.now());
+        final bool isToday = DateUtils.isSameDay(
+          currentOrder.scheduledAt,
+          DateTime.now(),
+        );
         if (isToday) {
           actionLabel = "تأكيد حضور اليوم ✅";
           nextStatus = OrderStatus.ready;
@@ -841,14 +949,26 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                 child: Padding(
                   padding: const EdgeInsets.only(left: 12),
                   child: OutlinedButton(
-                    onPressed: isLoading ? null : () => _showCancelDialog(context, currentOrder),
+                    onPressed: isLoading
+                        ? null
+                        : () => _showCancelDialog(context, currentOrder),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: themeColor.error,
-                      side: BorderSide(color: themeColor.error.withValues(alpha: 0.3)),
+                      side: BorderSide(
+                        color: themeColor.error.withValues(alpha: 0.3),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
-                    child: Text(l10n.tech_action_decline, style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+                    child: Text(
+                      l10n.tech_action_decline,
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -856,20 +976,34 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
               Expanded(
                 flex: 2,
                 child: ElevatedButton(
-                  onPressed: isLoading ? null : () => _handleAction(context, currentOrder, targetStatus),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: actionColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    elevation: 0,
-                    shadowColor: actionColor.withValues(alpha: 0.3),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ).copyWith(elevation: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.pressed) ? 2 : 6)),
+                  onPressed: isLoading
+                      ? null
+                      : () =>
+                            _handleAction(context, currentOrder, targetStatus),
+                  style:
+                      ElevatedButton.styleFrom(
+                        backgroundColor: actionColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        elevation: 0,
+                        shadowColor: actionColor.withValues(alpha: 0.3),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ).copyWith(
+                        elevation: WidgetStateProperty.resolveWith(
+                          (states) =>
+                              states.contains(WidgetState.pressed) ? 2 : 6,
+                        ),
+                      ),
                   child: isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -898,13 +1032,18 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
   bool currentStatusCanDecline(Booking order) {
     final bool isToday = DateUtils.isSameDay(order.scheduledAt, DateTime.now());
     if (isToday) {
-      return order.status == OrderStatus.assigned || order.status == OrderStatus.accepted;
+      return order.status == OrderStatus.assigned ||
+          order.status == OrderStatus.accepted;
     } else {
       return order.status == OrderStatus.accepted;
     }
   }
 
-  void _handleAction(BuildContext context, Booking currentOrder, OrderStatus nextStatus) {
+  void _handleAction(
+    BuildContext context,
+    Booking currentOrder,
+    OrderStatus nextStatus,
+  ) {
     if (nextStatus == OrderStatus.completed) {
       _showCompleteOrderCashDialog(context, currentOrder);
       return;
@@ -915,10 +1054,12 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
 
     switch (nextStatus) {
       case OrderStatus.accepted:
-        desc = "هل أنت متأكد من رغبتك في قبول هذا الطلب؟ سيتم إخطار العميل ببدء التجهيز.";
+        desc =
+            "هل أنت متأكد من رغبتك في قبول هذا الطلب؟ سيتم إخطار العميل ببدء التجهيز.";
         break;
       case OrderStatus.ready:
-        desc = "هل تؤكد حضورك لتنفيذ هذا الطلب اليوم؟ سيتم الآن فتح بيانات العميل والعنوان الكامل لك.";
+        desc =
+            "هل تؤكد حضورك لتنفيذ هذا الطلب اليوم؟ سيتم الآن فتح بيانات العميل والعنوان الكامل لك.";
         break;
       case OrderStatus.onTheWay:
         desc = "هل أنت متوجه إلى موقع العميل الآن؟ سيصل إشعار للعميل بذلك.";
@@ -942,7 +1083,11 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
       animType: AnimType.bottomSlide,
       title: title,
       desc: desc,
-      titleTextStyle: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 18),
+      titleTextStyle: const TextStyle(
+        fontFamily: 'Cairo',
+        fontWeight: FontWeight.bold,
+        fontSize: 18,
+      ),
       descTextStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
       btnOkText: "تأكيد",
       btnCancelText: "تراجع",
@@ -961,14 +1106,19 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
 
   void _showCancelDialog(BuildContext context, Booking currentOrder) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     AwesomeDialog(
       context: context,
       dialogType: DialogType.warning,
       animType: AnimType.bottomSlide,
       title: l10n.tech_details_decline_order,
-      desc: "يرجى العلم أن هذا الإجراء سيقوم بإلغاء التكليف الخاص بك لهذا الطلب.",
-      titleTextStyle: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 18),
+      desc:
+          "يرجى العلم أن هذا الإجراء سيقوم بإلغاء التكليف الخاص بك لهذا الطلب.",
+      titleTextStyle: const TextStyle(
+        fontFamily: 'Cairo',
+        fontWeight: FontWeight.bold,
+        fontSize: 18,
+      ),
       descTextStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
       btnOkText: "تأكيد الاعتذار",
       btnCancelText: "تراجع",
@@ -977,7 +1127,8 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
         final authCubit = context.read<AuthCubit>();
         context.read<TechnicianOrdersCubit>().transitionOrder(
           booking: currentOrder,
-          newStatus: OrderStatus.pending, // Transition back to pending (Rejection)
+          newStatus:
+              OrderStatus.pending, // Transition back to pending (Rejection)
           technicianId: authCubit.userId ?? currentOrder.technicianId ?? '',
           reason: "TECH_REJECTED",
           actorRole: "technician",
@@ -1005,25 +1156,27 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
 
   Future<void> _launchWhatsApp(String phone) async {
     if (phone.isEmpty) return;
-    
+
     // Clean phone number (keep only digits)
     String cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     // Ensure it starts with country code (e.g., 20 for Egypt)
-    if (!cleanPhone.startsWith('2') && cleanPhone.length == 11 && cleanPhone.startsWith('01')) {
-       cleanPhone = '2$cleanPhone';
+    if (!cleanPhone.startsWith('2') &&
+        cleanPhone.length == 11 &&
+        cleanPhone.startsWith('01')) {
+      cleanPhone = '2$cleanPhone';
     }
 
     final Uri url = Uri.parse('https://wa.me/$cleanPhone');
-    
+
     try {
       // On some Android devices, canLaunchUrl returns false even if WhatsApp is installed
       // if the manifest queries are not perfect. Using externalApplication mode is safer.
       final bool launched = await launchUrl(
-        url, 
-        mode: LaunchMode.externalApplication
+        url,
+        mode: LaunchMode.externalApplication,
       );
-      
+
       if (!launched) {
         debugPrint('Could not launch WhatsApp URL');
       }
@@ -1031,74 +1184,6 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
       debugPrint('Error launching WhatsApp: $e');
     }
   }
-
-  // Widget _buildFinancialSection(BuildContext context, Booking order) {
-  //   final themeColor = context.themeColor;
-  //   final locale = Localizations.localeOf(context).languageCode;
-  // 
-  //   final basePriceVal = order.price.basePrice;
-  //   final extraFeesVal = order.price.extraFees;
-  //   final discountVal = order.price.discount;
-  //   final totalVal = order.price.total;
-  //   final metadata = order.price.metadata ?? {};
-  //   final subtotalVal = (metadata['subtotal'] ?? basePriceVal).toDouble();
-  // 
-  //   // Commissionable amount based on pre-discount subtotal + extra fees
-  //   final baseCommissionableAmount = subtotalVal + extraFeesVal;
-  // 
-  //   // Retrieve platform commission and technician payout directly from metadata, fallback to standard 80/20 split
-  //   final commissionRateVal = (metadata['commission_rate'] ?? 0.20).toDouble();
-  //   final platformCommissionVal = (metadata['platform_commission'] ?? (baseCommissionableAmount * commissionRateVal)).toDouble();
-  //   final bonusesVal = 0.0; // default 0
-  //   final technicianPayoutVal = (metadata['technician_payout'] ?? (baseCommissionableAmount * (1.0 - commissionRateVal))).toDouble() + bonusesVal;
-  // 
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.stretch,
-  //     children: [
-  //       Padding(
-  //         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-  //         child: Text(
-  //           "البيانات المالية والأرباح",
-  //           style: TextStyle(
-  //             fontSize: 16,
-  //             fontWeight: FontWeight.w900,
-  //             color: themeColor.textPrimary,
-  //             fontFamily: 'Cairo',
-  //           ),
-  //         ),
-  //       ),
-  //       const SizedBox(height: 8),
-  //       EarningsLedgerCard(
-  //         orderId: order.displayId,
-  //         serviceName: order.service.name[locale] ?? '',
-  //         date: order.scheduledAt,
-  //         earnings: technicianPayoutVal,
-  //         status: order.status.name,
-  //       ),
-  //       const SizedBox(height: 16),
-  //       CommissionBreakdownCard(
-  //         customerPaid: totalVal,
-  //         technicianEarnings: technicianPayoutVal,
-  //         platformCommission: platformCommissionVal,
-  //       ),
-  //       if (bonusesVal > 0) ...[
-  //         const SizedBox(height: 16),
-  //         BonusHighlightCard(
-  //           bonusAmount: bonusesVal,
-  //           title: "حافز الأداء المتميز",
-  //           description: "حافز الأداء المتميز للطلب",
-  //         ),
-  //       ],
-  //       const SizedBox(height: 16),
-  //       CustomerPaidSummary(
-  //         basePrice: basePriceVal,
-  //         extraFees: extraFeesVal,
-  //         customerDiscount: discountVal,
-  //         customerPaid: totalVal,
-  //       ),
-  //     ],
-  //   );
-  // }
 
   // ── 5. POST-INSPECTION CARD & HELPERS ───────────────────────────────────
 
@@ -1114,22 +1199,22 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
             borderRadius: BorderRadius.circular(24),
             boxShadow: [themeColor.cardShadow],
           ),
-          child: const Center(
-            child: CircularProgressIndicator(),
-          ),
+          child: const Center(child: CircularProgressIndicator()),
         );
       }
       return const SizedBox.shrink();
     }
 
     // Check if this service is inspection-based or has dynamic inputs
-    final isInspection = _subService!.price.type == PricingMethod.inspection || 
-                         _subService!.price.fields.isNotEmpty;
+    final isInspection =
+        _subService!.price.type == PricingMethod.inspection ||
+        _subService!.price.fields.isNotEmpty;
     if (!isInspection) return const SizedBox.shrink();
 
     // Show only in arrived or pendingInspection status
-    final showCard = order.status == OrderStatus.arrived || 
-                     order.status == OrderStatus.pendingInspection;
+    final showCard =
+        order.status == OrderStatus.arrived ||
+        order.status == OrderStatus.pendingInspection;
     if (!showCard) return const SizedBox.shrink();
 
     return Container(
@@ -1155,7 +1240,11 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                   color: themeColor.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.assignment_turned_in_rounded, color: themeColor.primary, size: 24),
+                child: Icon(
+                  Icons.assignment_turned_in_rounded,
+                  color: themeColor.primary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
@@ -1171,7 +1260,7 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
           ),
           const SizedBox(height: 16),
           Text(
-            "هذه هي تفاصيل الطلب والمساحة المدخلة من قبل العميل. يرجى التأكد من مطابقتها على الواقع قبل بدء العمل.",
+            "هذه هي تفاصيل الطلب المدخلة من قبل العميل. يرجى التأكد من مطابقتها على الواقع قبل بدء العمل.",
             style: TextStyle(
               fontSize: 13,
               color: themeColor.secondaryText,
@@ -1184,7 +1273,7 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
 
           // Display selected inputs as static widgets
           ..._buildServiceComponentsList(context, order),
-          
+
           const SizedBox(height: 24),
           const Divider(height: 1, thickness: 0.5),
           const SizedBox(height: 20),
@@ -1193,23 +1282,34 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _loadingAdminWhatsApp ? null : () => _launchWhatsAppToAdmin(order),
+              onPressed: _loadingAdminWhatsApp
+                  ? null
+                  : () => _launchWhatsAppToAdmin(order),
               icon: _loadingAdminWhatsApp
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Icon(Icons.chat_rounded),
               label: const Text(
                 "تواصل مع الإدارة للمراجعة والتعديل",
-                style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 14),
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFF59E0B), // amber
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 elevation: 0,
               ),
             ),
@@ -1219,169 +1319,10 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
     );
   }
 
-  Widget _buildPayoutBreakdownCard(BuildContext context) {
-    final themeColor = context.themeColor;
-    if (_calculatedPricing == null) return const SizedBox.shrink();
-
-    final subtotal = (_calculatedPricing!.metadata?['subtotal'] ?? _calculatedPricing!.basePrice).toDouble();
-    final extraFees = _calculatedPricing!.extraFees;
-    final discount = _calculatedPricing!.discount;
-    final total = _calculatedPricing!.total;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: themeColor.primary.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: themeColor.primary.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "تفاصيل الحساب المتوقعة",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-              color: themeColor.primary,
-              fontFamily: 'Cairo',
-            ),
-          ),
-          const SizedBox(height: 12),
-          _buildPriceRow("سعر الخدمة الأساسي", "${subtotal.toStringAsFixed(2)} ج.م", themeColor),
-          if (extraFees > 0) ...[
-            const SizedBox(height: 8),
-            _buildPriceRow("رسوم إضافية", "${extraFees.toStringAsFixed(2)} ج.م", themeColor),
-          ],
-          if (discount > 0) ...[
-            const SizedBox(height: 8),
-            _buildPriceRow("الخصم المطبق", "- ${discount.toStringAsFixed(2)} ج.م", themeColor, isDiscount: true),
-          ],
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 10),
-            child: Divider(height: 1, thickness: 0.5),
-          ),
-          _buildPriceRow(
-            "إجمالي السعر المتوقع للعميل",
-            "${total.toStringAsFixed(2)} ج.م",
-            themeColor,
-            isBold: true,
-            textColor: themeColor.primary,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPriceRow(
-    String label,
-    String value,
-    ThemeColorExtension themeColor, {
-    bool isBold = false,
-    bool isDiscount = false,
-    Color? textColor,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: isBold ? themeColor.textPrimary : themeColor.secondaryText,
-              fontFamily: 'Cairo',
-              fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            color: textColor ?? (isDiscount ? Colors.redAccent : themeColor.textPrimary),
-            fontFamily: 'Cairo',
-            fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _calculatePrice(BuildContext context) async {
-    if (_subService == null) return;
-
-    setState(() {
-      _isCalculating = true;
-    });
-
-    final calculatePriceUseCase = GetIt.instance<CalculatePriceUseCase>();
-    final result = await calculatePriceUseCase(
-      CalculatePriceParams(
-        priceEntity: _subService!.price,
-        subServiceId: _subService!.id,
-        pricingInputs: _dynamicInputs,
-        selectedOptions: _selectedOptions,
-      ),
-    );
-
-    if (mounted) {
-      setState(() {
-        _isCalculating = false;
-      });
-
-      result.fold(
-        (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                "فشل حساب السعر: ${failure.message}",
-                style: const TextStyle(fontFamily: 'Cairo'),
-              ),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        },
-        (pricing) {
-          setState(() {
-            _calculatedPricing = pricing;
-          });
-        },
-      );
-    }
-  }
-
-  void _submitInspectionQuote(BuildContext context, Booking order) {
-    if (_calculatedPricing == null) return;
-
-    AwesomeDialog(
-      context: context,
-      dialogType: DialogType.question,
-      animType: AnimType.bottomSlide,
-      title: "تأكيد التسعير وبدء الخدمة",
-      desc: "هل أنت متأكد من حفظ هذا التسعير والبدء في تنفيذ الخدمة الآن؟ سيتم إرسال إشعار للعميل بالفاتورة النهائية.",
-      titleTextStyle: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 18),
-      descTextStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
-      btnOkText: "حفظ وبدء",
-      btnCancelText: "تراجع",
-      btnOkColor: const Color(0xFF10B981),
-      btnOkOnPress: () {
-        final authCubit = context.read<AuthCubit>();
-        final technicianId = authCubit.userId ?? order.technicianId ?? '';
-        
-        context.read<TechnicianOrdersCubit>().submitPostInspectionQuote(
-              booking: order,
-              dynamicInputs: _dynamicInputs,
-              pricing: _calculatedPricing!,
-              technicianId: technicianId,
-            );
-      },
-      btnCancelOnPress: () {},
-    ).show();
-  }
-
-  void _showCompleteOrderCashDialog(BuildContext context, Booking currentOrder) {
+  void _showCompleteOrderCashDialog(
+    BuildContext context,
+    Booking currentOrder,
+  ) {
     final themeColor = context.themeColor;
     final totalAmount = currentOrder.price.total;
     final requiredAmount = totalAmount.toInt();
@@ -1399,7 +1340,10 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
           builder: (dialogContext, setModalState) {
             return Dialog(
               backgroundColor: Colors.transparent,
-              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 24,
+              ),
               child: Container(
                 decoration: BoxDecoration(
                   color: themeColor.cardBackground,
@@ -1409,7 +1353,7 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                       color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 24,
                       offset: const Offset(0, 12),
-                    )
+                    ),
                   ],
                 ),
                 child: SingleChildScrollView(
@@ -1426,7 +1370,9 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                                color: const Color(
+                                  0xFF10B981,
+                                ).withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -1450,7 +1396,7 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                           ],
                         ),
                         const SizedBox(height: 20),
-                        
+
                         // Subtitle
                         Text(
                           "يرجى التأكد من استلام المبلغ المطلوب نقداً من العميل قبل تأكيد إتمام المهمة.",
@@ -1467,7 +1413,10 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                         // Required Amount Card
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 20,
+                            horizontal: 16,
+                          ),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
@@ -1477,10 +1426,12 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                             borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.2),
+                                color: const Color(
+                                  0xFF0F172A,
+                                ).withValues(alpha: 0.2),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
-                              )
+                              ),
                             ],
                           ),
                           child: Column(
@@ -1553,7 +1504,9 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                             ),
                             filled: true,
                             fillColor: Colors.grey[50],
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide(color: Colors.grey[200]!),
@@ -1607,14 +1560,21 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                           borderRadius: BorderRadius.circular(16),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               color: isConfirmed
-                                  ? const Color(0xFF10B981).withValues(alpha: 0.05)
+                                  ? const Color(
+                                      0xFF10B981,
+                                    ).withValues(alpha: 0.05)
                                   : Colors.grey[50],
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isConfirmed ? const Color(0xFF10B981) : Colors.grey[200]!,
+                                color: isConfirmed
+                                    ? const Color(0xFF10B981)
+                                    : Colors.grey[200]!,
                                 width: isConfirmed ? 2.0 : 1.0,
                               ),
                             ),
@@ -1623,17 +1583,23 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                                 Container(
                                   padding: const EdgeInsets.all(4),
                                   decoration: BoxDecoration(
-                                    color: isConfirmed ? const Color(0xFF10B981) : Colors.transparent,
+                                    color: isConfirmed
+                                        ? const Color(0xFF10B981)
+                                        : Colors.transparent,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: isConfirmed ? const Color(0xFF10B981) : Colors.grey[400]!,
+                                      color: isConfirmed
+                                          ? const Color(0xFF10B981)
+                                          : Colors.grey[400]!,
                                       width: 2,
                                     ),
                                   ),
                                   child: Icon(
                                     Icons.check,
                                     size: 14,
-                                    color: isConfirmed ? Colors.white : Colors.transparent,
+                                    color: isConfirmed
+                                        ? Colors.white
+                                        : Colors.transparent,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -1661,7 +1627,9 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                               child: TextButton(
                                 onPressed: () => Navigator.pop(dialogContext),
                                 style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
@@ -1684,11 +1652,18 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                                     ? () {
                                         if (formKey.currentState!.validate()) {
                                           Navigator.pop(dialogContext);
-                                          final authCubit = context.read<AuthCubit>();
-                                          context.read<TechnicianOrdersCubit>().completeOrderWithCash(
+                                          final authCubit = context
+                                              .read<AuthCubit>();
+                                          context
+                                              .read<TechnicianOrdersCubit>()
+                                              .completeOrderWithCash(
                                                 booking: currentOrder,
-                                                technicianId: authCubit.userId ?? currentOrder.technicianId ?? '',
-                                                collectedAmount: requiredAmount.toDouble(),
+                                                technicianId:
+                                                    authCubit.userId ??
+                                                    currentOrder.technicianId ??
+                                                    '',
+                                                collectedAmount: requiredAmount
+                                                    .toDouble(),
                                               );
                                         }
                                       }
@@ -1701,7 +1676,9 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                   elevation: 0,
                                 ),
                                 child: const Text(

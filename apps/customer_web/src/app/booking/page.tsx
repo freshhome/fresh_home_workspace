@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { 
@@ -99,6 +99,11 @@ function BookingFlowContent() {
     metadata: {} as any
   });
   const [isCalculating, setIsCalculating] = useState(false);
+  const [hasCalculated, setHasCalculated] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [animatePrice, setAnimatePrice] = useState(false);
+  const [showMobilePriceModal, setShowMobilePriceModal] = useState(false);
+  const dateScrollRef = useRef<HTMLDivElement>(null);
 
   // 1. Fetch main service categories
   useEffect(() => {
@@ -206,49 +211,102 @@ function BookingFlowContent() {
       }
       setPricingInputs(defaults);
       setSelectedAddons([]);
+      setHasCalculated(false);
+      setAnimatePrice(false);
+      setValidationErrors({});
     }
   }, [selectedSubService]);
 
-  // 4. Debounced call to DB calculate_booking_price RPC
-  useEffect(() => {
-    async function calculatePrice() {
-      if (!subServiceId || subServiceId.includes("mock") || Object.keys(pricingInputs).length === 0) return;
-      setIsCalculating(true);
-      
-      const inputs = { ...pricingInputs };
-      if (selectedAddons.length > 0) {
-        inputs.selected_options = selectedAddons;
-      }
+  // 4. Explicit validation and calculation call to DB calculate_booking_price RPC
+  const handleCalculate = async () => {
+    if (!subServiceId || subServiceId.includes("mock")) return;
 
-      try {
-        const { data, error } = await supabase.rpc("calculate_booking_price", {
-          p_sub_service_id: subServiceId,
-          p_pricing_inputs: inputs
-        });
-
-        if (error) throw error;
-        if (data) {
-          setPriceDetails({
-            basePrice: Number(data.basePrice) || 0,
-            extraFees: Number(data.extraFees) || 0,
-            discount: Number(data.discount) || 0,
-            total: Number(data.total) || 0,
-            metadata: data.metadata || {}
-          });
+    // Validate fields
+    const errors: Record<string, string> = {};
+    if (selectedSubService?.price_config?.fields) {
+      selectedSubService.price_config.fields.forEach((field: any) => {
+        const val = pricingInputs[field.id];
+        
+        // If field is required
+        if (field.required) {
+          if (val === undefined || val === null || val === "" || val === 0) {
+            errors[field.id] = "هذا الحقل مطلوب ولا يمكن تركه فارغاً أو بقيمة صفر";
+          } else if (field.type === "number") {
+            const num = Number(val);
+            if (field.min !== undefined && num < field.min) {
+              errors[field.id] = `الحد الأدنى المسموح به هو ${field.min}`;
+            }
+            if (field.max !== undefined && num > field.max) {
+              errors[field.id] = `الحد الأقصى المسموح به هو ${field.max}`;
+            }
+          }
+        } else {
+          // If not required but entered, validate min/max if present
+          if (val !== undefined && val !== null && val !== "" && field.type === "number") {
+            const num = Number(val);
+            if (field.min !== undefined && num < field.min && num > 0) {
+              errors[field.id] = `الحد الأدنى المسموح به هو ${field.min}`;
+            }
+            if (field.max !== undefined && num > field.max) {
+              errors[field.id] = `الحد الأقصى المسموح به هو ${field.max}`;
+            }
+          }
         }
-      } catch (e) {
-        console.error("Pricing calculation error:", e);
-      } finally {
-        setIsCalculating(false);
-      }
+      });
     }
 
-    const timer = setTimeout(() => {
-      calculatePrice();
-    }, 350);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      // Scroll to the first error
+      const firstErrorKey = Object.keys(errors)[0];
+      const errorEl = document.getElementById(`field-container-${firstErrorKey}`);
+      if (errorEl) {
+        errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
 
-    return () => clearTimeout(timer);
-  }, [subServiceId, pricingInputs, selectedAddons]);
+    // Clear validation errors
+    setValidationErrors({});
+    setIsCalculating(true);
+
+    const inputs = { ...pricingInputs };
+    if (selectedAddons.length > 0) {
+      inputs.selected_options = selectedAddons;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc("calculate_booking_price", {
+        p_sub_service_id: subServiceId,
+        p_pricing_inputs: inputs
+      });
+
+      if (error) throw error;
+      if (data) {
+        setPriceDetails({
+          basePrice: Number(data.basePrice) || 0,
+          extraFees: Number(data.extraFees) || 0,
+          discount: Number(data.discount) || 0,
+          total: Number(data.total) || 0,
+          metadata: data.metadata || {}
+        });
+        setHasCalculated(true);
+        setTimeout(() => {
+          setAnimatePrice(true);
+        }, 50);
+
+        // Show mobile modal if on mobile screen
+        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+          setShowMobilePriceModal(true);
+        }
+      }
+    } catch (e: any) {
+      console.error("Pricing calculation error:", e);
+      alert(`فشل حساب السعر: ${e.message || JSON.stringify(e)}`);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
 
   // Helper to parse DD-MM-YYYY or YYYY-MM-DD manually typed dates
   const parseManualDate = (text: string): Date | null => {
@@ -273,6 +331,16 @@ function BookingFlowContent() {
       }
     }
     return null;
+  };
+
+  const scrollDates = (direction: 'left' | 'right') => {
+    if (dateScrollRef.current) {
+      const scrollAmount = 200;
+      dateScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
   };
 
   // Sync typed date input to scheduledDate state when valid and available
@@ -306,6 +374,8 @@ function BookingFlowContent() {
     } else {
       setSelectedAddons([...selectedAddons, id]);
     }
+    setHasCalculated(false);
+    setAnimatePrice(false);
   };
 
   const handleFieldChange = (fieldId: string, val: any) => {
@@ -313,6 +383,13 @@ function BookingFlowContent() {
       ...pricingInputs,
       [fieldId]: val
     });
+    setHasCalculated(false);
+    setAnimatePrice(false);
+    if (validationErrors[fieldId]) {
+      const updatedErrors = { ...validationErrors };
+      delete updatedErrors[fieldId];
+      setValidationErrors(updatedErrors);
+    }
   };
 
   const isStepValid = () => {
@@ -607,11 +684,13 @@ function BookingFlowContent() {
                           {selectedSubService.price_config.fields.map((field: any) => {
                             if (field.type === "number") {
                               const val = pricingInputs[field.id] || 0;
+                              const hasError = !!validationErrors[field.id];
                               return (
-                                <div key={field.id} className="space-y-2">
+                                <div key={field.id} id={`field-container-${field.id}`} className="space-y-2">
                                   <div className="flex justify-between items-center">
                                     <label className="block text-xs font-bold text-slate-700">
                                       {field.label?.ar || field.label} {field.unit ? `(${field.unit})` : ""}
+                                      {field.required && <span className="text-red-500 mr-1">*</span>}
                                     </label>
                                     {field.id === "area" && <span className="text-xs font-black text-primary">{val} {field.unit || "م²"}</span>}
                                   </div>
@@ -635,7 +714,9 @@ function BookingFlowContent() {
                                             const parsed = parseInt(e.target.value);
                                             handleFieldChange(field.id, isNaN(parsed) ? 0 : parsed);
                                           }}
-                                          className="w-full p-2 pl-8 rounded-xl border border-slate-200 text-center text-xs font-black focus:border-primary focus:outline-none bg-white font-sans [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                          className={`w-full p-2 pl-8 rounded-xl border text-center text-xs font-black focus:outline-none bg-white font-sans [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                                            hasError ? 'border-red-500 focus:border-red-500 bg-red-50/15' : 'border-slate-200 focus:border-primary'
+                                          }`}
                                         />
                                         <span className="absolute left-2.5 text-[9px] font-extrabold text-slate-400 pointer-events-none">
                                           {field.unit || "م²"}
@@ -652,6 +733,7 @@ function BookingFlowContent() {
                                   ) : (
                                     <div className="flex items-center gap-4">
                                       <button 
+                                        type="button"
                                         onClick={() => handleFieldChange(field.id, Math.max(field.min || 0, val - 1))}
                                         className="w-10 h-10 rounded-xl bg-slate-100 font-bold text-lg flex items-center justify-center hover:bg-slate-200"
                                       >
@@ -659,6 +741,7 @@ function BookingFlowContent() {
                                       </button>
                                       <span className="text-xl font-black w-8 text-center">{val}</span>
                                       <button 
+                                        type="button"
                                         onClick={() => handleFieldChange(field.id, val + 1)}
                                         className="w-10 h-10 rounded-xl bg-slate-100 font-bold text-lg flex items-center justify-center hover:bg-slate-200"
                                       >
@@ -667,6 +750,12 @@ function BookingFlowContent() {
                                     </div>
                                   )}
                                   {field.description?.ar && <p className="text-[10px] text-slate-400 leading-normal">{field.description.ar}</p>}
+                                  {hasError && (
+                                    <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1">
+                                      <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
+                                      <span>{validationErrors[field.id]}</span>
+                                    </p>
+                                  )}
                                 </div>
                               );
                             } else if (field.type === "toggle") {
@@ -758,46 +847,71 @@ function BookingFlowContent() {
                       <span className="text-[10px] text-slate-400 hidden sm:inline">اسحب أفقياً لعرض المزيد من الأيام</span>
                     </div>
 
-                    {/* Horizontal scrollable date strip */}
-                    <div className="flex overflow-x-auto gap-2.5 pb-2 pt-1 snap-x snap-mandatory no-scrollbar">
-                      {Array.from({ length: 14 }).map((_, i) => {
-                        const dateObj = new Date();
-                        dateObj.setDate(dateObj.getDate() + i + 1);
-                        const formatted = dateObj.toISOString().split("T")[0];
-                        const dayName = dateObj.toLocaleDateString("ar-EG", { weekday: "long" });
-                        const dateLabel = dateObj.toLocaleDateString("ar-EG", { day: "numeric", month: "short" });
+                    {/* Horizontal scrollable date strip with arrow indicators */}
+                    <div className="relative flex items-center group/slider">
+                      {/* Right Arrow (RTL back) */}
+                      <button
+                        type="button"
+                        onClick={() => scrollDates('right')}
+                        className="absolute right-0 z-10 w-8 h-8 rounded-full bg-white/95 border border-slate-200 shadow-md flex items-center justify-center text-slate-500 hover:text-primary hover:bg-slate-50 active:scale-90 transition-all select-none"
+                        title="السابق"
+                      >
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
 
-                        const isAvailable = availabilityMap[formatted] !== false;
-                        const isSelected = scheduledDate === formatted;
+                      <div 
+                        ref={dateScrollRef}
+                        className="flex overflow-x-auto gap-2.5 pb-2 pt-1 px-9 snap-x snap-mandatory no-scrollbar w-full scroll-smooth"
+                      >
+                        {Array.from({ length: 14 }).map((_, i) => {
+                          const dateObj = new Date();
+                          dateObj.setDate(dateObj.getDate() + i + 1);
+                          const formatted = dateObj.toISOString().split("T")[0];
+                          const dayName = dateObj.toLocaleDateString("ar-EG", { weekday: "long" });
+                          const dateLabel = dateObj.toLocaleDateString("ar-EG", { day: "numeric", month: "short" });
 
-                        return (
-                          <button
-                            type="button"
-                            key={formatted}
-                            disabled={!isAvailable}
-                            onClick={() => {
-                              setScheduledDate(formatted);
-                              const parts = formatted.split("-");
-                              if (parts.length === 3) {
-                                setManualDateText(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                              }
-                            }}
-                            className={`snap-start shrink-0 min-w-[92px] p-2.5 rounded-xl border text-center transition-all flex flex-col justify-center gap-0.5 select-none ${
-                              isSelected 
-                                ? "bg-primary border-primary text-white shadow-md shadow-primary/10 scale-[1.02]" 
-                                : isAvailable
-                                  ? "bg-emerald-50/30 border-emerald-200/50 hover:border-emerald-400 text-emerald-700 hover:bg-emerald-50/60 cursor-pointer"
-                                  : "bg-rose-50/20 border-rose-200/20 text-rose-400/80 cursor-not-allowed opacity-60"
-                            }`}
-                          >
-                            <span className={`text-[9px] block font-bold ${isSelected ? "text-white/80" : "text-slate-400"}`}>{dayName}</span>
-                            <span className="text-xs block font-black">{dateLabel}</span>
-                            <span className={`text-[8px] font-bold block mt-0.5 ${isSelected ? "text-white/90" : isAvailable ? "text-emerald-600" : "text-rose-400"}`}>
-                              {isAvailable ? "متاح" : "غير متاح"}
-                            </span>
-                          </button>
-                        );
-                      })}
+                          const isAvailable = availabilityMap[formatted] !== false;
+                          const isSelected = scheduledDate === formatted;
+
+                          return (
+                            <button
+                              type="button"
+                              key={formatted}
+                              disabled={!isAvailable}
+                              onClick={() => {
+                                setScheduledDate(formatted);
+                                const parts = formatted.split("-");
+                                if (parts.length === 3) {
+                                  setManualDateText(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                                }
+                              }}
+                              className={`snap-start shrink-0 min-w-[92px] p-2.5 rounded-xl border text-center transition-all flex flex-col justify-center gap-0.5 select-none ${
+                                isSelected 
+                                  ? "bg-primary border-primary text-white shadow-md shadow-primary/10 scale-[1.02]" 
+                                  : isAvailable
+                                    ? "bg-emerald-50/30 border-emerald-200/50 hover:border-emerald-400 text-emerald-700 hover:bg-emerald-50/60 cursor-pointer"
+                                    : "bg-rose-50/20 border-rose-200/20 text-rose-400/80 cursor-not-allowed opacity-60"
+                              }`}
+                            >
+                              <span className={`text-[9px] block font-bold ${isSelected ? "text-white/80" : "text-slate-400"}`}>{dayName}</span>
+                              <span className="text-xs block font-black">{dateLabel}</span>
+                              <span className={`text-[8px] font-bold block mt-0.5 ${isSelected ? "text-white/90" : isAvailable ? "text-emerald-600" : "text-rose-400"}`}>
+                                {isAvailable ? "متاح" : "غير متاح"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Left Arrow (RTL forward) */}
+                      <button
+                        type="button"
+                        onClick={() => scrollDates('left')}
+                        className="absolute left-0 z-10 w-8 h-8 rounded-full bg-white/95 border border-slate-200 shadow-md flex items-center justify-center text-slate-500 hover:text-primary hover:bg-slate-50 active:scale-90 transition-all select-none"
+                        title="التالي"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                      </button>
                     </div>
 
                     {/* Styled Manual Input Alternative */}
@@ -1027,14 +1141,38 @@ function BookingFlowContent() {
                 )}
 
                 {currentStep < STEPS.length - 1 ? (
-                  <button 
-                    onClick={handleNext}
-                    disabled={!isStepValid()}
-                    className="flex items-center gap-1.5 bg-primary disabled:bg-slate-200 text-white disabled:text-slate-400 font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md disabled:shadow-none animate-all"
-                  >
-                    <span>الخطوة التالية</span>
-                    <ArrowLeft className="w-4 h-4 rotate-180" />
-                  </button>
+                  currentStep === 0 ? (
+                    !hasCalculated ? (
+                      <button 
+                        type="button"
+                        onClick={handleCalculate}
+                        disabled={isCalculating}
+                        className="flex items-center gap-1.5 bg-primary text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md hover:bg-primary/95 transition-all active:scale-95"
+                      >
+                        <span>{isCalculating ? "جاري الحساب..." : "احسب السعر"}</span>
+                        <ArrowLeft className="w-4 h-4 rotate-180" />
+                      </button>
+                    ) : (
+                      <button 
+                        type="button"
+                        onClick={handleNext}
+                        className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md transition-all active:scale-95"
+                      >
+                        <span>الخطوة التالية</span>
+                        <ArrowLeft className="w-4 h-4 rotate-180" />
+                      </button>
+                    )
+                  ) : (
+                    <button 
+                      type="button"
+                      onClick={handleNext}
+                      disabled={!isStepValid()}
+                      className="flex items-center gap-1.5 bg-primary disabled:bg-slate-200 text-white disabled:text-slate-400 font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md disabled:shadow-none transition-all active:scale-95"
+                    >
+                      <span>الخطوة التالية</span>
+                      <ArrowLeft className="w-4 h-4 rotate-180" />
+                    </button>
+                  )
                 ) : (
                   <button 
                     onClick={handleCompleteBooking}
@@ -1056,96 +1194,111 @@ function BookingFlowContent() {
 
             {/* Price invoice details block */}
             <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-[200px] z-20">
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl p-5 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] space-y-4">
+              <div className={`bg-white/95 backdrop-blur-md rounded-2xl p-5 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] space-y-4 transition-all duration-500 ${
+                animatePrice ? 'translate-y-0 opacity-100 scale-100' : 'lg:translate-y-4 lg:opacity-90'
+              }`}>
                 <h3 className="font-extrabold text-slate-800 text-base border-b border-slate-100 pb-3">ملخص الفاتورة المعتمدة</h3>
                 
-                <div className="space-y-3.5 text-xs text-slate-600">
-                  <div className="flex justify-between items-start gap-3">
-                    <span className="font-bold">الخدمة:</span>
-                    <span className="text-left font-extrabold text-primary">
-                      {selectedSubService?.title?.ar || selectedSubService?.title || "حساب السعر للخدمة..."}
-                    </span>
+                {currentStep === 0 && !hasCalculated ? (
+                  <div className="py-8 px-4 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center mx-auto text-primary">
+                      <Sparkles className="w-6 h-6 animate-pulse" />
+                    </div>
+                    <p className="text-xs font-bold text-slate-500 leading-relaxed">
+                      يرجى تحديد تفاصيل الخدمة واستكمال الحقول المطلوبة ثم الضغط على زر <span className="text-primary font-extrabold">"احسب السعر"</span> لعرض التكلفة النهائية هنا.
+                    </p>
                   </div>
-
-                  {/* Render input specs breakdown */}
-                  {Object.entries(pricingInputs).map(([k, v]) => {
-                    const field = selectedSubService?.price_config?.fields?.find((f: any) => f.id === k);
-                    if (!field || v === 0 || v === false) return null;
-                    return (
-                      <div key={k} className="flex justify-between">
-                        <span className="font-bold">{field.label?.ar || field.label}:</span>
-                        <span className="font-black text-slate-800">
-                          {typeof v === "boolean" ? "نعم" : `${v} ${field.unit || ""}`}
+                ) : (
+                  <>
+                    <div className="space-y-3.5 text-xs text-slate-600">
+                      <div className="flex justify-between items-start gap-3">
+                        <span className="font-bold">الخدمة:</span>
+                        <span className="text-left font-extrabold text-primary">
+                          {selectedSubService?.title?.ar || selectedSubService?.title || "حساب السعر للخدمة..."}
                         </span>
                       </div>
-                    );
-                  })}
-                  
-                  {/* Selected Addons invoice display */}
-                  {selectedAddons.length > 0 && selectedSubService?.price_config?.options && (
-                    <div className="space-y-1.5 border-t border-slate-100 pt-3">
-                      <span className="font-bold block text-slate-400">الإضافات المحددة:</span>
-                      {selectedAddons.map((addId) => {
-                        const addon = selectedSubService.price_config.options.find((a: any) => a.key === addId);
-                        if (!addon) return null;
+
+                      {/* Render input specs breakdown */}
+                      {Object.entries(pricingInputs).map(([k, v]) => {
+                        const field = selectedSubService?.price_config?.fields?.find((f: any) => f.id === k);
+                        if (!field || v === 0 || v === false) return null;
                         return (
-                          <div key={addId} className="flex justify-between text-[11px] font-semibold text-slate-500">
-                            <span>- {addon.key}</span>
-                            <span className="font-bold">+{addon.value} ج.م</span>
+                          <div key={k} className="flex justify-between">
+                            <span className="font-bold">{field.label?.ar || field.label}:</span>
+                            <span className="font-black text-slate-800">
+                              {typeof v === "boolean" ? "نعم" : `${v} ${field.unit || ""}`}
+                            </span>
                           </div>
                         );
                       })}
-                    </div>
-                  )}
-                  
-                  {/* Date & Time if selected */}
-                  {(scheduledDate || scheduledTime) && (
-                    <div className="space-y-2 border-t border-slate-100 pt-3">
-                      <span className="font-bold block text-slate-400">الموعد المحدد:</span>
-                      {scheduledDate && (
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800">
-                          <Calendar className="w-3.5 h-3.5 text-secondary" />
-                          <span>{scheduledDate}</span>
+                      
+                      {/* Selected Addons invoice display */}
+                      {selectedAddons.length > 0 && selectedSubService?.price_config?.options && (
+                        <div className="space-y-1.5 border-t border-slate-100 pt-3">
+                          <span className="font-bold block text-slate-400">الإضافات المحددة:</span>
+                          {selectedAddons.map((addId) => {
+                            const addon = selectedSubService.price_config.options.find((a: any) => a.key === addId);
+                            if (!addon) return null;
+                            return (
+                              <div key={addId} className="flex justify-between text-[11px] font-semibold text-slate-500">
+                                <span>- {addon.key}</span>
+                                <span className="font-bold">+{addon.value} ج.م</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
-                      {scheduledTime && (
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800">
-                          <Clock className="w-3.5 h-3.5 text-secondary" />
-                          <span>بين الساعة {scheduledTime}</span>
+                      
+                      {/* Date & Time if selected */}
+                      {(scheduledDate || scheduledTime) && (
+                        <div className="space-y-2 border-t border-slate-100 pt-3">
+                          <span className="font-bold block text-slate-400">الموعد المحدد:</span>
+                          {scheduledDate && (
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800">
+                              <Calendar className="w-3.5 h-3.5 text-secondary" />
+                              <span>{scheduledDate}</span>
+                            </div>
+                          )}
+                          {scheduledTime && (
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800">
+                              <Clock className="w-3.5 h-3.5 text-secondary" />
+                              <span>بين الساعة {scheduledTime}</span>
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
-                  )}
 
-                  {/* Governorate and city if step > 2 */}
-                  {currentStep >= 3 && address.street && (
-                    <div className="space-y-2 border-t border-slate-100 pt-3">
-                      <span className="font-bold block text-slate-400">العنوان:</span>
-                      <div className="flex items-start gap-1.5 text-[11px] text-slate-800 font-semibold leading-relaxed">
-                        <MapPin className="w-3.5 h-3.5 text-secondary mt-0.5 shrink-0" />
-                        <span>{address.governorate}، {address.city}، {address.street}، عمارة {address.building}</span>
+                      {/* Governorate and city if step > 2 */}
+                      {currentStep >= 3 && address.street && (
+                        <div className="space-y-2 border-t border-slate-100 pt-3">
+                          <span className="font-bold block text-slate-400">العنوان:</span>
+                          <div className="flex items-start gap-1.5 text-[11px] text-slate-800 font-semibold leading-relaxed">
+                            <MapPin className="w-3.5 h-3.5 text-secondary mt-0.5 shrink-0" />
+                            <span>{address.governorate}، {address.city}، {address.street}، عمارة {address.building}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t border-slate-150 pt-4 space-y-2">
+                      <div className="flex justify-between text-xs text-slate-500 font-semibold">
+                        <span>قيمة الخدمة الأساسية والإضافات:</span>
+                        <span>{isCalculating ? "..." : `${priceDetails.basePrice + priceDetails.extraFees} ج.م`}</span>
+                      </div>
+                      {priceDetails.discount > 0 && (
+                        <div className="flex justify-between text-xs text-emerald-600 font-semibold">
+                          <span>خصومات مطبقة:</span>
+                          <span>-{priceDetails.discount} ج.م</span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between text-base font-black text-primary border-t border-dashed border-slate-200 pt-3.5">
+                        <span>إجمالي القيمة:</span>
+                        <span>{isCalculating ? "جاري الحساب..." : `${priceDetails.total} ج.م`}</span>
                       </div>
                     </div>
-                  )}
-                </div>
-
-                <div className="border-t border-slate-150 pt-4 space-y-2">
-                  <div className="flex justify-between text-xs text-slate-500 font-semibold">
-                    <span>قيمة الخدمة الأساسية والإضافات:</span>
-                    <span>{isCalculating ? "..." : `${priceDetails.basePrice + priceDetails.extraFees} ج.م`}</span>
-                  </div>
-                  {priceDetails.discount > 0 && (
-                    <div className="flex justify-between text-xs text-emerald-600 font-semibold">
-                      <span>خصومات مطبقة:</span>
-                      <span>-{priceDetails.discount} ج.م</span>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between text-base font-black text-primary border-t border-dashed border-slate-200 pt-3.5">
-                    <span>إجمالي القيمة:</span>
-                    <span>{isCalculating ? "جاري الحساب..." : `${priceDetails.total} ج.م`}</span>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
 
               {/* Security guarantee box */}
@@ -1162,6 +1315,59 @@ function BookingFlowContent() {
           </div>
         </div>
       </main>
+      
+      {/* Mobile Price Popup Modal */}
+      {showMobilePriceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm lg:hidden animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 space-y-5 animate-[scaleUp_0.3s_cubic-bezier(0.34,1.56,0.64,1)]">
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto text-emerald-600">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <h4 className="text-lg font-black text-slate-800">تم احتساب السعر بنجاح!</h4>
+              <p className="text-slate-400 text-xs">إليك القيمة التفصيلية المعتمدة لطلبك.</p>
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/50 space-y-3">
+              <div className="flex justify-between text-xs text-slate-500 font-bold">
+                <span>قيمة الخدمة الأساسية والإضافات:</span>
+                <span>{priceDetails.basePrice + priceDetails.extraFees} ج.م</span>
+              </div>
+              {priceDetails.discount > 0 && (
+                <div className="flex justify-between text-xs text-emerald-600 font-extrabold">
+                  <span>خصومات مطبقة:</span>
+                  <span>-{priceDetails.discount} ج.م</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm font-black text-primary border-t border-dashed border-slate-200 pt-3 mt-1">
+                <span>إجمالي القيمة:</span>
+                <span>{priceDetails.total} ج.م</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMobilePriceModal(false);
+                  handleNext();
+                }}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/10"
+              >
+                <span>موافق ومتابعة الحجز</span>
+                <ArrowLeft className="w-4 h-4 rotate-180" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMobilePriceModal(false)}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-xs transition-all text-center"
+              >
+                تعديل التفاصيل
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <Footer />
     </>
