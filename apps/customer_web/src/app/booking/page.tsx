@@ -225,7 +225,7 @@ function BookingFlowContent() {
     if (selectedSubService?.price_config?.fields) {
       selectedSubService.price_config.fields.forEach((field: any) => {
         const val = pricingInputs[field.id];
-        const isRequired = field.required === true || field.required === "true" || field.required === 1 || field.required === "required";
+        const isRequired = field.required !== false;
         
         if (isRequired) {
           if (val === undefined || val === null || val === "" || val === 0 || val === "0") {
