@@ -797,7 +797,7 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
         actionColor = const Color(0xFF06B6D4);
         break;
       case OrderStatus.arrived:
-        actionLabel = "تأكيد المساحة وبدء العمل";
+        actionLabel = "تأكيد التفاصيل وبدء الخدمة";
         nextStatus = OrderStatus.inProgress;
         actionIcon = Icons.play_circle_outline_rounded;
         actionColor = const Color(0xFF10B981);
@@ -1159,7 +1159,7 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
               ),
               const SizedBox(width: 12),
               Text(
-                "معاينة ومراجعة المساحة",
+                "معاينة ومراجعة التفاصيل",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,

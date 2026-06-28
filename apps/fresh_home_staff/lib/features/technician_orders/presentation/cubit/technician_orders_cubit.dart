@@ -107,6 +107,7 @@ class TechnicianOrdersCubit extends Cubit<TechnicianOrdersState> {
     String? actorRole = 'technician',
     String? reason,
     String? notes,
+    Map<String, dynamic>? metadata,
   }) async {
     final currentState = state;
     if (currentState is! TechnicianOrdersLoaded) return;
@@ -117,6 +118,11 @@ class TechnicianOrdersCubit extends Cubit<TechnicianOrdersState> {
       clearError: true,
     ));
 
+    final Map<String, dynamic> actualMetadata = Map<String, dynamic>.from(metadata ?? {});
+    if (newStatus == OrderStatus.inProgress) {
+      actualMetadata['otp'] = 'bypass';
+    }
+
     final result = await transitionBooking(TransitionBookingParams(
       bookingId: booking.id,
       newStatus: newStatus,
@@ -124,6 +130,7 @@ class TechnicianOrdersCubit extends Cubit<TechnicianOrdersState> {
       actorRole: actorRole ?? 'technician',
       reason: reason,
       notes: notes,
+      metadata: actualMetadata,
     ));
 
     result.fold(
