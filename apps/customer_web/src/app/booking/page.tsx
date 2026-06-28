@@ -200,15 +200,11 @@ function BookingFlowContent() {
       const defaults: Record<string, any> = {};
       selectedSubService.price_config.fields.forEach((field: any) => {
         if (field.type === "number") {
-          defaults[field.id] = field.min || 0;
+          defaults[field.id] = "";
         } else if (field.type === "toggle") {
           defaults[field.id] = false;
         }
       });
-      // Set a default area driver if it is per square meter and no min was set
-      if (selectedSubService.price_config.type === "per_square_meter" && defaults.area === 0) {
-        defaults.area = 100;
-      }
       setPricingInputs(defaults);
       setSelectedAddons([]);
       setHasCalculated(false);
@@ -221,38 +217,44 @@ function BookingFlowContent() {
   const handleCalculate = async () => {
     if (!subServiceId || subServiceId.includes("mock")) return;
 
-    // Validate fields
+    // Validate and auto-adjust fields
     const errors: Record<string, string> = {};
+    const adjustedInputs = { ...pricingInputs };
+    let hasAdjustments = false;
+
     if (selectedSubService?.price_config?.fields) {
       selectedSubService.price_config.fields.forEach((field: any) => {
         const val = pricingInputs[field.id];
         
-        // If field is required
         if (field.required) {
-          if (val === undefined || val === null || val === "" || val === 0) {
-            errors[field.id] = "هذا الحقل مطلوب ولا يمكن تركه فارغاً أو بقيمة صفر";
+          if (val === undefined || val === null || val === "") {
+            errors[field.id] = "هذا الحقل مطلوب ولا يمكن تركه فارغاً";
           } else if (field.type === "number") {
             const num = Number(val);
             if (field.min !== undefined && num < field.min) {
-              errors[field.id] = `الحد الأدنى المسموح به هو ${field.min}`;
-            }
-            if (field.max !== undefined && num > field.max) {
+              adjustedInputs[field.id] = field.min;
+              hasAdjustments = true;
+            } else if (field.max !== undefined && num > field.max) {
               errors[field.id] = `الحد الأقصى المسموح به هو ${field.max}`;
             }
           }
         } else {
-          // If not required but entered, validate min/max if present
+          // If not required but entered
           if (val !== undefined && val !== null && val !== "" && field.type === "number") {
             const num = Number(val);
             if (field.min !== undefined && num < field.min && num > 0) {
-              errors[field.id] = `الحد الأدنى المسموح به هو ${field.min}`;
-            }
-            if (field.max !== undefined && num > field.max) {
+              adjustedInputs[field.id] = field.min;
+              hasAdjustments = true;
+            } else if (field.max !== undefined && num > field.max) {
               errors[field.id] = `الحد الأقصى المسموح به هو ${field.max}`;
             }
           }
         }
       });
+    }
+
+    if (hasAdjustments) {
+      setPricingInputs(adjustedInputs);
     }
 
     if (Object.keys(errors).length > 0) {
@@ -270,7 +272,7 @@ function BookingFlowContent() {
     setValidationErrors({});
     setIsCalculating(true);
 
-    const inputs = { ...pricingInputs };
+    const inputs = { ...adjustedInputs };
     if (selectedAddons.length > 0) {
       inputs.selected_options = selectedAddons;
     }
@@ -683,7 +685,7 @@ function BookingFlowContent() {
                         <div className="space-y-6 pt-4 border-t border-slate-100">
                           {selectedSubService.price_config.fields.map((field: any) => {
                             if (field.type === "number") {
-                              const val = pricingInputs[field.id] || 0;
+                              const val = pricingInputs[field.id] ?? "";
                               const hasError = !!validationErrors[field.id];
                               return (
                                 <div key={field.id} id={`field-container-${field.id}`} className="space-y-2">
@@ -692,14 +694,17 @@ function BookingFlowContent() {
                                       {field.label?.ar || field.label} {field.unit ? `(${field.unit})` : ""}
                                       {field.required && <span className="text-red-500 mr-1">*</span>}
                                     </label>
-                                    {field.id === "area" && <span className="text-xs font-black text-primary">{val} {field.unit || "م²"}</span>}
+                                    {field.id === "area" && <span className="text-xs font-black text-primary">{val !== "" ? val : "0"} {field.unit || "م²"}</span>}
                                   </div>
                                   
                                   {field.id === "area" ? (
                                     <div className="flex items-center gap-3">
                                       <button 
                                         type="button"
-                                        onClick={() => handleFieldChange(field.id, Math.max(field.min || 50, val - 10))}
+                                        onClick={() => {
+                                          const currentVal = val === "" ? (field.min || 50) : Number(val);
+                                          handleFieldChange(field.id, Math.max(field.min || 50, currentVal - 10));
+                                        }}
                                         className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/60 font-extrabold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors"
                                       >
                                         -
@@ -709,10 +714,23 @@ function BookingFlowContent() {
                                           type="number" 
                                           min={field.min || 50} 
                                           max={field.max || 400} 
-                                          value={val || ""}
+                                          value={val}
                                           onChange={(e) => {
-                                            const parsed = parseInt(e.target.value);
-                                            handleFieldChange(field.id, isNaN(parsed) ? 0 : parsed);
+                                            const text = e.target.value;
+                                            if (text === "") {
+                                              handleFieldChange(field.id, "");
+                                            } else {
+                                              const parsed = parseInt(text);
+                                              handleFieldChange(field.id, isNaN(parsed) ? "" : parsed);
+                                            }
+                                          }}
+                                          onBlur={() => {
+                                            if (val !== "") {
+                                              const num = Number(val);
+                                              if (field.min !== undefined && num < field.min) {
+                                                handleFieldChange(field.id, field.min);
+                                              }
+                                            }
                                           }}
                                           className={`w-full p-2 pl-8 rounded-xl border text-center text-xs font-black focus:outline-none bg-white font-sans [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                                             hasError ? 'border-red-500 focus:border-red-500 bg-red-50/15' : 'border-slate-200 focus:border-primary'
@@ -724,7 +742,10 @@ function BookingFlowContent() {
                                       </div>
                                       <button 
                                         type="button"
-                                        onClick={() => handleFieldChange(field.id, Math.min(field.max || 400, val + 10))}
+                                        onClick={() => {
+                                          const currentVal = val === "" ? (field.min || 50) : Number(val);
+                                          handleFieldChange(field.id, Math.min(field.max || 400, currentVal + 10));
+                                        }}
                                         className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/60 font-extrabold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors"
                                       >
                                         +
@@ -734,15 +755,21 @@ function BookingFlowContent() {
                                     <div className="flex items-center gap-4">
                                       <button 
                                         type="button"
-                                        onClick={() => handleFieldChange(field.id, Math.max(field.min || 0, val - 1))}
+                                        onClick={() => {
+                                          const currentVal = val === "" ? 0 : Number(val);
+                                          handleFieldChange(field.id, Math.max(field.min || 0, currentVal - 1));
+                                        }}
                                         className="w-10 h-10 rounded-xl bg-slate-100 font-bold text-lg flex items-center justify-center hover:bg-slate-200"
                                       >
                                         -
                                       </button>
-                                      <span className="text-xl font-black w-8 text-center">{val}</span>
+                                      <span className="text-xl font-black w-8 text-center">{val === "" ? "0" : val}</span>
                                       <button 
                                         type="button"
-                                        onClick={() => handleFieldChange(field.id, val + 1)}
+                                        onClick={() => {
+                                          const currentVal = val === "" ? 0 : Number(val);
+                                          handleFieldChange(field.id, currentVal + 1);
+                                        }}
                                         className="w-10 h-10 rounded-xl bg-slate-100 font-bold text-lg flex items-center justify-center hover:bg-slate-200"
                                       >
                                         +
