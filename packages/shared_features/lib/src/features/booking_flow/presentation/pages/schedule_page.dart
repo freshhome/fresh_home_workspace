@@ -77,10 +77,14 @@ class _SchedulePageState extends State<SchedulePage> {
 
     final now = DateTime.now();
     final todayDate = DateTime(now.year, now.month, now.day);
+    final config = context.read<BookingFlowCubit>().config;
+    final earliestDate = config.earliestSelectableDate;
 
-    if (parsedDate.isBefore(todayDate)) {
+    if (parsedDate.isBefore(earliestDate)) {
       setState(() {
-        dateWarningText = "يرجى اختيار تاريخ اليوم أو تاريخ في المستقبل.";
+        dateWarningText = config.mode == BookingFlowMode.admin
+            ? "يرجى اختيار تاريخ اليوم أو تاريخ في المستقبل."
+            : "يرجى اختيار تاريخ الغد أو تاريخ في المستقبل.";
         nextAvailableSuggestion = null;
       });
       _updateSchedule(context, null);
@@ -144,8 +148,8 @@ class _SchedulePageState extends State<SchedulePage> {
 
   void _updateSchedule(BuildContext context, DateTime? date, {String? time}) {
     final cubit = context.read<BookingFlowCubit>();
-    if (date == null) {
-      cubit.updateSchedule(null);
+    if (date == null || date.year == 1900) {
+      cubit.showScheduleError();
       return;
     }
     if (time == null) {
@@ -398,8 +402,22 @@ class _SchedulePageState extends State<SchedulePage> {
                       fontSize: 18),
                 ),
                 const SizedBox(height: 16),
-                _buildTimeSlots(
-                    context, state, themeColor, themeText, selectedDate),
+                if (dbDate == null || dbDate.year == 1900)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Text(
+                        "يرجى تحديد التاريخ أولاً لعرض الأوقات المتاحة",
+                        style: themeText.textBodyPrimary.copyWith(
+                          color: themeColor.textPrimary.withValues(alpha: 0.5),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  _buildTimeSlots(
+                      context, state, themeColor, themeText, selectedDate),
                 const SizedBox(height: 24),
 
                 // Info note

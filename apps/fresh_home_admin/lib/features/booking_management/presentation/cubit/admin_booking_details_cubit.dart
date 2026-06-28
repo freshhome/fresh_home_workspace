@@ -243,4 +243,36 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
       (r) => emit(AdminBookingDetailsSuccess('تم تأكيد حجز الواتساب يدوياً بنجاح وتنشيط الحجز!', booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
     );
   }
+
+  Future<void> updateBookingDetails({
+    required Booking booking,
+    required Map<String, dynamic> pricingInputs,
+    required BookingPricing price,
+  }) async {
+    UserProfile? customer;
+    UserProfile? technician;
+    if (state is AdminBookingDetailsLoaded) {
+      final loaded = state as AdminBookingDetailsLoaded;
+      customer = loaded.customer;
+      technician = loaded.technician;
+    } else if (state is AdminBookingDetailsSuccess) {
+      final success = state as AdminBookingDetailsSuccess;
+      customer = success.customer;
+      technician = success.technician;
+    }
+
+    emit(AdminBookingDetailsLoading());
+
+    final updatedBooking = booking.copyWith(
+      pricingInputs: pricingInputs,
+      price: price,
+    );
+
+    final result = await bookingRepository.updateBooking(booking: updatedBooking);
+
+    result.fold(
+      (l) => emit(AdminBookingDetailsError(l.message, booking: booking, customer: customer, technician: technician)),
+      (r) => emit(AdminBookingDetailsSuccess('تم تحديث تفاصيل الطلب والأسعار بنجاح', booking: updatedBooking, customer: customer, technician: technician)),
+    );
+  }
 }

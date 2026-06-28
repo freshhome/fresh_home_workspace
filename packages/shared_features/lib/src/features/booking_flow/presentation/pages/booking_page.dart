@@ -74,41 +74,53 @@ class _BookingPageState extends State<BookingPage> {
           curve: Curves.easeInOut,
         );
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.booking_appbar_title),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              final state = context.read<BookingFlowCubit>().state;
-              if (state.currentStepIndex > 0) {
-                context.read<BookingFlowCubit>().previousStep();
-              } else {
-                Navigator.of(context).pop();
-              }
-            },
-          ),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(110),
-            child: BlocBuilder<BookingFlowCubit, BookingFlowState>(
-              builder: (context, state) => BookingProgress(
-                currentStep: state.currentStepIndex,
-                totalSteps: config.totalSteps,
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          final state = context.read<BookingFlowCubit>().state;
+          if (state.currentStepIndex > 0) {
+            context.read<BookingFlowCubit>().previousStep();
+          } else {
+            Navigator.of(context).pop();
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(l10n.booking_appbar_title),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                final state = context.read<BookingFlowCubit>().state;
+                if (state.currentStepIndex > 0) {
+                  context.read<BookingFlowCubit>().previousStep();
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(110),
+              child: BlocBuilder<BookingFlowCubit, BookingFlowState>(
+                builder: (context, state) => BookingProgress(
+                  currentStep: state.currentStepIndex,
+                  totalSteps: config.totalSteps,
+                ),
               ),
             ),
           ),
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: _buildPages(config),
+          body: Column(
+            children: [
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: _buildPages(config),
+                ),
               ),
-            ),
-            _buildBottomBar(context, l10n, config),
-          ],
+              _buildBottomBar(context, l10n, config),
+            ],
+          ),
         ),
       ),
     );
@@ -136,6 +148,10 @@ class _BookingPageState extends State<BookingPage> {
         // ── Determine address/client step index ──
         final clientStepIndex = config.requiresManualClientData ? 3 : 2;
         final isClientStep = step == clientStepIndex;
+
+        // ── Determine schedule step index ──
+        final scheduleStepIndex = config.requiresServiceSelection ? 2 : 1;
+        final isScheduleStep = step == scheduleStepIndex;
 
         // ── Button logic ──────────────────────────────────────────────
         final String nextButtonText;
@@ -220,12 +236,26 @@ class _BookingPageState extends State<BookingPage> {
             FocusScope.of(context).unfocus();
             context.read<BookingFlowCubit>().requestAddressValidation();
           };
-        } else {
-          // Service selection or schedule step
+        } else if (isScheduleStep) {
+          // Schedule step: enforce selection
           nextButtonText = l10n.general_next;
           nextButtonIcon =
               const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white);
-          final canProceed = state.service != null || step != 0;
+          nextOnPressed = () {
+            if (state.scheduledAt == null || state.scheduledAt!.year == 1900) {
+              FocusScope.of(context).unfocus();
+              context.read<BookingFlowCubit>().showScheduleError();
+            } else {
+              FocusScope.of(context).unfocus();
+              context.read<BookingFlowCubit>().nextStep();
+            }
+          };
+        } else {
+          // Service selection step (Admin step 0)
+          nextButtonText = l10n.general_next;
+          nextButtonIcon =
+              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white);
+          final canProceed = state.service != null;
           nextOnPressed = canProceed
               ? () {
                   FocusScope.of(context).unfocus();

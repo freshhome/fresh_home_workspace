@@ -47,8 +47,12 @@ class _AddressPageState extends State<AddressPage> {
   void initState() {
     super.initState();
     final state = context.read<BookingFlowCubit>().state;
+    final profile = state.currentUserProfile;
 
-    if (state.address != null && _selectedAddressIndex == null) {
+    final addressesList = profile is CustomerProfile ? profile.addresses : const <Address>[];
+    final phoneList = profile?.phoneNumbers ?? [];
+
+    if (state.address != null) {
       _selectedGovernorate = state.address!.governorate.isNotEmpty
           ? state.address!.governorate
           : null;
@@ -59,9 +63,44 @@ class _AddressPageState extends State<AddressPage> {
       _buildingController.text = state.address!.buildingNumber;
       _floorController.text = state.address!.floorNumber ?? '';
       _apartmentController.text = state.address!.apartmentNumber ?? '';
+
+      // Find index in saved addresses
+      final idx = addressesList.indexWhere(
+        (a) =>
+            a.governorate == state.address!.governorate &&
+            a.city == state.address!.city &&
+            a.street == state.address!.street &&
+            a.buildingNumber == state.address!.buildingNumber &&
+            a.floorNumber == state.address!.floorNumber &&
+            a.apartmentNumber == state.address!.apartmentNumber,
+      );
+      _selectedAddressIndex = idx != -1 ? idx : -1;
+    } else {
+      // Auto-select first address if available
+      if (addressesList.isNotEmpty) {
+        _selectedAddressIndex = 0;
+        final addr = addressesList[0];
+        _fillAddressFields(addr);
+        context.read<BookingFlowCubit>().updateAddress(addr);
+      }
     }
-    if (state.contact != null && _selectedPhoneIndex == null) {
-      _phoneController.text = state.contact!.phone.firstOrNull ?? '';
+
+    if (state.contact != null) {
+      final phone = state.contact!.phone.firstOrNull ?? '';
+      _phoneController.text = phone;
+      
+      // Find index in saved phones
+      final idx = phoneList.indexWhere((p) => p.phoneNumber == phone);
+      _selectedPhoneIndex = idx != -1 ? idx : -1;
+    } else {
+      // Auto-select first phone if available
+      if (phoneList.isNotEmpty) {
+        _selectedPhoneIndex = 0;
+        final phone = phoneList[0].phoneNumber;
+        _phoneController.text = phone;
+        final contactName = profile != null ? '${profile.firstName} ${profile.lastName}' : '';
+        context.read<BookingFlowCubit>().updateContact(Contact(name: contactName, phone: [phone]));
+      }
     }
   }
 
@@ -122,40 +161,65 @@ class _AddressPageState extends State<AddressPage> {
         [];
     final hasPhones = phones.isNotEmpty;
 
-    if (_selectedAddressIndex == null && hasAddresses) {
-      setState(() => _showAddressError = true);
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOut,
-      );
-      return;
-    }
-    if (_selectedAddressIndex == -1) {
+    if (hasAddresses) {
+      if (_selectedAddressIndex == null) {
+        setState(() => _showAddressError = true);
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOut,
+        );
+        return;
+      }
+      if (_selectedAddressIndex == -1) {
+        if (!(_addressFormKey.currentState?.validate() ?? false)) return;
+      }
+    } else {
       if (!(_addressFormKey.currentState?.validate() ?? false)) return;
     }
-    if (_selectedPhoneIndex == null && hasPhones) {
-      setState(() => _showPhoneError = true);
-      return;
-    }
-    if (_selectedPhoneIndex == -1) {
+
+    if (hasPhones) {
+      if (_selectedPhoneIndex == null) {
+        setState(() => _showPhoneError = true);
+        return;
+      }
+      if (_selectedPhoneIndex == -1) {
+        if (!(_phoneFormKey.currentState?.validate() ?? false)) return;
+      }
+    } else {
       if (!(_phoneFormKey.currentState?.validate() ?? false)) return;
     }
 
-    if (_selectedAddressIndex != -1 && _selectedAddressIndex != null) {
+    if (_selectedAddressIndex == -1 || !hasAddresses) {
+      final city = (_selectedCity == l10n.address_city_other)
+          ? _otherCityController.text
+          : (_selectedCity ?? '');
+      cubit.updateAddress(
+        Address(
+          governorate: _selectedGovernorate ?? '',
+          city: city,
+          street: _streetController.text,
+          buildingNumber: _buildingController.text,
+          floorNumber: _floorController.text,
+          apartmentNumber: _apartmentController.text,
+        ),
+      );
+    } else if (_selectedAddressIndex != null) {
       cubit.updateAddress(
         (state.currentUserProfile as CustomerProfile)
             .addresses[_selectedAddressIndex!],
       );
     }
 
-    final selectedPhone = _selectedPhoneIndex == -1
+    final selectedPhone = (_selectedPhoneIndex == -1 || !hasPhones)
         ? _phoneController.text
         : (hasPhones ? phones[_selectedPhoneIndex!] : _phoneController.text);
 
     cubit.updateContact(
       Contact(
-        name: state.currentUserProfile?.firstName ?? '',
+        name: state.currentUserProfile != null
+            ? '${state.currentUserProfile!.firstName} ${state.currentUserProfile!.lastName}'
+            : '',
         phone: [selectedPhone],
       ),
     );

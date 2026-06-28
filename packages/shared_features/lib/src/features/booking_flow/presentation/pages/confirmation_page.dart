@@ -10,8 +10,15 @@ import 'package:shared/presentation/dialogs/dialog_helper.dart';
 import '../cubit/booking_flow_cubit.dart';
 import '../cubit/booking_flow_state.dart';
 
-class ConfirmationPage extends StatelessWidget {
+class ConfirmationPage extends StatefulWidget {
   const ConfirmationPage({super.key});
+
+  @override
+  State<ConfirmationPage> createState() => _ConfirmationPageState();
+}
+
+class _ConfirmationPageState extends State<ConfirmationPage> {
+  BookingStatus? _previousStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +28,11 @@ class ConfirmationPage extends StatelessWidget {
         final l10n = AppLocalizations.of(context)!;
 
         // Handle transition FROM loading
-        if (state.status != BookingStatus.loading) {
+        if (_previousStatus == BookingStatus.loading && state.status != BookingStatus.loading) {
           DialogHelper.dismissLoading(context);
         }
+
+        _previousStatus = state.status;
 
         // Handle transition TO different statuses
         if (state.status == BookingStatus.loading) {

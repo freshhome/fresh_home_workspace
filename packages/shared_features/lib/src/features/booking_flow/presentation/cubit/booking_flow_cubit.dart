@@ -397,6 +397,10 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     _validateCurrentStep();
   }
 
+  void showScheduleError() {
+    emit(state.copyWith(errorMessage: 'error_select_schedule'));
+  }
+
   // ── Address (Customer) ─────────────────────────────────────────────────────
 
   void updateAddress(Address address) {

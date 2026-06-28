@@ -1014,6 +1014,33 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
+            if (canAction) ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showEditOrderDetailsSheet(context),
+                  icon: const Icon(Icons.edit_note_rounded),
+                  label: const Text(
+                    'تعديل تفاصيل الطلب والأسعار',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981), // Emerald
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Row(
               children: [
                 Expanded(
@@ -1055,6 +1082,15 @@ class _AdminBookingDetailsContent extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showEditOrderDetailsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _EditOrderDetailsSheet(booking: booking),
     );
   }
 
@@ -2121,6 +2157,330 @@ class _ActionButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _EditOrderDetailsSheet extends StatefulWidget {
+  final Booking booking;
+
+  const _EditOrderDetailsSheet({super.key, required this.booking});
+
+  @override
+  State<_EditOrderDetailsSheet> createState() => _EditOrderDetailsSheetState();
+}
+
+class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
+  SubServiceEntity? _subService;
+  bool _loadingService = true;
+  final Map<String, dynamic> _dynamicInputs = {};
+  final List<String> _selectedOptions = [];
+  BookingPricing? _calculatedPricing;
+  bool _isCalculating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadServiceDetails();
+  }
+
+  Future<void> _loadServiceDetails() async {
+    final getServiceById = GetIt.instance<GetServiceByIdUseCase>();
+    final result = await getServiceById(widget.booking.service.subServiceId);
+
+    if (mounted) {
+      result.fold(
+        (failure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("فشل تحميل بيانات الخدمة: ${failure.message}", style: const TextStyle(fontFamily: 'Cairo')),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+          Navigator.pop(context);
+        },
+        (service) {
+          if (service is SubServiceEntity) {
+            setState(() {
+              _subService = service;
+              _loadingService = false;
+              if (widget.booking.pricingInputs != null) {
+                _dynamicInputs.addAll(widget.booking.pricingInputs!);
+              }
+              if (_dynamicInputs['selected_options'] != null) {
+                _selectedOptions.addAll(List<String>.from(_dynamicInputs['selected_options']));
+              }
+              _calculatedPricing = widget.booking.price;
+            });
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("نوع الخدمة غير مدعوم للتعديل الديناميكي", style: TextStyle(fontFamily: 'Cairo')),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+            Navigator.pop(context);
+          }
+        },
+      );
+    }
+  }
+
+  Future<void> _calculatePrice() async {
+    if (_subService == null) return;
+    setState(() {
+      _isCalculating = true;
+    });
+
+    final calculatePriceUseCase = GetIt.instance<CalculatePriceUseCase>();
+    final result = await calculatePriceUseCase(
+      CalculatePriceParams(
+        priceEntity: _subService!.price,
+        subServiceId: _subService!.id,
+        pricingInputs: _dynamicInputs,
+        selectedOptions: _selectedOptions,
+      ),
+    );
+
+    if (mounted) {
+      setState(() {
+        _isCalculating = false;
+      });
+      result.fold(
+        (failure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("فشل حساب السعر: ${failure.message}", style: const TextStyle(fontFamily: 'Cairo')),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        },
+        (pricing) {
+          setState(() {
+            _calculatedPricing = pricing;
+          });
+        },
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loadingService) {
+      return Container(
+        color: Colors.white,
+        height: 300,
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final computedFieldIds = _subService!.computedFields?.map((cf) => cf.id).toSet() ?? {};
+    final filteredFields = _subService!.price.fields
+        .where((f) => !computedFieldIds.contains(f.id))
+        .toList();
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 24,
+        right: 24,
+        top: 24,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "تعديل تفاصيل الطلب والأسعار",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Form Renderer
+            DynamicFormRenderer(
+              fields: filteredFields,
+              values: _dynamicInputs,
+              options: _subService!.price.options,
+              selectedOptions: _selectedOptions,
+              onFieldChanged: (key, value) {
+                setState(() {
+                  if (value == null) {
+                    _dynamicInputs.remove(key);
+                  } else {
+                    _dynamicInputs[key] = value;
+                  }
+                  _calculatedPricing = null;
+                });
+              },
+              onOptionToggled: (optionKey) {
+                setState(() {
+                  if (_selectedOptions.contains(optionKey)) {
+                    _selectedOptions.remove(optionKey);
+                  } else {
+                    _selectedOptions.add(optionKey);
+                  }
+                  _dynamicInputs['selected_options'] = _selectedOptions;
+                  _calculatedPricing = null;
+                });
+              },
+            ),
+
+            const SizedBox(height: 24),
+
+            // Recalculation Button
+            if (_calculatedPricing == null)
+              ElevatedButton.icon(
+                onPressed: _isCalculating ? null : _calculatePrice,
+                icon: _isCalculating
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.calculate_rounded),
+                label: Text(
+                  _isCalculating ? "جاري الحساب..." : "حساب السعر الجديد",
+                  style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 15),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E3A8A), // Slate blue
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                ),
+              )
+            else ...[
+              // Pricing breakdown card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "تفاصيل الحساب الجديد",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF10B981),
+                        fontFamily: 'Cairo',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildPriceRow("سعر الخدمة الأساسي", "${_calculatedPricing!.basePrice.toStringAsFixed(2)} ج.م"),
+                    if (_calculatedPricing!.extraFees > 0) ...[
+                      const SizedBox(height: 8),
+                      _buildPriceRow("رسوم إضافية", "${_calculatedPricing!.extraFees.toStringAsFixed(2)} ج.م"),
+                    ],
+                    if (_calculatedPricing!.discount > 0) ...[
+                      const SizedBox(height: 8),
+                      _buildPriceRow("الخصم المطبق", "- ${_calculatedPricing!.discount.toStringAsFixed(2)} ج.م", isDiscount: true),
+                    ],
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                      child: Divider(height: 1, thickness: 0.5),
+                    ),
+                    _buildPriceRow(
+                      "إجمالي السعر الجديد للعميل",
+                      "${_calculatedPricing!.total.toStringAsFixed(2)} ج.م",
+                      isBold: true,
+                      textColor: const Color(0xFF10B981),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Save button
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.read<AdminBookingDetailsCubit>().updateBookingDetails(
+                    booking: widget.booking,
+                    pricingInputs: _dynamicInputs,
+                    price: _calculatedPricing!,
+                  );
+                },
+                icon: const Icon(Icons.save_rounded),
+                label: const Text(
+                  "تحديث وحفظ التعديلات",
+                  style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 16),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 4,
+                  shadowColor: const Color(0xFF10B981).withValues(alpha: 0.3),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriceRow(
+    String label,
+    String value, {
+    bool isBold = false,
+    bool isDiscount = false,
+    Color? textColor,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: isBold ? Colors.black87 : Colors.black54,
+              fontFamily: 'Cairo',
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            color: textColor ?? (isDiscount ? Colors.redAccent : Colors.black87),
+            fontFamily: 'Cairo',
+            fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 }

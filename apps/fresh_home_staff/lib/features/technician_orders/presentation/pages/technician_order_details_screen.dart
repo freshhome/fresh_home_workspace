@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:shared_features/shared_features.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../cubit/technician_orders_cubit.dart';
 import '../cubit/technician_orders_state.dart';
 import '../widgets/status_timeline.dart';
@@ -38,6 +39,8 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
   final List<String> _originalSelectedOptions = [];
   BookingPricing? _calculatedPricing;
   bool _isCalculating = false;
+  String? _adminWhatsAppNumber;
+  bool _loadingAdminWhatsApp = false;
 
   @override
   void initState() {
@@ -46,8 +49,79 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
       if (mounted) {
         context.read<TechnicianOrdersCubit>().loadOrders();
         _loadServiceDetails();
+        _loadAdminWhatsApp();
       }
     });
+  }
+
+  Future<void> _loadAdminWhatsApp() async {
+    setState(() => _loadingAdminWhatsApp = true);
+    try {
+      final response = await Supabase.instance.client
+          .from('system_settings')
+          .select()
+          .eq('key', 'whatsapp_settings')
+          .maybeSingle();
+      if (response != null && response['value'] != null) {
+        final val = response['value'] as Map<String, dynamic>;
+        _adminWhatsAppNumber = val['business_number'] as String?;
+      }
+    } catch (e) {
+      debugPrint('⚠️ [TechnicianOrderDetails] Error loading admin WhatsApp: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _loadingAdminWhatsApp = false);
+      }
+    }
+  }
+
+  Future<void> _launchWhatsAppToAdmin(Booking order) async {
+    if (_adminWhatsAppNumber == null || _adminWhatsAppNumber!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("جاري تحميل رقم الإدارة، يرجى المحاولة بعد قليل...", style: TextStyle(fontFamily: 'Cairo')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final displayId = order.displayId;
+    final locale = Localizations.localeOf(context).languageCode;
+    final serviceName = order.service.name[locale] ?? order.service.name['ar'] ?? '';
+    final clientName = order.contact.name;
+    final clientPhone = order.contact.phone.isNotEmpty ? order.contact.phone.first : '';
+
+    String details = '';
+    if (order.pricingInputs != null) {
+      order.pricingInputs!.forEach((key, value) {
+        if (key != 'selected_options') {
+          details += "- $key: $value\n";
+        }
+      });
+    }
+
+    final message = "السلام عليكم ورحمة الله وبركاته،\n"
+        "أود تقديم طلب مراجعة وتعديل للأوردر رقم: #$displayId\n"
+        "نوع الخدمة: $serviceName\n"
+        "اسم العميل: $clientName\n"
+        "رقم هاتف العميل: $clientPhone\n"
+        "التفاصيل الحالية:\n"
+        "$details\n"
+        "المشكلة: المساحة الفعلية مختلفة وتحتاج إلى تعديل من طرفكم.";
+
+    // Clean admin phone number
+    String cleanPhone = _adminWhatsAppNumber!.replaceAll(RegExp(r'[^0-9]'), '');
+    if (!cleanPhone.startsWith('2') && cleanPhone.length == 11 && cleanPhone.startsWith('01')) {
+      cleanPhone = '2$cleanPhone';
+    }
+
+    final Uri url = Uri.parse('https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}');
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Error launching admin WhatsApp: $e');
+    }
   }
 
   Future<void> _loadServiceDetails() async {
@@ -723,17 +797,10 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
         actionColor = const Color(0xFF06B6D4);
         break;
       case OrderStatus.arrived:
-        final isInspection = _subService != null &&
-            (_subService!.price.type == PricingMethod.inspection ||
-                _subService!.price.fields.isNotEmpty);
-        if (isInspection) {
-          nextStatus = null;
-        } else {
-          actionLabel = l10n.tech_action_start_job;
-          nextStatus = OrderStatus.inProgress;
-          actionIcon = Icons.play_circle_outline_rounded;
-          actionColor = const Color(0xFF3B82F6);
-        }
+        actionLabel = "تأكيد المساحة وبدء العمل";
+        nextStatus = OrderStatus.inProgress;
+        actionIcon = Icons.play_circle_outline_rounded;
+        actionColor = const Color(0xFF10B981);
         break;
       case OrderStatus.inProgress:
         actionLabel = l10n.tech_action_complete;
@@ -1065,11 +1132,6 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
                      order.status == OrderStatus.pendingInspection;
     if (!showCard) return const SizedBox.shrink();
 
-    final computedFieldIds = _subService!.computedFields?.map((cf) => cf.id).toSet() ?? {};
-    final filteredFields = _subService!.price.fields
-        .where((f) => !computedFieldIds.contains(f.id))
-        .toList();
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(24),
@@ -1097,7 +1159,7 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
               ),
               const SizedBox(width: 12),
               Text(
-                "المعاينة وتأكيد التسعير",
+                "معاينة ومراجعة المساحة",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
@@ -1109,7 +1171,7 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
           ),
           const SizedBox(height: 16),
           Text(
-            "يرجى إدخال القياسات والخيارات الفعلية لمعاينة الموقع لحساب السعر النهائي للعميل والمستحقات الخاصة بك.",
+            "هذه هي تفاصيل الطلب والمساحة المدخلة من قبل العميل. يرجى التأكد من مطابقتها على الواقع قبل بدء العمل.",
             style: TextStyle(
               fontSize: 13,
               color: themeColor.secondaryText,
@@ -1120,137 +1182,38 @@ class _TechnicianOrderDetailsScreenState extends State<TechnicianOrderDetailsScr
           ),
           const SizedBox(height: 20),
 
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline_rounded, color: themeColor.warning, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    "التعديل متاح للإضافة فقط. لتعديل أو إلغاء أي خدمة سابقة، يرجى التواصل مع الإدارة.",
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 12,
-                      color: themeColor.warning,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          DynamicFormRenderer(
-            fields: filteredFields,
-            values: _dynamicInputs,
-            options: _subService!.price.options,
-            selectedOptions: _selectedOptions,
-            onFieldChanged: (key, value) {
-              final originalVal = _originalInputs[key];
-              if (originalVal != null) {
-                final double origNum = (originalVal is num) ? originalVal.toDouble() : 0.0;
-                final double newNum = (value is num) ? value.toDouble() : 0.0;
-                if (newNum < origNum) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        "حظر الإجراء: التعديل متاح للإضافة فقط. لتعديل أو إلغاء الخدمات السابقة، اتصل بالإدارة.",
-                        style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
-                      ),
-                      backgroundColor: Colors.orange,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  return;
-                }
-              }
-              setState(() {
-                if (value == null) {
-                  _dynamicInputs.remove(key);
-                } else {
-                  _dynamicInputs[key] = value;
-                }
-                _calculatedPricing = null;
-              });
-            },
-            onOptionToggled: (optionKey) {
-              if (_originalSelectedOptions.contains(optionKey) && _selectedOptions.contains(optionKey)) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      "حظر الإجراء: التعديل متاح للإضافة فقط. لتعديل أو إلغاء الخدمات السابقة، اتصل بالإدارة.",
-                      style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
-                    ),
-                    backgroundColor: Colors.orange,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                return;
-              }
-              setState(() {
-                if (_selectedOptions.contains(optionKey)) {
-                  _selectedOptions.remove(optionKey);
-                } else {
-                  _selectedOptions.add(optionKey);
-                }
-                _dynamicInputs['selected_options'] = _selectedOptions;
-                _calculatedPricing = null;
-              });
-            },
-          ),
-
+          // Display selected inputs as static widgets
+          ..._buildServiceComponentsList(context, order),
+          
           const SizedBox(height: 24),
+          const Divider(height: 1, thickness: 0.5),
+          const SizedBox(height: 20),
 
-          if (_calculatedPricing == null)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isCalculating ? null : () => _calculatePrice(context),
-                icon: _isCalculating
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.calculate_rounded),
-                label: Text(
-                  _isCalculating ? "جاري الحساب..." : "حساب السعر النهائي",
-                  style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 15),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: themeColor.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 0,
-                ),
+          // Contact admin button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _loadingAdminWhatsApp ? null : () => _launchWhatsAppToAdmin(order),
+              icon: _loadingAdminWhatsApp
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.chat_rounded),
+              label: const Text(
+                "تواصل مع الإدارة للمراجعة والتعديل",
+                style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 14),
               ),
-            )
-          else ...[
-            _buildPayoutBreakdownCard(context),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _submitInspectionQuote(context, order),
-                icon: const Icon(Icons.play_circle_fill_rounded),
-                label: const Text(
-                  "حفظ السعر وبدء الخدمة",
-                  style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 16),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 4,
-                  shadowColor: const Color(0xFF10B981).withValues(alpha: 0.3),
-                ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF59E0B), // amber
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
