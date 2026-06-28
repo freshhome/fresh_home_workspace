@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/shared.dart';
+import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
 import 'package:shared_features/shared_features.dart';
 import '../cubit/admin_booking_details_cubit.dart';
 import 'package:intl/intl.dart';
@@ -2177,6 +2178,7 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
   final List<String> _selectedOptions = [];
   BookingPricing? _calculatedPricing;
   bool _isCalculating = false;
+  final Map<String, String> _validationErrors = {};
 
   @override
   void initState() {
@@ -2228,16 +2230,69 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
 
   Future<void> _calculatePrice() async {
     if (_subService == null) return;
+
+    // Validate inputs
+    final errors = <String, String>{};
+    final adjustedInputs = Map<String, dynamic>.from(_dynamicInputs);
+    bool hasAdjustments = false;
+
+    for (final field in _subService!.price.fields) {
+      final val = adjustedInputs[field.id];
+      final isRequired = field.required;
+      
+      if (isRequired) {
+        if (val == null || (val is String && val.trim().isEmpty) || val == 0 || val == 0.0) {
+          errors[field.id] = "هذا الحقل مطلوب";
+        } else if (field.type == DynamicFieldType.number) {
+          final numVal = val is num ? val : num.tryParse(val.toString());
+          if (numVal != null && field.min != null && numVal < field.min!) {
+            adjustedInputs[field.id] = field.min!.toDouble();
+            hasAdjustments = true;
+          }
+        }
+      } else {
+        if (val != null && (val is! String || val.trim().isNotEmpty) && field.type == DynamicFieldType.number && val != 0 && val != 0.0) {
+          final numVal = val is num ? val : num.tryParse(val.toString());
+          if (numVal != null && field.min != null && numVal < field.min!) {
+            adjustedInputs[field.id] = field.min!.toDouble();
+            hasAdjustments = true;
+          }
+        }
+      }
+    }
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _validationErrors.clear();
+        _validationErrors.addAll(errors);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("يرجى استكمال الحقول المطلوبة بشكل صحيح", style: TextStyle(fontFamily: 'Cairo')),
+          backgroundColor: Colors.orangeAccent,
+        ),
+      );
+      return;
+    }
+
     setState(() {
+      _validationErrors.clear();
+      if (hasAdjustments) {
+        _dynamicInputs.clear();
+        _dynamicInputs.addAll(adjustedInputs);
+      }
       _isCalculating = true;
     });
 
     final calculatePriceUseCase = GetIt.instance<CalculatePriceUseCase>();
+    final cleanInputs = Map<String, dynamic>.from(_dynamicInputs);
+    cleanInputs.removeWhere((k, v) => v == null || v == "");
+
     final result = await calculatePriceUseCase(
       CalculatePriceParams(
         priceEntity: _subService!.price,
         subServiceId: _subService!.id,
-        pricingInputs: _dynamicInputs,
+        pricingInputs: cleanInputs,
         selectedOptions: _selectedOptions,
       ),
     );
@@ -2324,6 +2379,7 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
               values: _dynamicInputs,
               options: _subService!.price.options,
               selectedOptions: _selectedOptions,
+              validationErrors: _validationErrors,
               onFieldChanged: (key, value) {
                 setState(() {
                   if (value == null) {
@@ -2331,6 +2387,7 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
                   } else {
                     _dynamicInputs[key] = value;
                   }
+                  _validationErrors.remove(key);
                   _calculatedPricing = null;
                 });
               },

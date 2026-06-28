@@ -137,7 +137,59 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     final calcArea = area ?? state.area;
     final currentToken = ++_pricingRequestToken;
 
+    // Validate inputs
+    final errors = <String, String>{};
+    final adjustedInputs = Map<String, dynamic>.from(state.dynamicInputs);
+    bool hasAdjustments = false;
+
+    for (final field in priceEntity.fields) {
+      final val = adjustedInputs[field.id];
+      final isRequired = field.required;
+      
+      if (isRequired) {
+        if (val == null || (val is String && val.trim().isEmpty) || val == 0 || val == 0.0) {
+          errors[field.id] = "هذا الحقل مطلوب";
+        } else if (field.type == DynamicFieldType.number) {
+          final numVal = val is num ? val : num.tryParse(val.toString());
+          if (numVal != null && field.min != null && numVal < field.min!) {
+            adjustedInputs[field.id] = field.min!.toDouble();
+            hasAdjustments = true;
+          }
+        }
+      } else {
+        if (val != null && (val is! String || val.trim().isNotEmpty) && field.type == DynamicFieldType.number && val != 0 && val != 0.0) {
+          final numVal = val is num ? val : num.tryParse(val.toString());
+          if (numVal != null && field.min != null && numVal < field.min!) {
+            adjustedInputs[field.id] = field.min!.toDouble();
+            hasAdjustments = true;
+          }
+        }
+      }
+    }
+
+    if (priceEntity.type == PricingMethod.perSquareMeter && calcArea == null) {
+      errors['area'] = "يرجى تحديد المساحة";
+    }
+
+    if (errors.isNotEmpty) {
+      emit(state.copyWith(
+        validationErrors: errors,
+        errorMessage: 'يرجى استكمال الحقول المطلوبة بشكل صحيح.',
+        status: BookingStatus.failure,
+      ));
+      return;
+    }
+
+    if (hasAdjustments) {
+      emit(state.copyWith(dynamicInputs: adjustedInputs, validationErrors: const {}));
+    } else {
+      emit(state.copyWith(validationErrors: const {}));
+    }
+
     emit(state.copyWith(status: BookingStatus.loading, errorMessage: null));
+
+    final cleanInputs = Map<String, dynamic>.from(adjustedInputs);
+    cleanInputs.removeWhere((k, v) => v == null || v == "");
 
     final result = await calculatePriceUseCase(
       CalculatePriceParams(
@@ -149,7 +201,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         totalLinearMeters: calcLinearMeters,
         windows: state.useWindowsCalculator ? state.windows : null,
         selectedOptions: state.selectedOptions,
-        pricingInputs: state.dynamicInputs,
+        pricingInputs: cleanInputs,
       ),
     );
 
@@ -251,6 +303,11 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
       }
     }
 
+    final updatedErrors = Map<String, String>.from(state.validationErrors)..remove(key);
+    if (key == 'width' || key == 'height') {
+      updatedErrors.remove('area');
+    }
+
     emit(
       state.copyWith(
         dynamicInputs: updated,
@@ -260,6 +317,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         clearTotalLinearMeters: shouldClearLinearMeters,
         isPriceCalculated: false,
         clearPrice: true,
+        validationErrors: updatedErrors,
       ),
     );
     _validateCurrentStep();

@@ -14,6 +14,7 @@ class DynamicFormRenderer extends StatelessWidget {
   final List<String> selectedOptions;
   final Function(String key, dynamic value) onFieldChanged;
   final Function(String optionKey) onOptionToggled;
+  final Map<String, String> validationErrors;
 
   const DynamicFormRenderer({
     super.key,
@@ -23,6 +24,7 @@ class DynamicFormRenderer extends StatelessWidget {
     required this.selectedOptions,
     required this.onFieldChanged,
     required this.onOptionToggled,
+    this.validationErrors = const {},
   });
 
   @override
@@ -38,6 +40,7 @@ class DynamicFormRenderer extends StatelessWidget {
           final dynamic val = values[field.id];
           final String label =
               field.label[locale] ?? field.label['ar'] ?? field.id;
+          final String? errorText = validationErrors[field.id];
 
           Widget fieldWidget;
           if (field.displayType == 'card_stepper' &&
@@ -51,6 +54,7 @@ class DynamicFormRenderer extends StatelessWidget {
               themeColor: themeColor,
               themeText: themeText,
               locale: locale,
+              errorText: errorText,
             );
           } else if (field.displayType == 'card_toggle' &&
               field.type == DynamicFieldType.toggle) {
@@ -62,6 +66,7 @@ class DynamicFormRenderer extends StatelessWidget {
               themeColor: themeColor,
               themeText: themeText,
               locale: locale,
+              errorText: errorText,
             );
           } else {
             switch (field.type) {
@@ -74,6 +79,7 @@ class DynamicFormRenderer extends StatelessWidget {
                       onFieldChanged(field.id, newVal),
                   themeColor: themeColor,
                   themeText: themeText,
+                  errorText: errorText,
                 );
                 break;
               case DynamicFieldType.toggle:
@@ -84,6 +90,7 @@ class DynamicFormRenderer extends StatelessWidget {
                   onChanged: (bool newVal) => onFieldChanged(field.id, newVal),
                   themeColor: themeColor,
                   themeText: themeText,
+                  errorText: errorText,
                 );
                 break;
               case DynamicFieldType.dropdown:
@@ -95,6 +102,7 @@ class DynamicFormRenderer extends StatelessWidget {
                       onFieldChanged(field.id, newVal),
                   themeColor: themeColor,
                   themeText: themeText,
+                  errorText: errorText,
                 );
                 break;
               case DynamicFieldType.optionsGroup:
@@ -133,6 +141,7 @@ class DynamicNumberField extends StatefulWidget {
   final ValueChanged<double?> onChanged;
   final ThemeColorExtension themeColor;
   final AppTextThemeExtension themeText;
+  final String? errorText;
 
   const DynamicNumberField({
     super.key,
@@ -142,6 +151,7 @@ class DynamicNumberField extends StatefulWidget {
     required this.onChanged,
     required this.themeColor,
     required this.themeText,
+    this.errorText,
   });
 
   @override
@@ -179,41 +189,99 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final hasError = widget.errorText != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.label,
-          style: widget.themeText.titleSectionSmall.copyWith(
-            color: widget.themeColor.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
+        Row(
+          children: [
+            Text(
+              widget.label,
+              style: widget.themeText.titleSectionSmall.copyWith(
+                color: widget.themeColor.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
+            if (widget.field.required) ...[
+              const SizedBox(width: 4),
+              Text(
+                '*',
+                style: TextStyle(
+                  color: widget.themeColor.error,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
             color: widget.themeColor.cardBackground,
             borderRadius: BorderRadius.circular(16),
-            border: Border.fromBorderSide(widget.themeColor.cardBorder),
+            border: Border.all(
+              color: hasError
+                  ? widget.themeColor.error
+                  : widget.themeColor.unselectedItem.withValues(alpha: 0.15),
+              width: hasError ? 2.0 : 1.5,
+            ),
             boxShadow: [widget.themeColor.cardShadow],
           ),
-          child: BaseTextFormField(
-            controller: _controller,
-            keyboardType: TextInputType.number,
-            onChanged: (val) {
-              if (val.isEmpty) {
-                widget.onChanged(null);
-              } else {
-                widget.onChanged(double.tryParse(val));
+          child: Focus(
+            onFocusChange: (hasFocus) {
+              if (!hasFocus) {
+                final text = _controller.text.trim();
+                if (text.isNotEmpty) {
+                  final parsed = double.tryParse(text);
+                  if (parsed != null && widget.field.min != null && parsed < widget.field.min!) {
+                    _controller.text = widget.field.min!.toStringAsFixed(0);
+                    widget.onChanged(widget.field.min!.toDouble());
+                  }
+                }
               }
             },
-            hint: '0.0',
-            suffixText: widget.field.unit,
-            fillColor: Colors.transparent,
+            child: BaseTextFormField(
+              controller: _controller,
+              keyboardType: TextInputType.number,
+              onChanged: (val) {
+                if (val.isEmpty) {
+                  widget.onChanged(null);
+                } else {
+                  widget.onChanged(double.tryParse(val));
+                }
+              },
+              hint: '0.0',
+              suffixText: widget.field.unit,
+              fillColor: Colors.transparent,
+            ),
           ),
         ),
-        if (widget.field.min != null)
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 4, right: 4),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  size: 14,
+                  color: widget.themeColor.error,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  widget.errorText!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: widget.themeColor.error,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else if (widget.field.min != null)
           Padding(
             padding: const EdgeInsets.only(top: 8, left: 4, right: 4),
             child: Row(
@@ -249,6 +317,7 @@ class DynamicToggleField extends StatelessWidget {
   final ValueChanged<bool> onChanged;
   final ThemeColorExtension themeColor;
   final AppTextThemeExtension themeText;
+  final String? errorText;
 
   const DynamicToggleField({
     super.key,
@@ -258,6 +327,7 @@ class DynamicToggleField extends StatelessWidget {
     required this.onChanged,
     required this.themeColor,
     required this.themeText,
+    this.errorText,
   });
 
   @override
@@ -281,7 +351,7 @@ class DynamicToggleField extends StatelessWidget {
 
     final isTrueSelected = value == true;
     final isFalseSelected = value == false;
-    final hasError = field.required && value == null;
+    final hasError = errorText != null || (field.required && value == null);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,7 +511,7 @@ class DynamicToggleField extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  l10n.validation_selection_required,
+                  errorText ?? l10n.validation_selection_required,
                   style: TextStyle(
                     fontSize: 11,
                     color: themeColor.error,
@@ -465,6 +535,7 @@ class DynamicDropdownField extends StatelessWidget {
   final ValueChanged<String?> onChanged;
   final ThemeColorExtension themeColor;
   final AppTextThemeExtension themeText;
+  final String? errorText;
 
   const DynamicDropdownField({
     super.key,
@@ -474,6 +545,7 @@ class DynamicDropdownField extends StatelessWidget {
     required this.onChanged,
     required this.themeColor,
     required this.themeText,
+    this.errorText,
   });
 
   @override
@@ -483,17 +555,33 @@ class DynamicDropdownField extends StatelessWidget {
     final options = field.options ?? [];
     final bool isValidValue = options.any((opt) => opt.id == value);
     final String? effectiveVal = isValidValue ? value : null;
+    final hasError = errorText != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: themeText.titleSectionSmall.copyWith(
-            color: themeColor.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
+        Row(
+          children: [
+            Text(
+              label,
+              style: themeText.titleSectionSmall.copyWith(
+                color: themeColor.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
+            if (field.required) ...[
+              const SizedBox(width: 4),
+              Text(
+                '*',
+                style: TextStyle(
+                  color: themeColor.error,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 10),
         DropdownButtonFormField<String>(
@@ -532,20 +620,27 @@ class DynamicDropdownField extends StatelessWidget {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                color: themeColor.unselectedItem.withValues(alpha: 0.15),
-                width: 1.5,
+                color: hasError
+                    ? themeColor.error
+                    : themeColor.unselectedItem.withValues(alpha: 0.15),
+                width: hasError ? 2.0 : 1.5,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                color: themeColor.unselectedItem.withValues(alpha: 0.15),
-                width: 1.5,
+                color: hasError
+                    ? themeColor.error
+                    : themeColor.unselectedItem.withValues(alpha: 0.15),
+                width: hasError ? 2.0 : 1.5,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: themeColor.primary, width: 1.5),
+              borderSide: BorderSide(
+                color: hasError ? themeColor.error : themeColor.primary,
+                width: 1.5,
+              ),
             ),
           ),
           items: options.map((opt) {
@@ -562,6 +657,28 @@ class DynamicDropdownField extends StatelessWidget {
             );
           }).toList(),
         ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 4, right: 4),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  size: 14,
+                  color: themeColor.error,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  errorText!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: themeColor.error,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -732,6 +849,7 @@ class DynamicCardStepper extends StatelessWidget {
   final ThemeColorExtension themeColor;
   final AppTextThemeExtension themeText;
   final String locale;
+  final String? errorText;
 
   const DynamicCardStepper({
     super.key,
@@ -742,6 +860,7 @@ class DynamicCardStepper extends StatelessWidget {
     required this.themeColor,
     required this.themeText,
     required this.locale,
+    this.errorText,
   });
 
   @override
@@ -749,6 +868,7 @@ class DynamicCardStepper extends StatelessWidget {
     final hasValue = value > 0;
     final String? description =
         field.description?[locale] ?? field.description?['ar'];
+    final hasError = errorText != null;
 
     return Material(
       color: Colors.transparent,
@@ -760,8 +880,11 @@ class DynamicCardStepper extends StatelessWidget {
               ? themeColor.primary.withValues(alpha: 0.03)
               : themeColor.cardBackground,
           borderRadius: BorderRadius.circular(20),
-          border: Border.fromBorderSide(
-            hasValue ? themeColor.highlightedcardBorder : themeColor.cardBorder,
+          border: Border.all(
+            color: hasError
+                ? themeColor.error
+                : (hasValue ? themeColor.primary : themeColor.unselectedItem.withValues(alpha: 0.15)),
+            width: hasError ? 2.0 : 1.5,
           ),
           boxShadow: [themeColor.cardShadow],
         ),
@@ -791,13 +914,31 @@ class DynamicCardStepper extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        label,
-                        style: themeText.textBodyPrimary.copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: themeColor.textPrimary,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              label,
+                              style: themeText.textBodyPrimary.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: themeColor.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (field.required) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              '*',
+                              style: TextStyle(
+                                color: themeColor.error,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       if (description != null && description.isNotEmpty) ...[
                         const SizedBox(height: 4),
@@ -902,6 +1043,28 @@ class DynamicCardStepper extends StatelessWidget {
                 ),
               ],
             ),
+            if (hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.error_outline_rounded,
+                      size: 14,
+                      color: themeColor.error,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      errorText!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: themeColor.error,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -919,6 +1082,7 @@ class DynamicCardToggle extends StatelessWidget {
   final ThemeColorExtension themeColor;
   final AppTextThemeExtension themeText;
   final String locale;
+  final String? errorText;
 
   const DynamicCardToggle({
     super.key,
@@ -929,12 +1093,14 @@ class DynamicCardToggle extends StatelessWidget {
     required this.themeColor,
     required this.themeText,
     required this.locale,
+    this.errorText,
   });
 
   @override
   Widget build(BuildContext context) {
     final String? description =
         field.description?[locale] ?? field.description?['ar'];
+    final hasError = errorText != null;
 
     return Material(
       color: Colors.transparent,
@@ -949,93 +1115,141 @@ class DynamicCardToggle extends StatelessWidget {
                 ? themeColor.primary.withValues(alpha: 0.03)
                 : themeColor.cardBackground,
             borderRadius: BorderRadius.circular(20),
-            border: Border.fromBorderSide(
-              value ? themeColor.highlightedcardBorder : themeColor.cardBorder,
+            border: Border.all(
+              color: hasError
+                  ? themeColor.error
+                  : (value ? themeColor.primary : themeColor.unselectedItem.withValues(alpha: 0.15)),
+              width: hasError ? 2.0 : 1.5,
             ),
             boxShadow: [themeColor.cardShadow],
           ),
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Icon section
-              Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: value
-                      ? themeColor.primary.withValues(alpha: 0.1)
-                      : themeColor.unselectedItem.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: _buildIcon(
-                  field.icon,
-                  value ? themeColor.primary : themeColor.secondaryText,
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Text and details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: themeText.textBodyPrimary.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: themeColor.textPrimary,
-                      ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon section
+                  Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: value
+                          ? themeColor.primary.withValues(alpha: 0.1)
+                          : themeColor.unselectedItem.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    if (description != null && description.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        description,
-                        style: themeText.textCaption.copyWith(
-                          color: themeColor.secondaryText,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                    if (field.priceModifier != null &&
-                        field.priceModifier! > 0) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: themeColor.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Builder(
-                          builder: (context) {
-                            final l10n = AppLocalizations.of(context)!;
-                            return Text(
-                              '+ ${field.priceModifier!.toStringAsFixed(0)} ${l10n.pricing_currency_short}',
-                              style: themeText.textCaption.copyWith(
-                                color: themeColor.primary,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 11,
+                    child: _buildIcon(
+                      field.icon,
+                      value ? themeColor.primary : themeColor.secondaryText,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Text and details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                label,
+                                style: themeText.textBodyPrimary.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: themeColor.textPrimary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            );
-                          }
+                            ),
+                            if (field.required) ...[
+                              const SizedBox(width: 4),
+                              Text(
+                                '*',
+                                style: TextStyle(
+                                  color: themeColor.error,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        if (description != null && description.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            description,
+                            style: themeText.textCaption.copyWith(
+                              color: themeColor.secondaryText,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                        if (field.priceModifier != null &&
+                            field.priceModifier! > 0) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: themeColor.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Builder(
+                              builder: (context) {
+                                final l10n = AppLocalizations.of(context)!;
+                                return Text(
+                                  '+ ${field.priceModifier!.toStringAsFixed(0)} ${l10n.pricing_currency_short}',
+                                  style: themeText.textCaption.copyWith(
+                                    color: themeColor.primary,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 11,
+                                  ),
+                                );
+                              }
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Selection indicator
+                  Icon(
+                    value
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_off_rounded,
+                    color: value
+                        ? themeColor.primary
+                        : themeColor.secondaryText.withValues(alpha: 0.4),
+                    size: 24,
+                  ),
+                ],
+              ),
+              if (hasError)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline_rounded,
+                        size: 14,
+                        color: themeColor.error,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        errorText!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: themeColor.error,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              // Selection indicator
-              Icon(
-                value
-                    ? Icons.check_circle_rounded
-                    : Icons.radio_button_off_rounded,
-                color: value
-                    ? themeColor.primary
-                    : themeColor.secondaryText.withValues(alpha: 0.4),
-                size: 24,
-              ),
             ],
           ),
         ),

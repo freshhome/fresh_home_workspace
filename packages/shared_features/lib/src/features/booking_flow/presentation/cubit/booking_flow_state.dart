@@ -70,6 +70,7 @@ class BookingFlowState {
   final String? errorMessage;
   final String? generatedBookingId;
   final bool hasActiveCoupons;
+  final Map<String, String> validationErrors;
 
   const BookingFlowState({
     this.service,
@@ -106,6 +107,7 @@ class BookingFlowState {
     this.errorMessage,
     this.generatedBookingId,
     this.hasActiveCoupons = false,
+    this.validationErrors = const {},
   });
 
   BookingFlowState copyWith({
@@ -147,6 +149,7 @@ class BookingFlowState {
     String? errorMessage,
     String? generatedBookingId,
     bool? hasActiveCoupons,
+    Map<String, String>? validationErrors,
   }) {
     return BookingFlowState(
       service: service ?? this.service,
@@ -190,6 +193,7 @@ class BookingFlowState {
       errorMessage: errorMessage, // explicitly null-able
       generatedBookingId: generatedBookingId ?? this.generatedBookingId,
       hasActiveCoupons: hasActiveCoupons ?? this.hasActiveCoupons,
+      validationErrors: validationErrors ?? this.validationErrors,
     );
   }
 }

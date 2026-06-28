@@ -163,6 +163,7 @@ class _PricingPageState extends State<PricingPage> {
                         .updateDynamicInput(key, val),
                     onOptionToggled: (optKey) =>
                          context.read<BookingFlowCubit>().toggleOption(optKey),
+                    validationErrors: state.validationErrors,
                   )
                 else ...[
                   if (isAreaRequired)

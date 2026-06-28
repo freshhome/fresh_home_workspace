@@ -814,6 +814,48 @@ function BookingFlowContent() {
                                   </div>
                                 </div>
                               );
+                            } else if (field.type === "dropdown") {
+                              const val = pricingInputs[field.id] ?? "";
+                              const hasError = !!validationErrors[field.id];
+                              const options = field.options || [];
+                              return (
+                                <div key={field.id} id={`field-container-${field.id}`} className="space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <label className="block text-xs font-bold text-slate-700">
+                                      {field.label?.ar || field.label}
+                                      {field.required && <span className="text-red-500 mr-1">*</span>}
+                                    </label>
+                                  </div>
+                                  <div className="relative">
+                                    <select
+                                      value={val}
+                                      onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                                      className={`w-full p-3 rounded-xl border text-xs font-bold bg-white focus:outline-none transition-colors appearance-none pr-10 ${
+                                        hasError ? 'border-red-500 focus:border-red-500 bg-red-50/15' : 'border-slate-200 focus:border-primary'
+                                      }`}
+                                    >
+                                      <option value="">-- اختر قيمة --</option>
+                                      {options.map((opt: any) => (
+                                        <option key={opt.id} value={opt.id}>
+                                          {opt.label?.ar || opt.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
+                                      <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path>
+                                      </svg>
+                                    </div>
+                                  </div>
+                                  {field.description?.ar && <p className="text-[10px] text-slate-400 leading-normal">{field.description.ar}</p>}
+                                  {hasError && (
+                                    <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1">
+                                      <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
+                                      <span>{validationErrors[field.id]}</span>
+                                    </p>
+                                  )}
+                                </div>
+                              );
                             }
                             return null;
                           })}
