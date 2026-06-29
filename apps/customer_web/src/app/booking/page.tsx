@@ -1344,12 +1344,32 @@ function BookingFlowContent() {
                       {/* Render input specs breakdown */}
                       {Object.entries(pricingInputs).map(([k, v]) => {
                         const field = selectedSubService?.price_config?.fields?.find((f: any) => f.id === k);
-                        if (!field || v === 0 || v === false) return null;
+                        if (!field || v === undefined || v === null || v === "" || v === 0) return null;
+
+                        let displayValue = String(v);
+                        if (field.type === "toggle") {
+                          const optTrue = field.options && field.options.length > 0
+                            ? field.options.find((o: any) => o.id === "true" || o.id === "yes")
+                            : null;
+                          const optFalse = field.options && field.options.length > 1
+                            ? field.options.find((o: any) => o.id === "false" || o.id === "no")
+                            : null;
+                          const trueLabel = optTrue?.label?.ar || optTrue?.label || "نعم";
+                          const falseLabel = optFalse?.label?.ar || optFalse?.label || "لا";
+                          
+                          displayValue = v === true ? trueLabel : falseLabel;
+                        } else if (field.type === "dropdown") {
+                          const option = field.options?.find((o: any) => o.id === String(v));
+                          displayValue = option?.label?.ar || option?.label?.en || option?.label || String(v);
+                        } else {
+                          displayValue = `${v} ${field.unit || ""}`;
+                        }
+
                         return (
                           <div key={k} className="flex justify-between">
                             <span className="font-bold">{field.label?.ar || field.label}:</span>
                             <span className="font-black text-slate-800">
-                              {typeof v === "boolean" ? "نعم" : `${v} ${field.unit || ""}`}
+                              {displayValue}
                             </span>
                           </div>
                         );
