@@ -43,6 +43,13 @@ const REGIONS_MAP: Record<string, string[]> = {
   ]
 };
 
+const formatDateLocal = (date: Date): string => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 function BookingFlowContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -165,10 +172,10 @@ function BookingFlowContent() {
       setIsLoadingAvailability(true);
       try {
         const today = new Date();
-        const startDateStr = today.toISOString().split("T")[0];
+        const startDateStr = formatDateLocal(today);
         const endDate = new Date();
         endDate.setDate(today.getDate() + 30); // next 30 days
-        const endDateStr = endDate.toISOString().split("T")[0];
+        const endDateStr = formatDateLocal(endDate);
 
         const { data, error } = await supabase.rpc("get_available_days", {
           p_sub_service_id: subServiceId,
@@ -367,7 +374,7 @@ function BookingFlowContent() {
         const diffTime = parsedDate.getTime() - todayDate.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays <= 30) {
-          const formatted = parsedDate.toISOString().split("T")[0];
+          const formatted = formatDateLocal(parsedDate);
           if (availabilityMap[formatted] !== false) {
             setScheduledDate(formatted);
             return;
@@ -438,7 +445,7 @@ function BookingFlowContent() {
         if (diffDays > 30) {
           dateWarningText = "لا يمكن اختيار تاريخ بعد أكثر من شهر (30 يوماً) من تاريخ اليوم.";
         } else {
-          const formatted = parsedDate.toISOString().split("T")[0];
+          const formatted = formatDateLocal(parsedDate);
           if (availabilityMap[formatted] === false) {
             dateWarningText = "عذراً، هذا اليوم غير متوفر حالياً من قبل الفنيين.";
             
@@ -451,7 +458,7 @@ function BookingFlowContent() {
               if (diffFromToday > 30) {
                 break; // Out of range
               }
-              const searchStr = searchDate.toISOString().split("T")[0];
+              const searchStr = formatDateLocal(searchDate);
               if (availabilityMap[searchStr] !== false) {
                 foundNext = searchStr;
                 break;
@@ -989,7 +996,7 @@ function BookingFlowContent() {
                         {Array.from({ length: 14 }).map((_, i) => {
                           const dateObj = new Date();
                           dateObj.setDate(dateObj.getDate() + i + 1);
-                          const formatted = dateObj.toISOString().split("T")[0];
+                          const formatted = formatDateLocal(dateObj);
                           const dayName = dateObj.toLocaleDateString("ar-EG", { weekday: "long" });
                           const dateLabel = dateObj.toLocaleDateString("ar-EG", { day: "numeric", month: "short" });
 
