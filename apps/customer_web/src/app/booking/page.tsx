@@ -232,7 +232,7 @@ function BookingFlowContent() {
     if (selectedSubService?.price_config?.fields) {
       selectedSubService.price_config.fields.forEach((field: any) => {
         const val = pricingInputs[field.id];
-        const isRequired = true; // All fields are strictly required for pricing calculation
+        const isRequired = field.required === true;
         
         if (isRequired) {
           if (val === undefined || val === null || val === "" || val === 0 || val === "0") {
@@ -697,220 +697,220 @@ function BookingFlowContent() {
 
                       {/* Dynamic price input fields based on active catalog schema */}
                       {selectedSubService?.price_config?.fields && selectedSubService.price_config.fields.length > 0 ? (
-                        <div className="space-y-6 pt-4 border-t border-slate-100">
+                        <div className="space-y-4 pt-4 border-t border-slate-100">
                           {selectedSubService.price_config.fields.map((field: any) => {
-                            if (field.type === "number") {
-                              const val = pricingInputs[field.id] ?? "";
-                              const hasError = !!validationErrors[field.id];
-                              return (
-                                <div key={field.id} id={`field-container-${field.id}`} className="space-y-2">
-                                  <div className="flex justify-between items-center">
-                                    <label className="block text-xs font-bold text-slate-700">
-                                      {field.label?.ar || field.label} {field.unit ? `(${field.unit})` : ""}
-                                      {field.required && <span className="text-red-500 mr-1">*</span>}
-                                    </label>
-                                    {field.id === "area" && <span className="text-xs font-black text-primary">{val !== "" ? val : "0"} {field.unit || "م²"}</span>}
-                                  </div>
+                            const val = pricingInputs[field.id];
+                            const hasError = !!validationErrors[field.id];
+                            const hasIcon = field.icon && (field.icon.startsWith("http") || field.icon.startsWith("/"));
+
+                            return (
+                              <div 
+                                key={field.id} 
+                                id={`field-container-${field.id}`} 
+                                className={`p-4 rounded-2xl border transition-all duration-200 bg-slate-50/20 hover:bg-slate-50/50 ${
+                                  hasError ? "border-red-200 bg-red-50/5" : "border-slate-150 hover:border-slate-200"
+                                }`}
+                              >
+                                <div className="flex gap-4 items-start">
+                                  {hasIcon && (
+                                    <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                                      <img 
+                                        src={field.icon} 
+                                        alt={field.label?.ar || field.label || ""} 
+                                        className="w-full h-full object-contain p-0.5"
+                                      />
+                                    </div>
+                                  )}
                                   
-                                  {field.id === "area" ? (
-                                    <div className="flex items-center gap-3">
-                                      <button 
-                                        type="button"
-                                        onClick={() => {
-                                          const currentVal = val === "" ? (field.min || 50) : Number(val);
-                                          handleFieldChange(field.id, Math.max(field.min || 50, currentVal - 10));
-                                        }}
-                                        className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/60 font-extrabold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors"
-                                      >
-                                        -
-                                      </button>
-                                      <div className="relative flex items-center max-w-[140px]">
-                                        <input 
-                                          type="number" 
-                                          min={field.min || 50} 
-                                          max={field.max || 400} 
-                                          value={val}
-                                          onChange={(e) => {
-                                            const text = e.target.value;
-                                            if (text === "") {
-                                              handleFieldChange(field.id, "");
-                                            } else {
-                                              const parsed = parseInt(text);
-                                              handleFieldChange(field.id, isNaN(parsed) ? "" : parsed);
-                                            }
-                                          }}
-                                          onBlur={() => {
-                                            if (val !== "") {
-                                              const num = Number(val);
-                                              if (field.min !== undefined && num < field.min) {
-                                                handleFieldChange(field.id, field.min);
-                                              }
-                                            }
-                                          }}
-                                          className={`w-full p-2 pl-8 rounded-xl border text-center text-xs font-black focus:outline-none bg-white font-sans [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
-                                            hasError ? 'border-red-500 focus:border-red-500 bg-red-50/15' : 'border-slate-200 focus:border-primary'
-                                          }`}
-                                        />
-                                        <span className="absolute left-2.5 text-[9px] font-extrabold text-slate-400 pointer-events-none">
-                                          {field.unit || "م²"}
-                                        </span>
+                                  <div className="flex-1 space-y-3 min-w-0">
+                                    {/* Field Label & Description */}
+                                    <div className="space-y-1">
+                                      <div className="flex justify-between items-center">
+                                        <label className="block text-xs font-black text-slate-800">
+                                          {field.label?.ar || field.label} {field.unit ? `(${field.unit})` : ""}
+                                          {field.required && <span className="text-rose-500 mr-1">*</span>}
+                                          {!field.required && <span className="text-[9px] text-slate-400 font-bold mr-1.5">(اختياري)</span>}
+                                        </label>
+                                        
+                                        {field.type === "number" && field.id === "area" && (
+                                          <span className="text-xs font-black text-primary bg-primary/5 px-2 py-0.5 rounded-lg">
+                                            {val !== "" && val !== undefined && val !== null ? val : "0"} {field.unit || "م²"}
+                                          </span>
+                                        )}
                                       </div>
-                                      <button 
-                                        type="button"
-                                        onClick={() => {
-                                          const currentVal = val === "" ? (field.min || 50) : Number(val);
-                                          handleFieldChange(field.id, Math.min(field.max || 400, currentVal + 10));
-                                        }}
-                                        className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/60 font-extrabold text-lg flex items-center justify-center hover:bg-slate-200 transition-colors"
-                                      >
-                                        +
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-4">
-                                      <button 
-                                        type="button"
-                                        onClick={() => {
-                                          const currentVal = val === "" ? 0 : Number(val);
-                                          handleFieldChange(field.id, Math.max(field.min || 0, currentVal - 1));
-                                        }}
-                                        className="w-10 h-10 rounded-xl bg-slate-100 font-bold text-lg flex items-center justify-center hover:bg-slate-200"
-                                      >
-                                        -
-                                      </button>
-                                      <span className="text-xl font-black w-8 text-center">{val === "" ? "0" : val}</span>
-                                      <button 
-                                        type="button"
-                                        onClick={() => {
-                                          const currentVal = val === "" ? 0 : Number(val);
-                                          handleFieldChange(field.id, currentVal + 1);
-                                        }}
-                                        className="w-10 h-10 rounded-xl bg-slate-100 font-bold text-lg flex items-center justify-center hover:bg-slate-200"
-                                      >
-                                        +
-                                      </button>
-                                    </div>
-                                  )}
-                                  {field.description?.ar && <p className="text-[10px] text-slate-400 leading-normal">{field.description.ar}</p>}
-                                  {hasError && (
-                                    <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1">
-                                      <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
-                                      <span>{validationErrors[field.id]}</span>
-                                    </p>
-                                  )}
-                                </div>
-                              );
-                            } else if (field.type === "toggle") {
-                              const val = pricingInputs[field.id];
-                              const hasError = !!validationErrors[field.id];
-                              
-                              const optTrue = field.options && field.options.length > 0
-                                ? field.options.find((o: any) => o.id === "true" || o.id === "yes")
-                                : null;
-                              const optFalse = field.options && field.options.length > 1
-                                ? field.options.find((o: any) => o.id === "false" || o.id === "no")
-                                : null;
-                              
-                              const trueLabel = optTrue?.label?.ar || optTrue?.label || "نعم";
-                              const falseLabel = optFalse?.label?.ar || optFalse?.label || "لا";
-                              
-                              const isTrueSelected = val === true;
-                              const isFalseSelected = val === false;
-                              
-                              return (
-                                <div key={field.id} id={`field-container-${field.id}`} className="space-y-2">
-                                  <div className="flex justify-between items-center">
-                                    <label className="block text-xs font-bold text-slate-700">
-                                      {field.label?.ar || field.label}
-                                      {field.required && <span className="text-red-500 mr-1">*</span>}
-                                    </label>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div 
-                                      onClick={() => handleFieldChange(field.id, true)}
-                                      className={`p-3.5 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${
-                                        isTrueSelected 
-                                          ? "border-primary bg-primary/5 text-primary font-bold shadow-sm shadow-primary/10" 
-                                          : `bg-white hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200"}`
-                                      }`}
-                                    >
-                                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
-                                        isTrueSelected ? "border-primary bg-primary" : "border-slate-300 bg-white"
-                                      }`}>
-                                        {isTrueSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                                      </div>
-                                      <span className="text-xs font-bold text-slate-750">{trueLabel}</span>
+                                      {field.description?.ar && (
+                                        <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
+                                          {field.description.ar}
+                                        </p>
+                                      )}
                                     </div>
 
-                                    <div 
-                                      onClick={() => handleFieldChange(field.id, false)}
-                                      className={`p-3.5 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${
-                                        isFalseSelected 
-                                          ? "border-primary bg-primary/5 text-primary font-bold shadow-sm shadow-primary/10" 
-                                          : `bg-white hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200"}`
-                                      }`}
-                                    >
-                                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
-                                        isFalseSelected ? "border-primary bg-primary" : "border-slate-300 bg-white"
-                                      }`}>
-                                        {isFalseSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                                      </div>
-                                      <span className="text-xs font-bold text-slate-750">{falseLabel}</span>
+                                    {/* Input Controls */}
+                                    <div className="pt-1">
+                                      {field.type === "number" && (
+                                        field.id === "area" ? (
+                                          <div className="flex items-center gap-2">
+                                            <button 
+                                              type="button"
+                                              onClick={() => {
+                                                const currentVal = (val === "" || val === undefined || val === null) ? (field.min || 50) : Number(val);
+                                                handleFieldChange(field.id, Math.max(field.min || 50, currentVal - 10));
+                                              }}
+                                              className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200/60 font-extrabold text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-colors"
+                                            >
+                                              -
+                                            </button>
+                                            <div className="relative flex items-center max-w-[120px]">
+                                              <input 
+                                                type="number" 
+                                                min={field.min || 50} 
+                                                max={field.max || 400} 
+                                                value={val ?? ""}
+                                                onChange={(e) => {
+                                                  const text = e.target.value;
+                                                  if (text === "") {
+                                                    handleFieldChange(field.id, "");
+                                                  } else {
+                                                    const parsed = parseInt(text);
+                                                    handleFieldChange(field.id, isNaN(parsed) ? "" : parsed);
+                                                  }
+                                                }}
+                                                onBlur={() => {
+                                                  if (val !== "" && val !== undefined && val !== null) {
+                                                    const num = Number(val);
+                                                    if (field.min !== undefined && num < field.min) {
+                                                      handleFieldChange(field.id, field.min);
+                                                    }
+                                                  }
+                                                }}
+                                                className={`w-full p-1.5 pl-7 rounded-xl border text-center text-xs font-black focus:outline-none bg-white font-sans [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                                                  hasError ? 'border-red-500 focus:border-red-500 bg-red-50/15' : 'border-slate-200 focus:border-primary'
+                                                }`}
+                                              />
+                                              <span className="absolute left-2 text-[8px] font-extrabold text-slate-400 pointer-events-none">
+                                                {field.unit || "م²"}
+                                              </span>
+                                            </div>
+                                            <button 
+                                              type="button"
+                                              onClick={() => {
+                                                const currentVal = (val === "" || val === undefined || val === null) ? (field.min || 50) : Number(val);
+                                                handleFieldChange(field.id, Math.min(field.max || 400, currentVal + 10));
+                                              }}
+                                              className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200/60 font-extrabold text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-colors"
+                                            >
+                                              +
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center gap-3">
+                                            <button 
+                                              type="button"
+                                              onClick={() => {
+                                                const currentVal = (val === "" || val === undefined || val === null) ? 0 : Number(val);
+                                                handleFieldChange(field.id, Math.max(field.min || 0, currentVal - 1));
+                                              }}
+                                              className="w-9 h-9 rounded-xl bg-slate-150 border border-slate-200/60 font-extrabold text-slate-700 flex items-center justify-center hover:bg-slate-250 transition-all active:scale-90"
+                                            >
+                                              -
+                                            </button>
+                                            <span className="text-sm font-black w-8 text-center text-slate-800">
+                                              {(val === "" || val === undefined || val === null) ? "0" : val}
+                                            </span>
+                                            <button 
+                                              type="button"
+                                              onClick={() => {
+                                                const currentVal = (val === "" || val === undefined || val === null) ? 0 : Number(val);
+                                                if (field.max !== undefined && currentVal >= field.max) return;
+                                                handleFieldChange(field.id, currentVal + 1);
+                                              }}
+                                              className="w-9 h-9 rounded-xl bg-slate-150 border border-slate-200/60 font-extrabold text-slate-700 flex items-center justify-center hover:bg-slate-250 transition-all active:scale-90"
+                                            >
+                                              +
+                                            </button>
+                                          </div>
+                                        )
+                                      )}
+
+                                      {field.type === "toggle" && (() => {
+                                        const optTrue = field.options && field.options.length > 0
+                                          ? field.options.find((o: any) => o.id === "true" || o.id === "yes")
+                                          : null;
+                                        const optFalse = field.options && field.options.length > 1
+                                          ? field.options.find((o: any) => o.id === "false" || o.id === "no")
+                                          : null;
+                                        
+                                        const trueLabel = optTrue?.label?.ar || optTrue?.label || "نعم";
+                                        const falseLabel = optFalse?.label?.ar || optFalse?.label || "لا";
+                                        
+                                        const isTrueSelected = val === true;
+                                        const isFalseSelected = val === false;
+                                        
+                                        return (
+                                          <div className="grid grid-cols-2 gap-3 max-w-[280px]">
+                                            <div 
+                                              onClick={() => handleFieldChange(field.id, true)}
+                                              className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                                                isTrueSelected 
+                                                  ? "border-primary bg-primary/5 text-primary font-bold shadow-sm shadow-primary/10" 
+                                                  : `bg-white hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200"}`
+                                              }`}
+                                            >
+                                              <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
+                                                isTrueSelected ? "border-primary bg-primary" : "border-slate-300 bg-white"
+                                              }`}>
+                                                {isTrueSelected && <div className="w-1 h-1 rounded-full bg-white" />}
+                                              </div>
+                                              <span className="text-xs font-bold text-slate-750">{trueLabel}</span>
+                                            </div>
+
+                                            <div 
+                                              onClick={() => handleFieldChange(field.id, false)}
+                                              className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                                                isFalseSelected 
+                                                  ? "border-primary bg-primary/5 text-primary font-bold shadow-sm shadow-primary/10" 
+                                                  : `bg-white hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200"}`
+                                              }`}
+                                            >
+                                              <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
+                                                isFalseSelected ? "border-primary bg-primary" : "border-slate-300 bg-white"
+                                              }`}>
+                                                {isFalseSelected && <div className="w-1 h-1 rounded-full bg-white" />}
+                                              </div>
+                                              <span className="text-xs font-bold text-slate-750">{falseLabel}</span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })()}
+
+                                      {field.type === "dropdown" && (
+                                        <div className="relative max-w-[280px]">
+                                          <select
+                                            value={val ?? ""}
+                                            onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                                            className={`w-full p-2.5 rounded-xl border text-xs font-bold bg-white focus:outline-none transition-colors appearance-none pr-10 ${
+                                              hasError ? 'border-red-500 focus:border-red-500 bg-red-50/15' : 'border-slate-200 focus:border-primary'
+                                            }`}
+                                          >
+                                            <option value="">-- اختر قيمة --</option>
+                                            {(field.options || []).map((opt: any) => (
+                                              <option key={opt.id} value={opt.id}>
+                                                {opt.label?.ar || opt.label}
+                                              </option>
+                                            ))}
+                                          </select>
+                                          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
+                                            <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                                              <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path>
+                                            </svg>
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
-                                  {field.description?.ar && <p className="text-[10px] text-slate-400 leading-normal">{field.description.ar}</p>}
-                                  {hasError && (
-                                    <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1">
-                                      <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
-                                      <span>{validationErrors[field.id]}</span>
-                                    </p>
-                                  )}
                                 </div>
-                              );
-                            } else if (field.type === "dropdown") {
-                              const val = pricingInputs[field.id] ?? "";
-                              const hasError = !!validationErrors[field.id];
-                              const options = field.options || [];
-                              return (
-                                <div key={field.id} id={`field-container-${field.id}`} className="space-y-2">
-                                  <div className="flex justify-between items-center">
-                                    <label className="block text-xs font-bold text-slate-700">
-                                      {field.label?.ar || field.label}
-                                      {field.required && <span className="text-red-500 mr-1">*</span>}
-                                    </label>
-                                  </div>
-                                  <div className="relative">
-                                    <select
-                                      value={val}
-                                      onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                                      className={`w-full p-3 rounded-xl border text-xs font-bold bg-white focus:outline-none transition-colors appearance-none pr-10 ${
-                                        hasError ? 'border-red-500 focus:border-red-500 bg-red-50/15' : 'border-slate-200 focus:border-primary'
-                                      }`}
-                                    >
-                                      <option value="">-- اختر قيمة --</option>
-                                      {options.map((opt: any) => (
-                                        <option key={opt.id} value={opt.id}>
-                                          {opt.label?.ar || opt.label}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
-                                      <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path>
-                                      </svg>
-                                    </div>
-                                  </div>
-                                  {field.description?.ar && <p className="text-[10px] text-slate-400 leading-normal">{field.description.ar}</p>}
-                                  {hasError && (
-                                    <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1">
-                                      <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
-                                      <span>{validationErrors[field.id]}</span>
-                                    </p>
-                                  )}
-                                </div>
-                              );
-                            }
-                            return null;
+                              </div>
+                            );
                           })}
                         </div>
                       ) : (
