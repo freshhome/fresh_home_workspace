@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart'; // For timeDilation
 import 'package:flutter/scheduler.dart' as schedulerBinding;
 import 'package:fresh_home_motion/fresh_home_motion.dart';
 import 'package:shared_features/shared_features.dart'; // For BookingSuccessAnimation
@@ -22,6 +21,8 @@ class _MotionReviewPageState extends State<MotionReviewPage> {
   bool _fadeInTrigger = true;
   bool _scaleTrigger = true;
   bool _cardTrigger = true;
+  bool _loadingTrigger = true;
+  bool _logoTrigger = true;
 
   @override
   void dispose() {
@@ -81,6 +82,19 @@ class _MotionReviewPageState extends State<MotionReviewPage> {
               ),
               const SizedBox(height: 16.0),
               _buildFlowAnimationsSection(),
+              const SizedBox(height: 24.0),
+
+              // 🏠 شعار العلامة التجارية (Brand Logo Animation)
+              const Text(
+                'شعار العلامة التجارية المتحرك (Brand Logo Animation)',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              _buildBrandLogoSection(),
             ],
           ),
         ),
@@ -209,7 +223,11 @@ class _MotionReviewPageState extends State<MotionReviewPage> {
   /// Builds a responsive grid of visual cards exhibiting primitive animation widgets
   Widget _buildPrimitivesGrid() {
     final double screenWidth = MediaQuery.of(context).size.width;
-    final int columnCount = screenWidth < 800 ? 1 : 3;
+    final int columnCount = screenWidth < 600
+        ? 1
+        : screenWidth < 960
+        ? 2
+        : 4;
 
     return GridView.count(
       shrinkWrap: true,
@@ -327,6 +345,28 @@ class _MotionReviewPageState extends State<MotionReviewPage> {
               ),
             ),
           ),
+        ),
+
+        // 4. FHLoadingIndicator Card
+        _buildDemoCard(
+          title: 'مؤشر التحميل (FHLoadingIndicator)',
+          description:
+              'دوران تدرجي انسيابي، وتباطؤ نبضي تلقائي في Reduced Motion.',
+          trigger: _loadingTrigger,
+          onToggle: () {
+            setState(() {
+              _loadingTrigger = !_loadingTrigger;
+            });
+          },
+          animatedWidget: _loadingTrigger
+              ? Center(
+                  child: FHLoadingIndicator(
+                    size: 44.0,
+                    strokeWidth: 4.0,
+                    color: const Color(0xFF0D47A1),
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
       ],
     );
@@ -449,6 +489,86 @@ class _MotionReviewPageState extends State<MotionReviewPage> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the section for the native brand logo animation
+  Widget _buildBrandLogoSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xE0E2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Text(
+            'حركة شعار Fresh Home المتجهة (Native Vector Animation)',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'أداء رسومي فائق وخفيف للغاية مرسوم كلياً بمتجهات رياضية (CustomPainter) يحاكي تماماً ملف الـ Lottie الأصلي مع دعم كامل للتحكم التفاعلي وسهولة الوصول.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.5,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: FHBrandLogoAnimation(
+                size: 200,
+                enabled: _logoTrigger && !_simulatedReducedMotion,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _logoTrigger = !_logoTrigger;
+                  });
+                },
+                icon: Icon(
+                  _logoTrigger ? Icons.pause_circle_outline : Icons.play_circle_outline,
+                  color: const Color(0xFF0D47A1),
+                ),
+                label: Text(
+                  _logoTrigger ? 'إيقاف مؤقت للحركة' : 'تشغيل الحركة التفاعلية',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF0D47A1),
+                  side: const BorderSide(color: Color(0xFF0D47A1)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

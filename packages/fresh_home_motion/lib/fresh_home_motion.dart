@@ -16,7 +16,9 @@ export 'src/foundation/motion_config.dart';
 export 'src/foundation/motion_curves.dart';
 export 'src/foundation/platform_capability.dart';
 
-// Widgets (Motion Primitives)
+// Widgets (Motion Primitives & Loading)
 export 'src/widgets/fade_in.dart';
 export 'src/widgets/scale_transition.dart';
 export 'src/widgets/animated_card.dart';
+export 'src/loading/loading_indicator.dart';
+export 'src/widgets/brand_logo_animation.dart';

@@ -1096,16 +1096,19 @@ function BookingFlowContent() {
                   {/* Time Slots */}
                   <div className="space-y-3 pt-4 border-t border-slate-150">
                     <label className="block text-sm font-bold text-slate-700">الفترات الزمنية المتاحة لوصول الفني</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {["09:00 ص", "11:00 ص", "01:00 م", "03:00 م", "05:00 م"].map((time) => (
+                    <div className="grid grid-cols-3 gap-2" key={scheduledDate}>
+                      {["09:00 ص", "11:00 ص", "01:00 م", "03:00 م", "05:00 م"].map((time, index) => (
                         <div
                           key={time}
                           onClick={() => setScheduledTime(time)}
-                          className={`p-3.5 rounded-xl border text-center cursor-pointer font-bold text-xs transition-all ${
+                          className={`p-3.5 rounded-xl border text-center cursor-pointer font-bold text-xs transition-all animate-fade-in-up ${
                             scheduledTime === time 
                               ? "bg-primary border-primary text-white shadow-md shadow-primary/10" 
                               : "bg-white border-slate-200 hover:border-slate-300 text-slate-600"
                           }`}
+                          style={{
+                            animationDelay: `${index * 80}ms`,
+                          }}
                         >
                           {time}
                         </div>
