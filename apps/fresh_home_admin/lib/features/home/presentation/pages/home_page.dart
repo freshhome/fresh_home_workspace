@@ -193,6 +193,15 @@ class HomePage extends StatelessWidget {
                         color: Colors.green.shade600,
                         onTap: () => GoRouter.of(context).push('/admin/whatsapp-settings'),
                       ),
+                      // Motion Review Playground
+                      _buildFeatureCard(
+                        context,
+                        title: 'مراجعة حركات النظام',
+                        description: 'معاينة وفحص حركات التصميم وتأثيرات الانتقال في الحزمة التأسيسية لتعديلها',
+                        icon: Icons.motion_photos_on_rounded,
+                        color: Colors.pink.shade700,
+                        onTap: () => GoRouter.of(context).push('/admin/motion-review'),
+                      ),
                     ],
                   ),
                 ],

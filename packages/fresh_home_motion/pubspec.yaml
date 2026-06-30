@@ -1,0 +1,17 @@
+name: fresh_home_motion
+description: "The official Motion Design System package for the Fresh Home platform. Houses design tokens, transitions, and loading primitives."
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.10.3
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

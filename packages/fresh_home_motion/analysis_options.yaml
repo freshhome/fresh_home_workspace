@@ -1,0 +1,8 @@
+include: package:flutter_lints/flutter.yaml
+
+# Additional linter options can be configured here to enforce motion package specific formatting rules.
+linter:
+  rules:
+    - avoid_print
+    - prefer_const_constructors
+    - prefer_const_declarations

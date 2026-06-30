@@ -18,6 +18,8 @@ dependencies:
     path: ../../packages/shared
   shared_features:
     path: ../../packages/shared_features
+  fresh_home_motion:
+    path: ../../packages/fresh_home_motion
   # ---------------------------------------------------------
   # تم إضافة equatable لحل مشاكل التبعيات
   # ---------------------------------------------------------

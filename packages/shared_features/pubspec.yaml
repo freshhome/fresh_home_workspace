@@ -17,6 +17,8 @@ dependencies:
   # ---------------------------------------------------------
   shared:
     path: ../shared
+  fresh_home_motion:
+    path: ../fresh_home_motion
 
   # ---------------------------------------------------------
   # سوبا بيز والبنية التحتية (Supabase & Infrastructure)

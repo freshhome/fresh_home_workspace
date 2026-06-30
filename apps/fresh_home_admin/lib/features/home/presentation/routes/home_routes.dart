@@ -5,6 +5,8 @@ import 'package:shared/core/constants/app_routes.dart';
 import 'package:fresh_home_admin/features/whatsapp_settings/presentation/pages/whatsapp_settings_page.dart';
 import 'package:fresh_home_admin/features/whatsapp_settings/presentation/cubit/whatsapp_settings_cubit.dart';
 
+import 'package:fresh_home_admin/features/home/presentation/pages/motion_review_page.dart';
+
 class HomeRoutes {
   static final List<RouteBase> routes = [
     GoRoute(
@@ -18,6 +20,11 @@ class HomeRoutes {
         create: (context) => GetIt.instance<WhatsAppSettingsCubit>(),
         child: const WhatsAppSettingsPage(),
       ),
+    ),
+    GoRoute(
+      path: '/admin/motion-review',
+      name: 'admin_motion_review',
+      builder: (context, state) => const MotionReviewPage(),
     ),
   ];
 }

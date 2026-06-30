@@ -25,6 +25,7 @@ export 'src/features/booking_flow/domain/booking_flow_config.dart';
 export 'src/features/booking_flow/presentation/cubit/booking_flow_cubit.dart';
 export 'src/features/booking_flow/presentation/cubit/booking_flow_state.dart';
 export 'src/features/booking_flow/presentation/cubit/booking_cubit_params.dart';
+export 'src/features/booking_flow/presentation/widgets/booking_success_animation.dart';
 
 // Shared Features DI
 export 'src/di/shared_features_di.dart';
