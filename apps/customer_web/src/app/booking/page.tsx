@@ -1097,7 +1097,7 @@ function BookingFlowContent() {
                   <div className="space-y-3 pt-4 border-t border-slate-150">
                     <label className="block text-sm font-bold text-slate-700">الفترات الزمنية المتاحة لوصول الفني</label>
                     <div className="grid grid-cols-3 gap-2" key={scheduledDate}>
-                      {["09:00 ص", "11:00 ص", "01:00 م", "03:00 م", "05:00 م"].map((time, index) => (
+                      {["09:00 ص", "10:00 ص", "11:00 ص", "12:00 م", "01:00 م", "02:00 م", "03:00 م", "04:00 م", "05:00 م"].map((time, index) => (
                         <div
                           key={time}
                           onClick={() => setScheduledTime(time)}
