@@ -326,6 +326,7 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
     int depth,
     ThemeColorExtension themeColor, {
     Color? inheritedCategoryColor,
+    bool isGridItem = false,
   }) {
     final hasChildren = _adjacencyList[node.id]?.isNotEmpty ?? false;
     final isExpanded = _expandedNodes.contains(node.id);
@@ -336,34 +337,99 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color categoryColor = inheritedCategoryColor ?? _getCategoryColor(node.id);
 
-    // Color theme logic for cards
+    // Color theme and sizing logic for cards based on depth
+    final double cardBorderRadius;
     final Color cardBg;
     final Color cardBorderColor;
     final double cardBorderWidth;
+    final double iconContainerSize;
+    final double iconRadius;
+    final double titleFontSize;
+    final FontWeight titleFontWeight;
+    final double verticalMargin;
+    final double verticalPadding;
+    final double horizontalPadding;
+    final bool showAccentBar;
+    final double accentBarWidth;
+    final double accentBarHeight;
 
     if (depth == 0) {
-      // Parent card styling (depth == 0)
+      cardBorderRadius = 20;
       cardBg = isSelected
-          ? categoryColor.withValues(alpha: isDark ? 0.12 : 0.06)
-          : categoryColor.withValues(alpha: isDark ? 0.06 : 0.02);
-      cardBorderColor = isSelected
-          ? categoryColor
-          : categoryColor.withValues(alpha: 0.2);
-      cardBorderWidth = isSelected ? 2.0 : 1.2;
+          ? categoryColor.withValues(alpha: isDark ? 0.14 : 0.08)
+          : categoryColor.withValues(alpha: isDark ? 0.06 : 0.03);
+      cardBorderColor = isSelected ? categoryColor : categoryColor.withValues(alpha: 0.25);
+      cardBorderWidth = isSelected ? 2.2 : 1.2;
+      iconContainerSize = 56;
+      iconRadius = 14;
+      titleFontSize = 16;
+      titleFontWeight = FontWeight.w800;
+      verticalMargin = 8;
+      verticalPadding = 16;
+      horizontalPadding = 16;
+      showAccentBar = true;
+      accentBarWidth = 4.5;
+      accentBarHeight = 40;
+    } else if (depth == 1) {
+      cardBorderRadius = 16;
+      cardBg = isSelected
+          ? themeColor.primary.withValues(alpha: 0.08)
+          : themeColor.nestedCardBackground;
+      cardBorderColor = isSelected ? themeColor.primary : themeColor.unselectedItem.withValues(alpha: 0.18);
+      cardBorderWidth = isSelected ? 1.8 : 1.0;
+      iconContainerSize = 46;
+      iconRadius = 11;
+      titleFontSize = 14;
+      titleFontWeight = FontWeight.bold;
+      verticalMargin = 5;
+      verticalPadding = 12;
+      horizontalPadding = 14;
+      showAccentBar = true;
+      accentBarWidth = 2.5;
+      accentBarHeight = 28;
     } else {
-      // Nested child card styling (depth > 0)
+      // depth >= 2
+      cardBorderRadius = 12;
       cardBg = isSelected
           ? themeColor.primary.withValues(alpha: 0.05)
-          : themeColor.nestedCardBackground;
-      cardBorderColor = isSelected
-          ? themeColor.primary.withValues(alpha: 0.3)
-          : themeColor.unselectedItem.withValues(alpha: 0.12);
-      cardBorderWidth = isSelected ? 1.8 : 1.0;
+          : themeColor.background;
+      cardBorderColor = isSelected ? themeColor.primary.withValues(alpha: 0.6) : themeColor.unselectedItem.withValues(alpha: 0.1);
+      cardBorderWidth = 1.0;
+      iconContainerSize = 38;
+      iconRadius = 8;
+      titleFontSize = 12.5;
+      titleFontWeight = FontWeight.w600;
+      verticalMargin = 4;
+      verticalPadding = 10;
+      horizontalPadding = 12;
+      showAccentBar = false;
+      accentBarWidth = 0;
+      accentBarHeight = 0;
     }
+
+    // Grid specific overrides for compact dimensions
+    final double finalBorderRadius = isGridItem ? 14 : cardBorderRadius;
+    final Color finalBg = isGridItem
+        ? (isSelected
+            ? themeColor.primary.withValues(alpha: 0.08)
+            : (isDark ? themeColor.nestedCardBackground : Colors.white))
+        : cardBg;
+    final Color finalBorderColor = isGridItem
+        ? (isSelected ? themeColor.primary : themeColor.unselectedItem.withValues(alpha: 0.12))
+        : cardBorderColor;
+    final double finalBorderWidth = isGridItem ? (isSelected ? 1.8 : 1.0) : cardBorderWidth;
+    final double finalIconContainerSize = isGridItem ? 40 : iconContainerSize;
+    final double finalIconRadius = isGridItem ? 10 : iconRadius;
+    final double finalTitleFontSize = isGridItem ? 13 : titleFontSize;
+    final FontWeight finalTitleFontWeight = isGridItem ? FontWeight.bold : titleFontWeight;
+    final double finalVerticalMargin = isGridItem ? 2 : verticalMargin;
+    final double finalVerticalPadding = isGridItem ? 10 : verticalPadding;
+    final double finalHorizontalPadding = isGridItem ? 12 : horizontalPadding;
+    final bool finalShowAccentBar = isGridItem ? false : showAccentBar;
 
     // Depth indentation indicator lines
     Widget indentConnector = const SizedBox.shrink();
-    if (depth > 0) {
+    if (depth > 0 && !isGridItem) {
       indentConnector = Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -387,13 +453,13 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
               indentConnector,
               Expanded(
                 child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  margin: EdgeInsets.symmetric(vertical: finalVerticalMargin),
                   decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(16),
+                    color: finalBg,
+                    borderRadius: BorderRadius.circular(finalBorderRadius),
                     border: Border.all(
-                      color: cardBorderColor,
-                      width: cardBorderWidth,
+                      color: finalBorderColor,
+                      width: finalBorderWidth,
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -430,21 +496,21 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                         }
                       }
                     },
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(finalBorderRadius),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 14.0,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: finalHorizontalPadding,
+                        vertical: finalVerticalPadding,
                       ),
                       child: Row(
                         children: [
-                          // 1) Right Side: Vertical accent bar (for depth == 0) + spacing
-                          if (depth == 0) ...[
+                          // 1) Right Side: Vertical accent bar + spacing
+                          if (finalShowAccentBar) ...[
                             Container(
-                              width: 4,
-                              height: 38,
+                              width: accentBarWidth,
+                              height: accentBarHeight,
                               decoration: BoxDecoration(
-                                color: categoryColor,
+                                color: depth == 0 ? categoryColor : themeColor.primary,
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
@@ -456,21 +522,21 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
 
                           // 2) Icon / Thumbnail with custom background squircle
                           Container(
-                            width: 52,
-                            height: 52,
-                            padding: const EdgeInsets.all(8),
+                            width: finalIconContainerSize,
+                            height: finalIconContainerSize,
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: categoryColor.withValues(
+                              color: (depth == 0 ? categoryColor : themeColor.primary).withValues(
                                 alpha: isDark ? 0.12 : 0.06,
                               ),
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(finalIconRadius + 4),
                               border: Border.all(
-                                color: categoryColor.withValues(alpha: 0.15),
+                                color: (depth == 0 ? categoryColor : themeColor.primary).withValues(alpha: 0.15),
                                 width: 1.0,
                               ),
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(finalIconRadius),
                               child: node.image != null && node.image!.isNotEmpty
                                   ? CachedNetworkImage(
                                       imageUrl: node.image!,
@@ -501,9 +567,7 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                                       width: 8,
                                       height: 8,
                                       decoration: BoxDecoration(
-                                        color: node.status == ServiceStatus.active
-                                            ? const Color(0xFF10B981)
-                                            : Colors.grey.shade400,
+                                        color: _getStatusColor(node.status),
                                         shape: BoxShape.circle,
                                       ),
                                     ),
@@ -513,8 +577,8 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                                         displayTitle,
                                         style: TextStyle(
                                           fontFamily: 'Cairo',
-                                          fontSize: depth == 0 ? 15 : 13,
-                                          fontWeight: depth == 0 ? FontWeight.w800 : FontWeight.bold,
+                                          fontSize: finalTitleFontSize,
+                                          fontWeight: finalTitleFontWeight,
                                           color: themeColor.textPrimary,
                                         ),
                                         maxLines: 1,
@@ -529,9 +593,9 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                                     displayDesc,
                                     style: TextStyle(
                                       fontFamily: 'Cairo',
-                                      fontSize: 12,
+                                      fontSize: depth == 0 ? 12 : (depth == 1 ? 11.5 : 11),
                                       color: themeColor.textPrimary.withValues(
-                                        alpha: 0.7,
+                                        alpha: 0.65,
                                       ),
                                       height: 1.3,
                                     ),
@@ -553,15 +617,25 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                           ),
                           const SizedBox(width: 16),
 
-                          // 4) Left Side: Circle Action Button containing settings gear
-                          _buildTrailingAction(
-                            hasChildren: hasChildren,
-                            isBookable: node.isBookable,
-                            isExpanded: isExpanded,
-                            categoryColor: categoryColor,
-                            themeColor: themeColor,
-                            nodeId: node.id,
-                            node: node,
+                          // 4) Left Side: Circle Action Buttons (Status control & Settings gear)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildStatusControlAction(
+                                node: node,
+                                themeColor: themeColor,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildTrailingAction(
+                                hasChildren: hasChildren,
+                                isBookable: node.isBookable,
+                                isExpanded: isExpanded,
+                                categoryColor: categoryColor,
+                                themeColor: themeColor,
+                                nodeId: node.id,
+                                node: node,
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -573,18 +647,45 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
           ),
         ),
 
-        // Children node builder (Indented and animated)
+        // Children node builder (Indented and grid-aware layout)
         if (hasChildren && isExpanded)
-          Column(
-            children: (_adjacencyList[node.id] ?? [])
-                .where(_shouldShowNode)
-                .map((child) => _buildTreeNode(
-                      child,
-                      depth + 1,
-                      themeColor,
-                      inheritedCategoryColor: categoryColor,
-                    ))
-                .toList(),
+          Padding(
+            padding: EdgeInsets.only(
+              right: depth == 0 ? 24.0 : 16.0,
+              top: 6,
+              bottom: 12,
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final children = (_adjacencyList[node.id] ?? [])
+                    .where(_shouldShowNode)
+                    .toList();
+
+                // If there is enough width, display in 2 columns, otherwise single column.
+                final bool useTwoColumns = constraints.maxWidth > 550;
+                final double spacing = 12.0;
+                final double itemWidth = useTwoColumns
+                    ? (constraints.maxWidth - spacing) / 2
+                    : constraints.maxWidth;
+
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: children.map((child) {
+                    return SizedBox(
+                      width: itemWidth,
+                      child: _buildTreeNode(
+                        child,
+                        depth + 1,
+                        themeColor,
+                        inheritedCategoryColor: categoryColor,
+                        isGridItem: true,
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
           ),
       ],
     );
@@ -625,6 +726,153 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
             if (screenWidth < 768) {
               _showMobileDetailsSheet(themeColor);
             }
+          },
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(ServiceStatus status) {
+    switch (status) {
+      case ServiceStatus.active:
+        return const Color(0xFF10B981);
+      case ServiceStatus.ready:
+        return const Color(0xFF3B82F6);
+      case ServiceStatus.paused:
+        return const Color(0xFFEF4444);
+      case ServiceStatus.review:
+        return const Color(0xFFF59E0B);
+      case ServiceStatus.draft:
+        return const Color(0xFF6B7280);
+      case ServiceStatus.archived:
+        return const Color(0xFF9CA3AF);
+    }
+  }
+
+  IconData _getStatusIcon(ServiceStatus status) {
+    switch (status) {
+      case ServiceStatus.active:
+        return Icons.play_arrow_rounded;
+      case ServiceStatus.ready:
+        return Icons.check_circle_rounded;
+      case ServiceStatus.paused:
+        return Icons.pause_circle_filled_rounded;
+      case ServiceStatus.review:
+        return Icons.rate_review_rounded;
+      case ServiceStatus.draft:
+        return Icons.edit_note_rounded;
+      case ServiceStatus.archived:
+        return Icons.archive_rounded;
+    }
+  }
+
+  Future<void> _updateServiceStatus(ServiceEntity service, ServiceStatus newStatus) async {
+    DialogHelper.showLoading(context);
+    try {
+      final updateUseCase = di.getIt<UpdateServiceUseCase>();
+      final result = await updateUseCase(service.copyWith(status: newStatus));
+
+      if (!mounted) return;
+      DialogHelper.dismissLoading(context);
+
+      result.fold(
+        (failure) {
+          DialogHelper.showError(
+            context,
+            message: "فشل تحديث حالة الخدمة: ${failure.message}",
+          );
+        },
+        (savedService) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("تم تغيير حالة الخدمة إلى ${newStatus.arabicLabel} بنجاح!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _loadTree(forceRefresh: true);
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      DialogHelper.dismissLoading(context);
+      DialogHelper.showError(
+        context,
+        message: "حدث خطأ غير متوقع: $e",
+      );
+    }
+  }
+
+  Widget _buildStatusControlAction({
+    required ServiceEntity node,
+    required ThemeColorExtension themeColor,
+  }) {
+    final statusColor = _getStatusColor(node.status);
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.08),
+        shape: BoxShape.circle,
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          popupMenuTheme: PopupMenuThemeData(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
+        child: PopupMenuButton<ServiceStatus>(
+          icon: Icon(
+            _getStatusIcon(node.status),
+            color: statusColor,
+            size: 18,
+          ),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+          tooltip: 'تغيير حالة الخدمة',
+          onSelected: (ServiceStatus status) {
+            if (node.status == status) return;
+            _updateServiceStatus(node, status);
+          },
+          itemBuilder: (BuildContext context) {
+            return ServiceStatus.values.map((status) {
+              final isCurrent = node.status == status;
+              return PopupMenuItem<ServiceStatus>(
+                value: status,
+                child: Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _getStatusIcon(status),
+                        color: _getStatusColor(status),
+                        size: 18,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        status.arabicLabel,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 13,
+                          fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                          color: isCurrent ? themeColor.primary : themeColor.textPrimary,
+                        ),
+                      ),
+                      if (isCurrent) ...[
+                        const Spacer(),
+                        Icon(
+                          Icons.check_rounded,
+                          color: themeColor.primary,
+                          size: 16,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }).toList();
           },
         ),
       ),

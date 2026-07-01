@@ -50,8 +50,6 @@ class _ServiceConfiguratorWizardPageState
   // Step 2: Advanced Details State (Inclusions & Exclusions)
   late List<DetailEntity> _details;
   late NotIncludedEntity _notIncluded;
-  final Map<int, int> _detailSelectedTab = {};
-  int _exclusionsSelectedTab = 0;
   bool _hasExclusions = false;
 
   // Step 3: Instructions State
@@ -676,7 +674,6 @@ class _ServiceConfiguratorWizardPageState
   void _removeDetailSection(int index) {
     setState(() {
       _details.removeAt(index);
-      _detailSelectedTab.remove(index);
     });
   }
 
@@ -685,11 +682,6 @@ class _ServiceConfiguratorWizardPageState
       setState(() {
         final item = _details.removeAt(index);
         _details.insert(index - 1, item);
-        
-        final tabCurrent = _detailSelectedTab[index] ?? 0;
-        final tabPrev = _detailSelectedTab[index - 1] ?? 0;
-        _detailSelectedTab[index - 1] = tabCurrent;
-        _detailSelectedTab[index] = tabPrev;
       });
     }
   }
@@ -699,11 +691,6 @@ class _ServiceConfiguratorWizardPageState
       setState(() {
         final item = _details.removeAt(index);
         _details.insert(index + 1, item);
-        
-        final tabCurrent = _detailSelectedTab[index] ?? 0;
-        final tabNext = _detailSelectedTab[index + 1] ?? 0;
-        _detailSelectedTab[index + 1] = tabCurrent;
-        _detailSelectedTab[index] = tabNext;
       });
     }
   }
@@ -951,11 +938,18 @@ class _ServiceConfiguratorWizardPageState
   }
 
   Widget _buildDetailSectionCard(ThemeColorExtension themeColor, DetailEntity detail, int index) {
-    final activeTab = _detailSelectedTab[index] ?? 0;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isWide = screenWidth >= 850;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: themeColor.unselectedItem.withValues(alpha: 0.1),
+          width: 1.2,
+        ),
+      ),
       color: themeColor.cardBackground,
       child: ExpansionTile(
         title: Text(
@@ -1018,7 +1012,7 @@ class _ServiceConfiguratorWizardPageState
           // Section Icon Selection Row
           Container(
             padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 16),
+            margin: const EdgeInsets.only(bottom: 20),
             decoration: BoxDecoration(
               color: themeColor.background,
               borderRadius: BorderRadius.circular(16),
@@ -1140,147 +1134,173 @@ class _ServiceConfiguratorWizardPageState
             ),
           ),
 
-          // Language Select Tab Bar
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: themeColor.background,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _detailSelectedTab[index] = 0;
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: activeTab == 0
-                            ? themeColor.cardBackground
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: activeTab == 0
-                            ? [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                )
-                              ]
-                            : [],
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "المحتوى بالعربية",
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 12,
-                          fontWeight: activeTab == 0
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: activeTab == 0
-                              ? themeColor.primary
-                              : themeColor.textPrimary.withValues(alpha: 0.6),
+          // Title Fields (Arabic & English side-by-side or stacked)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: isWide
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildSectionTitleInput(
+                          themeColor: themeColor,
+                          isArabic: true,
+                          detailIdx: index,
+                          initialValue: detail.ar.title ?? '',
+                          onChanged: (val) {
+                            setState(() {
+                              _details[index] = DetailEntity(
+                                id: detail.id,
+                                ar: LanguageContentEntity(
+                                  title: val,
+                                  icon: detail.ar.icon,
+                                  iconPath: detail.ar.iconPath,
+                                  iconId: detail.ar.iconId,
+                                  points: detail.ar.points,
+                                ),
+                                en: detail.en,
+                              );
+                            });
+                          },
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _detailSelectedTab[index] = 1;
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: activeTab == 1
-                            ? themeColor.cardBackground
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: activeTab == 1
-                            ? [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                )
-                              ]
-                            : [],
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "English Content",
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 12,
-                          fontWeight: activeTab == 1
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: activeTab == 1
-                              ? themeColor.primary
-                              : themeColor.textPrimary.withValues(alpha: 0.6),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildSectionTitleInput(
+                          themeColor: themeColor,
+                          isArabic: false,
+                          detailIdx: index,
+                          initialValue: detail.en.title ?? '',
+                          onChanged: (val) {
+                            setState(() {
+                              _details[index] = DetailEntity(
+                                id: detail.id,
+                                ar: detail.ar,
+                                en: LanguageContentEntity(
+                                  title: val,
+                                  icon: detail.en.icon,
+                                  iconPath: detail.en.iconPath,
+                                  iconId: detail.en.iconId,
+                                  points: detail.en.points,
+                                ),
+                              );
+                            });
+                          },
                         ),
                       ),
-                    ),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      _buildSectionTitleInput(
+                        themeColor: themeColor,
+                        isArabic: true,
+                        detailIdx: index,
+                        initialValue: detail.ar.title ?? '',
+                        onChanged: (val) {
+                          setState(() {
+                            _details[index] = DetailEntity(
+                              id: detail.id,
+                              ar: LanguageContentEntity(
+                                title: val,
+                                icon: detail.ar.icon,
+                                iconPath: detail.ar.iconPath,
+                                iconId: detail.ar.iconId,
+                                points: detail.ar.points,
+                              ),
+                              en: detail.en,
+                            );
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildSectionTitleInput(
+                        themeColor: themeColor,
+                        isArabic: false,
+                        detailIdx: index,
+                        initialValue: detail.en.title ?? '',
+                        onChanged: (val) {
+                          setState(() {
+                            _details[index] = DetailEntity(
+                              id: detail.id,
+                              ar: detail.ar,
+                              en: LanguageContentEntity(
+                                title: val,
+                                icon: detail.en.icon,
+                                iconPath: detail.en.iconPath,
+                                iconId: detail.en.iconId,
+                                points: detail.en.points,
+                              ),
+                            );
+                          });
+                        },
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
-          // Fields according to selected tab
-          if (activeTab == 0)
-            _buildDetailLanguageFields(
-              themeColor: themeColor,
-              isArabic: true,
-              detailIdx: index,
-              content: detail.ar,
-              onTitleChanged: (titleVal) {
-                setState(() {
-                  _details[index] = DetailEntity(
-                    id: detail.id,
-                    ar: LanguageContentEntity(
-                      title: titleVal,
-                      icon: detail.ar.icon,
-                      iconPath: detail.ar.iconPath,
-                      iconId: detail.ar.iconId,
-                      points: detail.ar.points,
-                    ),
-                    en: detail.en,
-                  );
-                });
-              },
+          // Bullet Points Title Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "نقاط البنود التفصيلية (Bullet Points)",
+                style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => _addBulletPoint(index),
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text("إضافة نقطة / Add Point", style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: themeColor.primary.withValues(alpha: 0.1),
+                  foregroundColor: themeColor.primary,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Bullet Points List
+          if ((detail.ar.points ?? []).isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              decoration: BoxDecoration(
+                color: themeColor.background,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.05)),
+              ),
+              alignment: Alignment.center,
+              child: Column(
+                children: [
+                  Icon(Icons.list_alt_rounded, size: 36, color: themeColor.unselectedItem.withValues(alpha: 0.3)),
+                  const SizedBox(height: 8),
+                  Text(
+                    "لم يتم إضافة أي نقاط تفصيلية بعد. اضغط على الزر بالأعلى لإضافة نقطة جديدة.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: themeColor.textPrimary.withValues(alpha: 0.4)),
+                  ),
+                ],
+              ),
             )
           else
-            _buildDetailLanguageFields(
-              themeColor: themeColor,
-              isArabic: false,
-              detailIdx: index,
-              content: detail.en,
-              onTitleChanged: (titleVal) {
-                setState(() {
-                  _details[index] = DetailEntity(
-                    id: detail.id,
-                    ar: detail.ar,
-                    en: LanguageContentEntity(
-                      title: titleVal,
-                      icon: detail.en.icon,
-                      iconPath: detail.en.iconPath,
-                      iconId: detail.en.iconId,
-                      points: detail.en.points,
-                    ),
-                  );
-                });
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: detail.ar.points?.length ?? 0,
+              itemBuilder: (context, pIdx) {
+                return _buildBulletPointEditCard(
+                  themeColor: themeColor,
+                  detailIdx: index,
+                  pointIdx: pIdx,
+                  arValue: detail.ar.points?[pIdx] ?? '',
+                  enValue: detail.en.points?[pIdx] ?? '',
+                  isWide: isWide,
+                  totalPoints: detail.ar.points?.length ?? 0,
+                );
               },
             ),
         ],
@@ -1356,7 +1376,9 @@ class _ServiceConfiguratorWizardPageState
       );
     }
 
-    // Exclusions is active/enabled
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isWide = screenWidth >= 850;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1427,7 +1449,7 @@ class _ServiceConfiguratorWizardPageState
           // Shared Icon Selector Row for Exclusions
           Container(
             padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 16),
+            margin: const EdgeInsets.only(bottom: 20),
             decoration: BoxDecoration(
               color: themeColor.background,
               borderRadius: BorderRadius.circular(16),
@@ -1543,143 +1565,162 @@ class _ServiceConfiguratorWizardPageState
             ),
           ),
 
-          // Sliding Tab Bar for Exclusions Language
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: themeColor.background,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _exclusionsSelectedTab = 0;
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _exclusionsSelectedTab == 0
-                            ? themeColor.cardBackground
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: _exclusionsSelectedTab == 0
-                            ? [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                )
-                              ]
-                            : [],
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "الاستثناءات بالعربية",
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 12,
-                          fontWeight: _exclusionsSelectedTab == 0
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: _exclusionsSelectedTab == 0
-                              ? themeColor.primary
-                              : themeColor.textPrimary.withValues(alpha: 0.6),
+          // Exclusions Title Fields (Arabic & English side-by-side or stacked)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: isWide
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildExclusionTitleInput(
+                          themeColor: themeColor,
+                          isArabic: true,
+                          initialValue: _notIncluded.ar.title ?? '',
+                          onChanged: (val) {
+                            setState(() {
+                              _notIncluded = NotIncludedEntity(
+                                ar: LanguageContentEntity(
+                                  title: val,
+                                  icon: _notIncluded.ar.icon,
+                                  iconPath: _notIncluded.ar.iconPath,
+                                  iconId: _notIncluded.ar.iconId,
+                                  points: _notIncluded.ar.points,
+                                ),
+                                en: _notIncluded.en,
+                              );
+                            });
+                          },
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _exclusionsSelectedTab = 1;
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _exclusionsSelectedTab == 1
-                            ? themeColor.cardBackground
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: _exclusionsSelectedTab == 1
-                            ? [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                )
-                              ]
-                            : [],
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "English Exclusions",
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 12,
-                          fontWeight: _exclusionsSelectedTab == 1
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: _exclusionsSelectedTab == 1
-                              ? themeColor.primary
-                              : themeColor.textPrimary.withValues(alpha: 0.6),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildExclusionTitleInput(
+                          themeColor: themeColor,
+                          isArabic: false,
+                          initialValue: _notIncluded.en.title ?? '',
+                          onChanged: (val) {
+                            setState(() {
+                              _notIncluded = NotIncludedEntity(
+                                ar: _notIncluded.ar,
+                                en: LanguageContentEntity(
+                                  title: val,
+                                  icon: _notIncluded.en.icon,
+                                  iconPath: _notIncluded.en.iconPath,
+                                  iconId: _notIncluded.en.iconId,
+                                  points: _notIncluded.en.points,
+                                ),
+                              );
+                            });
+                          },
                         ),
                       ),
-                    ),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      _buildExclusionTitleInput(
+                        themeColor: themeColor,
+                        isArabic: true,
+                        initialValue: _notIncluded.ar.title ?? '',
+                        onChanged: (val) {
+                          setState(() {
+                            _notIncluded = NotIncludedEntity(
+                              ar: LanguageContentEntity(
+                                  title: val,
+                                  icon: _notIncluded.ar.icon,
+                                  iconPath: _notIncluded.ar.iconPath,
+                                  iconId: _notIncluded.ar.iconId,
+                                  points: _notIncluded.ar.points),
+                              en: _notIncluded.en,
+                            );
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildExclusionTitleInput(
+                        themeColor: themeColor,
+                        isArabic: false,
+                        initialValue: _notIncluded.en.title ?? '',
+                        onChanged: (val) {
+                          setState(() {
+                            _notIncluded = NotIncludedEntity(
+                              ar: _notIncluded.ar,
+                              en: LanguageContentEntity(
+                                  title: val,
+                                  icon: _notIncluded.en.icon,
+                                  iconPath: _notIncluded.en.iconPath,
+                                  iconId: _notIncluded.en.iconId,
+                                  points: _notIncluded.en.points),
+                            );
+                          });
+                        },
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
-          // Exclusion Fields according to active tab
-          if (_exclusionsSelectedTab == 0)
-            _buildExclusionsLanguageFields(
-              themeColor: themeColor,
-              isArabic: true,
-              content: _notIncluded.ar,
-              onTitleChanged: (val) {
-                setState(() {
-                  _notIncluded = NotIncludedEntity(
-                    ar: LanguageContentEntity(
-                      title: val,
-                      icon: _notIncluded.ar.icon,
-                      iconPath: _notIncluded.ar.iconPath,
-                      iconId: _notIncluded.ar.iconId,
-                      points: _notIncluded.ar.points,
-                    ),
-                    en: _notIncluded.en,
-                  );
-                });
-              },
+          // Exclusion Bullet Points Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "نقاط الاستثناء (Bullet Points)",
+                style: TextStyle(fontFamily: 'Cairo', fontSize: 13, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
+              ),
+              ElevatedButton.icon(
+                onPressed: _addExclusionBulletPoint,
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text("إضافة استثناء / Add Point", style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                  foregroundColor: Colors.orange,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Exclusion Bullet Points List
+          if ((_notIncluded.ar.points ?? []).isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              decoration: BoxDecoration(
+                color: themeColor.background,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.05)),
+              ),
+              alignment: Alignment.center,
+              child: Column(
+                children: [
+                  Icon(Icons.list_alt_rounded, size: 36, color: themeColor.unselectedItem.withValues(alpha: 0.3)),
+                  const SizedBox(height: 8),
+                  Text(
+                    "لم يتم إضافة أي نقاط استثناء بعد. اضغط على الزر بالأعلى لإضافة نقطة جديدة.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: themeColor.textPrimary.withValues(alpha: 0.4)),
+                  ),
+                ],
+              ),
             )
           else
-            _buildExclusionsLanguageFields(
-              themeColor: themeColor,
-              isArabic: false,
-              content: _notIncluded.en,
-              onTitleChanged: (val) {
-                setState(() {
-                  _notIncluded = NotIncludedEntity(
-                    ar: _notIncluded.ar,
-                    en: LanguageContentEntity(
-                      title: val,
-                      icon: _notIncluded.en.icon,
-                      iconPath: _notIncluded.en.iconPath,
-                      iconId: _notIncluded.en.iconId,
-                      points: _notIncluded.en.points,
-                    ),
-                  );
-                });
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _notIncluded.ar.points?.length ?? 0,
+              itemBuilder: (context, pIdx) {
+                return _buildExclusionBulletPointEditCard(
+                  themeColor: themeColor,
+                  pointIdx: pIdx,
+                  arValue: _notIncluded.ar.points?[pIdx] ?? '',
+                  enValue: _notIncluded.en.points?[pIdx] ?? '',
+                  isWide: isWide,
+                  totalPoints: _notIncluded.ar.points?.length ?? 0,
+                );
               },
             ),
         ],
@@ -1687,301 +1728,495 @@ class _ServiceConfiguratorWizardPageState
     );
   }
 
-  Widget _buildDetailLanguageFields({
+  Widget _buildSectionTitleInput({
     required ThemeColorExtension themeColor,
     required bool isArabic,
     required int detailIdx,
-    required LanguageContentEntity content,
-    required ValueChanged<String> onTitleChanged,
+    required String initialValue,
+    required ValueChanged<String> onChanged,
   }) {
-    final points = content.points ?? [];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        BaseTextFormField(
-          key: ValueKey('${isArabic ? "ar" : "en"}_detail_${detailIdx}_title'),
-          hint: isArabic ? "العنوان الرئيسي (مثال: ماذا تشمل الخدمة؟)" : "Section Title (e.g. What does this service include?)",
-          initialValue: content.title ?? '',
-          fillColor: themeColor.background,
-          onChanged: onTitleChanged,
+    final accentColor = isArabic ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
+    return Container(
+      decoration: BoxDecoration(
+        color: themeColor.background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.15),
+          width: 1.0,
         ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              isArabic ? "نقاط القائمة (Bullet Points)" : "Bullet Points",
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
-            ),
-            TextButton.icon(
-              onPressed: () => _addBulletPoint(detailIdx),
-              icon: const Icon(Icons.add, size: 16),
-              label: Text(isArabic ? "إضافة نقطة" : "Add Point", style: const TextStyle(fontFamily: 'Cairo', fontSize: 11)),
-              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-            ),
-          ],
-        ),
-        if (points.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-            decoration: BoxDecoration(
-              color: themeColor.background,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.05)),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              isArabic ? "لا توجد نقاط مضافة حالياً" : "No points added yet",
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: themeColor.textPrimary.withValues(alpha: 0.4)),
-            ),
-          )
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: points.length,
-            itemBuilder: (context, pointIdx) {
-              final pointValue = points[pointIdx];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 10,
-                      backgroundColor: themeColor.primary.withValues(alpha: 0.1),
-                      child: Text(
-                        "${pointIdx + 1}",
-                        style: TextStyle(fontSize: 9, color: themeColor.primary, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: BaseTextFormField(
-                        key: ValueKey('${isArabic ? "ar" : "en"}_detail_${detailIdx}_point_$pointIdx'),
-                        hint: isArabic ? "محتوى النقطة ${pointIdx + 1}" : "Point content ${pointIdx + 1}",
-                        initialValue: pointValue,
-                        fillColor: themeColor.background,
-                        onChanged: (val) {
-                          setState(() {
-                            final detail = _details[detailIdx];
-                            if (isArabic) {
-                              final arPoints = List<String>.from(detail.ar.points ?? []);
-                              if (pointIdx < arPoints.length) {
-                                arPoints[pointIdx] = val;
-                              }
-                              _details[detailIdx] = DetailEntity(
-                                id: detail.id,
-                                ar: LanguageContentEntity(
-                                  title: detail.ar.title,
-                                  icon: detail.ar.icon,
-                                  iconPath: detail.ar.iconPath,
-                                  iconId: detail.ar.iconId,
-                                  points: arPoints,
-                                ),
-                                en: detail.en,
-                              );
-                            } else {
-                              final enPoints = List<String>.from(detail.en.points ?? []);
-                              if (pointIdx < enPoints.length) {
-                                enPoints[pointIdx] = val;
-                              }
-                              _details[detailIdx] = DetailEntity(
-                                id: detail.id,
-                                ar: detail.ar,
-                                en: LanguageContentEntity(
-                                  title: detail.en.title,
-                                  icon: detail.en.icon,
-                                  iconPath: detail.en.iconPath,
-                                  iconId: detail.en.iconId,
-                                  points: enPoints,
-                                ),
-                              );
-                            }
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    if (pointIdx > 0)
-                      IconButton(
-                        icon: const Icon(Icons.arrow_upward_rounded, size: 16),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () => _moveBulletPointUp(detailIdx, pointIdx),
-                        visualDensity: VisualDensity.compact,
-                        tooltip: isArabic ? "تحريك لأعلى" : "Move Up",
-                      ),
-                    if (pointIdx < points.length - 1)
-                      IconButton(
-                        icon: const Icon(Icons.arrow_downward_rounded, size: 16),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () => _moveBulletPointDown(detailIdx, pointIdx),
-                        visualDensity: VisualDensity.compact,
-                        tooltip: isArabic ? "تحريك لأسفل" : "Move Down",
-                      ),
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent, size: 18),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => _removeBulletPoint(detailIdx, pointIdx),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ],
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-              );
-            },
+                child: Text(
+                  isArabic ? "العربية 🇸🇦" : "English 🇬🇧",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: accentColor,
+                  ),
+                ),
+              ),
+            ],
           ),
-      ],
+          const SizedBox(height: 8),
+          BaseTextFormField(
+            key: ValueKey('${isArabic ? "ar" : "en"}_detail_${detailIdx}_title_input'),
+            hint: isArabic ? "عنوان القسم بالعربية..." : "Section title in English...",
+            initialValue: initialValue,
+            fillColor: themeColor.cardBackground,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildExclusionsLanguageFields({
+  Widget _buildBulletPointEditCard({
     required ThemeColorExtension themeColor,
-    required bool isArabic,
-    required LanguageContentEntity content,
-    required ValueChanged<String> onTitleChanged,
+    required int detailIdx,
+    required int pointIdx,
+    required String arValue,
+    required String enValue,
+    required bool isWide,
+    required int totalPoints,
   }) {
-    final points = content.points ?? [];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        BaseTextFormField(
-          key: ValueKey(isArabic ? 'ar_exclusion_title' : 'en_exclusion_title'),
-          hint: isArabic ? "عنوان الاستثناءات (مثال: ما لا تشمله الخدمة)" : "Exclusions Title (e.g. What is not included)",
-          initialValue: content.title ?? '',
-          fillColor: themeColor.background,
-          onChanged: onTitleChanged,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: themeColor.background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: themeColor.unselectedItem.withValues(alpha: 0.08),
         ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              isArabic ? "نقاط الاستثناء (Bullet Points)" : "Exclusion Points",
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
-            ),
-            TextButton.icon(
-              onPressed: _addExclusionBulletPoint,
-              icon: const Icon(Icons.add, size: 16),
-              label: Text(isArabic ? "إضافة نقطة" : "Add Point", style: const TextStyle(fontFamily: 'Cairo', fontSize: 11)),
-              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-            ),
-          ],
-        ),
-        if (points.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-            decoration: BoxDecoration(
-              color: themeColor.background,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.05)),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              isArabic ? "لا توجد نقاط استثناء مضافة" : "No exclusion points added yet",
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: themeColor.textPrimary.withValues(alpha: 0.4)),
-            ),
-          )
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: points.length,
-            itemBuilder: (context, pointIdx) {
-              final pointValue = points[pointIdx];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Row(
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 11,
+                backgroundColor: themeColor.primary.withValues(alpha: 0.1),
+                child: Text(
+                  "${pointIdx + 1}",
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: themeColor.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "البند التفصيلي ${pointIdx + 1}",
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              // Move Up
+              if (pointIdx > 0)
+                IconButton(
+                  icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+                  onPressed: () => _moveBulletPointUp(detailIdx, pointIdx),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: "تحريك لأعلى",
+                ),
+              if (pointIdx > 0 && pointIdx < totalPoints - 1)
+                const SizedBox(width: 8),
+              // Move Down
+              if (pointIdx < totalPoints - 1)
+                IconButton(
+                  icon: const Icon(Icons.arrow_downward_rounded, size: 16),
+                  onPressed: () => _moveBulletPointDown(detailIdx, pointIdx),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: "تحريك لأسفل",
+                ),
+              const SizedBox(width: 12),
+              // Delete
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+                onPressed: () => _removeBulletPoint(detailIdx, pointIdx),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                visualDensity: VisualDensity.compact,
+                tooltip: "حذف البند",
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Fields
+          isWide
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 10,
-                      backgroundColor: Colors.orange.withValues(alpha: 0.1),
-                      child: Text(
-                        "${pointIdx + 1}",
-                        style: const TextStyle(fontSize: 9, color: Colors.orange, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     Expanded(
-                      child: BaseTextFormField(
-                        key: ValueKey(isArabic ? 'ar_exclusion_point_$pointIdx' : 'en_exclusion_point_$pointIdx'),
-                        hint: isArabic ? "محتوى نقطة الاستثناء ${pointIdx + 1}" : "Exclusion point content ${pointIdx + 1}",
-                        initialValue: pointValue,
-                        fillColor: themeColor.background,
-                        onChanged: (val) {
-                          setState(() {
-                            if (isArabic) {
-                              final arPoints = List<String>.from(_notIncluded.ar.points ?? []);
-                              if (pointIdx < arPoints.length) {
-                                arPoints[pointIdx] = val;
-                              }
-                              _notIncluded = NotIncludedEntity(
-                                ar: LanguageContentEntity(
-                                  title: _notIncluded.ar.title,
-                                  icon: _notIncluded.ar.icon,
-                                  iconPath: _notIncluded.ar.iconPath,
-                                  iconId: _notIncluded.ar.iconId,
-                                  points: arPoints,
-                                ),
-                                en: _notIncluded.en,
-                              );
-                            } else {
-                              final enPoints = List<String>.from(_notIncluded.en.points ?? []);
-                              if (pointIdx < enPoints.length) {
-                                enPoints[pointIdx] = val;
-                              }
-                              _notIncluded = NotIncludedEntity(
-                                ar: _notIncluded.ar,
-                                en: LanguageContentEntity(
-                                  title: _notIncluded.en.title,
-                                  icon: _notIncluded.en.icon,
-                                  iconPath: _notIncluded.en.iconPath,
-                                  iconId: _notIncluded.en.iconId,
-                                  points: enPoints,
-                                ),
-                              );
-                            }
-                          });
-                        },
+                      child: _buildBulletPointField(
+                        themeColor: themeColor,
+                        isArabic: true,
+                        detailIdx: detailIdx,
+                        pointIdx: pointIdx,
+                        value: arValue,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    if (pointIdx > 0)
-                      IconButton(
-                        icon: const Icon(Icons.arrow_upward_rounded, size: 16),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () => _moveExclusionBulletPointUp(pointIdx),
-                        visualDensity: VisualDensity.compact,
-                        tooltip: isArabic ? "تحريك لأعلى" : "Move Up",
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildBulletPointField(
+                        themeColor: themeColor,
+                        isArabic: false,
+                        detailIdx: detailIdx,
+                        pointIdx: pointIdx,
+                        value: enValue,
                       ),
-                    if (pointIdx < points.length - 1)
-                      IconButton(
-                        icon: const Icon(Icons.arrow_downward_rounded, size: 16),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () => _moveExclusionBulletPointDown(pointIdx),
-                        visualDensity: VisualDensity.compact,
-                        tooltip: isArabic ? "تحريك لأسفل" : "Move Down",
-                      ),
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent, size: 18),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => _removeExclusionBulletPoint(pointIdx),
-                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildBulletPointField(
+                      themeColor: themeColor,
+                      isArabic: true,
+                      detailIdx: detailIdx,
+                      pointIdx: pointIdx,
+                      value: arValue,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildBulletPointField(
+                      themeColor: themeColor,
+                      isArabic: false,
+                      detailIdx: detailIdx,
+                      pointIdx: pointIdx,
+                      value: enValue,
                     ),
                   ],
                 ),
-              );
-            },
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBulletPointField({
+    required ThemeColorExtension themeColor,
+    required bool isArabic,
+    required int detailIdx,
+    required int pointIdx,
+    required String value,
+  }) {
+    final accentColor = isArabic ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
+    return BaseTextFormField(
+      key: ValueKey('${isArabic ? "ar" : "en"}_detail_${detailIdx}_point_${pointIdx}_field'),
+      hint: isArabic ? "البند بالعربية..." : "Point in English...",
+      initialValue: value,
+      fillColor: themeColor.cardBackground,
+      prefixIcon: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: accentColor,
+            shape: BoxShape.circle,
           ),
-      ],
+        ),
+      ),
+      onChanged: (val) {
+        setState(() {
+          final detail = _details[detailIdx];
+          if (isArabic) {
+            final arPoints = List<String>.from(detail.ar.points ?? []);
+            if (pointIdx < arPoints.length) {
+              arPoints[pointIdx] = val;
+            }
+            _details[detailIdx] = DetailEntity(
+              id: detail.id,
+              ar: LanguageContentEntity(
+                title: detail.ar.title,
+                icon: detail.ar.icon,
+                iconPath: detail.ar.iconPath,
+                iconId: detail.ar.iconId,
+                points: arPoints,
+              ),
+              en: detail.en,
+            );
+          } else {
+            final enPoints = List<String>.from(detail.en.points ?? []);
+            if (pointIdx < enPoints.length) {
+              enPoints[pointIdx] = val;
+            }
+            _details[detailIdx] = DetailEntity(
+              id: detail.id,
+              ar: detail.ar,
+              en: LanguageContentEntity(
+                title: detail.en.title,
+                icon: detail.en.icon,
+                iconPath: detail.en.iconPath,
+                iconId: detail.en.iconId,
+                points: enPoints,
+              ),
+            );
+          }
+        });
+      },
+    );
+  }
+
+  Widget _buildExclusionTitleInput({
+    required ThemeColorExtension themeColor,
+    required bool isArabic,
+    required String initialValue,
+    required ValueChanged<String> onChanged,
+  }) {
+    final accentColor = isArabic ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
+    return Container(
+      decoration: BoxDecoration(
+        color: themeColor.background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.15),
+          width: 1.0,
+        ),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  isArabic ? "العربية 🇸🇦" : "English 🇬🇧",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: accentColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          BaseTextFormField(
+            key: ValueKey(isArabic ? 'ar_exclusion_title_input' : 'en_exclusion_title_input'),
+            hint: isArabic ? "عنوان الاستثناءات بالعربية..." : "Exclusions title in English...",
+            initialValue: initialValue,
+            fillColor: themeColor.cardBackground,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExclusionBulletPointEditCard({
+    required ThemeColorExtension themeColor,
+    required int pointIdx,
+    required String arValue,
+    required String enValue,
+    required bool isWide,
+    required int totalPoints,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: themeColor.background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: themeColor.unselectedItem.withValues(alpha: 0.08),
+        ),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 11,
+                backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                child: Text(
+                  "${pointIdx + 1}",
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "نقطة استثناء ${pointIdx + 1}",
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              // Move Up
+              if (pointIdx > 0)
+                IconButton(
+                  icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+                  onPressed: () => _moveExclusionBulletPointUp(pointIdx),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: "تحريك لأعلى",
+                ),
+              if (pointIdx > 0 && pointIdx < totalPoints - 1)
+                const SizedBox(width: 8),
+              // Move Down
+              if (pointIdx < totalPoints - 1)
+                IconButton(
+                  icon: const Icon(Icons.arrow_downward_rounded, size: 16),
+                  onPressed: () => _moveExclusionBulletPointDown(pointIdx),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: "تحريك لأسفل",
+                ),
+              const SizedBox(width: 12),
+              // Delete
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+                onPressed: () => _removeExclusionBulletPoint(pointIdx),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                visualDensity: VisualDensity.compact,
+                tooltip: "حذف النقطة",
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Fields
+          isWide
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _buildExclusionBulletPointField(
+                        themeColor: themeColor,
+                        isArabic: true,
+                        pointIdx: pointIdx,
+                        value: arValue,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildExclusionBulletPointField(
+                        themeColor: themeColor,
+                        isArabic: false,
+                        pointIdx: pointIdx,
+                        value: enValue,
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildExclusionBulletPointField(
+                      themeColor: themeColor,
+                      isArabic: true,
+                      pointIdx: pointIdx,
+                      value: arValue,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildExclusionBulletPointField(
+                      themeColor: themeColor,
+                      isArabic: false,
+                      pointIdx: pointIdx,
+                      value: enValue,
+                    ),
+                  ],
+                ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExclusionBulletPointField({
+    required ThemeColorExtension themeColor,
+    required bool isArabic,
+    required int pointIdx,
+    required String value,
+  }) {
+    final accentColor = isArabic ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
+    return BaseTextFormField(
+      key: ValueKey(isArabic ? 'ar_exclusion_point_field_$pointIdx' : 'en_exclusion_point_field_$pointIdx'),
+      hint: isArabic ? "نقطة الاستثناء بالعربية..." : "Exclusion point in English...",
+      initialValue: value,
+      fillColor: themeColor.cardBackground,
+      prefixIcon: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: accentColor,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+      onChanged: (val) {
+        setState(() {
+          if (isArabic) {
+            final arPoints = List<String>.from(_notIncluded.ar.points ?? []);
+            if (pointIdx < arPoints.length) {
+              arPoints[pointIdx] = val;
+            }
+            _notIncluded = NotIncludedEntity(
+              ar: LanguageContentEntity(
+                title: _notIncluded.ar.title,
+                icon: _notIncluded.ar.icon,
+                iconPath: _notIncluded.ar.iconPath,
+                iconId: _notIncluded.ar.iconId,
+                points: arPoints,
+              ),
+              en: _notIncluded.en,
+            );
+          } else {
+            final enPoints = List<String>.from(_notIncluded.en.points ?? []);
+            if (pointIdx < enPoints.length) {
+              enPoints[pointIdx] = val;
+            }
+            _notIncluded = NotIncludedEntity(
+              ar: _notIncluded.ar,
+              en: LanguageContentEntity(
+                title: _notIncluded.en.title,
+                icon: _notIncluded.en.icon,
+                iconPath: _notIncluded.en.iconPath,
+                iconId: _notIncluded.en.iconId,
+                points: enPoints,
+              ),
+            );
+          }
+        });
+      },
     );
   }
 
