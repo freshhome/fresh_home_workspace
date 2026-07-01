@@ -3085,8 +3085,71 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     ThemeColorExtension themeColor,
     AppTextThemeExtension themeText,
   ) {
+    final bool showAreaWarning = _pricingMethod == PricingMethod.perSquareMeter &&
+        !_fields.any((f) => f.id.trim() == 'area');
+
     return Column(
       children: [
+        if (showAreaWarning)
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.amber.shade200,
+                width: 1.0,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.lightbulb_rounded, color: Colors.amber.shade800, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '💡 توصية: يفضل إضافة حقل رقمي بمعرف "area" لحساب تسعير المتر المربع.',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.amber.shade900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _addAreaField,
+                    icon: const Icon(Icons.add_task_rounded, size: 16),
+                    label: const Text(
+                      'إضافة حقل المساحة (area) تلقائياً الآن',
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber.shade800,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
           child: Row(
@@ -4708,6 +4771,31 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         ),
       );
       // أضف مفتاح ثابت للحقل الجديد
+      _fieldStableKeys.add(
+        'fk_${DateTime.now().microsecondsSinceEpoch}_${_fields.length}',
+      );
+      _validateConfiguration();
+      _initializeSimulatorDefaults();
+    });
+    _markDirty();
+  }
+
+  void _addAreaField() {
+    setState(() {
+      _fields.add(
+        const DynamicFieldEntity(
+          id: 'area',
+          type: DynamicFieldType.number,
+          label: {'ar': 'المساحة', 'en': 'Area'},
+          required: true,
+          min: 1,
+          unit: 'م²',
+          description: {
+            'ar': 'المساحة الإجمالية للموقع بالمتر المربع',
+            'en': 'Total area in square meters'
+          },
+        ),
+      );
       _fieldStableKeys.add(
         'fk_${DateTime.now().microsecondsSinceEpoch}_${_fields.length}',
       );
