@@ -150,7 +150,7 @@ export default function PopularServices() {
               }
 
               if (sub.details && Array.isArray(sub.details) && sub.details.length > 0) {
-                highlights = sub.details.slice(0, 3).map((d: any) => typeof d === "string" ? d : d.ar || d.title || JSON.stringify(d));
+                highlights = sub.details.slice(0, 3).map((d: any) => typeof d === "string" ? d : (d.ar?.title || d.title?.ar || d.title || JSON.stringify(d)));
               } else if (sub.price_config?.fields && sub.price_config.fields.length > 0) {
                 highlights = sub.price_config.fields.slice(0, 3).map((f: any) => f.label?.ar || f.label);
               }
