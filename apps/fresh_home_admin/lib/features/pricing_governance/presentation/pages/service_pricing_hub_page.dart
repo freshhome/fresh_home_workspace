@@ -3093,63 +3093,160 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         if (showAreaWarning)
           Container(
             margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.amber.shade50,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: Colors.amber.shade200,
                 width: 1.0,
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.lightbulb_rounded, color: Colors.amber.shade800, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '💡 توصية: يفضل إضافة حقل رقمي بمعرف "area" لحساب تسعير المتر المربع.',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: Colors.amber.shade900,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _addAreaField,
-                    icon: const Icon(Icons.add_task_rounded, size: 16),
-                    label: const Text(
-                      'إضافة حقل المساحة (area) تلقائياً الآن',
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber.shade800,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                Icon(Icons.lightbulb_rounded, color: Colors.amber.shade800, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '💡 توصية: يرجى إضافة قالب حقل المساحة (area) بالأسفل لتفعيل حساب تسعير المتر المربع.',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                      color: Colors.amber.shade900,
                     ),
                   ),
                 ),
               ],
             ),
           ),
+
+        // Quick add templates title
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              'اقتراحات وقوالب حقول جاهزة للإضافة السريعة:',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: themeColor.textPrimary.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+        ),
+
+        // Horizontal templates scroll view
+        SizedBox(
+          height: 86,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _fieldTemplates.length,
+            itemBuilder: (context, idx) {
+              final template = _fieldTemplates[idx];
+              final bool isAdded = _fields.any((f) => f.id.trim() == template.id);
+              final bool isRecommended = template.id == 'area' && showAreaWarning;
+
+              return GestureDetector(
+                onTap: isAdded ? null : () => _addFieldFromTemplate(template),
+                child: Container(
+                  width: 175,
+                  margin: const EdgeInsets.only(left: 10, bottom: 8, top: 4),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isAdded
+                        ? themeColor.cardBackground.withValues(alpha: 0.5)
+                        : (isRecommended ? Colors.amber.shade50 : themeColor.cardBackground),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isAdded
+                          ? themeColor.unselectedItem.withValues(alpha: 0.1)
+                          : (isRecommended
+                              ? Colors.amber.shade400
+                              : themeColor.unselectedItem.withValues(alpha: 0.15)),
+                      width: isRecommended ? 1.5 : 1.0,
+                    ),
+                    boxShadow: [
+                      if (!isAdded)
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        )
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isAdded
+                              ? themeColor.unselectedItem.withValues(alpha: 0.05)
+                              : (isRecommended
+                                  ? Colors.amber.shade100
+                                  : themeColor.primary.withValues(alpha: 0.08)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          isAdded ? Icons.check_circle_rounded : _getTemplateIcon(template.icon),
+                          color: isAdded
+                              ? Colors.green
+                              : (isRecommended ? Colors.amber.shade900 : themeColor.primary),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              template.id == 'area'
+                                  ? 'حقل المساحة'
+                                  : (template.id == 'furnished'
+                                      ? 'تحديد المنزل مفروش'
+                                      : (template.id == 'number_of_rooms'
+                                          ? 'عدد الغرف'
+                                          : (template.id == 'number_of_bathrooms'
+                                              ? 'عدد الحمامات'
+                                              : 'وجود حيوانات أليفة'))),
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                color: isAdded
+                                    ? themeColor.textPrimary.withValues(alpha: 0.4)
+                                    : themeColor.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isAdded ? 'تمت الإضافة' : '+ إضافة سريعة',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 9,
+                                color: isAdded
+                                    ? Colors.green
+                                    : (isRecommended ? Colors.amber.shade900 : themeColor.secondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
           child: Row(
@@ -4780,22 +4877,118 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
     _markDirty();
   }
 
-  void _addAreaField() {
-    setState(() {
-      _fields.add(
-        const DynamicFieldEntity(
-          id: 'area',
-          type: DynamicFieldType.number,
-          label: {'ar': 'المساحة', 'en': 'Area'},
-          required: true,
-          min: 1,
-          unit: 'م²',
-          description: {
-            'ar': 'المساحة الإجمالية للموقع بالمتر المربع',
-            'en': 'Total area in square meters'
-          },
+  final List<DynamicFieldEntity> _fieldTemplates = const [
+    DynamicFieldEntity(
+      id: 'area',
+      type: DynamicFieldType.number,
+      label: {
+        'ar': 'يرجى إدخال المساحة المطلوبة بالمتر المربع',
+        'en': 'Please enter the required area in square meters'
+      },
+      required: true,
+      min: 1,
+      unit: 'م²',
+      description: {
+        'ar': 'المساحة الإجمالية للموقع لحساب تسعير المتر المربع',
+        'en': 'Total site area for square meter pricing calculation'
+      },
+      icon: 'square_foot',
+    ),
+    DynamicFieldEntity(
+      id: 'furnished',
+      type: DynamicFieldType.toggle,
+      label: {
+        'ar': 'هل المنزل مفروش بأثاث؟',
+        'en': 'Is the house furnished?'
+      },
+      required: false,
+      description: {
+        'ar': 'تحديد ما إذا كان الموقع يحتوي على أثاث لتعديل السعر',
+        'en': 'Specify if the site contains furniture for price adjustment'
+      },
+      icon: 'weekend',
+    ),
+    DynamicFieldEntity(
+      id: 'number_of_rooms',
+      type: DynamicFieldType.number,
+      label: {
+        'ar': 'يرجى تحديد عدد الغرف',
+        'en': 'Please specify the number of rooms'
+      },
+      required: true,
+      min: 1,
+      unit: 'غرفة',
+      description: {
+        'ar': 'عدد الغرف الإجمالي في الموقع المراد خدمته',
+        'en': 'Total number of rooms to clean/service'
+      },
+      icon: 'meeting_room',
+    ),
+    DynamicFieldEntity(
+      id: 'number_of_bathrooms',
+      type: DynamicFieldType.number,
+      label: {
+        'ar': 'يرجى تحديد عدد الحمامات',
+        'en': 'Please specify the number of bathrooms'
+      },
+      required: true,
+      min: 1,
+      unit: 'حمام',
+      description: {
+        'ar': 'عدد الحمامات الإجمالي في الموقع',
+        'en': 'Total number of bathrooms at the site'
+      },
+      icon: 'bathtub',
+    ),
+    DynamicFieldEntity(
+      id: 'has_pets',
+      type: DynamicFieldType.toggle,
+      label: {
+        'ar': 'هل توجد حيوانات أليفة في الموقع؟',
+        'en': 'Are there pets in the house?'
+      },
+      required: false,
+      description: {
+        'ar': 'تنبيه الفنيين لوجود حيوانات أليفة',
+        'en': 'Alert technicians regarding presence of pets'
+      },
+      icon: 'pets',
+    ),
+  ];
+
+  IconData _getTemplateIcon(String? iconName) {
+    switch (iconName) {
+      case 'square_foot':
+        return Icons.square_foot_rounded;
+      case 'weekend':
+        return Icons.weekend_rounded;
+      case 'meeting_room':
+        return Icons.meeting_room_rounded;
+      case 'bathtub':
+        return Icons.bathtub_rounded;
+      case 'pets':
+        return Icons.pets_rounded;
+      default:
+        return Icons.add_circle_outline_rounded;
+    }
+  }
+
+  void _addFieldFromTemplate(DynamicFieldEntity template) {
+    if (_fields.any((f) => f.id.trim() == template.id)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'الحقل (${template.id}) مضاف بالفعل لقائمة الحقول.',
+            style: const TextStyle(fontFamily: 'Cairo'),
+          ),
+          backgroundColor: Colors.orangeAccent,
         ),
       );
+      return;
+    }
+
+    setState(() {
+      _fields.add(template);
       _fieldStableKeys.add(
         'fk_${DateTime.now().microsecondsSinceEpoch}_${_fields.length}',
       );
@@ -4803,6 +4996,16 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
       _initializeSimulatorDefaults();
     });
     _markDirty();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'تم إضافة حقل "${template.label['ar']}" بنجاح!',
+          style: const TextStyle(fontFamily: 'Cairo'),
+        ),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   void _addNewComputedField() {
