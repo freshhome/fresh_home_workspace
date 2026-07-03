@@ -433,14 +433,16 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Row(
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
+                          runSpacing: 6,
                           children: [
                             StarRatingWidget(
                               initialRating: rating,
                               isReadOnly: true,
-                              iconSize: 18,
+                              iconSize: 16,
                             ),
-                            const SizedBox(width: 4),
                             Text(
                               rating.toStringAsFixed(1),
                               style: TextStyle(
@@ -450,7 +452,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                 fontFamily: 'Cairo',
                               ),
                             ),
-                            const SizedBox(width: 12),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
