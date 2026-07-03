@@ -338,6 +338,7 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
     final isSelected = _selectedService?.id == node.id;
     final displayTitle = node.title['ar'] ?? node.title['en'] ?? "بدون عنوان";
     final displayDesc = node.description['ar'] ?? node.description['en'] ?? "";
+    final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color categoryColor = inheritedCategoryColor ?? _getCategoryColor(node.id);
@@ -507,162 +508,202 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                         horizontal: finalHorizontalPadding,
                         vertical: finalVerticalPadding,
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 1) Right Side: Vertical accent bar + spacing
-                          if (finalShowAccentBar) ...[
-                            Container(
-                              width: accentBarWidth,
-                              height: accentBarHeight,
-                              decoration: BoxDecoration(
-                                color: depth == 0 ? categoryColor : themeColor.primary,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                          ] else ...[
-                            // For nested children, indent spacing slightly
-                            const SizedBox(width: 8),
-                          ],
-
-                          // 2) Icon / Thumbnail with custom background squircle
-                          Container(
-                            width: finalIconContainerSize,
-                            height: finalIconContainerSize,
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: (depth == 0 ? categoryColor : themeColor.primary).withValues(
-                                alpha: isDark ? 0.12 : 0.06,
-                              ),
-                              borderRadius: BorderRadius.circular(finalIconRadius + 4),
-                              border: Border.all(
-                                color: (depth == 0 ? categoryColor : themeColor.primary).withValues(alpha: 0.15),
-                                width: 1.0,
-                              ),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(finalIconRadius),
-                              child: node.image != null && node.image!.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: node.image!,
-                                      fit: BoxFit.contain,
-                                      placeholder: (context, url) => Center(
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: themeColor.primary,
-                                        ),
-                                      ),
-                                      errorWidget: (context, url, error) =>
-                                          _buildPlaceholderIcon(themeColor),
-                                    )
-                                  : _buildPlaceholderIcon(themeColor),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-
-                          // 3) Center: Title, Description, and Badges (placed vertically)
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: _getStatusColor(node.status),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        displayTitle,
-                                        style: TextStyle(
-                                          fontFamily: 'Cairo',
-                                          fontSize: finalTitleFontSize,
-                                          fontWeight: finalTitleFontWeight,
-                                          color: themeColor.textPrimary,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (displayDesc.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    displayDesc,
-                                    style: TextStyle(
-                                      fontFamily: 'Cairo',
-                                      fontSize: depth == 0 ? 12 : (depth == 1 ? 11.5 : 11),
-                                      color: themeColor.textPrimary.withValues(
-                                        alpha: 0.65,
-                                      ),
-                                      height: 1.3,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 6,
-                                  children: [
-                                    _buildIdBadge(node.id, categoryColor, themeColor),
-                                    _buildNodeBadge(node, themeColor),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-
-                          // 4) Left Side: Circle Action Buttons (Status control & Settings gear)
+                          // 1) TOP HALF: Accent Bar + Icon + Title Stack + Badges
                           Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (!node.isBookable) ...[
+                              // Accent Bar
+                              if (finalShowAccentBar) ...[
                                 Container(
-                                  width: 32,
-                                  height: 32,
+                                  width: accentBarWidth,
+                                  height: accentBarHeight,
                                   decoration: BoxDecoration(
-                                    color: (depth == 0 ? categoryColor : themeColor.primary).withValues(alpha: 0.08),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: IconButton(
-                                      icon: Icon(
-                                        Icons.add_rounded,
-                                        color: depth == 0 ? categoryColor : themeColor.primary,
-                                        size: 18,
-                                      ),
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
-                                      tooltip: "إضافة خدمة فرعية",
-                                      onPressed: () => _openAddWizard(node.id),
-                                    ),
+                                    color: depth == 0 ? categoryColor : themeColor.primary,
+                                    borderRadius: BorderRadius.circular(2),
                                   ),
                                 ),
+                                const SizedBox(width: 12),
+                              ] else ...[
                                 const SizedBox(width: 8),
                               ],
-                              _buildStatusControlAction(
+
+                              // Service Icon
+                              Container(
+                                width: finalIconContainerSize,
+                                height: finalIconContainerSize,
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: (depth == 0 ? categoryColor : themeColor.primary).withValues(
+                                    alpha: isDark ? 0.12 : 0.06,
+                                  ),
+                                  borderRadius: BorderRadius.circular(finalIconRadius + 4),
+                                  border: Border.all(
+                                    color: (depth == 0 ? categoryColor : themeColor.primary).withValues(alpha: 0.15),
+                                    width: 1.0,
+                                  ),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(finalIconRadius),
+                                  child: node.image != null && node.image!.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: node.image!,
+                                          fit: BoxFit.contain,
+                                          placeholder: (context, url) => Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: themeColor.primary,
+                                            ),
+                                          ),
+                                          errorWidget: (context, url, error) =>
+                                              _buildPlaceholderIcon(themeColor),
+                                        )
+                                      : _buildPlaceholderIcon(themeColor),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+
+                              // Title, Description and Badges stacked vertically
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: _getStatusColor(node.status),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            displayTitle,
+                                            style: TextStyle(
+                                              fontFamily: 'Cairo',
+                                              fontSize: finalTitleFontSize,
+                                              fontWeight: finalTitleFontWeight,
+                                              color: themeColor.textPrimary,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (displayDesc.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        displayDesc,
+                                        style: TextStyle(
+                                          fontFamily: 'Cairo',
+                                          fontSize: depth == 0 ? 12 : (depth == 1 ? 11.5 : 11),
+                                          color: themeColor.textPrimary.withValues(
+                                            alpha: 0.65,
+                                          ),
+                                          height: 1.3,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 6,
+                                      children: [
+                                        _buildIdBadge(node.id, categoryColor, themeColor),
+                                        _buildNodeBadge(node, themeColor),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // Divider Line
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Divider(
+                              color: themeColor.unselectedItem.withValues(alpha: 0.1),
+                              height: 1.0,
+                              thickness: 1.0,
+                            ),
+                          ),
+
+                          // 2) BOTTOM HALF: 4 Action Buttons with Labels
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              // 1. Add Child Button
+                              _buildBottomActionItem(
+                                iconWidget: Icon(
+                                  Icons.add_rounded,
+                                  color: depth == 0 ? categoryColor : themeColor.primary,
+                                  size: 20,
+                                ),
+                                label: isArabic ? "إضافة ابن" : "Add Child",
+                                onTap: () => _openAddWizard(node.id),
+                                accentColor: depth == 0 ? categoryColor : themeColor.primary,
+                                themeColor: themeColor,
+                                isEnabled: !node.isBookable,
+                              ),
+                              
+                              // 2. Status Control Popup
+                              _buildBottomStatusAction(
                                 node: node,
                                 themeColor: themeColor,
                               ),
-                              const SizedBox(width: 8),
-                              _buildTrailingAction(
-                                hasChildren: hasChildren,
-                                isBookable: node.isBookable,
-                                isExpanded: isExpanded,
-                                categoryColor: categoryColor,
+
+                              // 3. Settings Gear (Edit / Details)
+                              _buildBottomActionItem(
+                                iconWidget: Icon(
+                                  Icons.settings_rounded,
+                                  color: categoryColor,
+                                  size: 20,
+                                ),
+                                label: isArabic ? "الإعدادات" : "Settings",
+                                onTap: () {
+                                  setState(() {
+                                    _selectedService = node;
+                                  });
+                                  final double screenWidth = MediaQuery.of(context).size.width;
+                                  if (screenWidth < 768) {
+                                    _showMobileDetailsSheet(themeColor);
+                                  }
+                                },
+                                accentColor: categoryColor,
                                 themeColor: themeColor,
-                                nodeId: node.id,
-                                node: node,
+                              ),
+
+                              // 4. Sub-services Toggle Expand
+                              _buildBottomActionItem(
+                                iconWidget: Icon(
+                                  isExpanded
+                                      ? Icons.keyboard_arrow_up_rounded
+                                      : Icons.keyboard_arrow_down_rounded,
+                                  color: themeColor.primary,
+                                  size: 20,
+                                ),
+                                label: isArabic ? "الخدمات الفرعية" : "Sub-services",
+                                onTap: () {
+                                  setState(() {
+                                    if (isExpanded) {
+                                      _expandedNodes.remove(node.id);
+                                    } else {
+                                      _expandedNodes.add(node.id);
+                                    }
+                                  });
+                                },
+                                accentColor: themeColor.primary,
+                                themeColor: themeColor,
+                                isEnabled: !node.isBookable,
                               ),
                             ],
                           ),
@@ -720,46 +761,147 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
     );
   }
 
-  Widget _buildTrailingAction({
-    required bool hasChildren,
-    required bool isBookable,
-    required bool isExpanded,
-    required Color categoryColor,
+  Widget _buildBottomActionItem({
+    required Widget iconWidget,
+    required String label,
+    required VoidCallback? onTap,
+    required Color accentColor,
     required ThemeColorExtension themeColor,
-    required String nodeId,
-    required ServiceEntity node,
+    bool isEnabled = true,
   }) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: categoryColor.withValues(alpha: 0.08),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: IconButton(
-          icon: Icon(
-            Icons.settings_rounded,
-            color: categoryColor,
-            size: 18,
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.4,
+      child: InkWell(
+        onTap: isEnabled ? onTap : null,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(child: iconWidget),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: themeColor.textPrimary.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
           ),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
-          onPressed: () {
-            setState(() {
-              _selectedService = node;
-            });
-
-            // On mobile viewports, show preview details in a sliding bottom sheet
-            final double screenWidth = MediaQuery.of(context).size.width;
-            if (screenWidth < 768) {
-              _showMobileDetailsSheet(themeColor);
-            }
-          },
         ),
       ),
     );
   }
+
+  Widget _buildBottomStatusAction({
+    required ServiceEntity node,
+    required ThemeColorExtension themeColor,
+  }) {
+    final statusColor = _getStatusColor(node.status);
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    
+    return Theme(
+      data: Theme.of(context).copyWith(
+        popupMenuTheme: PopupMenuThemeData(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+      child: PopupMenuButton<ServiceStatus>(
+        tooltip: 'تغيير حالة الخدمة',
+        onSelected: (ServiceStatus status) {
+          if (node.status == status) return;
+          _updateServiceStatus(node, status);
+        },
+        itemBuilder: (BuildContext context) {
+          return ServiceStatus.values.map((status) {
+            final isCurrent = node.status == status;
+            return PopupMenuItem<ServiceStatus>(
+              value: status,
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _getStatusIcon(status),
+                      color: _getStatusColor(status),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      status.arabicLabel,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 13,
+                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                        color: isCurrent ? themeColor.primary : themeColor.textPrimary,
+                      ),
+                    ),
+                    if (isCurrent) ...[
+                      const Spacer(),
+                      Icon(
+                        Icons.check_rounded,
+                        color: themeColor.primary,
+                        size: 16,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(
+                    _getStatusIcon(node.status),
+                    color: statusColor,
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                isArabic ? "حالة الخدمة" : "Status",
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: themeColor.textPrimary.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 
   Color _getStatusColor(ServiceStatus status) {
     switch (status) {
@@ -831,82 +973,6 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
     }
   }
 
-  Widget _buildStatusControlAction({
-    required ServiceEntity node,
-    required ThemeColorExtension themeColor,
-  }) {
-    final statusColor = _getStatusColor(node.status);
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.08),
-        shape: BoxShape.circle,
-      ),
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          popupMenuTheme: PopupMenuThemeData(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-        ),
-        child: PopupMenuButton<ServiceStatus>(
-          icon: Icon(
-            _getStatusIcon(node.status),
-            color: statusColor,
-            size: 18,
-          ),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
-          tooltip: 'تغيير حالة الخدمة',
-          onSelected: (ServiceStatus status) {
-            if (node.status == status) return;
-            _updateServiceStatus(node, status);
-          },
-          itemBuilder: (BuildContext context) {
-            return ServiceStatus.values.map((status) {
-              final isCurrent = node.status == status;
-              return PopupMenuItem<ServiceStatus>(
-                value: status,
-                child: Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _getStatusIcon(status),
-                        color: _getStatusColor(status),
-                        size: 18,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        status.arabicLabel,
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 13,
-                          fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                          color: isCurrent ? themeColor.primary : themeColor.textPrimary,
-                        ),
-                      ),
-                      if (isCurrent) ...[
-                        const Spacer(),
-                        Icon(
-                          Icons.check_rounded,
-                          color: themeColor.primary,
-                          size: 16,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            }).toList();
-          },
-        ),
-      ),
-    );
-  }
 
   Widget _buildNodeBadge(ServiceEntity node, ThemeColorExtension themeColor) {
     if (node.isBookable) {
