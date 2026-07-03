@@ -166,6 +166,50 @@ function ServiceDetailsContent() {
     );
   }
 
+  const isUnavailable = service.status !== "active" && service.status !== "ready";
+  
+  if (isUnavailable) {
+    return (
+      <div className="min-h-screen relative flex flex-col font-sans overflow-hidden bg-gradient-to-br from-[#E0F2F1] via-white to-[#E3F2FD]">
+        {/* Animated background elements */}
+        <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-teal-100/40 blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-sky-100/40 blur-[120px] animate-pulse" />
+        
+        <Header />
+        
+        <main className="flex-1 flex items-center justify-center p-6 z-10">
+          <div className="backdrop-blur-md bg-white/75 border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.06)] rounded-[32px] max-w-md w-full p-8 text-center flex flex-col items-center">
+            
+            {/* Animated Icon */}
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
+              <Sparkles className="w-10 h-10 text-primary" />
+            </div>
+            
+            {/* Title */}
+            <h2 className="text-xl lg:text-2xl font-extrabold text-slate-800 mb-3">
+              الخدمة ستتوفر قريباً
+            </h2>
+            
+            {/* Description */}
+            <p className="text-slate-500 text-sm leading-relaxed mb-8">
+              نعمل حالياً على تجهيز هذه الخدمة بأعلى معايير الجودة لتكون متاحة لحجزك قريباً جداً.
+            </p>
+            
+            {/* Back Button */}
+            <button 
+              onClick={() => router.back()}
+              className="w-full bg-primary hover:bg-primary/95 text-white font-extrabold py-4 px-6 rounded-2xl shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+            >
+              العودة للخلف
+            </button>
+          </div>
+        </main>
+        
+        <Footer />
+      </div>
+    );
+  }
+
   const isPaused = service.status === "paused";
   const arTitle = service.title?.ar || service.title || "تفاصيل الخدمة";
   const arDesc = service.description?.ar || service.description || "";
