@@ -307,13 +307,17 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
             color: themeColor.textPrimary.withValues(alpha: 0.4),
           ),
           const SizedBox(width: 3),
-          Text(
-            displayId,
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Cairo',
-              color: themeColor.textPrimary.withValues(alpha: 0.5),
+          Flexible(
+            child: Text(
+              displayId,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Cairo',
+                color: themeColor.textPrimary.withValues(alpha: 0.5),
+              ),
             ),
           ),
         ],
