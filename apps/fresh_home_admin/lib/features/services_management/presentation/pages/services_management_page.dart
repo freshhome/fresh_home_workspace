@@ -621,6 +621,30 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              if (!node.isBookable) ...[
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: (depth == 0 ? categoryColor : themeColor.primary).withValues(alpha: 0.08),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: IconButton(
+                                      icon: Icon(
+                                        Icons.add_rounded,
+                                        color: depth == 0 ? categoryColor : themeColor.primary,
+                                        size: 18,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      tooltip: "إضافة خدمة فرعية",
+                                      onPressed: () => _openAddWizard(node.id),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
                               _buildStatusControlAction(
                                 node: node,
                                 themeColor: themeColor,
