@@ -287,6 +287,7 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
     Color accentColor,
     ThemeColorExtension themeColor,
   ) {
+    final String displayId = id.length > 8 ? '${id.substring(0, 8)}...' : id;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -307,7 +308,7 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
           ),
           const SizedBox(width: 3),
           Text(
-            id,
+            displayId,
             style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.bold,
