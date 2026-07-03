@@ -511,8 +511,19 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 1) TOP HALF: Accent Bar + Icon + Title Stack + Badges
+                          // 1) TOP ROW: Service ID and Category Badges side-by-side
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildIdBadge(node.id, categoryColor, themeColor),
+                              _buildNodeBadge(node, themeColor),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
+                          // 2) MIDDLE ROW: Icon + Title Stack + Description
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Accent Bar
                               if (finalShowAccentBar) ...[
@@ -564,7 +575,7 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                               ),
                               const SizedBox(width: 16),
 
-                              // Title, Description and Badges stacked vertically
+                              // Title and Description stacked vertically
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -608,19 +619,10 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                                           ),
                                           height: 1.3,
                                         ),
-                                        maxLines: 2,
+                                        maxLines: 4,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 6,
-                                      children: [
-                                        _buildIdBadge(node.id, categoryColor, themeColor),
-                                        _buildNodeBadge(node, themeColor),
-                                      ],
-                                    ),
                                   ],
                                 ),
                               ),
@@ -637,73 +639,80 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                             ),
                           ),
 
-                          // 2) BOTTOM HALF: 4 Action Buttons with Labels
+                          // 3) BOTTOM HALF: 4 Action Buttons with Labels (Using Expanded to divide space evenly)
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               // 1. Add Child Button
-                              _buildBottomActionItem(
-                                iconWidget: Icon(
-                                  Icons.add_rounded,
-                                  color: depth == 0 ? categoryColor : themeColor.primary,
-                                  size: 20,
+                              Expanded(
+                                child: _buildBottomActionItem(
+                                  iconWidget: Icon(
+                                    Icons.add_rounded,
+                                    color: depth == 0 ? categoryColor : themeColor.primary,
+                                    size: 20,
+                                  ),
+                                  label: isArabic ? "إضافة ابن" : "Add Child",
+                                  onTap: () => _openAddWizard(node.id),
+                                  accentColor: depth == 0 ? categoryColor : themeColor.primary,
+                                  themeColor: themeColor,
+                                  isEnabled: !node.isBookable,
                                 ),
-                                label: isArabic ? "إضافة ابن" : "Add Child",
-                                onTap: () => _openAddWizard(node.id),
-                                accentColor: depth == 0 ? categoryColor : themeColor.primary,
-                                themeColor: themeColor,
-                                isEnabled: !node.isBookable,
                               ),
                               
                               // 2. Status Control Popup
-                              _buildBottomStatusAction(
-                                node: node,
-                                themeColor: themeColor,
+                              Expanded(
+                                child: _buildBottomStatusAction(
+                                  node: node,
+                                  themeColor: themeColor,
+                                ),
                               ),
 
                               // 3. Settings Gear (Edit / Details)
-                              _buildBottomActionItem(
-                                iconWidget: Icon(
-                                  Icons.settings_rounded,
-                                  color: categoryColor,
-                                  size: 20,
+                              Expanded(
+                                child: _buildBottomActionItem(
+                                  iconWidget: Icon(
+                                    Icons.settings_rounded,
+                                    color: categoryColor,
+                                    size: 20,
+                                  ),
+                                  label: isArabic ? "الإعدادات" : "Settings",
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedService = node;
+                                    });
+                                    final double screenWidth = MediaQuery.of(context).size.width;
+                                    if (screenWidth < 768) {
+                                      _showMobileDetailsSheet(themeColor);
+                                    }
+                                  },
+                                  accentColor: categoryColor,
+                                  themeColor: themeColor,
                                 ),
-                                label: isArabic ? "الإعدادات" : "Settings",
-                                onTap: () {
-                                  setState(() {
-                                    _selectedService = node;
-                                  });
-                                  final double screenWidth = MediaQuery.of(context).size.width;
-                                  if (screenWidth < 768) {
-                                    _showMobileDetailsSheet(themeColor);
-                                  }
-                                },
-                                accentColor: categoryColor,
-                                themeColor: themeColor,
                               ),
 
                               // 4. Sub-services Toggle Expand
-                              _buildBottomActionItem(
-                                iconWidget: Icon(
-                                  isExpanded
-                                      ? Icons.keyboard_arrow_up_rounded
-                                      : Icons.keyboard_arrow_down_rounded,
-                                  color: themeColor.primary,
-                                  size: 20,
+                              Expanded(
+                                child: _buildBottomActionItem(
+                                  iconWidget: Icon(
+                                    isExpanded
+                                        ? Icons.keyboard_arrow_up_rounded
+                                        : Icons.keyboard_arrow_down_rounded,
+                                    color: themeColor.primary,
+                                    size: 20,
+                                  ),
+                                  label: isArabic ? "الخدمات الفرعية" : "Sub-services",
+                                  onTap: () {
+                                    setState(() {
+                                      if (isExpanded) {
+                                        _expandedNodes.remove(node.id);
+                                      } else {
+                                        _expandedNodes.add(node.id);
+                                      }
+                                    });
+                                  },
+                                  accentColor: themeColor.primary,
+                                  themeColor: themeColor,
+                                  isEnabled: !node.isBookable,
                                 ),
-                                label: isArabic ? "الخدمات الفرعية" : "Sub-services",
-                                onTap: () {
-                                  setState(() {
-                                    if (isExpanded) {
-                                      _expandedNodes.remove(node.id);
-                                    } else {
-                                      _expandedNodes.add(node.id);
-                                    }
-                                  });
-                                },
-                                accentColor: themeColor.primary,
-                                themeColor: themeColor,
-                                isEnabled: !node.isBookable,
                               ),
                             ],
                           ),
@@ -775,7 +784,7 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
         onTap: isEnabled ? onTap : null,
         borderRadius: BorderRadius.circular(10),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -789,13 +798,16 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                 child: Center(child: iconWidget),
               ),
               const SizedBox(height: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: themeColor.textPrimary.withValues(alpha: 0.6),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: themeColor.textPrimary.withValues(alpha: 0.6),
+                  ),
                 ),
               ),
             ],
@@ -866,7 +878,7 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
           }).toList();
         },
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -886,13 +898,16 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                 ),
               ),
               const SizedBox(height: 5),
-              Text(
-                isArabic ? "حالة الخدمة" : "Status",
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: themeColor.textPrimary.withValues(alpha: 0.6),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  isArabic ? "حالة الخدمة" : "Status",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: themeColor.textPrimary.withValues(alpha: 0.6),
+                  ),
                 ),
               ),
             ],
