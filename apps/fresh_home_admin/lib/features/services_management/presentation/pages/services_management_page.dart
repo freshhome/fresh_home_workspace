@@ -287,7 +287,6 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
     Color accentColor,
     ThemeColorExtension themeColor,
   ) {
-    final String displayId = id.length > 8 ? '${id.substring(0, 8)}...' : id;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -309,7 +308,7 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
           const SizedBox(width: 3),
           Flexible(
             child: Text(
-              displayId,
+              id,
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
               style: TextStyle(
@@ -511,11 +510,13 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 1) TOP ROW: Service ID and Category Badges side-by-side
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildIdBadge(node.id, categoryColor, themeColor),
+                              Flexible(
+                                child: _buildIdBadge(node.id, categoryColor, themeColor),
+                              ),
+                              const SizedBox(width: 8),
                               _buildNodeBadge(node, themeColor),
                             ],
                           ),
