@@ -117,8 +117,7 @@ FROM public.bookings b
 LEFT JOIN public.profiles p_user ON p_user.id = b.user_id
 LEFT JOIN public.profiles p_tech ON p_tech.id = b.technician_id
 WHERE b.status NOT IN (
-    'completed', 'cancelled', 'expired', 'failed_no_show', 'failed',
-    'cancelled_by_customer', 'cancelled_by_admin', 'cancelled_by_technician'
+    'completed', 'cancelled', 'expired', 'failed_no_show'
 )
 AND (
     -- Assigned > 4 hours without acceptance
@@ -164,8 +163,7 @@ WITH booking_stats AS (
     SELECT
         COUNT(*) FILTER (WHERE scheduled_day >= CURRENT_DATE - 7)                                   AS bookings_last_7d,
         COUNT(*) FILTER (WHERE status = 'completed' AND scheduled_day >= CURRENT_DATE - 7)          AS completed_last_7d,
-        COUNT(*) FILTER (WHERE status IN ('cancelled','cancelled_by_customer',
-                                          'cancelled_by_admin','cancelled_by_technician')
+        COUNT(*) FILTER (WHERE status = 'cancelled'
                               AND scheduled_day >= CURRENT_DATE - 7)                                AS cancelled_last_7d,
         COUNT(*) FILTER (WHERE status = 'failed_no_show' AND scheduled_day >= CURRENT_DATE - 7)     AS no_show_last_7d,
         COUNT(*) FILTER (WHERE is_critical = TRUE AND scheduled_day >= CURRENT_DATE - 7)            AS critical_last_7d,
@@ -460,10 +458,7 @@ SELECT
         'completed'::public.order_status_v2,
         'cancelled'::public.order_status_v2,
         'expired'::public.order_status_v2,
-        'failed_no_show'::public.order_status_v2,
-        'cancelled_by_customer'::public.order_status_v2,
-        'cancelled_by_admin'::public.order_status_v2,
-        'cancelled_by_technician'::public.order_status_v2
+        'failed_no_show'::public.order_status_v2
     ))                                                                       AS active_bookings_now,
     -- Notifications
     (SELECT COUNT(*) FROM public.notifications_outbox

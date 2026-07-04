@@ -1,11 +1,77 @@
--- ==============================================================================
--- Fresh Home: Admin Management RPCs (v1.0)
--- Description: Professional atomic operations for administrators.
--- ==============================================================================
+-- Migration ID: 87_fix_cancelled_bookings_availability
+-- Description: Fix technician availability and capacity calculations to correctly exclude cancelled, expired, and failed no-show bookings. Recreates idx_booking_capacity and updates related DB functions.
 
--- 1. admin_reschedule_booking_atomic
--- Atomically changes the date of a booking, re-verifying capacity for the SAME technician.
--- After rescheduling, the status is returned to 'assigned', but logs the 'rescheduled' event.
+BEGIN;
+
+-- 1. RECREATE THE CAPACITY INDEX WITH THE NEW UNIFIED STATUS FILTERS
+DROP INDEX IF EXISTS public.idx_booking_capacity;
+CREATE INDEX idx_booking_capacity
+    ON public.bookings(technician_id, scheduled_day, service_id)
+    WHERE status NOT IN (
+        'cancelled'::public.order_status_v2, 
+        'expired'::public.order_status_v2, 
+        'failed_no_show'::public.order_status_v2
+    );
+
+-- 2. REDEFINE get_available_technicians
+CREATE OR REPLACE FUNCTION public.get_available_technicians(
+    p_sub_service_id TEXT,
+    p_date           DATE
+) RETURNS TABLE (
+    technician_id   UUID,
+    first_name      TEXT,
+    last_name       TEXT,
+    avatar_url      TEXT,
+    rating          DECIMAL,
+    current_load    BIGINT,
+    max_capacity    INTEGER
+) AS $$
+BEGIN
+    RETURN QUERY
+    WITH pool_mapping AS (
+        SELECT
+            ts.technician_id,
+            ts.capacity_pool_id,
+            cp.max_daily_capacity
+        FROM public.technician_skills ts
+        JOIN public.capacity_pools cp ON ts.capacity_pool_id = cp.id
+        WHERE ts.sub_service_id = p_sub_service_id
+          AND ts.is_active = true
+    ),
+    pool_load AS (
+        SELECT
+            pm.technician_id,
+            pm.capacity_pool_id,
+            COUNT(b.id) FILTER (WHERE b.technician_id = pm.technician_id) AS assigned_load,
+            COUNT(b.id) FILTER (WHERE b.technician_id IS NULL) AS unassigned_load
+        FROM pool_mapping pm
+        LEFT JOIN public.bookings b 
+               ON b.service_id      = p_sub_service_id
+              AND (b.scheduled_day AT TIME ZONE 'UTC')::DATE = p_date
+              AND b.status NOT IN ('cancelled'::public.order_status_v2, 'expired'::public.order_status_v2, 'failed_no_show'::public.order_status_v2)
+        GROUP BY pm.technician_id, pm.capacity_pool_id
+    )
+    SELECT
+        tp.user_id,
+        pr.first_name,
+        pr.last_name,
+        pr.avatar_url,
+        tp.rating,
+        (COALESCE(pl.assigned_load, 0) + COALESCE(pl.unassigned_load, 0))::BIGINT,
+        pm.max_daily_capacity
+    FROM pool_mapping pm
+    JOIN public.technician_profiles tp ON tp.user_id = pm.technician_id
+    JOIN public.profiles pr ON pr.id = tp.user_id
+    JOIN pool_load pl ON pl.technician_id = pm.technician_id
+                     AND pl.capacity_pool_id = pm.capacity_pool_id
+    WHERE tp.is_available = true
+      AND pr.account_status = 'active'
+      AND (COALESCE(pl.assigned_load, 0) + COALESCE(pl.unassigned_load, 0)) < pm.max_daily_capacity
+    ORDER BY tp.rating DESC;
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+
+-- 3. REDEFINE admin_reschedule_booking_atomic (4-parameter version)
 CREATE OR REPLACE FUNCTION public.admin_reschedule_booking_atomic(
     p_booking_id   UUID,
     p_new_date     DATE,
@@ -42,6 +108,10 @@ BEGIN
       AND sub_service_id = v_service_id
       AND is_active      = true;
 
+    IF v_pool_id IS NULL THEN
+        RAISE EXCEPTION 'Technician does not have active skill for this service.' USING ERRCODE = 'P0001';
+    END IF;
+
     -- 3. Locking & Verification
     v_lock_key_1 := hashtext(v_tech_id::TEXT || v_pool_id::TEXT);
     v_lock_key_2 := hashtext(p_new_date::TEXT);
@@ -55,14 +125,13 @@ BEGIN
       AND b.service_id    = v_service_id
       AND b.scheduled_day::DATE = p_new_date
       AND b.status NOT IN ('cancelled'::public.order_status_v2, 'expired'::public.order_status_v2, 'failed_no_show'::public.order_status_v2)
-      AND b.id != p_booking_id; -- Exclude self if already on this day (though unlikely for reschedule)
+      AND b.id != p_booking_id; -- Exclude self if already on this day
 
     IF v_current_load >= v_max_cap THEN
         RAISE EXCEPTION 'Capacity full for this technician on the new date.' USING ERRCODE = 'P0002';
     END IF;
 
     -- 4. Update Booking & Log Event
-    -- We use transition_booking to ensure consistency and outbox notifications
     PERFORM set_config('app.trusted_internal_call', 'true', true);
     PERFORM public.transition_booking(
         p_booking_id,
@@ -81,9 +150,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
 
-
--- 2. admin_reassign_booking
--- Atomically switches a booking to a NEW technician, verifying capacity.
+-- 4. REDEFINE admin_reassign_booking (4-parameter version)
 CREATE OR REPLACE FUNCTION public.admin_reassign_booking(
     p_booking_id       UUID,
     p_new_technician_id UUID,
@@ -138,8 +205,6 @@ BEGIN
     END IF;
 
     -- 4. Update Booking & Log Event
-    -- Using transition_booking to ensure the NEW technician gets an assignment notification
-    -- and the OLD status flow is respected.
     PERFORM set_config('app.trusted_internal_call', 'true', true);
     PERFORM public.transition_booking(
         p_booking_id,
@@ -158,80 +223,44 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
 
-
--- 3. admin_force_status_update
--- Controlled override for administrators to jump statuses if needed.
-CREATE OR REPLACE FUNCTION public.admin_force_status_update(
-    p_booking_id   UUID,
-    p_new_status   public.order_status_v2,
-    p_admin_id     UUID,
-    p_reason       TEXT DEFAULT NULL
-) RETURNS VOID AS $$
-BEGIN
-    -- Enforce admin-only access
-    IF NOT public.is_admin() THEN
-        RAISE EXCEPTION 'Unauthorized: Only administrators can force status updates.' USING ERRCODE = '42501';
-    END IF;
-
-    -- We delegate all logic to transition_booking which handles:
-    -- 1. Admin permission check
-    -- 2. Force override flag
-    -- 3. Audit logging in booking_events
-    -- 4. Outbox notification enqueuing
-    PERFORM set_config('app.trusted_internal_call', 'true', true);
-    PERFORM public.transition_booking(
-        p_booking_id,
-        p_new_status,
-        p_admin_id,
-        'admin',
-        'ADMIN_FORCE_UPDATE',
-        COALESCE(p_reason, 'Manual status override by administrator'),
-        jsonb_build_object('force_override', true)
-    );
-END;
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
-
-
--- 4. get_fleet_capacity_dashboard
--- Provides a system-wide view of capacity utilization per sub-service and date.
-CREATE OR REPLACE FUNCTION public.get_fleet_capacity_dashboard(
+-- 5. REDEFINE get_fleet_capacity_report
+CREATE OR REPLACE FUNCTION public.get_fleet_capacity_report(
     p_start_date DATE,
     p_end_date   DATE,
-    p_main_service_id UUID DEFAULT NULL
+    p_sub_service_id UUID DEFAULT NULL
 ) RETURNS TABLE (
-    service_id             UUID,
-    service_title         JSONB,
+    sub_service_id         UUID,
+    sub_service_title      JSONB,
     target_date            DATE,
-    total_technicians      BIGINT,
-    total_capacity        BIGINT,
-    total_booked          BIGINT,
-    available_capacity    BIGINT,
-    utilization_percentage DECIMAL
+    active_technician_count BIGINT,
+    total_capacity         BIGINT,
+    total_bookings         BIGINT,
+    available_slots        BIGINT,
+    utilization            NUMERIC
 ) AS $$
 BEGIN
     -- Enforce admin-only access
     IF NOT public.is_admin() THEN
-        RAISE EXCEPTION 'Unauthorized: Only administrators can view the fleet capacity dashboard.' USING ERRCODE = '42501';
+        RAISE EXCEPTION 'Unauthorized: Only administrators can view the fleet capacity report.' USING ERRCODE = '42501';
     END IF;
 
     RETURN QUERY
     WITH date_series AS (
-        SELECT d.day::DATE AS target_date 
-        FROM generate_series(p_start_date, p_end_date, '1 day'::INTERVAL) AS d(day)
+        SELECT d.day::DATE AS target_date
+        FROM generate_series(p_start_date, p_end_date, '1 day'::INTERVAL) d(day)
     ),
     service_list AS (
-        SELECT ss.id, ss.title, ss.parent_id AS main_service_id
-        FROM public.services ss
-        WHERE ss.is_bookable = true
-          AND (p_main_service_id IS NULL OR ss.parent_id = p_main_service_id)
+        SELECT id, title
+        FROM public.services
+        WHERE is_bookable = true
+          AND (p_sub_service_id IS NULL OR id = p_sub_service_id)
     ),
     tech_capabilities AS (
-        -- Calculate effective capacity for every tech/pool combination on every date in range
+        -- Cross join technicians skilled for these services and check if blocked
         SELECT
             ds.target_date,
             sl.id AS sub_service_id,
             ts.technician_id,
-            ts.capacity_pool_id,
             CASE
                 WHEN co.is_blocked = TRUE THEN 0
                 WHEN co.new_capacity IS NOT NULL THEN co.new_capacity
@@ -280,13 +309,11 @@ BEGIN
     LEFT JOIN tech_capabilities tc ON tc.target_date = ds.target_date AND tc.sub_service_id = sl.id
     LEFT JOIN service_load l      ON l.target_date = ds.target_date AND l.service_id = sl.id
     GROUP BY sl.id, sl.title, ds.target_date
-    ORDER BY ds.target_date, sl.title->>'en'; -- Assuming English title for secondary sort
+    ORDER BY ds.target_date, sl.title->>'en';
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
-
--- 5. get_technician_capacity_report
--- Provides a granular breakdown for each technician on a specific date.
+-- 6. REDEFINE get_technician_capacity_report
 CREATE OR REPLACE FUNCTION public.get_technician_capacity_report(
     p_date DATE,
     p_sub_service_id UUID DEFAULT NULL
@@ -298,7 +325,7 @@ CREATE OR REPLACE FUNCTION public.get_technician_capacity_report(
     effective_cap    INTEGER,
     current_load     BIGINT,
     is_blocked       BOOLEAN,
-    status           TEXT -- 'healthy' | 'overloaded' | 'idle' | 'blocked'
+    status           TEXT
 ) AS $$
 BEGIN
     -- Enforce admin-only access
@@ -358,10 +385,158 @@ BEGIN
             WHEN t.blocked_flag THEN 'blocked'
             WHEN t.load_count > t.effective_capacity THEN 'overloaded'
             WHEN t.load_count = t.effective_capacity THEN 'full'
-            WHEN t.load_count = 0 THEN 'idle'
             ELSE 'healthy'
-        END
-    FROM tech_stats t
-    ORDER BY t.load_count DESC;
+        END::TEXT
+    FROM tech_stats t;
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+
+-- 7. REDEFINE admin_reschedule_booking_atomic (2-parameter API facing overload)
+CREATE OR REPLACE FUNCTION public.admin_reschedule_booking_atomic(
+    p_booking_id  UUID,
+    p_new_date    DATE
+)
+RETURNS VOID
+LANGUAGE plpgsql
+VOLATILE SECURITY DEFINER
+AS $$
+DECLARE
+    v_booking          public.bookings;
+    v_tech_id          UUID;
+    v_pool_id          UUID;
+    v_cap              INTEGER;
+    v_booked           INTEGER;
+BEGIN
+    -- Enforce admin-only access
+    IF NOT public.is_admin() THEN
+        RAISE EXCEPTION 'Unauthorized: Only administrators can reschedule bookings.' USING ERRCODE = '42501';
+    END IF;
+
+    -- Fetch booking
+    SELECT * INTO v_booking FROM public.bookings WHERE id = p_booking_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Booking not found: %', p_booking_id USING ERRCODE = 'P0001';
+    END IF;
+
+    v_tech_id := v_booking.technician_id;
+
+    -- Verify technician is assigned
+    IF v_tech_id IS NULL THEN
+        RAISE EXCEPTION 'Booking has no assigned technician.' USING ERRCODE = 'P0002';
+    END IF;
+
+    -- Get the technician's capacity pool for this service
+    SELECT cp.id INTO v_pool_id
+    FROM public.capacity_pools cp
+    JOIN public.technician_skills ts
+        ON ts.capacity_pool_id = cp.id AND ts.technician_id = cp.technician_id
+    WHERE cp.technician_id = v_tech_id
+      AND ts.sub_service_id = v_booking.service_id
+    LIMIT 1;
+
+    IF v_pool_id IS NULL THEN
+        RAISE EXCEPTION 'Technician capacity pool not found.' USING ERRCODE = 'P0003';
+    END IF;
+
+    -- Effective capacity for new date
+    SELECT COALESCE(
+        CASE WHEN co.is_blocked THEN 0 ELSE co.new_capacity END,
+        cp.max_daily_capacity
+    ) INTO v_cap
+    FROM public.capacity_pools cp
+    LEFT JOIN public.capacity_overrides co
+        ON co.pool_id = cp.id AND co.technician_id = cp.technician_id
+       AND co.override_date = p_new_date
+    WHERE cp.id = v_pool_id;
+
+    -- Count existing bookings on new date for this technician
+    SELECT COUNT(*)::INTEGER INTO v_booked
+    FROM public.bookings
+    WHERE technician_id = v_tech_id
+      AND scheduled_day::DATE = p_new_date
+      AND id != p_booking_id
+      AND status NOT IN (
+            'cancelled'::public.order_status_v2,
+            'expired'::public.order_status_v2,
+            'failed_no_show'::public.order_status_v2
+      );
+
+    IF v_booked >= v_cap THEN
+        RAISE EXCEPTION 'Technician is at full capacity on %. Cannot reschedule.', p_new_date
+            USING ERRCODE = 'P0004';
+    END IF;
+
+    -- Perform the rescheduling
+    UPDATE public.bookings
+    SET scheduled_day = p_new_date
+    WHERE id = p_booking_id;
+
+    -- Set session flag to signal trusted database internal state machine action
+    PERFORM set_config('app.trusted_internal_call', 'true', true);
+
+    -- Transition booking status via lifecycle gatekeeper
+    PERFORM public.transition_booking(
+        p_booking_id,
+        'assigned'::public.order_status_v2,
+        auth.uid(),
+        'admin',
+        'ADMIN_RESCHEDULE',
+        'Admin rescheduled booking to ' || p_new_date::TEXT,
+        jsonb_build_object('force_override', true)
+    );
+END;
+$$;
+
+-- 8. REDEFINE get_technician_daily_pool_breakdown
+CREATE OR REPLACE FUNCTION public.get_technician_daily_pool_breakdown(
+    p_technician_id UUID,
+    p_date          DATE
+) RETURNS TABLE (
+    pool_id          UUID,
+    pool_title       TEXT,
+    max_capacity     INTEGER,
+    current_load     INTEGER,
+    is_blocked       BOOLEAN,
+    override_capacity INTEGER,
+    is_override      BOOLEAN,
+    slot_mask        TEXT
+) AS $$
+BEGIN
+    -- Enforce access check: Only admins or the technician themselves can view their pool breakdown
+    IF auth.uid() IS NOT NULL AND NOT (public.is_admin() OR auth.uid() = p_technician_id) THEN
+        RAISE EXCEPTION 'Unauthorized: Access to this technician capacity breakdown is restricted.' USING ERRCODE = '42501';
+    END IF;
+
+    RETURN QUERY
+    SELECT 
+        cp.id,
+        cp.title,
+        cp.max_daily_capacity,
+        (
+            SELECT COUNT(*)::INTEGER
+            FROM public.bookings b
+            JOIN public.technician_skills ts ON ts.sub_service_id = b.service_id
+            WHERE ts.capacity_pool_id = cp.id
+              AND (b.scheduled_day AT TIME ZONE 'UTC')::DATE = p_date
+              AND (b.technician_id = p_technician_id OR b.technician_id IS NULL)
+              AND b.status NOT IN ('cancelled'::public.order_status_v2, 'expired'::public.order_status_v2, 'failed_no_show'::public.order_status_v2)
+        ) AS current_load,
+        COALESCE(co.is_blocked, false) AS is_blocked,
+        co.new_capacity AS override_capacity,
+        (co.pool_id IS NOT NULL) AS is_override,
+        co.slot_mask
+    FROM public.capacity_pools cp
+    LEFT JOIN LATERAL (
+        SELECT co_inner.pool_id, co_inner.is_blocked, co_inner.new_capacity, co_inner.slot_mask
+        FROM public.capacity_overrides co_inner
+        WHERE co_inner.pool_id       = cp.id
+          AND co_inner.technician_id = p_technician_id
+          AND co_inner.override_date = p_date
+        ORDER BY co_inner.created_at DESC
+        LIMIT 1
+    ) co ON TRUE
+    WHERE cp.technician_id = p_technician_id;
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+
+COMMIT;

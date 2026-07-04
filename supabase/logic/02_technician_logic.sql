@@ -43,7 +43,7 @@ BEGIN
         LEFT JOIN public.bookings b 
                ON b.service_id      = p_sub_service_id
               AND (b.scheduled_day AT TIME ZONE 'UTC')::DATE = p_date
-              AND b.status NOT IN ('cancelled_by_customer', 'cancelled_by_admin', 'cancelled_by_technician')
+              AND b.status NOT IN ('cancelled'::public.order_status_v2, 'expired'::public.order_status_v2, 'failed_no_show'::public.order_status_v2)
         GROUP BY pm.technician_id, pm.capacity_pool_id
     )
     SELECT
@@ -52,7 +52,7 @@ BEGIN
         pr.last_name,
         pr.avatar_url,
         tp.rating,
-        (COALESCE(pl.assigned_load, 0) + COALESCE(pl.unassigned_load, 0))::BIGINT,
+        COALESCE(pl.assigned_load, 0)::BIGINT,
         pm.max_daily_capacity
     FROM pool_mapping pm
     JOIN public.technician_profiles tp ON tp.user_id = pm.technician_id
@@ -61,8 +61,22 @@ BEGIN
                      AND pl.capacity_pool_id = pm.capacity_pool_id
     WHERE tp.is_available = true
       AND pr.account_status = 'active'
-      AND (COALESCE(pl.assigned_load, 0) + COALESCE(pl.unassigned_load, 0)) < pm.max_daily_capacity
-    ORDER BY tp.rating DESC;
+      AND COALESCE(pl.assigned_load, 0) < pm.max_daily_capacity
+    ORDER BY 
+        -- 1. Prioritize Group A (load_ratio < 0.5) over Group B (load_ratio >= 0.5)
+        CASE WHEN (COALESCE(pl.assigned_load, 0)::float / pm.max_daily_capacity) < 0.5 THEN 1 ELSE 0 END DESC,
+        -- 2. Sorting within groups: Group A sorts by capacity DESC first, Group B neutral
+        CASE 
+            WHEN (COALESCE(pl.assigned_load, 0)::float / pm.max_daily_capacity) < 0.5 
+                THEN pm.max_daily_capacity 
+            ELSE 0 
+        END DESC,
+        -- 3. Sort by lowest load_ratio (utilization) ascending
+        (COALESCE(pl.assigned_load, 0)::float / pm.max_daily_capacity) ASC,
+        -- 4. Tie-breaker: higher max capacity first
+        pm.max_daily_capacity DESC,
+        -- 5. Final tie-breaker: rating descending
+        tp.rating DESC;
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 

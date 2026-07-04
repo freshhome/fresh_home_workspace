@@ -1,12 +1,8 @@
--- ==============================================================================
--- Fresh Home: Audited Booking Updates (v1.0)
--- File: 22_audited_booking_updates.sql
---
--- Objective: Provide secure, audited RPCs for updating booking details 
---            without bypassing the State Machine or Audit Trail.
--- ==============================================================================
+-- Migration ID: 88_auto_reassign_on_reschedule
+-- Description: Enhance customer_update_booking_schedule to support automatic technician reassignment when rescheduling, with transactional advisory locking to prevent double booking. Fixes UUID/TEXT type cast issue on v_service_id.
 
--- 1. RPC: Update Booking Schedule (Audited)
+BEGIN;
+
 CREATE OR REPLACE FUNCTION public.customer_update_booking_schedule(
     p_booking_id    UUID,
     p_new_day       DATE,
@@ -18,7 +14,7 @@ DECLARE
     v_old_time      TIME;
     v_status        public.order_status_v2;
     v_tech_id       UUID;
-    v_service_id    TEXT;
+    v_service_id    TEXT; -- Fixed type from UUID to TEXT to match the bookings table schema
     v_booking_user_id UUID;
     v_is_available  BOOLEAN;
     v_new_tech_id   UUID;
@@ -136,63 +132,4 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 2. RPC: Update Booking Address & Contact (Audited)
-CREATE OR REPLACE FUNCTION public.customer_update_booking_address(
-    p_booking_id       UUID,
-    p_address_snapshot JSONB,
-    p_contact_snapshot JSONB,
-    p_actor_id         UUID
-) RETURNS VOID AS $$
-DECLARE
-    v_old_address JSONB;
-    v_old_contact JSONB;
-    v_status      public.order_status_v2;
-    v_booking_user_id UUID;
-BEGIN
-    -- A. Fetch current state and lock
-    SELECT address_snapshot, service_snapshot->'contact', status, user_id
-    INTO v_old_address, v_old_contact, v_status, v_booking_user_id
-    FROM public.bookings WHERE id = p_booking_id FOR UPDATE;
-
-    IF NOT FOUND THEN RAISE EXCEPTION 'الحجز غير موجود'; END IF;
-
-    -- B. Enforce Authentication & Authorization
-    IF auth.uid() IS NOT NULL THEN
-        p_actor_id := auth.uid();
-        IF NOT (public.is_admin() OR v_booking_user_id = auth.uid()) THEN
-            RAISE EXCEPTION 'Unauthorized: Access to update this booking is restricted.' USING ERRCODE = '42501';
-        END IF;
-    END IF;
-
-    -- C. Business Validation
-    IF v_status NOT IN ('created', 'assigned', 'accepted', 'ready', 'pending') THEN
-        RAISE EXCEPTION 'لا يمكن تعديل العنوان بعد وصول الفني أو بدء العمل';
-    END IF;
-
-    -- D. Atomic Update
-    UPDATE public.bookings
-    SET address_snapshot = p_address_snapshot,
-        updated_at = NOW()
-    WHERE id = p_booking_id;
-
-    -- E. Detailed Audit Trail
-    INSERT INTO public.booking_events (
-        booking_id, event_type, actor_id, actor_role, metadata
-    ) VALUES (
-        p_booking_id,
-        'ADDRESS_UPDATE',
-        p_actor_id,
-        CASE WHEN p_actor_id IS NOT NULL AND EXISTS (
-            SELECT 1 FROM public.user_roles ur JOIN public.roles r ON ur.role_id = r.id 
-            WHERE ur.user_id = p_actor_id AND r.name = 'admin'
-        ) THEN 'admin' ELSE 'customer' END,
-        jsonb_build_object(
-            'old_address', v_old_address,
-            'new_address', p_address_snapshot
-        )
-    );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-COMMENT ON FUNCTION public.customer_update_booking_schedule IS 'Updates booking day/time with capacity check and audit trail.';
-COMMENT ON FUNCTION public.customer_update_booking_address IS 'Updates booking address snapshot with status check and audit trail.';
+COMMIT;
