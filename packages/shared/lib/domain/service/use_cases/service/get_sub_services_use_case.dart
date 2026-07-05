@@ -12,7 +12,7 @@ class GetSubServicesUseCase {
     required String mainServiceId,
     bool forceRemote = false,
   }) {
-    return repository.getSubServices(mainServiceId);
+    return repository.getSubServices(mainServiceId, forceRefresh: forceRemote);
   }
 
 }

@@ -353,7 +353,7 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
     final response = await _supabase
         .from('services')
         .select('id')
-        .eq('status', 'active');
+        .inFilter('status', ['active', 'paused']);
     return (response as List).map((json) => json['id'] as String).toList();
   }
 

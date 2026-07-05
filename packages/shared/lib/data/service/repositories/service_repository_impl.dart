@@ -92,8 +92,10 @@ class ServiceRepositoryImpl implements ServiceRepository {
       );
       _allServices = [];
       _buildTreeCache();
-      // Trigger full sync
-      await syncAllServices(forceFull: true);
+      // Trigger full sync asynchronously to prevent synchronous infinite loop
+      unawaited(syncAllServices(forceFull: true).then((_) {}, onError: (e) {
+        print('❌ Self-healing sync failed: $e');
+      }));
     } catch (e) {
       print('❌ Self-healing failed: $e');
     }
@@ -194,10 +196,15 @@ class ServiceRepositoryImpl implements ServiceRepository {
 
   @override
   Future<Either<Failure, List<SubServiceEntity>>> getSubServices(
-    String mainServiceId,
-  ) async {
+    String mainServiceId, {
+    bool forceRefresh = false,
+  }) async {
     try {
-      await _loadCacheIfNeeded();
+      if (forceRefresh) {
+        await syncAllServices();
+      } else {
+        await _loadCacheIfNeeded();
+      }
       final children = _adjacencyList[mainServiceId] ?? [];
       return Right(
         children

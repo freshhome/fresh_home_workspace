@@ -643,20 +643,32 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                           // 3) BOTTOM HALF: 4 Action Buttons with Labels (Using Expanded to divide space evenly)
                           Row(
                             children: [
-                              // 1. Add Child Button
+                              // 1. Add Child OR Sort Order Button
                               Expanded(
-                                child: _buildBottomActionItem(
-                                  iconWidget: Icon(
-                                    Icons.add_rounded,
-                                    color: depth == 0 ? categoryColor : themeColor.primary,
-                                    size: 20,
-                                  ),
-                                  label: isArabic ? "إضافة ابن" : "Add Child",
-                                  onTap: () => _openAddWizard(node.id),
-                                  accentColor: depth == 0 ? categoryColor : themeColor.primary,
-                                  themeColor: themeColor,
-                                  isEnabled: !node.isBookable,
-                                ),
+                                child: node.isBookable
+                                    ? _buildBottomActionItem(
+                                        iconWidget: Icon(
+                                          Icons.sort_rounded,
+                                          color: depth == 0 ? categoryColor : themeColor.primary,
+                                          size: 20,
+                                        ),
+                                        label: isArabic ? "الترتيب" : "Sort Order",
+                                        onTap: () => _openSortOrderDialog(node, themeColor),
+                                        accentColor: depth == 0 ? categoryColor : themeColor.primary,
+                                        themeColor: themeColor,
+                                      )
+                                    : _buildBottomActionItem(
+                                        iconWidget: Icon(
+                                          Icons.add_rounded,
+                                          color: depth == 0 ? categoryColor : themeColor.primary,
+                                          size: 20,
+                                        ),
+                                        label: isArabic ? "إضافة ابن" : "Add Child",
+                                        onTap: () => _openAddWizard(node.id),
+                                        accentColor: depth == 0 ? categoryColor : themeColor.primary,
+                                        themeColor: themeColor,
+                                        isEnabled: !node.isBookable,
+                                      ),
                               ),
                               
                               // 2. Status Control Popup
@@ -690,30 +702,52 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
                                 ),
                               ),
 
-                              // 4. Sub-services Toggle Expand
+                              // 4. Sub-services Toggle Expand OR Pricing Button
                               Expanded(
-                                child: _buildBottomActionItem(
-                                  iconWidget: Icon(
-                                    isExpanded
-                                        ? Icons.keyboard_arrow_up_rounded
-                                        : Icons.keyboard_arrow_down_rounded,
-                                    color: themeColor.primary,
-                                    size: 20,
-                                  ),
-                                  label: isArabic ? "الخدمات الفرعية" : "Sub-services",
-                                  onTap: () {
-                                    setState(() {
-                                      if (isExpanded) {
-                                        _expandedNodes.remove(node.id);
-                                      } else {
-                                        _expandedNodes.add(node.id);
-                                      }
-                                    });
-                                  },
-                                  accentColor: themeColor.primary,
-                                  themeColor: themeColor,
-                                  isEnabled: !node.isBookable,
-                                ),
+                                child: node.isBookable
+                                    ? _buildBottomActionItem(
+                                        iconWidget: Icon(
+                                          Icons.payments_rounded,
+                                          color: themeColor.primary,
+                                          size: 20,
+                                        ),
+                                        label: isArabic ? "السعر" : "Price",
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => ServicePricingHubPage(
+                                                subServiceId: node.id,
+                                                initialService: node,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        accentColor: themeColor.primary,
+                                        themeColor: themeColor,
+                                      )
+                                    : _buildBottomActionItem(
+                                        iconWidget: Icon(
+                                          isExpanded
+                                              ? Icons.keyboard_arrow_up_rounded
+                                              : Icons.keyboard_arrow_down_rounded,
+                                          color: themeColor.primary,
+                                          size: 20,
+                                        ),
+                                        label: isArabic ? "الخدمات الفرعية" : "Sub-services",
+                                        onTap: () {
+                                          setState(() {
+                                            if (isExpanded) {
+                                              _expandedNodes.remove(node.id);
+                                            } else {
+                                              _expandedNodes.add(node.id);
+                                            }
+                                          });
+                                        },
+                                        accentColor: themeColor.primary,
+                                        themeColor: themeColor,
+                                        isEnabled: !node.isBookable,
+                                      ),
                               ),
                             ],
                           ),
@@ -2270,6 +2304,108 @@ class _ServicesManagementPageState extends State<ServicesManagementPage> {
           ),
         ),
       ),
+    );
+  }
+
+  void _openSortOrderDialog(ServiceEntity node, ThemeColorExtension themeColor) {
+    final controller = TextEditingController(text: node.order.toString());
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            backgroundColor: themeColor.background,
+            title: const Text(
+              "تعديل ترتيب العرض",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Cairo',
+                fontSize: 16,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "أدخل رقم ترتيب عرض الخدمة (الخدمة ذات الرقم الأصغر تظهر أولاً):",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "رقم الترتيب",
+                    labelStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 13),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: themeColor.primary),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(
+                  "إلغاء",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    color: themeColor.unselectedItem,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: themeColor.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {
+                  final newOrder = int.tryParse(controller.text) ?? node.order;
+                  Navigator.pop(dialogContext);
+                  _updateSortOrder(node, newOrder);
+                },
+                child: const Text(
+                  "حفظ",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _updateSortOrder(ServiceEntity node, int newOrder) async {
+    DialogHelper.showLoading(context);
+    final updateUseCase = di.getIt<UpdateServiceUseCase>();
+    final result = await updateUseCase(node.copyWith(order: newOrder));
+    if (!mounted) return;
+    DialogHelper.dismissLoading(context);
+    result.fold(
+      (failure) => DialogHelper.showError(context, message: failure.message),
+      (_) {
+        DialogHelper.showSuccess(context, message: "تم تحديث الترتيب بنجاح");
+        _loadTree(forceRefresh: true);
+      },
     );
   }
 }

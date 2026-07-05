@@ -89,6 +89,96 @@ function BookingFlowContent() {
   const [name, setName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
 
+  const [loginRedirectUrl, setLoginRedirectUrl] = useState("/login");
+  const [isClientUserLoggedIn, setIsClientUserLoggedIn] = useState(false);
+
+  // Load user profile details if logged in
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setLoginRedirectUrl(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+    }
+
+    async function loadUserProfile() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setIsClientUserLoggedIn(true);
+        const userId = session.user.id;
+        
+        // 1. Set name from user metadata
+        const metadata = session.user.user_metadata;
+        if (metadata?.first_name) {
+          setName(`${metadata.first_name} ${metadata.last_name || ""}`.trim());
+        }
+
+        // 2. Fetch primary phone
+        try {
+          const { data: phoneData } = await supabase
+            .from("user_phones")
+            .select("phone_number")
+            .eq("user_id", userId)
+            .eq("is_primary", true)
+            .maybeSingle();
+          if (phoneData?.phone_number) {
+            setPhone(phoneData.phone_number);
+          } else {
+            // Fallback: fetch any phone
+            const { data: anyPhones } = await supabase
+              .from("user_phones")
+              .select("phone_number")
+              .eq("user_id", userId)
+              .limit(1);
+            if (anyPhones && anyPhones.length > 0) {
+              setPhone(anyPhones[0].phone_number);
+            }
+          }
+        } catch (err) {
+          console.error("Error loading profile phone in booking:", err);
+        }
+
+        // 3. Fetch primary address
+        try {
+          const { data: addrData } = await supabase
+            .from("user_addresses")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("is_primary", true)
+            .maybeSingle();
+          
+          if (addrData) {
+            setAddress({
+              governorate: addrData.governorate,
+              city: addrData.city,
+              street: addrData.street,
+              building: addrData.building_number || "",
+              floor: addrData.floor || "",
+              apartment: addrData.apartment || ""
+            });
+          } else {
+            // Fallback: fetch any address
+            const { data: anyAddrs } = await supabase
+              .from("user_addresses")
+              .select("*")
+              .eq("user_id", userId)
+              .limit(1);
+            if (anyAddrs && anyAddrs.length > 0) {
+              setAddress({
+                governorate: anyAddrs[0].governorate,
+                city: anyAddrs[0].city,
+                street: anyAddrs[0].street,
+                building: anyAddrs[0].building_number || "",
+                floor: anyAddrs[0].floor || "",
+                apartment: anyAddrs[0].apartment || ""
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Error loading profile address in booking:", err);
+        }
+      }
+    }
+    loadUserProfile();
+  }, []);
+
   // Availability states
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
@@ -1204,6 +1294,23 @@ function BookingFlowContent() {
                     <h2 className="text-xl font-black text-slate-800">مراجعة البيانات وتأكيد الطلب</h2>
                     <p className="text-slate-400 text-xs">يرجى كتابة الاسم ورقم الهاتف لتأكيد وإتمام حجزك.</p>
                   </div>
+
+                  {/* Auth status card */}
+                  {!isClientUserLoggedIn ? (
+                    <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl text-[11px] text-primary font-bold flex justify-between items-center gap-4 text-right">
+                      <span>هل تمتلك حساباً مسجلاً؟ سجل دخولك الآن لتعبئة بياناتك تلقائياً وحفظ هذا الحجز تحت حسابك.</span>
+                      <Link 
+                        href={loginRedirectUrl} 
+                        className="bg-primary hover:bg-primary/95 text-white p-2 px-4 rounded-xl transition-all text-[10px] shrink-0 font-extrabold shadow-sm"
+                      >
+                        تسجيل الدخول
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-[11px] text-emerald-700 font-bold text-right">
+                      مرحباً بك! بما أنك مسجل الدخول، سيتم ربط هذا الحجز بحسابك الشخصي في فريش هوم تلقائياً لسهولة تتبعه وإدارته من لوحة التحكم.
+                    </div>
+                  )}
 
                   {/* Name and Phone Inputs */}
                   <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200/60">

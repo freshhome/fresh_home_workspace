@@ -33,7 +33,7 @@ class ServicesPage extends StatelessWidget {
             final services = state is ServicesListSuccess ? state.services : <SubServiceEntity>[];
 
             return RefreshIndicator(
-              onRefresh: () => context.read<ServicesCubit>().getServices(serveid),
+              onRefresh: () => context.read<ServicesCubit>().getServices(serveid, forceRemote: true),
               color: themeColor.primary,
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(

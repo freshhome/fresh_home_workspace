@@ -17,8 +17,23 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("+201000000000");
+  const [user, setUser] = useState<any>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
+    // Check current auth session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoadingUser(false);
+    });
+
+    // Subscribe to auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoadingUser(false);
+    });
+
     async function fetchAllServices() {
       try {
         const { data, error } = await supabase
@@ -49,6 +64,10 @@ export default function Header() {
 
     fetchAllServices();
     fetchWhatsappSettings();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const mainServicesLookup = services.reduce((acc: Record<string, any>, item) => {
@@ -206,6 +225,67 @@ export default function Header() {
               <WhatsAppIcon className="w-4 h-4" />
               <span>تواصل معنا</span>
             </a>
+
+            <div className="h-4 w-[1px] bg-slate-200" />
+
+            {!loadingUser && (
+              <div className="relative">
+                {user ? (
+                  <>
+                    <button
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-primary hover:bg-primary/5 transition-all text-xs font-bold text-slate-700 cursor-pointer"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black">
+                        {user.user_metadata?.first_name ? user.user_metadata.first_name[0].toUpperCase() : user.email?.[0].toUpperCase()}
+                      </div>
+                      <span>{user.user_metadata?.first_name || "حسابي"}</span>
+                    </button>
+                    {isDropdownOpen && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-40 cursor-default" 
+                          onClick={() => setIsDropdownOpen(false)}
+                        />
+                        <div className="absolute left-0 mt-2 w-48 bg-white rounded-2xl border border-slate-150 shadow-lg py-1.5 z-50 text-right">
+                          <Link
+                            href="/profile"
+                            onClick={() => setIsDropdownOpen(false)}
+                            className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-primary/5 hover:text-primary transition-colors"
+                          >
+                            ملفي الشخصي
+                          </Link>
+                          <Link
+                            href="/orders"
+                            onClick={() => setIsDropdownOpen(false)}
+                            className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-primary/5 hover:text-primary transition-colors"
+                          >
+                            طلباتي
+                          </Link>
+                          <button
+                            onClick={async () => {
+                              setIsDropdownOpen(false);
+                              await supabase.auth.signOut();
+                              window.location.href = "/";
+                            }}
+                            className="w-full text-right block px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          >
+                            تسجيل الخروج
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary font-bold text-xs transition-all cursor-pointer"
+                  >
+                    تسجيل الدخول
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -252,6 +332,56 @@ export default function Header() {
             <span>تتبع الطلبات</span>
             <span className="bg-emerald-50 text-secondary text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-100">متاح الآن كضيف</span>
           </Link>
+          {!loadingUser && (
+            <div className="pt-2 border-t border-slate-100/80">
+              {user ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2.5 px-3 py-1.5 bg-slate-50/55 rounded-xl">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black">
+                      {user.user_metadata?.first_name ? user.user_metadata.first_name[0].toUpperCase() : user.email?.[0].toUpperCase()}
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-black block text-slate-800">{user.user_metadata?.first_name || "مرحباً بك"}</span>
+                      <span className="text-[10px] font-medium text-slate-400 block">{user.email}</span>
+                    </div>
+                  </div>
+                  <Link
+                    href="/profile"
+                    className="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-primary font-bold text-right text-xs"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    ملفي الشخصي
+                  </Link>
+                  <Link
+                    href="/orders"
+                    className="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-primary font-bold text-right text-xs"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    طلباتي
+                  </Link>
+                  <button
+                    onClick={async () => {
+                      setIsOpen(false);
+                      await supabase.auth.signOut();
+                      window.location.href = "/";
+                    }}
+                    className="w-full text-right block px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-xs cursor-pointer"
+                  >
+                    تسجيل الخروج
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="block text-center px-4 py-2.5 rounded-xl bg-primary text-white font-extrabold text-xs shadow-md cursor-pointer"
+                  onClick={() => setIsOpen(false)}
+                >
+                  تسجيل الدخول / إنشاء حساب
+                </Link>
+              )}
+            </div>
+          )}
+
           <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
             <a 
               href={`https://wa.me/${whatsappNumber.replace("+", "").replace(/\s/g, "").trim()}`}

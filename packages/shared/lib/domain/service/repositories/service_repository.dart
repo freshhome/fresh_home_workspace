@@ -14,7 +14,7 @@ abstract class ServiceRepository {
   Future<Either<Failure, MainServiceEntity>> addMainService(MainServiceEntity service);
   Future<Either<Failure, MainServiceEntity>> updateMainService(MainServiceEntity service);
   Future<Either<Failure, Unit>> deleteMainService(String id, {required MainServiceEntity mainService});
-  Future<Either<Failure, List<SubServiceEntity>>> getSubServices(String mainServiceId);
+  Future<Either<Failure, List<SubServiceEntity>>> getSubServices(String mainServiceId, {bool forceRefresh = false});
   Future<Either<Failure, SubServiceEntity>> getSubServiceById(String id, {required bool forceRemote, required String mainServiceId, required String subServiceId});
   Future<Either<Failure, SubServiceEntity>> addSubService(SubServiceEntity subService, String mainServiceId);
   Future<Either<Failure, SubServiceEntity>> updateSubService(SubServiceEntity service);

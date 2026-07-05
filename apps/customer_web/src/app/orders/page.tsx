@@ -2,10 +2,10 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { 
   ShieldCheck, Phone, CheckCircle, Clock, MapPin, 
-  Award, Star, Send, Check
+  Award, Star, Send, Check, AlertCircle, ChevronLeft
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -31,6 +31,7 @@ const TIMELINE_STEPS = [
 ];
 
 function OrderTrackingContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId") || "";
   const isSuccess = searchParams.get("success") === "true";
@@ -42,6 +43,11 @@ function OrderTrackingContent() {
   const [whatsappNumber, setWhatsappNumber] = useState("+201012345678");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  const [user, setUser] = useState<any>(null);
+  const [userBookings, setUserBookings] = useState<any[]>([]);
+  const [loadingUserBookings, setLoadingUserBookings] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
 
   useEffect(() => {
     if (!booking || booking.is_whatsapp_confirmed) {
@@ -95,6 +101,33 @@ function OrderTrackingContent() {
     }
     fetchWhatsappSettings();
   }, []);
+
+  useEffect(() => {
+    async function checkUserAndLoadBookings() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        if (!bookingId) {
+          setLoadingUserBookings(true);
+          try {
+            const { data } = await supabase
+              .from("bookings")
+              .select("id, readable_id, status, created_at, scheduled_day, start_time_slot, service_snapshot, pricing_inputs")
+              .eq("user_id", session.user.id)
+              .order("created_at", { ascending: false });
+            if (data) {
+              setUserBookings(data);
+            }
+          } catch (e) {
+            console.error("Error loading user bookings in orders page:", e);
+          } finally {
+            setLoadingUserBookings(false);
+          }
+        }
+      }
+    }
+    checkUserAndLoadBookings();
+  }, [bookingId]);
 
   useEffect(() => {
     async function fetchBookingDetails() {
@@ -220,15 +253,154 @@ function OrderTrackingContent() {
     );
   }
 
-  if (!booking && !bookingId.includes("FH-")) {
+  if (!bookingId) {
     return (
-      <div className="flex-1 bg-slate-50 py-20 text-center space-y-4">
-        <h1 className="text-xl font-black text-slate-800">الحجز المطلوب غير موجود</h1>
-        <p className="text-xs text-slate-500">يرجى التحقق من صحة رابط التتبع أو رقم الطلب المرفق.</p>
-        <Link href="/" className="bg-primary text-white text-xs font-bold px-6 py-2.5 rounded-xl inline-block">
-          العودة للرئيسية
-        </Link>
-      </div>
+      <>
+        <Header />
+        <main className="flex-1 bg-slate-50 py-10">
+          <div className="max-w-xl mx-auto px-4 text-right">
+            {user ? (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-black text-slate-800 font-sans">حجوزاتي وطلباتي</h1>
+                  <p className="text-slate-400 text-xs mt-1">قائمة بجميع الطلبات المرتبطة بحسابك.</p>
+                </div>
+                
+                {loadingUserBookings ? (
+                  <div className="py-12 flex justify-center bg-white rounded-3xl border border-slate-200/50">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+                  </div>
+                ) : userBookings.length === 0 ? (
+                  <div className="bg-white p-8 rounded-3xl border border-slate-200/60 shadow-xs text-center space-y-4">
+                    <Clock className="w-8 h-8 mx-auto text-slate-300" />
+                    <p className="text-xs font-bold text-slate-500 font-sans">لم تقم بإجراء أي حجوزات بعد.</p>
+                    <Link href="/" className="bg-primary hover:bg-primary/95 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs inline-block shadow-sm">
+                      احجز خدمة جديدة الآن
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {userBookings.map((b) => {
+                      const title = b.service_snapshot?.title || "خدمة منزلية";
+                      const date = new Date(b.created_at).toLocaleDateString("ar-EG", {
+                        day: "numeric",
+                        month: "short"
+                      });
+                      const isCompleted = b.status === "completed";
+                      const isCancelled = b.status === "cancelled";
+                      
+                      return (
+                        <Link 
+                          href={`/orders?bookingId=${b.id}`}
+                          key={b.id}
+                          className="block p-4 bg-white hover:bg-slate-50/50 rounded-2xl border border-slate-200/60 shadow-xs transition-all hover:border-slate-300"
+                        >
+                          <div className="flex justify-between items-center gap-4">
+                            <div className="space-y-1 text-right">
+                              <span className="text-xs font-black text-slate-800 block">{title}</span>
+                              <div className="text-[10px] text-slate-400 font-bold flex gap-2">
+                                <span>الرقم: {b.readable_id}</span>
+                                <span>•</span>
+                                <span>{date}</span>
+                              </div>
+                            </div>
+                            <span className={`text-[9px] font-black px-2.5 py-0.5 rounded-full border ${
+                              isCompleted 
+                                ? "bg-emerald-50 border-emerald-100 text-emerald-700" 
+                                : isCancelled 
+                                  ? "bg-rose-50 border-rose-100 text-rose-700" 
+                                  : "bg-primary/5 border-primary/10 text-primary"
+                            }`}>
+                              {b.status === "created" && "تم تسجيل الطلب"}
+                              {b.status === "assigned" && "تم التعيين"}
+                              {b.status === "accepted" && "مؤكد"}
+                              {b.status === "on_the_way" && "الفني بالطريق"}
+                              {b.status === "arrived" && "الفني بالموقع"}
+                              {b.status === "in_progress" && "جاري العمل"}
+                              {b.status === "completed" && "اكتمل بنجاح"}
+                              {b.status === "cancelled" && "ملغي"}
+                            </span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-slate-200/60 shadow-xs space-y-6">
+                <div>
+                  <h1 className="text-xl font-black text-slate-800 font-sans">تتبع الطلبات والحجوزات</h1>
+                  <p className="text-slate-400 text-xs mt-1">تتبع حالة زيارة الفني وتأكيد حجزك كضيف.</p>
+                </div>
+
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (searchInput.trim()) {
+                      router.push(`/orders?bookingId=${searchInput.trim()}`);
+                    }
+                  }}
+                  className="space-y-4"
+                >
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-600">رقم الحجز الفرعي (Booking ID)</label>
+                    <input 
+                      type="text" 
+                      placeholder="مثال: FH-100293 أو معرف الحجز الخاص بك"
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-left font-mono"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 rounded-xl bg-primary text-white font-extrabold text-xs shadow-md shadow-primary/10 hover:bg-primary/95 transition-all cursor-pointer"
+                  >
+                    تتبع الطلب الآن
+                  </button>
+                </form>
+
+                <div className="text-center pt-4 border-t border-slate-100 text-xs text-slate-500">
+                  <span>سجل دخولك لعرض قائمة حجوزاتك كاملة تلقائياً: </span>
+                  <Link href="/login" className="text-primary font-black hover:underline">
+                    تسجيل الدخول
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <>
+        <Header />
+        <main className="flex-grow bg-slate-50 py-20">
+          <div className="max-w-md mx-auto px-4 text-center space-y-4 bg-white p-8 rounded-3xl border border-slate-200/60 shadow-xs">
+            <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+            <h1 className="text-xl font-black text-slate-800">الحجز المطلوب غير موجود</h1>
+            <p className="text-xs text-slate-500 font-bold leading-relaxed">
+              يرجى التحقق من صحة رمز التتبع المكتوب. أو اضغط على الزر للعودة وتصفح طلبات حسابك.
+            </p>
+            <div className="pt-2 flex flex-col gap-2">
+              <Link href="/orders" className="bg-primary hover:bg-primary/95 text-white text-xs font-black py-2.5 rounded-xl block shadow-sm">
+                الذهاب لصفحة تتبع الطلبات
+              </Link>
+              <Link href="/" className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-black py-2.5 rounded-xl block">
+                العودة للرئيسية
+              </Link>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
     );
   }
 
