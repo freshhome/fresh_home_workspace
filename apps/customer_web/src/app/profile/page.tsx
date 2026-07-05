@@ -84,8 +84,28 @@ function ProfileContent() {
         return;
       }
       setUser(session.user);
-      setFirstName(session.user.user_metadata?.first_name || "");
-      setLastName(session.user.user_metadata?.last_name || "");
+
+      // Load name from public.profiles table (Single Source of Truth)
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("first_name, last_name")
+          .eq("id", session.user.id)
+          .single();
+        
+        if (!profileError && profileData) {
+          setFirstName(profileData.first_name || "");
+          setLastName(profileData.last_name || "");
+        } else {
+          setFirstName(session.user.user_metadata?.first_name || "");
+          setLastName(session.user.user_metadata?.last_name || "");
+        }
+      } catch (e) {
+        console.error("Error loading profiles name:", e);
+        setFirstName(session.user.user_metadata?.first_name || "");
+        setLastName(session.user.user_metadata?.last_name || "");
+      }
+
       setLoading(false);
       
       // Load tables asynchronously
@@ -157,13 +177,25 @@ function ProfileContent() {
     }
   }
 
-  // Update profile handler (Metadata updates sync to profiles via trigger)
+  // Update profile handler
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileSuccess("");
     setUpdatingProfile(true);
 
     try {
+      // 1. Update public.profiles table directly (Single Source of Truth)
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          first_name: firstName.trim(),
+          last_name: lastName.trim()
+        })
+        .eq("id", user.id);
+      
+      if (profileError) throw profileError;
+
+      // 2. Update auth metadata for consistency
       const { data, error } = await supabase.auth.updateUser({
         data: {
           first_name: firstName.trim(),

@@ -104,10 +104,28 @@ function BookingFlowContent() {
         setIsClientUserLoggedIn(true);
         const userId = session.user.id;
         
-        // 1. Set name from user metadata
-        const metadata = session.user.user_metadata;
-        if (metadata?.first_name) {
-          setName(`${metadata.first_name} ${metadata.last_name || ""}`.trim());
+        // 1. Set name from profiles table (Single Source of Truth), fallback to metadata
+        try {
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("first_name, last_name")
+            .eq("id", userId)
+            .single();
+          
+          if (profileData?.first_name) {
+            setName(`${profileData.first_name} ${profileData.last_name || ""}`.trim());
+          } else {
+            const metadata = session.user.user_metadata;
+            if (metadata?.first_name) {
+              setName(`${metadata.first_name} ${metadata.last_name || ""}`.trim());
+            }
+          }
+        } catch (err) {
+          console.error("Error loading profiles name in booking:", err);
+          const metadata = session.user.user_metadata;
+          if (metadata?.first_name) {
+            setName(`${metadata.first_name} ${metadata.last_name || ""}`.trim());
+          }
         }
 
         // 2. Fetch primary phone
