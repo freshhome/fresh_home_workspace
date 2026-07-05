@@ -292,6 +292,46 @@ function ProfileContent() {
     }
   };
 
+  // Set primary phone handler
+  const handleSetPrimaryPhone = async (phoneId: string) => {
+    try {
+      await supabase
+        .from("user_phones")
+        .update({ is_primary: false })
+        .eq("user_id", user.id);
+      
+      const { error } = await supabase
+        .from("user_phones")
+        .update({ is_primary: true })
+        .eq("id", phoneId);
+      
+      if (error) throw error;
+      loadPhones(user.id);
+    } catch (err: any) {
+      alert("فشل تعيين الرقم كأولوي: " + err.message);
+    }
+  };
+
+  // Set primary address handler
+  const handleSetPrimaryAddress = async (addressId: string) => {
+    try {
+      await supabase
+        .from("user_addresses")
+        .update({ is_primary: false })
+        .eq("user_id", user.id);
+      
+      const { error } = await supabase
+        .from("user_addresses")
+        .update({ is_primary: true })
+        .eq("id", addressId);
+      
+      if (error) throw error;
+      loadAddresses(user.id);
+    } catch (err: any) {
+      alert("فشل تعيين العنوان كأولوي: " + err.message);
+    }
+  };
+
   // Handle LogOut
   const handleLogOut = async () => {
     await supabase.auth.signOut();
@@ -475,19 +515,29 @@ function ProfileContent() {
                     <div key={p.id} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50">
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-black text-slate-700 font-sans tracking-wide">{p.phone_number}</span>
-                        {p.is_primary && (
+                        {p.is_primary ? (
                           <span className="text-[9px] font-black text-secondary bg-secondary/10 px-2 py-0.5 rounded-full">
                             الرقم الأساسي
                           </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSetPrimaryPhone(p.id)}
+                            className="text-[9px] font-bold text-slate-400 hover:text-primary hover:underline transition-colors cursor-pointer"
+                          >
+                            تعيين كأساسي
+                          </button>
                         )}
                       </div>
-                      <button
-                        onClick={() => handleDeletePhone(p.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
-                        title="حذف الرقم"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {!p.is_primary && (
+                        <button
+                          onClick={() => handleDeletePhone(p.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
+                          title="حذف الرقم"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   ))
                 )}
@@ -609,23 +659,33 @@ function ProfileContent() {
                           <span className="text-xs font-black text-slate-800">
                             {addr.governorate}، {addr.city}
                           </span>
-                          {addr.is_primary && (
+                          {addr.is_primary ? (
                             <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
                               الأساسي
                             </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleSetPrimaryAddress(addr.id)}
+                              className="text-[9px] font-bold text-slate-400 hover:text-primary hover:underline transition-colors cursor-pointer"
+                            >
+                              تعيين كأساسي
+                            </button>
                           )}
                         </div>
                         <p className="text-[10px] font-bold text-slate-500">
                           {addr.street} - مبنى {addr.building_number} {addr.floor ? `- الدور ${addr.floor}` : ""} {addr.apartment ? `- شقة ${addr.apartment}` : ""}
                         </p>
                       </div>
-                      <button
-                        onClick={() => handleDeleteAddress(addr.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
-                        title="حذف العنوان"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {!addr.is_primary && (
+                        <button
+                          onClick={() => handleDeleteAddress(addr.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
+                          title="حذف العنوان"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   ))
                 )}

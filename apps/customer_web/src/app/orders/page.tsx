@@ -279,51 +279,78 @@ function OrderTrackingContent() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {userBookings.map((b) => {
-                      const title = b.service_snapshot?.title || "خدمة منزلية";
-                      const date = new Date(b.created_at).toLocaleDateString("ar-EG", {
-                        day: "numeric",
-                        month: "short"
-                      });
-                      const isCompleted = b.status === "completed";
-                      const isCancelled = b.status === "cancelled";
-                      
-                      return (
-                        <Link 
-                          href={`/orders?bookingId=${b.id}`}
-                          key={b.id}
-                          className="block p-4 bg-white hover:bg-slate-50/50 rounded-2xl border border-slate-200/60 shadow-xs transition-all hover:border-slate-300"
-                        >
-                          <div className="flex justify-between items-center gap-4">
-                            <div className="space-y-1 text-right">
-                              <span className="text-xs font-black text-slate-800 block">{title}</span>
-                              <div className="text-[10px] text-slate-400 font-bold flex gap-2">
-                                <span>الرقم: {b.readable_id}</span>
-                                <span>•</span>
-                                <span>{date}</span>
+                  <div className="space-y-6">
+                    {/* Active Bookings Section */}
+                    {userBookings.some((b) => !["completed", "cancelled"].includes(b.status)) && (
+                      <div className="space-y-3">
+                        <span className="block text-[11px] font-black text-primary bg-primary/5 p-2 px-3.5 rounded-xl self-start">الحجوزات النشطة الحالية</span>
+                        {userBookings
+                          .filter((b) => !["completed", "cancelled"].includes(b.status))
+                          .map((b) => (
+                            <Link 
+                              href={`/orders?bookingId=${b.id}`}
+                              key={b.id}
+                              className="block p-4 bg-white hover:bg-slate-50/50 rounded-2xl border border-slate-200/60 shadow-xs transition-all hover:border-slate-350"
+                            >
+                              <div className="flex justify-between items-center gap-4">
+                                <div className="space-y-1 text-right">
+                                  <span className="text-xs font-black text-slate-800 block">{b.service_snapshot?.title || "خدمة منزلية"}</span>
+                                  <div className="text-[10px] text-slate-400 font-bold flex gap-2">
+                                    <span>الرقم: {b.readable_id}</span>
+                                    <span>•</span>
+                                    <span>{new Date(b.created_at).toLocaleDateString("ar-EG", { day: "numeric", month: "short" })}</span>
+                                  </div>
+                                </div>
+                                <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full border bg-primary/5 border-primary/10 text-primary">
+                                  {b.status === "created" && "تم تسجيل الطلب"}
+                                  {b.status === "assigned" && "تم التعيين"}
+                                  {b.status === "accepted" && "مؤكد"}
+                                  {b.status === "on_the_way" && "الفني بالطريق"}
+                                  {b.status === "arrived" && "الفني بالموقع"}
+                                  {b.status === "in_progress" && "جاري العمل"}
+                                </span>
                               </div>
-                            </div>
-                            <span className={`text-[9px] font-black px-2.5 py-0.5 rounded-full border ${
-                              isCompleted 
-                                ? "bg-emerald-50 border-emerald-100 text-emerald-700" 
-                                : isCancelled 
-                                  ? "bg-rose-50 border-rose-100 text-rose-700" 
-                                  : "bg-primary/5 border-primary/10 text-primary"
-                            }`}>
-                              {b.status === "created" && "تم تسجيل الطلب"}
-                              {b.status === "assigned" && "تم التعيين"}
-                              {b.status === "accepted" && "مؤكد"}
-                              {b.status === "on_the_way" && "الفني بالطريق"}
-                              {b.status === "arrived" && "الفني بالموقع"}
-                              {b.status === "in_progress" && "جاري العمل"}
-                              {b.status === "completed" && "اكتمل بنجاح"}
-                              {b.status === "cancelled" && "ملغي"}
-                            </span>
-                          </div>
-                        </Link>
-                      );
-                    })}
+                            </Link>
+                          ))}
+                      </div>
+                    )}
+
+                    {/* Past/Completed Bookings Section */}
+                    {userBookings.some((b) => ["completed", "cancelled"].includes(b.status)) && (
+                      <div className="space-y-3">
+                        <span className="block text-[11px] font-black text-slate-400 bg-slate-100 p-2 px-3.5 rounded-xl self-start animate-fade-in">الحجوزات السابقة والمكتملة</span>
+                        {userBookings
+                          .filter((b) => ["completed", "cancelled"].includes(b.status))
+                          .map((b) => {
+                            const isCompleted = b.status === "completed";
+                            return (
+                              <Link 
+                                href={`/orders?bookingId=${b.id}`}
+                                key={b.id}
+                                className="block p-4 bg-white hover:bg-slate-50/50 rounded-2xl border border-slate-250/60 shadow-xs transition-all hover:border-slate-350 opacity-80 hover:opacity-100"
+                              >
+                                <div className="flex justify-between items-center gap-4">
+                                  <div className="space-y-1 text-right">
+                                    <span className="text-xs font-black text-slate-800 block">{b.service_snapshot?.title || "خدمة منزلية"}</span>
+                                    <div className="text-[10px] text-slate-400 font-bold flex gap-2">
+                                      <span>الرقم: {b.readable_id}</span>
+                                      <span>•</span>
+                                      <span>{new Date(b.created_at).toLocaleDateString("ar-EG", { day: "numeric", month: "short" })}</span>
+                                    </div>
+                                  </div>
+                                  <span className={`text-[9px] font-black px-2.5 py-0.5 rounded-full border ${
+                                    isCompleted 
+                                      ? "bg-emerald-50 border-emerald-100 text-emerald-700" 
+                                      : "bg-rose-50 border-rose-100 text-rose-700"
+                                  }`}>
+                                    {isCompleted ? "اكتمل بنجاح" : "ملغي"}
+                                  </span>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -721,6 +748,32 @@ function OrderTrackingContent() {
                     <div className="border-t border-slate-100 pt-3 flex justify-between font-black text-primary text-sm">
                       <span>القيمة الإجمالية للطلب:</span>
                       <span>{booking.price_snapshot.total} ج.م</span>
+                    </div>
+                  )}
+
+                  {/* Cancel Booking option for logged-in users */}
+                  {user && !["completed", "cancelled"].includes(booking.status) && (
+                    <div className="border-t border-slate-100 pt-4 mt-3">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm("هل أنت متأكد من رغبتك في إلغاء هذا الحجز؟")) return;
+                          try {
+                            const { error } = await supabase
+                              .from("bookings")
+                              .update({ status: "cancelled" })
+                              .eq("id", booking.id);
+                            if (error) throw error;
+                            alert("تم إلغاء الحجز بنجاح.");
+                            window.location.reload();
+                          } catch (err: any) {
+                            alert("فشل إلغاء الحجز: " + err.message);
+                          }
+                        }}
+                        className="w-full py-2.5 rounded-xl border border-rose-250 hover:bg-rose-50 text-rose-600 font-extrabold text-xs transition-all cursor-pointer text-center"
+                      >
+                        إلغاء هذا الحجز (Cancel Booking)
+                      </button>
                     </div>
                   )}
                 </div>
