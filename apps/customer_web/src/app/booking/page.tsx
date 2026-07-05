@@ -683,7 +683,7 @@ function BookingFlowContent() {
         p_contact_name: name.trim(),
         p_contact_phones: [phone.trim()],
         p_start_time_slot: time24,
-        p_is_whatsapp_confirmed: false
+        p_is_whatsapp_confirmed: userId !== null
       });
 
       if (bookingError) throw bookingError;
