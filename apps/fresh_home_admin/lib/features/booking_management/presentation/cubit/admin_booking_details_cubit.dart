@@ -151,7 +151,10 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     );
 
     result.fold(
-      (l) => emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
+      (l) {
+        debugPrint('❌ [AdminBookingDetailsCubit] Reassign Technician Error: ${l.message}');
+        emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: currentCustomer, technician: currentTechnician));
+      },
       (r) => emit(AdminBookingDetailsSuccess('تم إعادة تعيين الفني بنجاح', booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
     );
   }
@@ -181,7 +184,10 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     );
 
     result.fold(
-      (l) => emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
+      (l) {
+        debugPrint('❌ [AdminBookingDetailsCubit] Reschedule Booking Error: ${l.message}');
+        emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: currentCustomer, technician: currentTechnician));
+      },
       (r) => emit(AdminBookingDetailsSuccess('تم إعادة جدولة الموعد بنجاح', booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
     );
   }
@@ -271,7 +277,10 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     final result = await bookingRepository.updateBooking(booking: updatedBooking);
 
     result.fold(
-      (l) => emit(AdminBookingDetailsError(l.message, booking: booking, customer: customer, technician: technician)),
+      (l) {
+        debugPrint('❌ [AdminBookingDetailsCubit] Update Booking Details Error: ${l.message}');
+        emit(AdminBookingDetailsError(l.message, booking: booking, customer: customer, technician: technician));
+      },
       (r) => emit(AdminBookingDetailsSuccess('تم تحديث تفاصيل الطلب والأسعار بنجاح', booking: updatedBooking, customer: customer, technician: technician)),
     );
   }
