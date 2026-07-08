@@ -83,6 +83,7 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     _bookingSubscription = bookingRepository.watchBooking(bookingId: targetId).listen((result) {
       result.fold(
         (failure) {
+          if (isClosed) return;
           debugPrint('❌ [AdminBookingDetailsCubit] Stream Error: ${failure.message}');
           if (state is! AdminBookingDetailsLoaded) {
             emit(AdminBookingDetailsError(failure.message));
@@ -116,6 +117,7 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
             technician = null;
           }
 
+          if (isClosed) return;
           emit(AdminBookingDetailsLoaded(
             booking: updatedBooking,
             customer: customer,
@@ -150,6 +152,7 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
       reason: reason,
     );
 
+    if (isClosed) return;
     result.fold(
       (l) {
         debugPrint('❌ [AdminBookingDetailsCubit] Reassign Technician Error: ${l.message}');
@@ -183,6 +186,7 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
       reason: reason,
     );
 
+    if (isClosed) return;
     result.fold(
       (l) {
         debugPrint('❌ [AdminBookingDetailsCubit] Reschedule Booking Error: ${l.message}');
@@ -219,6 +223,7 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
       notes: notes,
     );
 
+    if (isClosed) return;
     result.fold(
       (l) => emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
       (r) => emit(AdminBookingDetailsSuccess('تم إلغاء الطلب بنجاح', booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
@@ -244,6 +249,7 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
       bookingId: bookingId,
     );
 
+    if (isClosed) return;
     result.fold(
       (l) => emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
       (r) => emit(AdminBookingDetailsSuccess('تم تأكيد حجز الواتساب يدوياً بنجاح وتنشيط الحجز!', booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
@@ -276,8 +282,15 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
 
     final result = await bookingRepository.updateBooking(booking: updatedBooking);
 
+    if (isClosed) return;
     result.fold(
       (l) {
+        // ignore: avoid_print
+        print('==================================================================');
+        // ignore: avoid_print
+        print('❌ [AdminBookingDetailsCubit] Update Booking Details Error: ${l.message}');
+        // ignore: avoid_print
+        print('==================================================================');
         debugPrint('❌ [AdminBookingDetailsCubit] Update Booking Details Error: ${l.message}');
         emit(AdminBookingDetailsError(l.message, booking: booking, customer: customer, technician: technician));
       },

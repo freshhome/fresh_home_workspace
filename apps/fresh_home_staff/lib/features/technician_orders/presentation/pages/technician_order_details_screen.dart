@@ -7,11 +7,9 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:shared_features/shared_features.dart';
-import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../cubit/technician_orders_cubit.dart';
 import '../cubit/technician_orders_state.dart';
-import '../widgets/status_timeline.dart';
 import '../widgets/status_badge.dart';
 
 class TechnicianOrderDetailsScreen extends StatefulWidget {
@@ -104,11 +102,35 @@ class _TechnicianOrderDetailsScreenState
 
     String details = '';
     if (order.pricingInputs != null) {
-      order.pricingInputs!.forEach((key, value) {
-        if (key != 'selected_options') {
-          details += "- $key: $value\n";
+      final formatted = DynamicFieldFormatter.formatBooking(
+        pricingInputs: order.pricingInputs!,
+        snapshot: order.fieldSnapshot,
+        locale: locale,
+      );
+      for (final f in formatted) {
+        details += "- ${f.label}: ${f.displayValue} ${f.unit ?? ''}\n".trim() + "\n";
+      }
+
+      final windows = order.pricingInputs!['windows'];
+      if (windows is List && windows.isNotEmpty) {
+        final label = locale == 'ar' ? 'النوافذ' : 'Windows';
+        details += "- $label: ${windows.length} ${locale == 'ar' ? 'نوافذ' : 'Windows'}\n";
+      }
+
+      final selectedOptions = order.pricingInputs!['selected_options'];
+      if (selectedOptions is List && selectedOptions.isNotEmpty) {
+        final label = locale == 'ar' ? 'الخدمات الإضافية' : 'Addons';
+        final List<String> addonLabels = [];
+        for (final opt in selectedOptions) {
+          final mapped = DynamicFieldFormatter.formatBookingAsMap(
+            pricingInputs: {opt.toString(): true},
+            snapshot: order.fieldSnapshot,
+            locale: locale,
+          );
+          addonLabels.add(mapped[opt.toString()]?.label ?? opt.toString());
         }
-      });
+        details += "- $label: ${addonLabels.join(', ')}\n";
+      }
     }
 
     final message =
@@ -290,18 +312,14 @@ class _TechnicianOrderDetailsScreenState
                           // const SizedBox(height: 16),
 
                           // 3. Customer Details Card
-                          _buildCustomerInfoCard(
-                            context,
-                            currentOrder,
-                            canShowSensitive,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 4. Status Timeline (Vertical at bottom)
-                          StatusTimeline(
-                            currentStatus: currentOrder.status,
-                            isVertical: true,
-                          ),
+                          if (canShowSensitive) ...[
+                            _buildCustomerInfoCard(
+                              context,
+                              currentOrder,
+                              canShowSensitive,
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                         ],
                       ),
                     ),
@@ -418,37 +436,24 @@ class _TechnicianOrderDetailsScreenState
             timeStr,
           ),
 
-          if (_subService != null) ...[
+          if (_subService != null ||
+              (order.pricingInputs != null &&
+                  order.pricingInputs!.isNotEmpty)) ...[
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.symmetric(vertical: 16),
               child: Divider(height: 1, thickness: 0.5),
             ),
-            Theme(
-              data: Theme.of(
-                context,
-              ).copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                iconColor: themeColor.primary,
-                collapsedIconColor: themeColor.secondaryText,
-                title: Text(
-                  "تفاصيل الخدمة المضافة",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: themeColor.primary,
-                    fontFamily: 'Cairo',
-                  ),
-                ),
-                leading: Icon(
-                  Icons.info_outline_rounded,
-                  color: themeColor.primary,
-                  size: 20,
-                ),
-                childrenPadding: const EdgeInsets.only(top: 8, bottom: 12),
-                children: _buildServiceComponentsList(context, order),
+            Text(
+              "متطلبات وتفاصيل الخدمة",
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+                color: themeColor.primary,
+                fontFamily: 'Cairo',
               ),
             ),
+            const SizedBox(height: 12),
+            ..._buildServiceComponentsList(context, order),
           ],
 
           const Padding(
@@ -490,90 +495,53 @@ class _TechnicianOrderDetailsScreenState
     final locale = Localizations.localeOf(context).languageCode;
     final List<Widget> items = [];
 
-    if (_subService == null) return items;
+    final Map<String, dynamic> rawInputs = _dynamicInputs.isNotEmpty 
+        ? _dynamicInputs 
+        : (order.pricingInputs ?? {});
+        
+    final List<FormattedField> formatted = DynamicFieldFormatter.formatBooking(
+      pricingInputs: rawInputs,
+      snapshot: order.fieldSnapshot,
+      locale: locale,
+    );
 
-    // 1. Dynamic fields
-    for (final field in _subService!.price.fields) {
-      final val = _dynamicInputs[field.id];
-      if (val != null) {
-        String displayVal = '';
-        if (field.type == DynamicFieldType.toggle) {
-          if (val == true) {
-            displayVal = field.label[locale] ?? field.label['ar'] ?? field.id;
-          } else {
-            continue;
-          }
-        } else if (field.type == DynamicFieldType.number) {
-          final num numVal = val as num;
-          if (numVal > 0) {
-            displayVal =
-                "${field.label[locale] ?? field.label['ar'] ?? field.id}: ${numVal.toStringAsFixed(0)} ${field.unit ?? ''}";
-          } else {
-            continue;
-          }
-        } else {
-          displayVal =
-              "${field.label[locale] ?? field.label['ar'] ?? field.id}: $val";
-        }
-
-        items.add(
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.check_circle_outline_rounded,
-                  size: 16,
-                  color: themeColor.secondary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    displayVal,
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: themeColor.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
+    for (final f in formatted) {
+      items.add(
+        _buildProfessionalFieldRow(
+          context,
+          f.label,
+          "${f.displayValue} ${f.unit ?? ''}".trim(),
+        ),
+      );
     }
 
-    // 2. Extra options
-    for (final option in _subService!.price.options) {
-      final key = option.key ?? '';
-      if (_selectedOptions.contains(key)) {
-        final label = option.label?[locale] ?? option.label?['ar'] ?? key;
+    final windows = rawInputs['windows'];
+    if (windows is List && windows.isNotEmpty) {
+      final label = locale == 'ar' ? 'النوافذ' : 'Windows';
+      items.add(
+        _buildProfessionalFieldRow(
+          context,
+          label,
+          "${windows.length} ${locale == 'ar' ? 'نوافذ' : 'Windows'}",
+        ),
+      );
+    }
+
+    final selectedOptions = rawInputs['selected_options'] ?? _selectedOptions;
+    if (selectedOptions is List) {
+      for (final opt in selectedOptions) {
+        final mapped = DynamicFieldFormatter.formatBookingAsMap(
+          pricingInputs: {opt.toString(): true},
+          snapshot: order.fieldSnapshot,
+          locale: locale,
+        );
+        final f = mapped[opt.toString()];
+        final label = f?.label ?? opt.toString();
         items.add(
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.add_circle_outline_rounded,
-                  size: 16,
-                  color: themeColor.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: themeColor.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          _buildProfessionalFieldRow(
+            context,
+            label,
+            locale == 'ar' ? 'محدد' : 'Selected',
           ),
         );
       }
@@ -584,10 +552,10 @@ class _TechnicianOrderDetailsScreenState
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
-            "لا توجد إضافات أو خيارات محددة",
+            "لا توجد متطلبات أو تفاصيل محددة للطلب",
             style: TextStyle(
               fontFamily: 'Cairo',
-              fontSize: 12,
+              fontSize: 13,
               color: themeColor.secondaryText,
               fontStyle: FontStyle.italic,
             ),
@@ -597,6 +565,61 @@ class _TechnicianOrderDetailsScreenState
     }
 
     return items;
+  }
+
+  Widget _buildProfessionalFieldRow(
+    BuildContext context,
+    String label,
+    String value,
+  ) {
+    final themeColor = context.themeColor;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: themeColor.unselectedItem.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: themeColor.unselectedItem.withValues(alpha: 0.08),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: themeColor.textPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: themeColor.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // ── CUSTOMER INFO CARD ──────────────────────────────────────────────────

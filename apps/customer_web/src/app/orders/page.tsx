@@ -683,30 +683,81 @@ function OrderTrackingContent() {
                   </div>
 
                   {/* مواصفات الخدمة والمدخلات */}
-                  {booking.price_config?.fields && (() => {
-                    const fieldsToRender = booking.price_config.fields.filter((field: any) => {
-                      const val = booking.pricing_inputs?.[field.id];
-                      if (field.type === "toggle") return !!val;
-                      if (field.type === "number") return val !== undefined && val > 0;
-                      return val !== undefined && val !== "";
-                    });
+                  {(() => {
+                    const pricingInputs = booking.pricing_inputs || {};
+                    const snapshot = pricingInputs.__field_snapshot;
+                    const fieldLabels = pricingInputs.__field_labels || {};
 
-                    if (fieldsToRender.length === 0) return null;
+                    const inputKeys = Object.keys(pricingInputs).filter(
+                      (key) =>
+                        key !== "selected_options" &&
+                        key !== "windows" &&
+                        key !== "__field_snapshot" &&
+                        key !== "__field_labels"
+                    );
+
+                    if (inputKeys.length === 0) return null;
 
                     return (
                       <div className="border-t border-slate-100 pt-3 space-y-2">
                         <span className="text-slate-500 font-bold block mb-1">المواصفات والتفاصيل:</span>
                         <div className="grid grid-cols-1 gap-1.5">
-                          {fieldsToRender.map((field: any) => {
-                            const val = booking.pricing_inputs?.[field.id];
-                            const label = field.label?.ar || field.label?.en || field.label;
-                            const unit = field.unit || "";
-                            
+                          {inputKeys.map((key) => {
+                            const val = pricingInputs[key];
+                            if (val === undefined || val === null || val === "") return null;
+
+                            let label = key;
+                            let displayValue = String(val);
+                            let unit = "";
+
+                            if (snapshot) {
+                              const fieldSchema = snapshot.fields?.find((f: any) => f.id === key);
+                              if (fieldSchema) {
+                                label = fieldSchema.label?.ar || fieldSchema.label?.en || key;
+                                unit = fieldSchema.unit?.ar || fieldSchema.unit?.en || "";
+                                
+                                if (fieldSchema.type === "toggle") {
+                                  const isTrue = val === true || String(val).toLowerCase() === "true";
+                                  displayValue = isTrue ? "نعم" : "لا";
+                                } else if (fieldSchema.type === "dropdown" && fieldSchema.options) {
+                                  const opt = fieldSchema.options.find((o: any) => o.id === String(val));
+                                  if (opt) {
+                                    displayValue = opt.label?.ar || opt.label?.en || String(val);
+                                  }
+                                }
+                              }
+                            } else {
+                              const labelMap = fieldLabels[key];
+                              if (labelMap) {
+                                label = labelMap.ar || labelMap.en || key;
+                              }
+
+                              const valMap = fieldLabels[String(val)];
+                              if (valMap) {
+                                displayValue = valMap.ar || valMap.en || String(val);
+                              } else if (val === true || String(val).toLowerCase() === "true") {
+                                displayValue = "نعم";
+                              } else if (val === false || String(val).toLowerCase() === "false") {
+                                displayValue = "لا";
+                              }
+
+                              const configField = booking.price_config?.fields?.find((f: any) => f.id === key);
+                              if (configField && configField.unit) {
+                                unit = configField.unit;
+                              } else if (key === "area") {
+                                unit = "م²";
+                              } else if (key === "total_linear_meters") {
+                                unit = "م";
+                              }
+                            }
+
+                            if (typeof val === "number" && val <= 0 && key !== "area") return null;
+
                             return (
-                              <div key={field.id} className="flex justify-between text-[11px] bg-slate-50/70 px-2.5 py-1.5 rounded-lg border border-slate-100/80">
+                              <div key={key} className="flex justify-between text-[11px] bg-slate-50/70 px-2.5 py-1.5 rounded-lg border border-slate-100/80">
                                 <span className="text-slate-550 font-medium">{label}:</span>
                                 <span className="font-bold text-slate-850">
-                                  {field.type === "toggle" ? "نعم" : `${val} ${unit}`}
+                                  {displayValue} {unit}
                                 </span>
                               </div>
                             );
@@ -725,9 +776,25 @@ function OrderTrackingContent() {
                           const optionObj = booking.price_config?.options?.find((opt: any) => opt.key === addonKey);
                           const addonPrice = optionObj ? ` (+${optionObj.value} ج.م)` : "";
                           
+                          let addonLabel = addonKey;
+                          const snapshot = booking.pricing_inputs?.__field_snapshot;
+                          const fieldLabels = booking.pricing_inputs?.__field_labels || {};
+
+                          if (snapshot) {
+                            const schema = snapshot.fields?.find((f: any) => f.id === addonKey);
+                            if (schema) {
+                              addonLabel = schema.label?.ar || schema.label?.en || addonKey;
+                            }
+                          } else {
+                            const labelMap = fieldLabels[addonKey];
+                            if (labelMap) {
+                              addonLabel = labelMap.ar || labelMap.en || addonKey;
+                            }
+                          }
+
                           return (
                             <div key={idx} className="flex justify-between text-[11px] bg-emerald-50/30 text-emerald-800 px-2.5 py-1.5 rounded-lg border border-emerald-100/40">
-                              <span className="font-semibold">✨ {addonKey}</span>
+                              <span className="font-semibold">✨ {addonLabel}</span>
                               {addonPrice && <span className="font-bold text-emerald-600">{addonPrice}</span>}
                             </div>
                           );

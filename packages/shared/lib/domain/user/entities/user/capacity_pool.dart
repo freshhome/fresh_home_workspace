@@ -6,6 +6,7 @@ class CapacityPool extends Equatable {
   final String id;
   final String technicianId;
   final String title;
+  final String mainServiceId;
   final int maxDailyCapacity;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -14,6 +15,7 @@ class CapacityPool extends Equatable {
     required this.id,
     required this.technicianId,
     required this.title,
+    required this.mainServiceId,
     required this.maxDailyCapacity,
     required this.createdAt,
     required this.updatedAt,
@@ -24,6 +26,7 @@ class CapacityPool extends Equatable {
         id,
         technicianId,
         title,
+        mainServiceId,
         maxDailyCapacity,
         createdAt,
         updatedAt,

@@ -12,6 +12,9 @@ class CapacityPoolRemoteModel {
 
   final String title;
 
+  @JsonKey(name: 'main_service_id')
+  final String mainServiceId;
+
   @JsonKey(name: 'max_daily_capacity')
   final int maxDailyCapacity;
 
@@ -25,6 +28,7 @@ class CapacityPoolRemoteModel {
     required this.id,
     required this.technicianId,
     required this.title,
+    required this.mainServiceId,
     required this.maxDailyCapacity,
     required this.createdAt,
     required this.updatedAt,
@@ -39,6 +43,7 @@ class CapacityPoolRemoteModel {
         id: id,
         technicianId: technicianId,
         title: title,
+        mainServiceId: mainServiceId,
         maxDailyCapacity: maxDailyCapacity,
         createdAt: createdAt,
         updatedAt: updatedAt,

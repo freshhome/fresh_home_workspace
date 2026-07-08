@@ -1,5 +1,6 @@
 export 'entities/booking/booking.dart';
 export 'entities/booking/sub_entities/booking_components.dart';
+export 'entities/booking/sub_entities/dynamic_field_snapshot.dart';
 export 'repositories/booking_repository.dart';
 export 'repositories/admin_booking_repository.dart';
 export 'use_cases/booking/calculate_price_use_case.dart';

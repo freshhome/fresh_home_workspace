@@ -121,6 +121,8 @@ class TechnicianOrdersCubit extends Cubit<TechnicianOrdersState> {
     final Map<String, dynamic> actualMetadata = Map<String, dynamic>.from(metadata ?? {});
     if (newStatus == OrderStatus.inProgress) {
       actualMetadata['otp'] = 'bypass';
+    } else if (newStatus == OrderStatus.arrived) {
+      actualMetadata['location'] = {'latitude': 30.0, 'longitude': 31.0};
     }
 
     final result = await transitionBooking(TransitionBookingParams(

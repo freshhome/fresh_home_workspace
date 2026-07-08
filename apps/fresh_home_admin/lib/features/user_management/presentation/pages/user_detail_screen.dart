@@ -21,12 +21,13 @@ class UserDetailScreen extends StatefulWidget {
 
 class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isTechnician = false;
 
   @override
   void initState() {
     super.initState();
-    final bool isTechnician = widget.user.roles.contains(UserRole.technician);
-    _tabController = TabController(length: isTechnician ? 5 : 4, vsync: this);
+    _isTechnician = widget.user.roles.contains(UserRole.technician);
+    _tabController = TabController(length: _isTechnician ? 5 : 4, vsync: this);
     context.read<UserDetailCubit>().fetchUserDetail(widget.user.id);
   }
 
@@ -65,7 +66,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
               const Tab(text: 'نظرة عامة', icon: Icon(Icons.dashboard_rounded)),
               const Tab(text: 'الاتصال والعناوين', icon: Icon(Icons.contact_phone_rounded)),
               const Tab(text: 'الأدوار والأمان', icon: Icon(Icons.admin_panel_settings_rounded)),
-              if (widget.user.roles.contains(UserRole.technician))
+              if (_isTechnician)
                 const Tab(text: 'التخصصات (فني)', icon: Icon(Icons.build_circle_rounded)),
               const Tab(text: 'النشاط والسجلات', icon: Icon(Icons.history_rounded)),
             ],
@@ -88,6 +89,23 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
                 ),
               );
             }
+
+            if (state is UserDetailLoaded) {
+              final bool newIsTechnician = state.user.roles.contains(UserRole.technician);
+              if (newIsTechnician != _isTechnician) {
+                setState(() {
+                  _isTechnician = newIsTechnician;
+                  final expectedLength = _isTechnician ? 5 : 4;
+                  final oldIndex = _tabController.index;
+                  _tabController.dispose();
+                  _tabController = TabController(
+                    length: expectedLength,
+                    vsync: this,
+                    initialIndex: oldIndex < expectedLength ? oldIndex : 0,
+                  );
+                });
+              }
+            }
           },
           builder: (context, state) {
             if (state is UserDetailLoading) {
@@ -99,7 +117,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
                   _OverviewTab(user: state.user),
                   _ContactTab(user: state.user),
                   _SecurityTab(user: state.user, mainServices: state.mainServices),
-                  if (state.user.roles.contains(UserRole.technician))
+                  if (_isTechnician)
                     _TechnicianTab(
                       user: state.user,
                       technicianProfile: state.technicianProfile,
@@ -445,39 +463,7 @@ class _TechnicianTab extends StatelessWidget {
           const SizedBox(height: 24),
         ],
         
-        // 1. Main Service Selection
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSectionTitle('الخدمة الأساسية للفني'),
-            if (technicianProfile?.mainServiceId == null)
-              TextButton.icon(
-                onPressed: () => _updateMainService(context),
-                icon: const Icon(Icons.edit_rounded, size: 16),
-                label: const Text('تعيين'),
-              )
-            else
-               TextButton.icon(
-                onPressed: () => _updateMainService(context),
-                icon: const Icon(Icons.edit_rounded, size: 16),
-                label: const Text('تغيير'),
-              )
-          ],
-        ),
-        Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.home_repair_service_rounded)),
-            title: Text(
-              _getMainServiceName(technicianProfile?.mainServiceId),
-              style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
-            ),
-            subtitle: const Text('تحدد هذه الخدمة الخدمات الفرعية التي يمكن إسنادها للفني.', style: TextStyle(fontSize: 11)),
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // 2. Capacity Pools
+        // 1. Capacity Pools
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -526,12 +512,7 @@ class _TechnicianTab extends StatelessWidget {
     );
   }
 
-  String _getMainServiceName(String? id) {
-    if (id == null) return 'غير محددة';
-    final ms = mainServices.firstWhere((e) => e['id'] == id, orElse: () => <String, dynamic>{});
-    if (ms.isEmpty) return id;
-    return ms['title']?['ar'] ?? id;
-  }
+
   
   String _getPoolName(String poolId) {
     final pool = capacityPools.firstWhere((e) => e.id == poolId);
@@ -687,31 +668,15 @@ class _TechnicianTab extends StatelessWidget {
     );
   }
 
-  void _updateMainService(BuildContext context) {
-    final cubit = context.read<UserDetailCubit>();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('تعيين الخدمة الأساسية', style: TextStyle(fontFamily: 'Cairo')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: mainServices.map((ms) => ListTile(
-            title: Text(ms['title']?['ar'] ?? ms['id'], style: const TextStyle(fontFamily: 'Cairo')),
-            onTap: () {
-              Navigator.pop(dialogContext);
-              cubit.setMainService(user.id, ms['id']);
-            },
-          )).toList(),
-        ),
-      ),
-    );
-  }
+
 
   void _showUpsertPoolDialog(BuildContext context, {CapacityPoolRemoteModel? pool}) {
     final cubit = context.read<UserDetailCubit>();
-    String title = pool?.title ?? '${user.firstName} ${user.lastName} - ';
+    String title = pool?.title ?? '';
+    String? selectedMainServiceId = pool?.mainServiceId;
     int capacity = pool?.maxDailyCapacity ?? 5;
     final themeColor = context.themeColor;
+    final titleController = TextEditingController(text: title);
 
     showDialog(
       context: context,
@@ -722,188 +687,218 @@ class _TechnicianTab extends StatelessWidget {
           builder: (context, setState) {
             return Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: themeColor.primary.withValues(alpha:0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          pool == null ? Icons.add_business_rounded : Icons.edit_note_rounded,
-                          color: themeColor.primary,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        pool == null ? 'إضافة خزان سعة' : 'تعديل الخزان',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          fontFamily: 'Cairo',
-                          color: themeColor.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'اسم الخزان',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Cairo',
-                      color: themeColor.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  BaseTextFormField(
-                    controller: TextEditingController(text: title),
-                    hint: 'أدخل اسم الخزان...',
-                    fillColor: themeColor.background,
-                    radius: 12,
-                    onChanged: (val) => title = val,
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'القدرة اليومية القصوى',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Cairo',
-                          color: themeColor.textPrimary,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: themeColor.primary.withValues(alpha:0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '$capacity طلبات',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Cairo',
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: themeColor.primary.withValues(alpha:0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            pool == null ? Icons.add_business_rounded : Icons.edit_note_rounded,
                             color: themeColor.primary,
+                            size: 24,
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        Text(
+                          pool == null ? 'إضافة خزان سعة' : 'تعديل الخزان',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: 'Cairo',
+                            color: themeColor.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    DropdownButtonFormField<String>(
+                      value: selectedMainServiceId,
+                      items: mainServices.map((ms) {
+                        final name = ms['title']?['ar'] ?? ms['id'];
+                        return DropdownMenuItem(
+                          value: ms['id'] as String,
+                          child: Text(name, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13)),
+                        );
+                      }).toList(),
+                      onChanged: pool != null ? null : (val) {
+                        setState(() {
+                          selectedMainServiceId = val;
+                          if (pool == null && val != null) {
+                            final ms = mainServices.firstWhere((e) => e['id'] == val);
+                            final msName = ms['title']?['ar'] ?? '';
+                            title = '${user.firstName} ${user.lastName} - $msName';
+                            titleController.text = title;
+                          }
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        labelText: 'الخدمة الأساسية للخزان (القسم)',
+                        labelStyle: TextStyle(fontFamily: 'Cairo', fontSize: 13),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 60,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: 10, // 0 to 9
-                      separatorBuilder: (context, index) => const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final isSelected = capacity == index;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() => capacity = index);
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: 55,
-                            decoration: BoxDecoration(
-                              color: isSelected ? themeColor.primary : themeColor.background,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected ? themeColor.primary : themeColor.unselectedItem.withValues(alpha:0.2),
-                                width: isSelected ? 2 : 1,
-                              ),
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: themeColor.primary.withValues(alpha:0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4),
-                                      )
-                                    ]
-                                  : [],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'اسم الخزان',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Cairo',
+                        color: themeColor.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    BaseTextFormField(
+                      controller: titleController,
+                      hint: 'أدخل اسم الخزان...',
+                      fillColor: themeColor.background,
+                      radius: 12,
+                      onChanged: (val) => title = val,
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'القدرة اليومية القصوى',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Cairo',
+                            color: themeColor.textPrimary,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: themeColor.primary.withValues(alpha:0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '$capacity طلبات',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Cairo',
+                              color: themeColor.primary,
                             ),
-                            child: Center(
-                              child: Text(
-                                index.toString(),
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w900,
-                                  fontFamily: 'Cairo',
-                                  color: isSelected ? Colors.white : themeColor.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 60,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: 10, // 0 to 9
+                        separatorBuilder: (context, index) => const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          final isSelected = capacity == index;
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() => capacity = index);
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 55,
+                              decoration: BoxDecoration(
+                                color: isSelected ? themeColor.primary : themeColor.background,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected ? themeColor.primary : themeColor.unselectedItem.withValues(alpha:0.2),
+                                  width: isSelected ? 2 : 1,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: themeColor.primary.withValues(alpha:0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4),
+                                        )
+                                      ]
+                                    : [],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  index.toString(),
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                    fontFamily: 'Cairo',
+                                    color: isSelected ? Colors.white : themeColor.textPrimary,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: Text(
-                            'إلغاء',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontWeight: FontWeight.bold,
-                              color: themeColor.secondaryText,
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: Text(
+                              'إلغاء',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold,
+                                color: themeColor.secondaryText,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (title.trim().isEmpty) return;
-                            Navigator.pop(dialogContext);
-                            cubit.upsertPool(
-                              technicianId: user.id,
-                              poolId: pool?.id,
-                              title: title.trim(),
-                              maxDailyCapacity: capacity,
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: themeColor.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text(
-                            'حفظ الخزان',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (title.trim().isEmpty) return;
+                              if (selectedMainServiceId == null) return;
+                              Navigator.pop(dialogContext);
+                              cubit.upsertPool(
+                                technicianId: user.id,
+                                poolId: pool?.id,
+                                title: title.trim(),
+                                mainServiceId: selectedMainServiceId!,
+                                maxDailyCapacity: capacity,
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: themeColor.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text(
+                              'حفظ الخزان',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -942,32 +937,37 @@ class _TechnicianTab extends StatelessWidget {
 
   void _showAddSkillDialog(BuildContext context) {
     final cubit = context.read<UserDetailCubit>();
-    final assignedSubServiceIds = technicianSkills.map((e) => e.subServiceId).toSet();
-    final filteredAvailable = availableSubServices.where((e) => !assignedSubServiceIds.contains(e['id'])).toList();
-
-    if (filteredAvailable.isEmpty) {
+    
+    if (capacityPools.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('جميع الخدمات مسندة بالفعل لهذا الفني', style: TextStyle(fontFamily: 'Cairo'))),
+        const SnackBar(content: Text('يجب إضافة خزان سعة للفني أولاً قبل إسناد أي خدمات فرعية.', style: TextStyle(fontFamily: 'Cairo'))),
       );
       return;
     }
 
+    final assignedSubServiceIds = technicianSkills.map((e) => e.subServiceId).toSet();
     final Set<String> selectedSubServiceIds = {};
-    String? selectedPoolId = capacityPools.isNotEmpty ? capacityPools.first.id : null;
+    String? selectedPoolId = capacityPools.first.id;
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('إضافة خدمات للفني', style: TextStyle(fontFamily: 'Cairo')),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (capacityPools.isNotEmpty)
+        builder: (context, setState) {
+          final selectedPool = capacityPools.firstWhere((p) => p.id == selectedPoolId);
+          final poolSubServices = availableSubServices.where((sub) {
+            final isMatch = sub['main_service_id'] == selectedPool.mainServiceId;
+            final isNotAssigned = !assignedSubServiceIds.contains(sub['id']);
+            return isMatch && isNotAssigned;
+          }).toList();
+
+          return AlertDialog(
+            title: const Text('إضافة خدمات للفني', style: TextStyle(fontFamily: 'Cairo')),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   DropdownButtonFormField<String>(
-                    // ignore: deprecated_member_use
                     value: selectedPoolId,
                     items: capacityPools
                         .map((p) => DropdownMenuItem(
@@ -975,65 +975,77 @@ class _TechnicianTab extends StatelessWidget {
                               child: Text(p.title, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13)),
                             ))
                         .toList(),
-                    onChanged: (val) => setState(() => selectedPoolId = val),
+                    onChanged: (val) {
+                      setState(() {
+                        selectedPoolId = val;
+                        selectedSubServiceIds.clear(); // Clear selections when changing pools
+                      });
+                    },
                     decoration: const InputDecoration(labelText: 'الربط بخزان السعة'),
                   ),
-                const SizedBox(height: 16),
-                const Text('اختر الخدمات الفرعية:', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Flexible(
-                  child: Container(
-                    constraints: const BoxConstraints(maxHeight: 300),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: filteredAvailable.length,
-                      itemBuilder: (context, index) {
-                        final item = filteredAvailable[index];
-                        final id = item['id'] as String;
-                        final isSelected = selectedSubServiceIds.contains(id);
-                        return CheckboxListTile(
-                          title: Text(item['title']?['ar'] ?? id, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13)),
-                          value: isSelected,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              if (value == true) {
-                                selectedSubServiceIds.add(id);
-                              } else {
-                                selectedSubServiceIds.remove(id);
-                              }
-                            });
+                  const SizedBox(height: 16),
+                  const Text('اختر الخدمات الفرعية:', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  if (poolSubServices.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Text('لا توجد خدمات فرعية غير مسندة تحت تخصص هذا الخزان', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey)),
+                    )
+                  else
+                    Flexible(
+                      child: Container(
+                        constraints: const BoxConstraints(maxHeight: 300),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: poolSubServices.length,
+                          itemBuilder: (context, index) {
+                            final item = poolSubServices[index];
+                            final id = item['id'] as String;
+                            final isSelected = selectedSubServiceIds.contains(id);
+                            return CheckboxListTile(
+                              title: Text(item['title']?['ar'] ?? id, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13)),
+                              value: isSelected,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  if (value == true) {
+                                    selectedSubServiceIds.add(id);
+                                  } else {
+                                    selectedSubServiceIds.remove(id);
+                                  }
+                                });
+                              },
+                              controlAffinity: ListTileControlAffinity.leading,
+                              dense: true,
+                            );
                           },
-                          controlAffinity: ListTileControlAffinity.leading,
-                          dense: true,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+              ElevatedButton(
+                onPressed: selectedSubServiceIds.isEmpty || selectedPoolId == null
+                    ? null
+                    : () {
+                        Navigator.pop(dialogContext);
+                        cubit.assignSkills(
+                          technicianId: user.id,
+                          subServiceIds: selectedSubServiceIds.toList(),
+                          capacityPoolId: selectedPoolId!,
                         );
                       },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: selectedSubServiceIds.isEmpty || selectedPoolId == null
-                  ? null
-                  : () {
-                      Navigator.pop(dialogContext);
-                      cubit.assignSkills(
-                        technicianId: user.id,
-                        subServiceIds: selectedSubServiceIds.toList(),
-                        capacityPoolId: selectedPoolId!,
-                      );
-                    },
-              child: const Text('إضافة'),
-            ),
-          ],
-        ),
+                child: const Text('إضافة'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

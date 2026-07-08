@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:hive/hive.dart';
 import 'package:shared/core/constants/hive_constants.dart';
@@ -320,6 +321,8 @@ class ServiceRepositoryImpl implements ServiceRepository {
     String id, {
     bool forceRefresh = false,
   }) async {
+    // ignore: avoid_print
+    print('🔍 [ServiceRepositoryImpl] getServiceById: id="$id", forceRefresh=$forceRefresh, supabaseUrl="${Supabase.instance.client.rest.url}"');
     try {
       if (forceRefresh && await networkInfo.isConnected) {
         final remoteModel = await remoteDataSource.getServiceById(id);
@@ -359,7 +362,12 @@ class ServiceRepositoryImpl implements ServiceRepository {
 
           return Right(entity);
         }
-      } catch (_) {}
+      } catch (fallbackError, stackTrace) {
+        // ignore: avoid_print
+        print('❌ [ServiceRepositoryImpl] Fallback Remote Fetch Failed: $fallbackError');
+        // ignore: avoid_print
+        print(stackTrace);
+      }
       return Left(CacheFailure(message: e.toString()));
     }
   }

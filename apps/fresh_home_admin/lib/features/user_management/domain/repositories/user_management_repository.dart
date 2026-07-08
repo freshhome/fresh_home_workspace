@@ -25,8 +25,11 @@ abstract class UserManagementRepository {
   Future<List<TechnicianSkillRemoteModel>> getTechnicianSkills(String technicianId);
   Future<List<CapacityPoolRemoteModel>> getTechnicianPools(String technicianId);
   Future<CapacityPoolRemoteModel> upsertCapacityPool({
-    required String technicianId, String? poolId,
-    required String title, required int maxDailyCapacity,
+    required String technicianId,
+    String? poolId,
+    required String title,
+    required String mainServiceId,
+    required int maxDailyCapacity,
   });
   Future<void> deleteCapacityPool(String poolId);
   Future<void> assignSkill({

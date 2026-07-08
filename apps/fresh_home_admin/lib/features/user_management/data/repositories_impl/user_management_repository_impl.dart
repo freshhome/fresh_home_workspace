@@ -83,12 +83,14 @@ class UserManagementRepositoryImpl implements UserManagementRepository {
     required String technicianId,
     String? poolId,
     required String title,
+    required String mainServiceId,
     required int maxDailyCapacity,
   }) {
     return _remoteDataSource.upsertCapacityPool(
       technicianId: technicianId,
       poolId: poolId,
       title: title,
+      mainServiceId: mainServiceId,
       maxDailyCapacity: maxDailyCapacity,
     );
   }

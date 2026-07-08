@@ -132,6 +132,7 @@ class BookingMapper {
       isCritical: model.isCritical,
       criticalReason: model.criticalReason,
       pricingInputs: model.pricingInputs,
+      fieldSnapshot: model.fieldSnapshot,
     );
   }
 
@@ -167,6 +168,7 @@ class BookingMapper {
       isCritical: entity.isCritical,
       criticalReason: entity.criticalReason,
       pricingInputs: entity.pricingInputs,
+      fieldSnapshot: entity.fieldSnapshot,
     );
   }
 

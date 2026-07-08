@@ -88,12 +88,7 @@ class UserDetailCubit extends Cubit<UserDetailState> {
         technicianSkills = await _repository.getTechnicianSkills(userId);
         
         mainServices = await _repository.getAllMainServices();
-        if (technicianProfile?.mainServiceId != null) {
-          availableSubServices = await _repository.getAllSubServices(
-              mainServiceId: technicianProfile!.mainServiceId);
-        } else {
-          availableSubServices = await _repository.getAllSubServices();
-        }
+        availableSubServices = await _repository.getAllSubServices();
       }
 
       emit(UserDetailLoaded(
@@ -166,6 +161,7 @@ class UserDetailCubit extends Cubit<UserDetailState> {
     required String technicianId,
     String? poolId,
     required String title,
+    required String mainServiceId,
     required int maxDailyCapacity,
   }) async {
     final currentState = state;
@@ -175,6 +171,7 @@ class UserDetailCubit extends Cubit<UserDetailState> {
         technicianId: technicianId,
         poolId: poolId,
         title: title,
+        mainServiceId: mainServiceId,
         maxDailyCapacity: maxDailyCapacity,
       );
       emit(const UserDetailSuccess('Capacity pool saved successfully'));

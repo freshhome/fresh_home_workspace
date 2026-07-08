@@ -32,3 +32,4 @@ export 'widgets/pricing/customer_paid_summary.dart';
 export 'widgets/pricing/interactive_quote_lock_timeline.dart';
 export 'widgets/star_rating_widget.dart';
 export 'widget/animated_background/animated_background.dart';
+export 'utils/dynamic_field_formatter.dart';

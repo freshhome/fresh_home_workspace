@@ -588,6 +588,81 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
       }
     }
 
+    final Map<String, Map<String, String>> fieldLabels = {};
+    DynamicFieldSnapshot? snapshot;
+
+    if (state.servicePrice != null) {
+      final List<SnapshotField> snapshotFields = [];
+
+      for (final field in state.servicePrice!.fields) {
+        fieldLabels[field.id] = field.label;
+        final List<SnapshotOption>? snapshotOptions = field.options?.map((opt) {
+          fieldLabels[opt.id] = opt.label;
+          return SnapshotOption(
+            id: opt.id,
+            label: opt.label,
+          );
+        }).toList();
+
+        snapshotFields.add(SnapshotField(
+          id: field.id,
+          type: field.type.name,
+          label: field.label,
+          unit: field.unit != null ? {'ar': field.unit!, 'en': field.unit!} : null,
+          required: field.required,
+          min: field.min?.toDouble(),
+          options: snapshotOptions,
+        ));
+      }
+
+      for (final option in state.servicePrice!.options) {
+        if (option.key != null) {
+          final labelMap = option.label ?? {'ar': option.key!, 'en': option.key!};
+          fieldLabels[option.key!] = labelMap;
+          
+          if (!snapshotFields.any((f) => f.id == option.key)) {
+            snapshotFields.add(SnapshotField(
+              id: option.key!,
+              type: 'toggle',
+              label: labelMap,
+              required: false,
+            ));
+          }
+        }
+      }
+
+      if (state.servicePrice!.type == PricingMethod.perSquareMeter ||
+          !snapshotFields.any((f) => f.id == 'area')) {
+        if (!snapshotFields.any((f) => f.id == 'area')) {
+          snapshotFields.add(const SnapshotField(
+            id: 'area',
+            type: 'number',
+            label: {'ar': 'المساحة', 'en': 'Area'},
+            unit: {'ar': 'م²', 'en': 'sqm'},
+            required: true,
+          ));
+        }
+      }
+
+      if (state.servicePrice!.type == PricingMethod.perLinearMeter) {
+        if (!snapshotFields.any((f) => f.id == 'total_linear_meters')) {
+          snapshotFields.add(const SnapshotField(
+            id: 'total_linear_meters',
+            type: 'number',
+            label: {'ar': 'إجمالي الأمتار الطولية', 'en': 'Total Linear Meters'},
+            unit: {'ar': 'م', 'en': 'm'},
+            required: true,
+          ));
+        }
+      }
+
+      snapshot = DynamicFieldSnapshot(
+        snapshotVersion: 1,
+        snapshotTimestamp: DateTime.now().toUtc(),
+        fields: snapshotFields,
+      );
+    }
+
     final pricingInputs = <String, dynamic>{
       ...state.dynamicInputs,
       if (state.area != null) 'area': state.area,
@@ -604,6 +679,8 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
             )
             .toList(),
       'selected_options': state.selectedOptions,
+      '__field_labels': fieldLabels,
+      if (snapshot != null) '__field_snapshot': snapshot.toJson(),
     };
 
     final booking = Booking(
@@ -621,6 +698,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       pricingInputs: pricingInputs,
+      fieldSnapshot: snapshot,
     );
 
     final result = await createBookingUseCase(booking: booking);

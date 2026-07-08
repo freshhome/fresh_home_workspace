@@ -237,6 +237,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                               '',
                           isTitle: true,
                         ),
+                        _buildDynamicFieldsList(context, currentOrder),
                         _buildInfoTile(
                           context,
                           'التاريخ',
@@ -890,6 +891,69 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         preSelectedService: bookedService,
         initialServicePrice: null,
       ),
+    );
+  }
+
+  Widget _buildDynamicFieldsList(BuildContext context, Booking order) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final Map<String, dynamic> rawInputs = order.pricingInputs ?? {};
+    if (rawInputs.isEmpty) return const SizedBox.shrink();
+
+    final List<FormattedField> formatted = DynamicFieldFormatter.formatBooking(
+      pricingInputs: rawInputs,
+      snapshot: order.fieldSnapshot,
+      locale: locale,
+    );
+
+    final List<Widget> children = [];
+
+    for (final f in formatted) {
+      children.add(
+        _buildInfoTile(
+          context,
+          f.label,
+          "${f.displayValue} ${f.unit ?? ''}".trim(),
+        ),
+      );
+    }
+
+    final windows = rawInputs['windows'];
+    if (windows is List && windows.isNotEmpty) {
+      final label = locale == 'ar' ? 'النوافذ' : 'Windows';
+      children.add(
+        _buildInfoTile(
+          context,
+          label,
+          "${windows.length} ${locale == 'ar' ? 'نوافذ' : 'Windows'}",
+        ),
+      );
+    }
+
+    final selectedOptions = rawInputs['selected_options'];
+    if (selectedOptions is List && selectedOptions.isNotEmpty) {
+      final List<String> addonLabels = [];
+      for (final opt in selectedOptions) {
+        final mapped = DynamicFieldFormatter.formatBookingAsMap(
+          pricingInputs: {opt.toString(): true},
+          snapshot: order.fieldSnapshot,
+          locale: locale,
+        );
+        final f = mapped[opt.toString()];
+        addonLabels.add(f?.label ?? opt.toString());
+      }
+      final label = locale == 'ar' ? 'الخدمات الإضافية' : 'Addons';
+      children.add(
+        _buildInfoTile(
+          context,
+          label,
+          addonLabels.join(', '),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:shared/core/converters/timestamp_converter.dart';
 import 'package:shared/data/booking/models/remote/sub_models/booking_snapshots.dart';
 import 'package:shared/data/booking/models/remote/sub_models/booking_components_remote_model.dart';
+import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field_snapshot.dart';
 
 @TimestampConverter()
 class BookingRemoteModel {
@@ -31,6 +32,7 @@ class BookingRemoteModel {
   final bool isCritical;
   final String? criticalReason;
   final Map<String, dynamic>? pricingInputs;
+  final DynamicFieldSnapshot? fieldSnapshot;
   final bool isWhatsappConfirmed;
   final String? paymentMethod;
   final String? paymentStatus;
@@ -66,6 +68,7 @@ class BookingRemoteModel {
     this.isCritical = false,
     this.criticalReason,
     this.pricingInputs,
+    this.fieldSnapshot,
   });
 
   factory BookingRemoteModel.fromJson(Map<String, dynamic> json) {
@@ -103,10 +106,25 @@ class BookingRemoteModel {
       isCritical: json['is_critical'] as bool? ?? false,
       criticalReason: json['critical_reason'] as String?,
       pricingInputs: json['pricing_inputs'] as Map<String, dynamic>?,
+      fieldSnapshot: json['pricing_inputs']?['__field_snapshot'] != null
+          ? DynamicFieldSnapshot.fromJson(
+              Map<String, dynamic>.from(json['pricing_inputs']['__field_snapshot'] as Map),
+            )
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
+    Map<String, dynamic>? resolvedPricingInputs;
+    if (pricingInputs != null || fieldSnapshot != null) {
+      resolvedPricingInputs = pricingInputs != null
+          ? Map<String, dynamic>.from(pricingInputs!)
+          : <String, dynamic>{};
+      if (fieldSnapshot != null) {
+        resolvedPricingInputs['__field_snapshot'] = fieldSnapshot!.toJson();
+      }
+    }
+
     return {
       'id': id,
       'user_id': userId,
@@ -138,7 +156,7 @@ class BookingRemoteModel {
       if (cancelledByRole != null) 'cancelled_by_role': cancelledByRole,
       'is_critical': isCritical,
       if (criticalReason != null) 'critical_reason': criticalReason,
-      if (pricingInputs != null) 'pricing_inputs': pricingInputs,
+      if (resolvedPricingInputs != null) 'pricing_inputs': resolvedPricingInputs,
     };
   }
 }

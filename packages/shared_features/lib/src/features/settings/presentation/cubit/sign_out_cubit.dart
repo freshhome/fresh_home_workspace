@@ -11,6 +11,7 @@ class SignOutCubit extends Cubit<SignOutState> {
   Future<void> signOut() async {
     emit(SignOutLoading());
     final res = await signOutUseCase();
+    if (isClosed) return;
     res.fold((Failure l) => emit(SignOutError(l)), (_) => emit(SignOutSuccess()));
   }
 }

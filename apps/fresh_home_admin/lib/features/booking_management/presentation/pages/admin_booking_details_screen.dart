@@ -147,15 +147,7 @@ class _AdminBookingDetailsContent extends StatelessWidget {
             }
           }
           if (state is AdminBookingDetailsError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  state.message,
-                  style: const TextStyle(fontFamily: 'Cairo'),
-                ),
-                backgroundColor: const Color(0xFFEF4444),
-              ),
-            );
+            _showErrorDialog(context, state.message);
           }
         },
         builder: (context, state) {
@@ -344,14 +336,19 @@ class _AdminBookingDetailsContent extends StatelessWidget {
     );
   }
 
-  void _showCopyMessageDialog(BuildContext context, {bool isAutomatic = false}) {
+  void _showCopyMessageDialog(
+    BuildContext context, {
+    bool isAutomatic = false,
+  }) {
     final String customerName = booking.contact.name.isNotEmpty
         ? booking.contact.name
         : (customer?.fullName ?? 'عميل فريش هوم');
     String customerPhone = booking.contact.phone.isNotEmpty
         ? booking.contact.phone.first
         : '';
-    if (customer != null && !customer!.isAdmin && customer!.phoneNumbers.isNotEmpty) {
+    if (customer != null &&
+        !customer!.isAdmin &&
+        customer!.phoneNumbers.isNotEmpty) {
       customerPhone = customer!.phoneNumbers.first.phoneNumber;
     }
     final String orderNumber = booking.readableId ?? booking.displayId;
@@ -459,17 +456,27 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
-                  onPressed: customerPhone.isNotEmpty ? () async {
-                    String cleanPhone = customerPhone.replaceAll(RegExp(r'[\+\s\-]'), '');
-                    if (cleanPhone.startsWith('0') && cleanPhone.startsWith('01')) {
-                      cleanPhone = '20${cleanPhone.substring(1)}';
-                    }
-                    final String whatsappUrl = 'https://wa.me/$cleanPhone?text=${Uri.encodeComponent(messageText)}';
-                    final Uri url = Uri.parse(whatsappUrl);
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(url, mode: LaunchMode.externalApplication);
-                    }
-                  } : null,
+                  onPressed: customerPhone.isNotEmpty
+                      ? () async {
+                          String cleanPhone = customerPhone.replaceAll(
+                            RegExp(r'[\+\s\-]'),
+                            '',
+                          );
+                          if (cleanPhone.startsWith('0') &&
+                              cleanPhone.startsWith('01')) {
+                            cleanPhone = '20${cleanPhone.substring(1)}';
+                          }
+                          final String whatsappUrl =
+                              'https://wa.me/$cleanPhone?text=${Uri.encodeComponent(messageText)}';
+                          final Uri url = Uri.parse(whatsappUrl);
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(
+                              url,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
+                        }
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF25D366),
                     foregroundColor: Colors.white,
@@ -560,6 +567,92 @@ class _AdminBookingDetailsContent extends StatelessWidget {
     );
   }
 
+  void _showErrorDialog(BuildContext context, String errorMessage) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          elevation: 10,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.error_outline_rounded,
+                        color: Color(0xFFDC2626),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Text(
+                        'خطأ في العملية',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  errorMessage,
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 14,
+                    height: 1.6,
+                    color: Color(0xFF475569),
+                  ),
+                  textDirection: ui.TextDirection.rtl,
+                  textAlign: TextAlign.right,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text(
+                    'موافق',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _makeCall(String phoneNumber) async {
     try {
       final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
@@ -625,12 +718,14 @@ class _AdminBookingDetailsContent extends StatelessWidget {
             value: booking.paymentMethod?.toLowerCase() == 'instapay'
                 ? 'تحويل إنستا باي (InstaPay)'
                 : booking.paymentMethod?.toLowerCase() == 'vodafone_cash'
-                    ? 'تحويل فودافون كاش (Vodafone Cash)'
-                    : 'نقداً (كاش)',
+                ? 'تحويل فودافون كاش (Vodafone Cash)'
+                : 'نقداً (كاش)',
           ),
           _InfoRow(
             label: 'حالة سداد تحصيل الفني',
-            value: booking.paymentStatus == 'paid' ? 'تمت التسوية' : 'معلّق قيد التحصيل',
+            value: booking.paymentStatus == 'paid'
+                ? 'تمت التسوية'
+                : 'معلّق قيد التحصيل',
             valueColor: booking.paymentStatus == 'paid'
                 ? const Color(0xFF10B981)
                 : const Color(0xFFF59E0B),
@@ -762,7 +857,10 @@ class _AdminBookingDetailsContent extends StatelessWidget {
               TextButton.icon(
                 onPressed: () => _showCopyMessageDialog(context),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
                 icon: const Icon(
                   Icons.share_rounded,
@@ -1087,11 +1185,16 @@ class _AdminBookingDetailsContent extends StatelessWidget {
   }
 
   void _showEditOrderDetailsSheet(BuildContext context) {
+    final cubit = context.read<AdminBookingDetailsCubit>();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) => _EditOrderDetailsSheet(booking: booking),
+      builder: (sheetContext) => _EditOrderDetailsSheet(
+        booking: booking,
+        cubit: cubit,
+        onError: (message) => _showErrorDialog(context, message),
+      ),
     );
   }
 
@@ -2164,8 +2267,15 @@ class _ActionButton extends StatelessWidget {
 
 class _EditOrderDetailsSheet extends StatefulWidget {
   final Booking booking;
+  final AdminBookingDetailsCubit cubit;
+  final void Function(String) onError;
 
-  const _EditOrderDetailsSheet({super.key, required this.booking});
+  const _EditOrderDetailsSheet({
+    super.key,
+    required this.booking,
+    required this.cubit,
+    required this.onError,
+  });
 
   @override
   State<_EditOrderDetailsSheet> createState() => _EditOrderDetailsSheetState();
@@ -2188,41 +2298,42 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
 
   Future<void> _loadServiceDetails() async {
     final getServiceById = GetIt.instance<GetServiceByIdUseCase>();
-    final result = await getServiceById(widget.booking.service.subServiceId);
+    final sId = widget.booking.serviceId ?? widget.booking.service.subServiceId;
+    final result = await getServiceById(sId, forceRefresh: true);
 
     if (mounted) {
       result.fold(
         (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("فشل تحميل بيانات الخدمة: ${failure.message}", style: const TextStyle(fontFamily: 'Cairo')),
-              backgroundColor: Colors.redAccent,
-            ),
+          // ignore: avoid_print
+          print(
+            '==================================================================',
+          );
+          // ignore: avoid_print
+          print(
+            '❌ [_EditOrderDetailsSheet] Load Service Details Error: ${failure.message}',
+          );
+          // ignore: avoid_print
+          print(
+            '==================================================================',
           );
           Navigator.pop(context);
+          widget.onError("فشل تحميل بيانات الخدمة: ${failure.message}");
         },
         (service) {
-          if (service is SubServiceEntity) {
-            setState(() {
-              _subService = service;
-              _loadingService = false;
-              if (widget.booking.pricingInputs != null) {
-                _dynamicInputs.addAll(widget.booking.pricingInputs!);
-              }
-              if (_dynamicInputs['selected_options'] != null) {
-                _selectedOptions.addAll(List<String>.from(_dynamicInputs['selected_options']));
-              }
-              _calculatedPricing = widget.booking.price;
-            });
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("نوع الخدمة غير مدعوم للتعديل الديناميكي", style: TextStyle(fontFamily: 'Cairo')),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
-            Navigator.pop(context);
-          }
+          final subService = ServiceMapper.serviceToSubServiceEntity(service);
+          setState(() {
+            _subService = subService;
+            _loadingService = false;
+            if (widget.booking.pricingInputs != null) {
+              _dynamicInputs.addAll(widget.booking.pricingInputs!);
+            }
+            if (_dynamicInputs['selected_options'] != null) {
+              _selectedOptions.addAll(
+                List<String>.from(_dynamicInputs['selected_options']),
+              );
+            }
+            _calculatedPricing = widget.booking.price;
+          });
         },
       );
     }
@@ -2239,9 +2350,12 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
     for (final field in _subService!.price.fields) {
       final val = adjustedInputs[field.id];
       final isRequired = field.required;
-      
+
       if (isRequired) {
-        if (val == null || (val is String && val.trim().isEmpty) || val == 0 || val == 0.0) {
+        if (val == null ||
+            (val is String && val.trim().isEmpty) ||
+            val == 0 ||
+            val == 0.0) {
           errors[field.id] = "هذا الحقل مطلوب";
         } else if (field.type == DynamicFieldType.number) {
           final numVal = val is num ? val : num.tryParse(val.toString());
@@ -2251,7 +2365,11 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
           }
         }
       } else {
-        if (val != null && (val is! String || val.trim().isNotEmpty) && field.type == DynamicFieldType.number && val != 0 && val != 0.0) {
+        if (val != null &&
+            (val is! String || val.trim().isNotEmpty) &&
+            field.type == DynamicFieldType.number &&
+            val != 0 &&
+            val != 0.0) {
           final numVal = val is num ? val : num.tryParse(val.toString());
           if (numVal != null && field.min != null && numVal < field.min!) {
             adjustedInputs[field.id] = field.min!.toDouble();
@@ -2268,7 +2386,10 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("يرجى استكمال الحقول المطلوبة بشكل صحيح", style: TextStyle(fontFamily: 'Cairo')),
+          content: Text(
+            "يرجى استكمال الحقول المطلوبة بشكل صحيح",
+            style: TextStyle(fontFamily: 'Cairo'),
+          ),
           backgroundColor: Colors.orangeAccent,
         ),
       );
@@ -2305,7 +2426,10 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
         (failure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("فشل حساب السعر: ${failure.message}", style: const TextStyle(fontFamily: 'Cairo')),
+              content: Text(
+                "فشل حساب السعر: ${failure.message}",
+                style: const TextStyle(fontFamily: 'Cairo'),
+              ),
               backgroundColor: Colors.redAccent,
             ),
           );
@@ -2325,13 +2449,12 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
       return Container(
         color: Colors.white,
         height: 300,
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    final computedFieldIds = _subService!.computedFields?.map((cf) => cf.id).toSet() ?? {};
+    final computedFieldIds =
+        _subService!.computedFields?.map((cf) => cf.id).toSet() ?? {};
     final filteredFields = _subService!.price.fields
         .where((f) => !computedFieldIds.contains(f.id))
         .toList();
@@ -2414,18 +2537,27 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Icon(Icons.calculate_rounded),
                 label: Text(
                   _isCalculating ? "جاري الحساب..." : "حساب السعر الجديد",
-                  style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 15),
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E3A8A), // Slate blue
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   elevation: 0,
                 ),
               )
@@ -2436,7 +2568,9 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2451,14 +2585,24 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildPriceRow("سعر الخدمة الأساسي", "${_calculatedPricing!.basePrice.toStringAsFixed(2)} ج.م"),
+                    _buildPriceRow(
+                      "سعر الخدمة الأساسي",
+                      "${_calculatedPricing!.basePrice.toStringAsFixed(2)} ج.م",
+                    ),
                     if (_calculatedPricing!.extraFees > 0) ...[
                       const SizedBox(height: 8),
-                      _buildPriceRow("رسوم إضافية", "${_calculatedPricing!.extraFees.toStringAsFixed(2)} ج.م"),
+                      _buildPriceRow(
+                        "رسوم إضافية",
+                        "${_calculatedPricing!.extraFees.toStringAsFixed(2)} ج.م",
+                      ),
                     ],
                     if (_calculatedPricing!.discount > 0) ...[
                       const SizedBox(height: 8),
-                      _buildPriceRow("الخصم المطبق", "- ${_calculatedPricing!.discount.toStringAsFixed(2)} ج.م", isDiscount: true),
+                      _buildPriceRow(
+                        "الخصم المطبق",
+                        "- ${_calculatedPricing!.discount.toStringAsFixed(2)} ج.م",
+                        isDiscount: true,
+                      ),
                     ],
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 10),
@@ -2479,7 +2623,7 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
-                  context.read<AdminBookingDetailsCubit>().updateBookingDetails(
+                  widget.cubit.updateBookingDetails(
                     booking: widget.booking,
                     pricingInputs: _dynamicInputs,
                     price: _calculatedPricing!,
@@ -2488,13 +2632,19 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
                 icon: const Icon(Icons.save_rounded),
                 label: const Text(
                   "تحديث وحفظ التعديلات",
-                  style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 16),
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF10B981),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   elevation: 4,
                   shadowColor: const Color(0xFF10B981).withValues(alpha: 0.3),
                 ),
@@ -2532,7 +2682,8 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
           value,
           style: TextStyle(
             fontSize: 14,
-            color: textColor ?? (isDiscount ? Colors.redAccent : Colors.black87),
+            color:
+                textColor ?? (isDiscount ? Colors.redAccent : Colors.black87),
             fontFamily: 'Cairo',
             fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
           ),

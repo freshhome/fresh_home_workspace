@@ -40,6 +40,7 @@ abstract class UserManagementRemoteDataSource {
     required String technicianId,
     String? poolId,
     required String title,
+    required String mainServiceId,
     required int maxDailyCapacity,
   });
 
@@ -263,12 +264,14 @@ class UserManagementRemoteDataSourceImpl implements UserManagementRemoteDataSour
     required String technicianId,
     String? poolId,
     required String title,
+    required String mainServiceId,
     required int maxDailyCapacity,
   }) async {
     try {
       final data = {
         'technician_id': technicianId,
         'title': title,
+        'main_service_id': mainServiceId,
         'max_daily_capacity': maxDailyCapacity,
       };
       if (poolId != null) data['id'] = poolId;

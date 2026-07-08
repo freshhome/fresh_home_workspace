@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/booking_components.dart';
+import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field_snapshot.dart';
 import 'package:shared/domain/user/entities/user/address.dart';
 
 class Booking extends Equatable {
@@ -38,6 +39,7 @@ class Booking extends Equatable {
   final String? criticalReason;
 
   final Map<String, dynamic>? pricingInputs;
+  final DynamicFieldSnapshot? fieldSnapshot;
 
   String get displayId => readableId ?? id.split('-').first;
 
@@ -72,6 +74,7 @@ class Booking extends Equatable {
     this.isCritical = false,
     this.criticalReason,
     this.pricingInputs,
+    this.fieldSnapshot,
   });
 
   Booking copyWith({
@@ -106,6 +109,7 @@ class Booking extends Equatable {
     bool? isCritical,
     String? criticalReason,
     Map<String, dynamic>? pricingInputs,
+    DynamicFieldSnapshot? fieldSnapshot,
     // Flags to explicitly clear nullable fields to null
     bool clearAssignedAt = false,
     bool clearAcceptedAt = false,
@@ -146,6 +150,7 @@ class Booking extends Equatable {
       isCritical: isCritical ?? this.isCritical,
       criticalReason: criticalReason ?? this.criticalReason,
       pricingInputs: pricingInputs ?? this.pricingInputs,
+      fieldSnapshot: fieldSnapshot ?? this.fieldSnapshot,
     );
   }
 
@@ -181,5 +186,6 @@ class Booking extends Equatable {
     isCritical,
     criticalReason,
     pricingInputs,
+    fieldSnapshot,
   ];
 }

@@ -3213,7 +3213,9 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
                                           ? 'عدد الغرف'
                                           : (template.id == 'number_of_bathrooms'
                                               ? 'عدد الحمامات'
-                                              : 'وجود حيوانات أليفة'))),
+                                              : (template.id == 'closure_duration'
+                                                  ? 'مدة إغلاق المنزل'
+                                                  : 'وجود حيوانات أليفة')))),
                               style: TextStyle(
                                 fontFamily: 'Cairo',
                                 fontWeight: FontWeight.bold,
@@ -4954,6 +4956,50 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
       },
       icon: 'pets',
     ),
+    DynamicFieldEntity(
+      id: 'closure_duration',
+      type: DynamicFieldType.dropdown,
+      label: {
+        'ar': 'مدة إغلاق المنزل',
+        'en': 'Duration of closing the house'
+      },
+      required: false,
+      options: [
+        DropdownOptionEntity(
+          id: '0',
+          label: {
+            'ar': 'أقل من سنة',
+            'en': 'Less than a year'
+          },
+        ),
+        DropdownOptionEntity(
+          id: '10',
+          label: {
+            'ar': 'من سنة إلى سنتين',
+            'en': 'From 1 to 2 years'
+          },
+        ),
+        DropdownOptionEntity(
+          id: '20',
+          label: {
+            'ar': 'من سنتين إلى 5 سنوات',
+            'en': 'From 2 to 5 years'
+          },
+        ),
+        DropdownOptionEntity(
+          id: '30',
+          label: {
+            'ar': 'أكثر من 5 سنوات',
+            'en': 'More than 5 years'
+          },
+        ),
+      ],
+      description: {
+        'ar': 'سؤال العميل عن مدة إغلاق المنزل لزيادة سعر المتر للمساحة',
+        'en': 'Ask the customer about the house closure duration to increase the per-square-meter price'
+      },
+      icon: 'history',
+    ),
   ];
 
   IconData _getTemplateIcon(String? iconName) {
@@ -4968,6 +5014,8 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         return Icons.bathtub_rounded;
       case 'pets':
         return Icons.pets_rounded;
+      case 'history':
+        return Icons.history_rounded;
       default:
         return Icons.add_circle_outline_rounded;
     }
@@ -5754,79 +5802,85 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
                                     ),
                                   ),
                                   const Spacer(),
-                                  InkWell(
-                                    onTap: () async {
-                                      String? selectedIconId;
-                                      final getSharedIcons = getIt<GetSharedIconsUseCase>();
-                                      final result = await getSharedIcons();
-                                      result.fold(
-                                        (_) {},
-                                        (icons) {
-                                          try {
-                                            final matched = icons.firstWhere(
-                                              (icon) => icon.publicUrl == field.icon || icon.id == field.icon,
-                                            );
-                                            selectedIconId = matched.id;
-                                          } catch (_) {}
-                                        },
-                                      );
-
-                                      if (context.mounted) {
-                                        final pickedIcon = await SharedIconPickerDialog.show(
-                                          context,
-                                          selectedIconId: selectedIconId,
+                                  Flexible(
+                                    child: InkWell(
+                                      onTap: () async {
+                                        String? selectedIconId;
+                                        final getSharedIcons = getIt<GetSharedIconsUseCase>();
+                                        final result = await getSharedIcons();
+                                        result.fold(
+                                          (_) {},
+                                          (icons) {
+                                            try {
+                                              final matched = icons.firstWhere(
+                                                (icon) => icon.publicUrl == field.icon || icon.id == field.icon,
+                                              );
+                                              selectedIconId = matched.id;
+                                            } catch (_) {}
+                                          },
                                         );
-                                        if (pickedIcon != null) {
-                                          setState(() {
-                                            _iconController.text = pickedIcon.publicUrl;
-                                          });
-                                          widget.onFieldChanged(_copyWith(icon: pickedIcon.publicUrl));
+
+                                        if (context.mounted) {
+                                          final pickedIcon = await SharedIconPickerDialog.show(
+                                            context,
+                                            selectedIconId: selectedIconId,
+                                          );
+                                          if (pickedIcon != null) {
+                                            setState(() {
+                                              _iconController.text = pickedIcon.publicUrl;
+                                            });
+                                            widget.onFieldChanged(_copyWith(icon: pickedIcon.publicUrl));
+                                          }
                                         }
-                                      }
-                                    },
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: t.cardBackground,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: t.unselectedItem.withValues(alpha: 0.1),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          if (field.icon?.isNotEmpty == true) ...[
-                                            ClipRRect(
-                                              borderRadius: BorderRadius.circular(6),
-                                              child: field.icon!.startsWith('http')
-                                                  ? CachedNetworkImage(
-                                                      imageUrl: field.icon!,
-                                                      width: 24,
-                                                      height: 24,
-                                                      fit: BoxFit.contain,
-                                                      placeholder: (_, _) => const SizedBox(
-                                                        width: 20,
-                                                        height: 20,
-                                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                                      ),
-                                                      errorWidget: (_, _, _) => const Icon(Icons.broken_image, size: 20, color: Colors.redAccent),
-                                                    )
-                                                  : _buildPreviewIcon(field.icon!, t.primary),
-                                            ),
-                                            const SizedBox(width: 8),
-                                          ],
-                                          Text(
-                                            field.icon?.isNotEmpty == true ? "تغيير الأيقونة" : "اختر أيقونة",
-                                            style: TextStyle(
-                                              fontFamily: 'Cairo',
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                              color: t.primary,
-                                            ),
+                                      },
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: t.cardBackground,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: t.unselectedItem.withValues(alpha: 0.1),
                                           ),
-                                        ],
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (field.icon?.isNotEmpty == true) ...[
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.circular(6),
+                                                child: field.icon!.startsWith('http')
+                                                    ? CachedNetworkImage(
+                                                        imageUrl: field.icon!,
+                                                        width: 24,
+                                                        height: 24,
+                                                        fit: BoxFit.contain,
+                                                        placeholder: (_, _) => const SizedBox(
+                                                          width: 20,
+                                                          height: 20,
+                                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                                        ),
+                                                        errorWidget: (_, _, _) => const Icon(Icons.broken_image, size: 20, color: Colors.redAccent),
+                                                      )
+                                                    : _buildPreviewIcon(field.icon!, t.primary),
+                                              ),
+                                              const SizedBox(width: 8),
+                                            ],
+                                            Flexible(
+                                              child: Text(
+                                                field.icon?.isNotEmpty == true ? "تغيير الأيقونة" : "اختر أيقونة",
+                                                style: TextStyle(
+                                                  fontFamily: 'Cairo',
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: t.primary,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),

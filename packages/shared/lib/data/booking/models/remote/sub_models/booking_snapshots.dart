@@ -21,9 +21,14 @@ class ServiceSnapshotModel {
     final nameMap = json['name'] != null 
         ? Map<String, String>.from(json['name'] as Map) 
         : {'ar': title ?? 'خدمة', 'en': title ?? 'Service'};
+    final resolvedId = (json['id'] ?? 
+                        json['subServiceId'] ?? 
+                        json['sub_service_id'] ?? 
+                        json['service_id'] ?? 
+                        json['serviceId'] ?? '') as String;
     return ServiceSnapshotModel(
-      id: (json['id'] ?? json['subServiceId'] ?? '') as String,
-      subServiceId: (json['subServiceId'] ?? json['id'] ?? '') as String,
+      id: resolvedId,
+      subServiceId: resolvedId,
       name: nameMap,
       image: (json['image'] ?? '') as String,
     );
