@@ -33,6 +33,7 @@ class _TechnicianOrderDetailsScreenState
     extends State<TechnicianOrderDetailsScreen> {
   SubServiceEntity? _subService;
   bool _loadingService = false;
+  bool _serviceLoadAttempted = false;
   final Map<String, dynamic> _dynamicInputs = {};
   final List<String> _selectedOptions = [];
   final Map<String, dynamic> _originalInputs = {};
@@ -168,8 +169,11 @@ class _TechnicianOrderDetailsScreenState
   Future<void> _loadServiceDetails([Booking? order]) async {
     final booking = order ?? widget.order;
     if (booking == null || booking.service.subServiceId.isEmpty) return;
-    if (_subService != null || _loadingService) return;
-    setState(() => _loadingService = true);
+    if (_subService != null || _loadingService || _serviceLoadAttempted) return;
+    setState(() {
+      _loadingService = true;
+      _serviceLoadAttempted = true;
+    });
     final useCase = GetIt.instance<GetServiceByIdUseCase>();
     final result = await useCase(booking.service.subServiceId);
     result.fold(
@@ -276,7 +280,7 @@ class _TechnicianOrderDetailsScreenState
           }
 
           // Dynamically load service details if widget.order was null but resolved from state
-          if (_subService == null && !_loadingService) {
+          if (_subService == null && !_loadingService && !_serviceLoadAttempted) {
             final allOrders = [
               ...state.todayOrders,
               ...state.upcomingGroups.expand((g) => g.orders),
