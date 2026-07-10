@@ -114,9 +114,22 @@ class UserManagementRemoteDataSourceImpl implements UserManagementRemoteDataSour
   @override
   Future<List<UserRemoteModel>> getTechniciansBySubService(String subServiceId, {DateTime? date}) async {
     try {
-      List<String> techIds = [];
+      // 1. Fetch all technicians who have this sub-service skill (the base qualified list)
+      final skillResponse = await _supabase
+          .from('technician_skills')
+          .select('technician_id')
+          .eq('sub_service_id', subServiceId)
+          .eq('is_active', true);
       
+      final List<String> allTechIds = (skillResponse as List)
+          .map((e) => e['technician_id'] as String)
+          .toList();
+
+      if (allTechIds.isEmpty) return [];
+
+      List<String> activeTechIds = [];
       if (date != null) {
+        // 2. Fetch actually available technicians for the specific date
         final rpcResponse = await _supabase.rpc(
           'get_available_technicians',
           params: {
@@ -124,31 +137,33 @@ class UserManagementRemoteDataSourceImpl implements UserManagementRemoteDataSour
             'p_date': date.toIso8601String().split('T').first,
           },
         );
-        techIds = (rpcResponse as List)
-            .map((e) => e['technician_id'] as String)
-            .toList();
-      } else {
-        final skillResponse = await _supabase
-            .from('technician_skills')
-            .select('technician_id')
-            .eq('sub_service_id', subServiceId)
-            .eq('is_active', true);
-        
-        techIds = (skillResponse as List)
+        activeTechIds = (rpcResponse as List)
             .map((e) => e['technician_id'] as String)
             .toList();
       }
 
-      if (techIds.isEmpty) return [];
+      // Fallback: If no technicians are available on that date, return all qualified technicians.
+      final targetIds = (date != null && activeTechIds.isNotEmpty) ? activeTechIds : allTechIds;
 
       final response = await _supabase
           .from('profiles')
           .select('*, user_roles(roles(name))')
-          .inFilter('id', techIds);
+          .inFilter('id', targetIds);
 
-      return (response as List)
+      final result = (response as List)
           .map((json) => UserRemoteModel.fromJson(json))
           .toList();
+
+      // If we did a fallback to all qualified technicians, sort available ones first (if any)
+      if (date != null && activeTechIds.isNotEmpty && targetIds == allTechIds) {
+        result.sort((a, b) {
+          final aAvail = activeTechIds.contains(a.id) ? 1 : 0;
+          final bAvail = activeTechIds.contains(b.id) ? 1 : 0;
+          return bAvail.compareTo(aAvail);
+        });
+      }
+
+      return result;
     } on PostgrestException catch (e) {
       throw SupabaseExceptionApp(e.message, code: e.code);
     }
