@@ -26,6 +26,7 @@ class DynamicFieldFormatter {
 
     // Filter metadata keys that are not input fields
     final Map<String, dynamic> filteredInputs = Map<String, dynamic>.from(pricingInputs)
+      ..removeWhere((k, v) => v == null || v.toString() == 'null')
       ..remove('selected_options')
       ..remove('windows')
       ..remove('__field_snapshot')
@@ -45,7 +46,17 @@ class DynamicFieldFormatter {
           ),
         );
 
-        final labelText = schema.label[locale] ?? schema.label['ar'] ?? key;
+        var labelText = schema.label[locale] ?? schema.label['ar'] ?? key;
+        if (labelText == key) {
+          // Fallback to __field_labels if snapshot doesn't have label
+          final rawLabels = pricingInputs['__field_labels'] as Map?;
+          if (rawLabels != null) {
+            final labelMap = rawLabels[key];
+            if (labelMap is Map) {
+              labelText = labelMap[locale]?.toString() ?? labelMap['ar']?.toString() ?? key;
+            }
+          }
+        }
         final unitText = schema.unit?[locale] ?? schema.unit?['ar'];
         String displayValue = '';
 
@@ -54,12 +65,24 @@ class DynamicFieldFormatter {
           displayValue = isTrue 
               ? (locale == 'ar' ? 'نعم' : 'Yes') 
               : (locale == 'ar' ? 'لا' : 'No');
-        } else if (schema.type == 'dropdown') {
-          final option = schema.options?.firstWhere(
-            (o) => o.id == val.toString(),
-            orElse: () => SnapshotOption(id: val.toString(), label: {locale: val.toString()}),
-          );
-          displayValue = option?.label[locale] ?? option?.label['ar'] ?? val.toString();
+        } else if (schema.type == 'dropdown' || schema.type == 'optionsGroup' || schema.type == 'options_group') {
+          if (val is List) {
+            final List<String> labels = [];
+            for (final item in val) {
+              final option = schema.options?.firstWhere(
+                (o) => o.id == item.toString(),
+                orElse: () => SnapshotOption(id: item.toString(), label: {locale: item.toString()}),
+              );
+              labels.add(option?.label[locale] ?? option?.label['ar'] ?? item.toString());
+            }
+            displayValue = labels.join(', ');
+          } else {
+            final option = schema.options?.firstWhere(
+              (o) => o.id == val.toString(),
+              orElse: () => SnapshotOption(id: val.toString(), label: {locale: val.toString()}),
+            );
+            displayValue = option?.label[locale] ?? option?.label['ar'] ?? val.toString();
+          }
         } else if (schema.type == 'number') {
           final num? number = num.tryParse(val.toString());
           displayValue = number != null 
@@ -98,8 +121,18 @@ class DynamicFieldFormatter {
         final labelText = labelMap?[locale] ?? labelMap?['ar'] ?? key;
 
         // Try to translate value (e.g. if it is a dropdown option ID)
-        final valMap = fieldLabels[val.toString()];
-        String displayValue = valMap?[locale] ?? valMap?['ar'] ?? val.toString();
+        String displayValue = '';
+        if (val is List) {
+          final List<String> labels = [];
+          for (final item in val) {
+            final valMap = fieldLabels[item.toString()];
+            labels.add(valMap?[locale] ?? valMap?['ar'] ?? item.toString());
+          }
+          displayValue = labels.join(', ');
+        } else {
+          final valMap = fieldLabels[val.toString()];
+          displayValue = valMap?[locale] ?? valMap?['ar'] ?? val.toString();
+        }
 
         // Specific fallbacks for bool values
         if (val == true || val.toString().toLowerCase() == 'true') {

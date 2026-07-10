@@ -104,7 +104,7 @@ class _TechnicianOrderDetailsScreenState
     if (order.pricingInputs != null) {
       final formatted = DynamicFieldFormatter.formatBooking(
         pricingInputs: order.pricingInputs!,
-        snapshot: order.fieldSnapshot,
+        snapshot: _getEffectiveSnapshot(order),
         locale: locale,
       );
       for (final f in formatted) {
@@ -123,8 +123,12 @@ class _TechnicianOrderDetailsScreenState
         final List<String> addonLabels = [];
         for (final opt in selectedOptions) {
           final mapped = DynamicFieldFormatter.formatBookingAsMap(
-            pricingInputs: {opt.toString(): true},
-            snapshot: order.fieldSnapshot,
+            pricingInputs: {
+              opt.toString(): true,
+              if (order.pricingInputs?['__field_labels'] != null)
+                '__field_labels': order.pricingInputs!['__field_labels'],
+            },
+            snapshot: _getEffectiveSnapshot(order),
             locale: locale,
           );
           addonLabels.add(mapped[opt.toString()]?.label ?? opt.toString());
@@ -161,9 +165,10 @@ class _TechnicianOrderDetailsScreenState
     }
   }
 
-  Future<void> _loadServiceDetails() async {
-    final booking = widget.order;
+  Future<void> _loadServiceDetails([Booking? order]) async {
+    final booking = order ?? widget.order;
     if (booking == null || booking.service.subServiceId.isEmpty) return;
+    if (_subService != null || _loadingService) return;
     setState(() => _loadingService = true);
     final useCase = GetIt.instance<GetServiceByIdUseCase>();
     final result = await useCase(booking.service.subServiceId);
@@ -202,26 +207,86 @@ class _TechnicianOrderDetailsScreenState
     );
   }
 
+  DynamicFieldSnapshot? _getEffectiveSnapshot(Booking order) {
+    if (order.fieldSnapshot != null) return order.fieldSnapshot;
+    if (_subService == null) return null;
+
+    final List<SnapshotField> snapshotFields = [];
+    for (final field in _subService!.price.fields) {
+      final List<SnapshotOption>? snapshotOptions = field.options?.map((opt) {
+        return SnapshotOption(
+          id: opt.id,
+          label: opt.label,
+        );
+      }).toList();
+
+      snapshotFields.add(SnapshotField(
+        id: field.id,
+        type: field.type.name,
+        label: field.label,
+        unit: field.unit != null ? {'ar': field.unit!, 'en': field.unit!} : null,
+        required: field.required,
+        min: field.min?.toDouble(),
+        options: snapshotOptions,
+      ));
+    }
+
+    for (final option in _subService!.price.options) {
+      if (option.key != null) {
+        final labelMap = option.label ?? {'ar': option.key!, 'en': option.key!};
+        if (!snapshotFields.any((f) => f.id == option.key)) {
+          snapshotFields.add(SnapshotField(
+            id: option.key!,
+            type: 'toggle',
+            label: labelMap,
+            required: false,
+          ));
+        }
+      }
+    }
+
+    return DynamicFieldSnapshot(
+      snapshotVersion: 1,
+      snapshotTimestamp: DateTime.now().toUtc(),
+      fields: snapshotFields,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeColor = context.themeColor;
 
     return BlocListener<TechnicianOrdersCubit, TechnicianOrdersState>(
       listener: (context, state) {
-        if (state is TechnicianOrdersLoaded && state.transitionError != null) {
-          debugPrint(
-            '❌ [TechnicianOrderDetails] Action Failed: ${state.transitionError}',
-          );
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                state.transitionError!,
-                style: const TextStyle(fontFamily: 'Cairo'),
+        if (state is TechnicianOrdersLoaded) {
+          if (state.transitionError != null) {
+            debugPrint(
+              '❌ [TechnicianOrderDetails] Action Failed: ${state.transitionError}',
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.transitionError!,
+                  style: const TextStyle(fontFamily: 'Cairo'),
+                ),
+                backgroundColor: themeColor.error,
+                behavior: SnackBarBehavior.floating,
               ),
-              backgroundColor: themeColor.error,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+            );
+          }
+
+          // Dynamically load service details if widget.order was null but resolved from state
+          if (_subService == null && !_loadingService) {
+            final allOrders = [
+              ...state.todayOrders,
+              ...state.upcomingGroups.expand((g) => g.orders),
+              ...state.historyGroups.expand((g) => g.orders),
+            ];
+            final matched = allOrders.where((o) => o.id == (widget.order?.id ?? widget.bookingId)).firstOrNull;
+            if (matched != null) {
+              _loadServiceDetails(matched);
+            }
+          }
         }
       },
       child: BlocBuilder<TechnicianOrdersCubit, TechnicianOrdersState>(
@@ -243,10 +308,9 @@ class _TechnicianOrderDetailsScreenState
               ...state.upcomingGroups.expand((g) => g.orders),
               ...state.historyGroups.expand((g) => g.orders),
             ];
-            currentOrder = allOrders.firstWhere(
+            currentOrder = allOrders.where(
               (o) => o.id == (widget.order?.id ?? widget.bookingId),
-              orElse: () => widget.order!,
-            );
+            ).firstOrNull ?? widget.order;
           }
 
           if (currentOrder == null) {
@@ -501,7 +565,7 @@ class _TechnicianOrderDetailsScreenState
         
     final List<FormattedField> formatted = DynamicFieldFormatter.formatBooking(
       pricingInputs: rawInputs,
-      snapshot: order.fieldSnapshot,
+      snapshot: _getEffectiveSnapshot(order),
       locale: locale,
     );
 
@@ -531,8 +595,12 @@ class _TechnicianOrderDetailsScreenState
     if (selectedOptions is List) {
       for (final opt in selectedOptions) {
         final mapped = DynamicFieldFormatter.formatBookingAsMap(
-          pricingInputs: {opt.toString(): true},
-          snapshot: order.fieldSnapshot,
+          pricingInputs: {
+            opt.toString(): true,
+            if (rawInputs['__field_labels'] != null)
+              '__field_labels': rawInputs['__field_labels'],
+          },
+          snapshot: _getEffectiveSnapshot(order),
           locale: locale,
         );
         final f = mapped[opt.toString()];

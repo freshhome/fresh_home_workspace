@@ -19,7 +19,7 @@ class UserDetailScreen extends StatefulWidget {
   State<UserDetailScreen> createState() => _UserDetailScreenState();
 }
 
-class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerProviderStateMixin {
+class _UserDetailScreenState extends State<UserDetailScreen> with TickerProviderStateMixin {
   late TabController _tabController;
   bool _isTechnician = false;
 

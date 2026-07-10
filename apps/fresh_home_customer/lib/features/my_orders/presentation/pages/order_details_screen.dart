@@ -934,7 +934,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       final List<String> addonLabels = [];
       for (final opt in selectedOptions) {
         final mapped = DynamicFieldFormatter.formatBookingAsMap(
-          pricingInputs: {opt.toString(): true},
+          pricingInputs: {
+            opt.toString(): true,
+            if (rawInputs['__field_labels'] != null)
+              '__field_labels': rawInputs['__field_labels'],
+          },
           snapshot: order.fieldSnapshot,
           locale: locale,
         );
