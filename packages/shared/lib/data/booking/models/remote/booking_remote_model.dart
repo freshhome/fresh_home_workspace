@@ -73,14 +73,22 @@ class BookingRemoteModel {
 
   factory BookingRemoteModel.fromJson(Map<String, dynamic> json) {
     return BookingRemoteModel(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? '',
       userId: json['user_id'] as String?,
       technicianId: json['technician_id'] as String?,
-      service: ServiceSnapshotModel.fromJson(json['service_snapshot'] as Map<String, dynamic>),
-      address: AddressSnapshotModel.fromJson(json['address_snapshot'] as Map<String, dynamic>),
-      price: PriceSnapshotModel.fromJson(json['price_snapshot'] as Map<String, dynamic>),
-      status: json['status'] as String,
-      scheduledAt: DateTime.parse(json['scheduled_day'] as String),
+      service: json['service_snapshot'] != null
+          ? ServiceSnapshotModel.fromJson(json['service_snapshot'] as Map<String, dynamic>)
+          : const ServiceSnapshotModel(id: '', subServiceId: '', name: {}, image: ''),
+      address: json['address_snapshot'] != null
+          ? AddressSnapshotModel.fromJson(json['address_snapshot'] as Map<String, dynamic>)
+          : const AddressSnapshotModel(governorate: '', city: '', street: '', buildingNumber: ''),
+      price: json['price_snapshot'] != null
+          ? PriceSnapshotModel.fromJson(json['price_snapshot'] as Map<String, dynamic>)
+          : const PriceSnapshotModel(basePrice: 0.0, extraFees: 0.0, discount: 0.0, total: 0.0),
+      status: json['status'] as String? ?? 'pending',
+      scheduledAt: json['scheduled_day'] != null
+          ? DateTime.parse(json['scheduled_day'] as String)
+          : DateTime.now(),
       startTimeSlot: json['start_time_slot'] as String? ?? '09:00',
       contact: ContactModel(
         name: json['contact_name'] as String? ?? 'Client',
@@ -89,8 +97,8 @@ class BookingRemoteModel {
       addressId: json['address_id'] as String?,
       serviceId: json['service_id'] as String?,
       readableId: json['readable_id'] as String?,
-      createdAt: const TimestampConverter().fromJson(json['created_at']),
-      updatedAt: const TimestampConverter().fromJson(json['updated_at']),
+      createdAt: json['created_at'] != null ? const TimestampConverter().fromJson(json['created_at']) : DateTime.now(),
+      updatedAt: json['updated_at'] != null ? const TimestampConverter().fromJson(json['updated_at']) : DateTime.now(),
       isWhatsappConfirmed: json['is_whatsapp_confirmed'] as bool? ?? true,
       paymentMethod: json['payment_method'] as String?,
       paymentStatus: json['payment_status'] as String?,
