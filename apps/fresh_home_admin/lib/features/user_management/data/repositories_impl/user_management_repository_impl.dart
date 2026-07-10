@@ -27,8 +27,8 @@ class UserManagementRepositoryImpl implements UserManagementRepository {
   }
 
   @override
-  Future<List<UserRemoteModel>> getTechniciansBySubService(String subServiceId) {
-    return _remoteDataSource.getTechniciansBySubService(subServiceId);
+  Future<List<UserRemoteModel>> getTechniciansBySubService(String subServiceId, {DateTime? date}) {
+    return _remoteDataSource.getTechniciansBySubService(subServiceId, date: date);
   }
 
   @override

@@ -1821,14 +1821,6 @@ class _AdminBookingDetailsContent extends StatelessWidget {
     bool isLoadingTechs = true;
     List<UserRemoteModel> technicians = [];
 
-    // Fetch technicians specialized in this service
-    GetIt.I<UserManagementRepository>()
-        .getTechniciansBySubService(booking.service.subServiceId)
-        .then((list) {
-          technicians = list;
-          isLoadingTechs = false;
-        });
-
     final bookingCubit = context.read<AdminBookingDetailsCubit>();
     final authCubit = context.read<AuthCubit>();
 
@@ -1840,7 +1832,10 @@ class _AdminBookingDetailsContent extends StatelessWidget {
         builder: (context, setSheetState) {
           if (isLoadingTechs && technicians.isEmpty) {
             GetIt.I<UserManagementRepository>()
-                .getTechniciansBySubService(booking.service.subServiceId)
+                .getTechniciansBySubService(
+                  booking.service.subServiceId,
+                  date: booking.scheduledAt,
+                )
                 .then((list) {
                   if (context.mounted) {
                     setSheetState(() {

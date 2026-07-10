@@ -12,7 +12,7 @@ abstract class UserManagementRepository {
     UserRole? roleFilter,
     UserStatus? statusFilter,
   });
-  Future<List<UserRemoteModel>> getTechniciansBySubService(String subServiceId);
+  Future<List<UserRemoteModel>> getTechniciansBySubService(String subServiceId, {DateTime? date});
   Future<void> updateUserStatus(String userId, UserStatus status);
   Future<void> assignRole(String userId, UserRole role, {String? mainServiceId});
   Future<void> removeRole(String userId, UserRole role);

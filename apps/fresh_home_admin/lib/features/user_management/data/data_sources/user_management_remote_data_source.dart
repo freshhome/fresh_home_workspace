@@ -15,7 +15,7 @@ abstract class UserManagementRemoteDataSource {
     UserRole? roleFilter,
     UserStatus? statusFilter,
   });
-  Future<List<UserRemoteModel>> getTechniciansBySubService(String subServiceId);
+  Future<List<UserRemoteModel>> getTechniciansBySubService(String subServiceId, {DateTime? date});
   Future<void> updateUserStatus(String userId, UserStatus status);
   Future<void> assignRole(String userId, UserRole role, {String? mainServiceId});
   Future<void> removeRole(String userId, UserRole role);
@@ -112,17 +112,32 @@ class UserManagementRemoteDataSourceImpl implements UserManagementRemoteDataSour
   }
 
   @override
-  Future<List<UserRemoteModel>> getTechniciansBySubService(String subServiceId) async {
+  Future<List<UserRemoteModel>> getTechniciansBySubService(String subServiceId, {DateTime? date}) async {
     try {
-      final skillResponse = await _supabase
-          .from('technician_skills')
-          .select('technician_id')
-          .eq('sub_service_id', subServiceId)
-          .eq('is_active', true);
+      List<String> techIds = [];
       
-      final List<String> techIds = (skillResponse as List)
-          .map((e) => e['technician_id'] as String)
-          .toList();
+      if (date != null) {
+        final rpcResponse = await _supabase.rpc(
+          'get_available_technicians',
+          params: {
+            'p_sub_service_id': subServiceId,
+            'p_date': date.toIso8601String().split('T').first,
+          },
+        );
+        techIds = (rpcResponse as List)
+            .map((e) => e['technician_id'] as String)
+            .toList();
+      } else {
+        final skillResponse = await _supabase
+            .from('technician_skills')
+            .select('technician_id')
+            .eq('sub_service_id', subServiceId)
+            .eq('is_active', true);
+        
+        techIds = (skillResponse as List)
+            .map((e) => e['technician_id'] as String)
+            .toList();
+      }
 
       if (techIds.isEmpty) return [];
 
