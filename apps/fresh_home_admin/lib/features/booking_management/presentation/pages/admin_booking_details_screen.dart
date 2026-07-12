@@ -1816,6 +1816,7 @@ class _AdminBookingDetailsContent extends StatelessWidget {
   }
 
   void _showReassignSheet(BuildContext context) async {
+    debugPrint('🔍 [AdminBookingDetailsScreen] _showReassignSheet opened for Booking ID: "${booking.id}"');
     final reasonController = TextEditingController();
     String? selectedTechId;
     bool isLoadingTechs = true;
@@ -1831,15 +1832,24 @@ class _AdminBookingDetailsContent extends StatelessWidget {
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
           if (isLoadingTechs && technicians.isEmpty) {
+            debugPrint('🔍 [AdminBookingDetailsScreen] Initiating fetch for qualified technicians. SubService ID: "${booking.service.subServiceId}", Date: ${booking.scheduledAt}');
             GetIt.I<UserManagementRepository>()
                 .getTechniciansBySubService(
                   booking.service.subServiceId,
                   date: booking.scheduledAt,
                 )
                 .then((list) {
+                  debugPrint('ℹ️ [AdminBookingDetailsScreen] Fetch complete. Received ${list.length} technicians.');
                   if (context.mounted) {
                     setSheetState(() {
                       technicians = list;
+                      isLoadingTechs = false;
+                    });
+                  }
+                }).catchError((error) {
+                  debugPrint('❌ [AdminBookingDetailsScreen] Fetch failed with error: $error');
+                  if (context.mounted) {
+                    setSheetState(() {
                       isLoadingTechs = false;
                     });
                   }
@@ -2028,6 +2038,7 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                       onPressed: (selectedTechId != null)
                           ? () {
                               final adminId = authCubit.userId ?? '';
+                              debugPrint('🚀 [AdminBookingDetailsScreen] Submitting reassignment. Technician ID: "$selectedTechId", Admin ID: "$adminId", Reason: "${reasonController.text}"');
                               bookingCubit.reassign(
                                 bookingId: booking.id,
                                 newTechnicianId: selectedTechId!,

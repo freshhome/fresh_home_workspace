@@ -134,6 +134,7 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     required String adminId,
     String? reason,
   }) async {
+    debugPrint('🔍 [AdminBookingDetailsCubit] reassign: bookingId="$bookingId", newTechnicianId="$newTechnicianId", adminId="$adminId", reason="$reason"');
     Booking? currentBooking;
     UserProfile? currentCustomer;
     UserProfile? currentTechnician;
@@ -152,13 +153,19 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
       reason: reason,
     );
 
-    if (isClosed) return;
+    if (isClosed) {
+      debugPrint('⚠️ [AdminBookingDetailsCubit] Cubit was closed before reassign completed.');
+      return;
+    }
     result.fold(
       (l) {
         debugPrint('❌ [AdminBookingDetailsCubit] Reassign Technician Error: ${l.message}');
         emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: currentCustomer, technician: currentTechnician));
       },
-      (r) => emit(AdminBookingDetailsSuccess('تم إعادة تعيين الفني بنجاح', booking: currentBooking, customer: currentCustomer, technician: currentTechnician)),
+      (r) {
+        debugPrint('✅ [AdminBookingDetailsCubit] Reassign Technician Success!');
+        emit(AdminBookingDetailsSuccess('تم إعادة تعيين الفني بنجاح', booking: currentBooking, customer: currentCustomer, technician: currentTechnician));
+      },
     );
   }
 

@@ -113,6 +113,7 @@ class UserManagementRemoteDataSourceImpl implements UserManagementRemoteDataSour
 
   @override
   Future<List<UserRemoteModel>> getTechniciansBySubService(String subServiceId, {DateTime? date}) async {
+    debugPrint('🔍 [UserManagementRemoteDataSource] getTechniciansBySubService: subServiceId="$subServiceId", date=$date');
     try {
       // 1. Fetch all technicians who have this sub-service skill (the base qualified list)
       final skillResponse = await _supabase
@@ -125,25 +126,35 @@ class UserManagementRemoteDataSourceImpl implements UserManagementRemoteDataSour
           .map((e) => e['technician_id'] as String)
           .toList();
 
-      if (allTechIds.isEmpty) return [];
+      debugPrint('ℹ️ [UserManagementRemoteDataSource] Qualified tech IDs count (allTechIds): ${allTechIds.length}. IDs: $allTechIds');
+
+      if (allTechIds.isEmpty) {
+        debugPrint('⚠️ [UserManagementRemoteDataSource] No qualified technicians found for sub_service_id: "$subServiceId"');
+        return [];
+      }
 
       List<String> activeTechIds = [];
       if (date != null) {
+        final formattedDate = date.toIso8601String().split('T').first;
+        debugPrint('🔍 [UserManagementRemoteDataSource] Calling RPC get_available_technicians for date: "$formattedDate"');
         // 2. Fetch actually available technicians for the specific date
         final rpcResponse = await _supabase.rpc(
           'get_available_technicians',
           params: {
             'p_sub_service_id': subServiceId,
-            'p_date': date.toIso8601String().split('T').first,
+            'p_date': formattedDate,
           },
         );
         activeTechIds = (rpcResponse as List)
             .map((e) => e['technician_id'] as String)
             .toList();
+        debugPrint('ℹ️ [UserManagementRemoteDataSource] Available tech IDs from RPC (activeTechIds): ${activeTechIds.length}. IDs: $activeTechIds');
       }
 
       // Fallback: If no technicians are available on that date, return all qualified technicians.
-      final targetIds = (date != null && activeTechIds.isNotEmpty) ? activeTechIds : allTechIds;
+      final bool useActive = date != null && activeTechIds.isNotEmpty;
+      final targetIds = useActive ? activeTechIds : allTechIds;
+      debugPrint('ℹ️ [UserManagementRemoteDataSource] Selected target list of IDs: ${useActive ? "activeTechIds" : "allTechIds (fallback)"}. IDs: $targetIds');
 
       final response = await _supabase
           .from('profiles')
@@ -154,8 +165,14 @@ class UserManagementRemoteDataSourceImpl implements UserManagementRemoteDataSour
           .map((json) => UserRemoteModel.fromJson(json))
           .toList();
 
+      debugPrint('ℹ️ [UserManagementRemoteDataSource] Fetched profile details. Count: ${result.length}');
+      for (var user in result) {
+        debugPrint('   - Profile: "${user.fullName}" (id: ${user.id}, email: ${user.email})');
+      }
+
       // If we did a fallback to all qualified technicians, sort available ones first (if any)
       if (date != null && activeTechIds.isNotEmpty && targetIds == allTechIds) {
+        debugPrint('ℹ️ [UserManagementRemoteDataSource] Sorting available technicians at the top of the fallback list.');
         result.sort((a, b) {
           final aAvail = activeTechIds.contains(a.id) ? 1 : 0;
           final bAvail = activeTechIds.contains(b.id) ? 1 : 0;
@@ -163,9 +180,14 @@ class UserManagementRemoteDataSourceImpl implements UserManagementRemoteDataSour
         });
       }
 
+      debugPrint('✅ [UserManagementRemoteDataSource] getTechniciansBySubService completed successfully. Returning ${result.length} technicians.');
       return result;
     } on PostgrestException catch (e) {
+      debugPrint('❌ [UserManagementRemoteDataSource] PostgrestException: ${e.message}, code: ${e.code}, details: ${e.details}');
       throw SupabaseExceptionApp(e.message, code: e.code);
+    } catch (e, stack) {
+      debugPrint('❌ [UserManagementRemoteDataSource] Unexpected Error: $e\n$stack');
+      rethrow;
     }
   }
 
