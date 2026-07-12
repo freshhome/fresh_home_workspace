@@ -12,6 +12,7 @@ import 'package:fresh_home_admin/features/user_management/domain/repositories/us
 import 'package:shared/data/user/models/remote/user_remote_model.dart';
 import 'package:shared/data/booking/datasources/availability_remote_datasource.dart';
 import 'package:get_it/get_it.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminBookingDetailsScreen extends StatefulWidget {
   final Booking? booking;
@@ -140,7 +141,13 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                 backgroundColor: const Color(0xFF10B981),
               ),
             );
-            if (state.message.contains('الواتساب')) {
+            if (state.warningMessage != null) {
+              _showWarningAndRescheduleDialog(
+                context,
+                state.warningMessage!,
+                state.suggestedRescheduleDate,
+              );
+            } else if (state.message.contains('الواتساب')) {
               _showCopyMessageDialog(context, isAutomatic: true);
             } else {
               Navigator.pop(context);
@@ -648,6 +655,130 @@ class _AdminBookingDetailsContent extends StatelessWidget {
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void _showWarningAndRescheduleDialog(
+    BuildContext context,
+    String warningMessage,
+    DateTime? suggestedDate,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final dateStr = suggestedDate != null 
+            ? DateFormat('yyyy-MM-dd').format(suggestedDate) 
+            : null;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: Row(
+            children: const [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+              SizedBox(width: 8),
+              Text(
+                "تنبيه عدم توفر فنيين",
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                warningMessage,
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 14,
+                  height: 1.5,
+                  color: Color(0xFF475569),
+                ),
+                textDirection: ui.TextDirection.rtl,
+              ),
+              if (dateStr != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFDCFCE7)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.event_available_rounded, color: Color(0xFF16A34A), size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "أقرب تاريخ متاح للخدمة الجديدة هو:\n$dateStr",
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 12,
+                            color: Color(0xFF15803D),
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textDirection: ui.TextDirection.rtl,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text(
+                "تجاهل",
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            if (suggestedDate != null)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  final authCubit = context.read<AuthCubit>();
+                  final adminId = authCubit.userId ?? '';
+                  context.read<AdminBookingDetailsCubit>().reschedule(
+                    bookingId: booking.id,
+                    newDateTime: suggestedDate,
+                    adminId: adminId,
+                    reason: 'إعادة جدولة تلقائية لتغيير الخدمة لعدم توفر فنيين',
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  "إعادة جدولة للموعد المقترح",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );
@@ -2326,15 +2457,49 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
   bool _isCalculating = false;
   final Map<String, String> _validationErrors = {};
 
+  String? _selectedServiceId;
+  List<Map<String, dynamic>> _siblings = [];
+
   @override
   void initState() {
     super.initState();
+    _selectedServiceId = widget.booking.serviceId ?? widget.booking.service.subServiceId;
+    _loadServiceDetails();
+  }
+
+  Future<void> _loadSiblings(String parentId) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('services')
+          .select('id, title')
+          .eq('parent_id', parentId)
+          .eq('is_bookable', true);
+      
+      if (mounted) {
+        setState(() {
+          _siblings = (response as List).map((e) => Map<String, dynamic>.from(e)).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ [_EditOrderDetailsSheet] Load Siblings Error: $e');
+    }
+  }
+
+  void _onServiceChanged(String? newServiceId) {
+    if (newServiceId == null || newServiceId == _selectedServiceId) return;
+    setState(() {
+      _selectedServiceId = newServiceId;
+      _loadingService = true;
+      _subService = null;
+      _calculatedPricing = null;
+      _validationErrors.clear();
+    });
     _loadServiceDetails();
   }
 
   Future<void> _loadServiceDetails() async {
     final getServiceById = GetIt.instance<GetServiceByIdUseCase>();
-    final sId = widget.booking.serviceId ?? widget.booking.service.subServiceId;
+    final sId = _selectedServiceId ?? widget.booking.serviceId ?? widget.booking.service.subServiceId;
     final result = await getServiceById(sId, forceRefresh: true);
 
     if (mounted) {
@@ -2360,16 +2525,32 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
           setState(() {
             _subService = subService;
             _loadingService = false;
-            if (widget.booking.pricingInputs != null) {
-              _dynamicInputs.addAll(widget.booking.pricingInputs!);
+            
+            // If the selected service is the original service of the booking, preserve original inputs.
+            // Otherwise, reset them.
+            final originalId = widget.booking.serviceId ?? widget.booking.service.subServiceId;
+            if (sId == originalId) {
+              _dynamicInputs.clear();
+              if (widget.booking.pricingInputs != null) {
+                _dynamicInputs.addAll(widget.booking.pricingInputs!);
+              }
+              _selectedOptions.clear();
+              if (_dynamicInputs['selected_options'] != null) {
+                _selectedOptions.addAll(
+                  List<String>.from(_dynamicInputs['selected_options']),
+                );
+              }
+              _calculatedPricing = widget.booking.price;
+            } else {
+              _dynamicInputs.clear();
+              _selectedOptions.clear();
+              _calculatedPricing = null;
             }
-            if (_dynamicInputs['selected_options'] != null) {
-              _selectedOptions.addAll(
-                List<String>.from(_dynamicInputs['selected_options']),
-              );
-            }
-            _calculatedPricing = widget.booking.price;
           });
+          
+          if (service.parentId != null && _siblings.isEmpty) {
+            _loadSiblings(service.parentId!);
+          }
         },
       );
     }
@@ -2532,6 +2713,52 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
             ),
             const SizedBox(height: 16),
 
+            if (_siblings.isNotEmpty) ...[
+              const Text(
+                "الخدمة الفرعية المحددة",
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedServiceId ?? widget.booking.serviceId ?? widget.booking.service.subServiceId,
+                    isExpanded: true,
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                    items: _siblings.map((sib) {
+                      final titleMap = Map<String, dynamic>.from(sib['title'] as Map? ?? {});
+                      final titleStr = titleMap['ar'] ?? titleMap['en'] ?? sib['id'];
+                      return DropdownMenuItem<String>(
+                        value: sib['id'] as String,
+                        child: Text(
+                          titleStr,
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 14,
+                            color: Color(0xFF0F172A),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: _onServiceChanged,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
             // Form Renderer
             DynamicFormRenderer(
               fields: filteredFields,
@@ -2659,8 +2886,24 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
+                  
+                  Booking targetBooking = widget.booking;
+                  if (_selectedServiceId != null && 
+                      _selectedServiceId != (widget.booking.serviceId ?? widget.booking.service.subServiceId)) {
+                    final newServiceSnapshot = BookedService(
+                      id: _subService!.id,
+                      subServiceId: _subService!.id,
+                      name: _subService!.title,
+                      image: _subService!.image ?? '',
+                    );
+                    targetBooking = widget.booking.copyWith(
+                      serviceId: _selectedServiceId,
+                      service: newServiceSnapshot,
+                    );
+                  }
+
                   widget.cubit.updateBookingDetails(
-                    booking: widget.booking,
+                    booking: targetBooking,
                     pricingInputs: _dynamicInputs,
                     price: _calculatedPricing!,
                   );

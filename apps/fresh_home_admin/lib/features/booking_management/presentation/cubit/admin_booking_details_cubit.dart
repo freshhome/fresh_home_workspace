@@ -6,6 +6,10 @@ import 'package:shared/domain/booking/entities/booking/booking.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/booking_components.dart';
 import 'package:shared/domain/booking/repositories/booking_repository.dart';
 import 'package:shared/domain/user/repositories/user_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:get_it/get_it.dart';
+import 'package:fresh_home_admin/features/user_management/domain/repositories/user_management_repository.dart';
+import 'package:shared/domain/booking/use_cases/booking/get_available_days_use_case.dart';
 import '../../domain/usecases/admin_watch_bookings.dart';
 import '../../domain/usecases/admin_reassign_booking.dart';
 import '../../domain/usecases/admin_reschedule_booking.dart';
@@ -28,11 +32,15 @@ class AdminBookingDetailsSuccess extends AdminBookingDetailsState {
   final Booking? booking;
   final UserProfile? customer;
   final UserProfile? technician;
+  final String? warningMessage;
+  final DateTime? suggestedRescheduleDate;
   AdminBookingDetailsSuccess(
     this.message, {
     this.booking,
     this.customer,
     this.technician,
+    this.warningMessage,
+    this.suggestedRescheduleDate,
   });
 }
 
@@ -268,23 +276,109 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
     required Map<String, dynamic> pricingInputs,
     required BookingPricing price,
   }) async {
+    Booking? currentBooking;
     UserProfile? customer;
     UserProfile? technician;
     if (state is AdminBookingDetailsLoaded) {
       final loaded = state as AdminBookingDetailsLoaded;
+      currentBooking = loaded.booking;
       customer = loaded.customer;
       technician = loaded.technician;
     } else if (state is AdminBookingDetailsSuccess) {
       final success = state as AdminBookingDetailsSuccess;
+      currentBooking = success.booking;
       customer = success.customer;
       technician = success.technician;
     }
 
     emit(AdminBookingDetailsLoading());
 
+    // 1. Check if service changed
+    final bool isServiceChanged = currentBooking != null && 
+        booking.serviceId != null && 
+        currentBooking.serviceId != booking.serviceId;
+
+    String? finalTechId = booking.technicianId;
+    String successMessage = 'تم تحديث تفاصيل الطلب والأسعار بنجاح';
+    String? warningMessage;
+    DateTime? suggestedRescheduleDate;
+
+    if (isServiceChanged) {
+      final String newServiceId = booking.serviceId!;
+      final String? currentTechId = currentBooking.technicianId;
+
+      bool currentTechHasSkill = false;
+      if (currentTechId != null) {
+        // Query if current technician has the new skill
+        try {
+          final skillCheck = await Supabase.instance.client
+              .from('technician_skills')
+              .select('id')
+              .eq('technician_id', currentTechId)
+              .eq('sub_service_id', newServiceId)
+              .eq('is_active', true)
+              .maybeSingle();
+          currentTechHasSkill = skillCheck != null;
+        } catch (e) {
+          debugPrint('Error checking technician skill: $e');
+        }
+      }
+
+      if (currentTechId != null && currentTechHasSkill) {
+        // Option 1: Keep the current technician
+        debugPrint('ℹ️ [updateBookingDetails] Current technician has the skill. Keeping assignment.');
+        finalTechId = currentTechId;
+      } else {
+        // Option 2 & 3: Assign to closest available technician, or unassign and suggest reschedule
+        debugPrint('ℹ️ [updateBookingDetails] Current technician does not have the skill or is null. Finding available technicians on ${booking.scheduledAt}');
+        
+        try {
+          // Get available technicians for the booking date and new service
+          final list = await GetIt.I<UserManagementRepository>()
+              .getTechniciansBySubService(newServiceId, date: booking.scheduledAt);
+          
+          if (list.isNotEmpty) {
+            // Find the best available technician
+            final newTech = list.first;
+            finalTechId = newTech.uid;
+            successMessage = 'تم تغيير الخدمة وإسناد الطلب للفني المتاح "${newTech.fullName}"';
+            debugPrint('✅ [updateBookingDetails] Assigned to new available technician: $finalTechId');
+          } else {
+            // No technicians available on this day
+            finalTechId = null; // Unassign
+            warningMessage = 'لا يوجد فنيين متاحين للخدمة الجديدة في هذا اليوم (${booking.scheduledAt.toIso8601String().split('T').first}).';
+            debugPrint('⚠️ [updateBookingDetails] No available technicians found on ${booking.scheduledAt}.');
+            
+            // Find the closest available day in the next 30 days
+            final getAvailableDays = GetIt.instance<GetAvailableDaysUseCase>();
+            final daysResult = await getAvailableDays(
+              serviceId: newServiceId,
+              startDate: DateTime.now(),
+              endDate: DateTime.now().add(const Duration(days: 30)),
+            );
+            
+            daysResult.fold(
+              (f) => debugPrint('Error loading available days: ${f.message}'),
+              (days) {
+                final availableDays = days.where((d) => d.isAvailable);
+                if (availableDays.isNotEmpty) {
+                  suggestedRescheduleDate = availableDays.first.date;
+                  debugPrint('ℹ️ [updateBookingDetails] Suggested reschedule date: $suggestedRescheduleDate');
+                }
+              },
+            );
+          }
+        } catch (e) {
+          debugPrint('Error finding available technicians: $e');
+        }
+      }
+    }
+
     final updatedBooking = booking.copyWith(
       pricingInputs: pricingInputs,
       price: price,
+      technicianId: finalTechId,
+      clearAssignedAt: finalTechId == null, // Clear assignedAt timestamp if unassigned
     );
 
     final result = await bookingRepository.updateBooking(booking: updatedBooking);
@@ -299,9 +393,21 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
         // ignore: avoid_print
         print('==================================================================');
         debugPrint('❌ [AdminBookingDetailsCubit] Update Booking Details Error: ${l.message}');
-        emit(AdminBookingDetailsError(l.message, booking: booking, customer: customer, technician: technician));
+        emit(AdminBookingDetailsError(l.message, booking: currentBooking, customer: customer, technician: technician));
       },
-      (r) => emit(AdminBookingDetailsSuccess('تم تحديث تفاصيل الطلب والأسعار بنجاح', booking: updatedBooking, customer: customer, technician: technician)),
+      (r) {
+        // Reload all data so that the correct technician details are fetched and updated in the screen
+        loadData(bookingId: booking.id);
+        
+        emit(AdminBookingDetailsSuccess(
+          successMessage,
+          booking: updatedBooking,
+          customer: customer,
+          technician: null,
+          warningMessage: warningMessage,
+          suggestedRescheduleDate: suggestedRescheduleDate,
+        ));
+      },
     );
   }
 }
