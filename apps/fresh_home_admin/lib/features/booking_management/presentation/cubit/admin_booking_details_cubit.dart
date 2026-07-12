@@ -49,11 +49,13 @@ class AdminBookingDetailsError extends AdminBookingDetailsState {
   final Booking? booking;
   final UserProfile? customer;
   final UserProfile? technician;
+  final DateTime? suggestedRescheduleDate;
   AdminBookingDetailsError(
     this.message, {
     this.booking,
     this.customer,
     this.technician,
+    this.suggestedRescheduleDate,
   });
 }
 
@@ -329,7 +331,7 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
         debugPrint('ℹ️ [updateBookingDetails] Current technician has the skill. Keeping assignment.');
         finalTechId = currentTechId;
       } else {
-        // Option 2 & 3: Assign to closest available technician, or unassign and suggest reschedule
+        // Option 2 & 3: Assign to closest available technician, or reject and suggest reschedule
         debugPrint('ℹ️ [updateBookingDetails] Current technician does not have the skill or is null. Finding available technicians on ${booking.scheduledAt}');
         
         try {
@@ -344,10 +346,8 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
             successMessage = 'تم تغيير الخدمة وإسناد الطلب للفني المتاح "${newTech.fullName}"';
             debugPrint('✅ [updateBookingDetails] Assigned to new available technician: $finalTechId');
           } else {
-            // No technicians available on this day
-            finalTechId = null; // Unassign
-            warningMessage = 'لا يوجد فنيين متاحين للخدمة الجديدة في هذا اليوم (${booking.scheduledAt.toIso8601String().split('T').first}).';
-            debugPrint('⚠️ [updateBookingDetails] No available technicians found on ${booking.scheduledAt}.');
+            // No technicians available on this day -> Reject the update!
+            debugPrint('⚠️ [updateBookingDetails] No available technicians found on ${booking.scheduledAt}. Rejecting service change.');
             
             // Find the closest available day in the next 30 days
             final getAvailableDays = GetIt.instance<GetAvailableDaysUseCase>();
@@ -367,9 +367,25 @@ class AdminBookingDetailsCubit extends Cubit<AdminBookingDetailsState> {
                 }
               },
             );
+
+            emit(AdminBookingDetailsError(
+              'لا يمكن تغيير الخدمة لعدم توفر فنيين مؤهلين في هذا اليوم. يرجى اختيار موعد آخر أو التراجع.',
+              booking: currentBooking,
+              customer: customer,
+              technician: technician,
+              suggestedRescheduleDate: suggestedRescheduleDate,
+            ));
+            return; // Reject and stop
           }
         } catch (e) {
           debugPrint('Error finding available technicians: $e');
+          emit(AdminBookingDetailsError(
+            'حدث خطأ أثناء فحص الفنيين المتاحين: $e',
+            booking: currentBooking,
+            customer: customer,
+            technician: technician,
+          ));
+          return; // Reject and stop
         }
       }
     }

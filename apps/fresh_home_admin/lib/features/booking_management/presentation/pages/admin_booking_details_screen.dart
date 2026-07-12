@@ -154,7 +154,15 @@ class _AdminBookingDetailsContent extends StatelessWidget {
             }
           }
           if (state is AdminBookingDetailsError) {
-            _showErrorDialog(context, state.message);
+            if (state.suggestedRescheduleDate != null) {
+              _showWarningAndRescheduleDialog(
+                context,
+                state.message,
+                state.suggestedRescheduleDate,
+              );
+            } else {
+              _showErrorDialog(context, state.message);
+            }
           }
         },
         builder: (context, state) {
