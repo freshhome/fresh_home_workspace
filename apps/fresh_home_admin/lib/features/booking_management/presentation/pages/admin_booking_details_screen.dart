@@ -1158,7 +1158,10 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                     label: 'تغيير الفني',
                     icon: Icons.swap_horiz_rounded,
                     onPressed: canAction
-                        ? () => _showReassignSheet(context)
+                        ? () {
+                            debugPrint('🟢 [AdminBookingDetailsScreen] Button "تغيير الفني" clicked. bookingId: "${booking.id}", subServiceId: "${booking.service.subServiceId}", scheduledAt: "${booking.scheduledAt}"');
+                            _showReassignSheet(context);
+                          }
                         : null,
                     color: const Color(0xFFF59E0B),
                   ),
@@ -1912,6 +1915,33 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                         padding: EdgeInsets.all(40),
                         child: CircularProgressIndicator(
                           color: Color(0xFFF59E0B),
+                        ),
+                      ),
+                    )
+                  else if (technicians.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.people_outline_rounded,
+                              size: 48,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'لا يوجد فنيين مؤهلين لهذه الخدمة في النظام\n(SubService ID: "${booking.service.subServiceId}")',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontFamily: 'Cairo',
+                                color: Color(0xFF64748B),
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )
