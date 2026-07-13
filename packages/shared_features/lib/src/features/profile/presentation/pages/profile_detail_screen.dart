@@ -204,10 +204,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     final additionalPhones = profile.phoneNumbers;
     final addresses = profile is CustomerProfile ? profile.addresses : const <Address>[];
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return RefreshIndicator(
+      color: themeColor.primary,
+      onRefresh: () async {
+        await context.read<ProfileCubit>().load();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Avatar Section
           Center(
@@ -458,8 +464,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           const SizedBox(height: 40),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSectionHeader(String title, {VoidCallback? onAdd}) {
     final themeColor = context.themeColor;
