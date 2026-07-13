@@ -30,6 +30,7 @@ import '../../features/whatsapp_settings/domain/repositories/whatsapp_settings_r
 import 'package:shared/data/service/repositories/service_repository_impl.dart';
 import '../../features/whatsapp_settings/data/repositories/whatsapp_settings_repository_impl.dart';
 import '../../features/whatsapp_settings/presentation/cubit/whatsapp_settings_cubit.dart';
+import '../../features/dispatch_lab/presentation/routes/dispatch_lab_routes.dart';
 
 final getIt = GetIt.instance;
 
@@ -52,6 +53,7 @@ Future<void> initAppDI() async {
       ...PricingGovernanceRoutes.routes,
       ...AdminFinanceRoutes.routes,
       ...ReviewsModerationRoutes.routes,
+      ...DispatchLabRoutes.routes,
     ],
     navigationConfig: NavigationConfig(
       items: [

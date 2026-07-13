@@ -13,10 +13,16 @@ class HomePage extends StatelessWidget {
 
     // Responsive grid configurations based on viewport width
     final int crossAxisCount = screenWidth < 600
-        ? 1
+        ? 2
         : screenWidth < 960
-            ? 2
-            : 3;
+            ? 3
+            : 4;
+
+    final double childAspectRatio = screenWidth < 600
+        ? 2.5
+        : screenWidth < 960
+            ? 2.3
+            : 2.2;
 
     final double padding = screenWidth < 600 ? 16.0 : 32.0;
 
@@ -108,15 +114,14 @@ class HomePage extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: screenWidth < 600 ? 2.5 : 2.2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: childAspectRatio,
                     children: [
                       // Booking Dispatch Board
                       _buildFeatureCard(
                         context,
                         title: l10n.admin_nav_dispatch,
-                        description: l10n.admin_nav_dispatch_desc,
                         icon: Icons.edit_calendar_rounded,
                         color: Colors.purple,
                         onTap: () => GoRouter.of(context).pushNamed('admin_dashboard'),
@@ -125,7 +130,6 @@ class HomePage extends StatelessWidget {
                       _buildFeatureCard(
                         context,
                         title: l10n.admin_nav_services,
-                        description: l10n.admin_nav_services_desc,
                         icon: Icons.design_services_rounded,
                         color: themeColor.primary,
                         onTap: () => GoRouter.of(context).pushNamed(AppRoutes.servicesManagement),
@@ -134,7 +138,6 @@ class HomePage extends StatelessWidget {
                       _buildFeatureCard(
                         context,
                         title: l10n.admin_nav_pricing,
-                        description: l10n.admin_nav_pricing_desc,
                         icon: Icons.gavel_rounded,
                         color: Colors.amber.shade800,
                         onTap: () => GoRouter.of(context).push('/pricing-governance'),
@@ -143,7 +146,6 @@ class HomePage extends StatelessWidget {
                       _buildFeatureCard(
                         context,
                         title: l10n.admin_nav_bookings,
-                        description: l10n.admin_nav_bookings_desc,
                         icon: Icons.calendar_month_rounded,
                         color: Colors.blueAccent,
                         onTap: () => GoRouter.of(context).push('/admin/bookings'),
@@ -152,7 +154,6 @@ class HomePage extends StatelessWidget {
                       _buildFeatureCard(
                         context,
                         title: l10n.admin_nav_users,
-                        description: l10n.admin_nav_users_desc,
                         icon: Icons.people_alt_rounded,
                         color: Colors.orange,
                         onTap: () => GoRouter.of(context).pushNamed(AppRoutes.adminUserManagement),
@@ -161,7 +162,6 @@ class HomePage extends StatelessWidget {
                       _buildFeatureCard(
                         context,
                         title: l10n.admin_nav_finance,
-                        description: l10n.admin_nav_finance_desc,
                         icon: Icons.account_balance_rounded,
                         color: Colors.green,
                         onTap: () => GoRouter.of(context).push('/admin/finance'),
@@ -170,7 +170,6 @@ class HomePage extends StatelessWidget {
                       _buildFeatureCard(
                         context,
                         title: l10n.admin_nav_reviews,
-                        description: l10n.admin_nav_reviews_desc,
                         icon: Icons.rate_review_rounded,
                         color: const Color(0xFF1E3A8A),
                         onTap: () => GoRouter.of(context).push('/admin-reviews'),
@@ -179,7 +178,6 @@ class HomePage extends StatelessWidget {
                       _buildFeatureCard(
                         context,
                         title: l10n.admin_nav_supabase,
-                        description: l10n.admin_nav_supabase_desc,
                         icon: Icons.cloud_done_rounded,
                         color: Colors.teal,
                         onTap: () => GoRouter.of(context).pushNamed(AppRoutes.adminSupabaseServices),
@@ -188,7 +186,6 @@ class HomePage extends StatelessWidget {
                       _buildFeatureCard(
                         context,
                         title: 'إعدادات الواتساب',
-                        description: 'التحكم برقم الإرسال والـ API والمهلة الزمنية لتأكيد حجوزات الضيوف',
                         icon: Icons.chat_bubble_outline_rounded,
                         color: Colors.green.shade600,
                         onTap: () => GoRouter.of(context).push('/admin/whatsapp-settings'),
@@ -197,10 +194,17 @@ class HomePage extends StatelessWidget {
                       _buildFeatureCard(
                         context,
                         title: 'مراجعة حركات النظام',
-                        description: 'معاينة وفحص حركات التصميم وتأثيرات الانتقال في الحزمة التأسيسية لتعديلها',
                         icon: Icons.motion_photos_on_rounded,
                         color: Colors.pink.shade700,
                         onTap: () => GoRouter.of(context).push('/admin/motion-review'),
+                      ),
+                      // Dispatch Algorithm Lab
+                      _buildFeatureCard(
+                        context,
+                        title: 'مختبر خوارزميات التوزيع',
+                        icon: Icons.science_outlined,
+                        color: Colors.deepPurple,
+                        onTap: () => GoRouter.of(context).push('/admin/dispatch-lab'),
                       ),
                     ],
                   ),
@@ -324,7 +328,6 @@ class HomePage extends StatelessWidget {
   Widget _buildFeatureCard(
     BuildContext context, {
     required String title,
-    required String description,
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
@@ -334,15 +337,15 @@ class HomePage extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: themeColor.cardBackground,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: themeColor.unselectedItem.withValues(alpha: 0.05),
         ),
         boxShadow: [
           BoxShadow(
             color: color.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -350,54 +353,38 @@ class HomePage extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, color: color, size: 28),
+                  child: Icon(icon, color: color, size: 24),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: themeColor.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: themeColor.secondaryText,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: themeColor.textPrimary,
+                      height: 1.2,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: themeColor.unselectedItem.withValues(alpha: 0.25),
-                  size: 14,
+                  color: themeColor.unselectedItem.withValues(alpha: 0.2),
+                  size: 12,
                 ),
               ],
             ),
