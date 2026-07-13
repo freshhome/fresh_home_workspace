@@ -184,6 +184,14 @@ class DispatchEngine {
                 final runnerUp = finalSortedList[1];
                 final comp = rule.compare(tech, runnerUp, booking);
                 if (comp < 0) {
+                  if (rule.id == 'rank_proportional_share') {
+                    final uTech = (tech.currentOrders + booking.requiredCapacity) / tech.dailyCapacity;
+                    final uRunner = (runnerUp.currentOrders + booking.requiredCapacity) / runnerUp.dailyCapacity;
+                    if (uTech == uRunner) {
+                      reasons.add('تفوّق بقاعدة (${rule.name}: تساوي الإشغال المتوقع ${rule.getMetricString(tech)} وتفوّق بسعة كلية أكبر ${tech.dailyCapacity} مقابل ${runnerUp.dailyCapacity})');
+                      break; 
+                    }
+                  }
                   reasons.add('تفوّق بقاعدة (${rule.name}: ${rule.getMetricString(tech)} مقابل ${rule.getMetricString(runnerUp)})');
                   break; 
                 } else {
@@ -200,6 +208,14 @@ class DispatchEngine {
           for (final rule in rankingRules) {
             final comp = rule.compare(winner, tech, booking);
             if (comp < 0) {
+              if (rule.id == 'rank_proportional_share') {
+                final uWinner = (winner.currentOrders + booking.requiredCapacity) / winner.dailyCapacity;
+                final uTech = (tech.currentOrders + booking.requiredCapacity) / tech.dailyCapacity;
+                if (uWinner == uTech) {
+                  compareSteps.add('أقل بقاعدة (${rule.name}: تساوي الإشغال المتوقع ${rule.getMetricString(tech)} وأقل بسعة كلية ${tech.dailyCapacity} مقابل ${winner.dailyCapacity} للفائز)');
+                  break;
+                }
+              }
               compareSteps.add('أقل بقاعدة (${rule.name}: ${rule.getMetricString(tech)} مقابل ${rule.getMetricString(winner)} للفائز)');
               break; 
             } else {
@@ -233,7 +249,7 @@ class DispatchEngine {
     );
 
     // 2. التوزيع المتناسب المتداخل
-    final hasProportionalRule = rankingRules.any((r) => r.id == 'proportional_share');
+    final hasProportionalRule = rankingRules.any((r) => r.id == 'rank_proportional_share');
     if (hasProportionalRule) {
       final winnerUtil = (winner.currentOrders + 1) / winner.dailyCapacity;
       if (finalSortedList.length > 1) {
@@ -257,7 +273,7 @@ class DispatchEngine {
     }
 
     // 3. التقييم
-    final hasRatingRule = rankingRules.any((r) => r.id == 'rating');
+    final hasRatingRule = rankingRules.any((r) => r.id == 'rank_rating');
     if (hasRatingRule) {
       if (finalSortedList.length > 1) {
         final runnerUp = finalSortedList[1];
@@ -278,7 +294,7 @@ class DispatchEngine {
     }
 
     // 4. الانتظار (FIFO)
-    final hasFifoRule = rankingRules.any((r) => r.id == 'idle_time');
+    final hasFifoRule = rankingRules.any((r) => r.id == 'rank_idle_time');
     if (hasFifoRule) {
       if (finalSortedList.length > 1) {
         final runnerUp = finalSortedList[1];
