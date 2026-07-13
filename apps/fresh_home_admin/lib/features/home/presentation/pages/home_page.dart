@@ -15,14 +15,14 @@ class HomePage extends StatelessWidget {
     final int crossAxisCount = screenWidth < 600
         ? 2
         : screenWidth < 960
-            ? 3
-            : 4;
+        ? 3
+        : 4;
 
     final double childAspectRatio = screenWidth < 600
-        ? 2.5
+        ? 2.3
         : screenWidth < 960
-            ? 2.3
-            : 2.2;
+            ? 2.1
+            : 2.0;
 
     final double padding = screenWidth < 600 ? 16.0 : 32.0;
 
@@ -121,90 +121,105 @@ class HomePage extends StatelessWidget {
                       // Booking Dispatch Board
                       _buildFeatureCard(
                         context,
-                        title: l10n.admin_nav_dispatch,
+                        title: 'الجدول',
                         icon: Icons.edit_calendar_rounded,
                         color: Colors.purple,
-                        onTap: () => GoRouter.of(context).pushNamed('admin_dashboard'),
+                        onTap: () =>
+                            GoRouter.of(context).pushNamed('admin_dashboard'),
                       ),
                       // Services Management
                       _buildFeatureCard(
                         context,
-                        title: l10n.admin_nav_services,
+                        title: 'الخدمات',
                         icon: Icons.design_services_rounded,
                         color: themeColor.primary,
-                        onTap: () => GoRouter.of(context).pushNamed(AppRoutes.servicesManagement),
+                        onTap: () => GoRouter.of(
+                          context,
+                        ).pushNamed(AppRoutes.servicesManagement),
                       ),
                       // Pricing Governance
                       _buildFeatureCard(
                         context,
-                        title: l10n.admin_nav_pricing,
+                        title: 'أسعار الخدمات',
                         icon: Icons.gavel_rounded,
                         color: Colors.amber.shade800,
-                        onTap: () => GoRouter.of(context).push('/pricing-governance'),
+                        onTap: () =>
+                            GoRouter.of(context).push('/pricing-governance'),
                       ),
                       // Bookings Management
                       _buildFeatureCard(
                         context,
-                        title: l10n.admin_nav_bookings,
+                        title: 'الحجوزات',
                         icon: Icons.calendar_month_rounded,
                         color: Colors.blueAccent,
-                        onTap: () => GoRouter.of(context).push('/admin/bookings'),
+                        onTap: () =>
+                            GoRouter.of(context).push('/admin/bookings'),
                       ),
                       // Users Access Management
                       _buildFeatureCard(
                         context,
-                        title: l10n.admin_nav_users,
+                        title: 'المستخدمين',
                         icon: Icons.people_alt_rounded,
                         color: Colors.orange,
-                        onTap: () => GoRouter.of(context).pushNamed(AppRoutes.adminUserManagement),
+                        onTap: () => GoRouter.of(
+                          context,
+                        ).pushNamed(AppRoutes.adminUserManagement),
                       ),
                       // Financial Center
                       _buildFeatureCard(
                         context,
-                        title: l10n.admin_nav_finance,
+                        title: 'الحسابات',
                         icon: Icons.account_balance_rounded,
                         color: Colors.green,
-                        onTap: () => GoRouter.of(context).push('/admin/finance'),
+                        onTap: () =>
+                            GoRouter.of(context).push('/admin/finance'),
                       ),
                       // Reviews Moderation
                       _buildFeatureCard(
                         context,
-                        title: l10n.admin_nav_reviews,
+                        title: 'التقييمات',
                         icon: Icons.rate_review_rounded,
                         color: const Color(0xFF1E3A8A),
-                        onTap: () => GoRouter.of(context).push('/admin-reviews'),
+                        onTap: () =>
+                            GoRouter.of(context).push('/admin-reviews'),
                       ),
                       // Cloud Sync Monitor (Supabase)
                       _buildFeatureCard(
                         context,
-                        title: l10n.admin_nav_supabase,
+                        title: 'عرض الخدمات',
                         icon: Icons.cloud_done_rounded,
                         color: Colors.teal,
-                        onTap: () => GoRouter.of(context).pushNamed(AppRoutes.adminSupabaseServices),
+                        onTap: () => GoRouter.of(
+                          context,
+                        ).pushNamed(AppRoutes.adminSupabaseServices),
                       ),
                       // WhatsApp Configuration Settings
                       _buildFeatureCard(
                         context,
-                        title: 'إعدادات الواتساب',
+                        title: 'الواتساب',
                         icon: Icons.chat_bubble_outline_rounded,
                         color: Colors.green.shade600,
-                        onTap: () => GoRouter.of(context).push('/admin/whatsapp-settings'),
+                        onTap: () => GoRouter.of(
+                          context,
+                        ).push('/admin/whatsapp-settings'),
                       ),
                       // Motion Review Playground
                       _buildFeatureCard(
                         context,
-                        title: 'مراجعة حركات النظام',
+                        title: 'الانميشن',
                         icon: Icons.motion_photos_on_rounded,
                         color: Colors.pink.shade700,
-                        onTap: () => GoRouter.of(context).push('/admin/motion-review'),
+                        onTap: () =>
+                            GoRouter.of(context).push('/admin/motion-review'),
                       ),
                       // Dispatch Algorithm Lab
                       _buildFeatureCard(
                         context,
-                        title: 'مختبر خوارزميات التوزيع',
+                        title: 'ترتيب الفنيين',
                         icon: Icons.science_outlined,
                         color: Colors.deepPurple,
-                        onTap: () => GoRouter.of(context).push('/admin/dispatch-lab'),
+                        onTap: () =>
+                            GoRouter.of(context).push('/admin/dispatch-lab'),
                       ),
                     ],
                   ),
@@ -244,20 +259,26 @@ class HomePage extends StatelessWidget {
 
     if (screenWidth < 600) {
       return Column(
-        children: cards.map((c) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: c,
-        )).toList(),
+        children: cards
+            .map(
+              (c) =>
+                  Padding(padding: const EdgeInsets.only(bottom: 12), child: c),
+            )
+            .toList(),
       );
     }
 
     return Row(
-      children: cards.map((c) => Expanded(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          child: c,
-        ),
-      )).toList(),
+      children: cards
+          .map(
+            (c) => Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: c,
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 
