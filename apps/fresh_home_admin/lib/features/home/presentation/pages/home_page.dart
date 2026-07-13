@@ -19,10 +19,10 @@ class HomePage extends StatelessWidget {
         : 4;
 
     final double childAspectRatio = screenWidth < 600
-        ? 2.3
+        ? 1.15
         : screenWidth < 960
-            ? 2.1
-            : 2.0;
+            ? 1.10
+            : 1.05;
 
     final double padding = screenWidth < 600 ? 16.0 : 32.0;
 
@@ -376,36 +376,31 @@ class HomePage extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
+                    shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: color, size: 24),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: themeColor.textPrimary,
-                      height: 1.2,
-                    ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: themeColor.textPrimary,
+                    height: 1.2,
                   ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: themeColor.unselectedItem.withValues(alpha: 0.2),
-                  size: 12,
                 ),
               ],
             ),
