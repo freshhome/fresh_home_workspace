@@ -656,106 +656,116 @@ class _DispatchLabViewState extends State<DispatchLabView> {
               itemBuilder: (context, index) {
                 final tech = state.technicians[index];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Row(
-                    children: [
-                      // Active switch + Name
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: themeColor.cardBackground,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: themeColor.unselectedItem.withValues(alpha: 0.05),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Switch(
-                                  value: tech.isActive,
-                                  activeColor: themeColor.primary,
-                                  onChanged: (val) => cubit.toggleTechnicianActive(tech.id),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    tech.name,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      color: tech.isActive ? themeColor.textPrimary : themeColor.secondaryText,
-                                      decoration: tech.isActive ? null : TextDecoration.lineThrough,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                            Switch(
+                              value: tech.isActive,
+                              activeColor: themeColor.primary,
+                              onChanged: (val) => cubit.toggleTechnicianActive(tech.id),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(right: 48.0),
+                            const SizedBox(width: 8),
+                            Expanded(
                               child: Text(
-                                'التقييم: ${tech.rating} ★ | السعة اليومية: ${tech.dailyCapacity}',
-                                style: TextStyle(fontSize: 11, color: themeColor.secondaryText),
+                                tech.name,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: tech.isActive ? themeColor.textPrimary : themeColor.secondaryText,
+                                  decoration: tech.isActive ? null : TextDecoration.lineThrough,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      // Stats: occupancy & utilization
-                      Expanded(
-                        flex: 4,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  'الإشغال: ${tech.currentOrders} / ${tech.dailyCapacity}',
-                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                // 1. Rating (نجمة وتحتها القيمة)
+                                Column(
+                                  children: [
+                                    const Icon(Icons.star_rounded, color: Colors.amber, size: 22),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${tech.rating}',
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  '${(tech.utilization * 100).toStringAsFixed(0)}%',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: tech.utilization > 1.0
-                                        ? Colors.red
-                                        : tech.utilization == 1.0
-                                            ? Colors.green
-                                            : themeColor.primary,
-                                  ),
+                                const SizedBox(width: 24),
+                                // 2. Capacity (أيقونة السعة وتحتها القيمة)
+                                Column(
+                                  children: [
+                                    const Icon(Icons.flash_on_rounded, color: Colors.blue, size: 20),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${tech.dailyCapacity}',
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(width: 24),
+                                // 3. Occupancy (أيقونة الإشغال وتحتها القيمة)
+                                Column(
+                                  children: [
+                                    Icon(
+                                      Icons.donut_large_rounded, 
+                                      color: tech.utilization > 1.0
+                                          ? Colors.red
+                                          : tech.utilization == 1.0
+                                              ? Colors.green
+                                              : themeColor.primary,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${tech.currentOrders}/${tech.dailyCapacity}',
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: tech.utilization,
-                                backgroundColor: themeColor.unselectedItem.withValues(alpha: 0.1),
-                                color: tech.utilization > 1.0
-                                    ? Colors.red
-                                    : tech.utilization == 1.0
-                                        ? Colors.green
-                                        : themeColor.primary,
-                                minHeight: 6,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              tech.lastAssignedOrderIndex == null ? 'لم تعيّن له طلبات بعد' : 'آخر طلب: الحجز رقم ${tech.lastAssignedOrderIndex}',
-                              style: TextStyle(fontSize: 10, color: themeColor.secondaryText),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit_rounded, size: 20),
+                                  color: themeColor.primary,
+                                  onPressed: () => _showEditTechDialog(context, cubit, tech),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.delete_outline_rounded, color: themeColor.error, size: 20),
+                                  onPressed: () => cubit.removeTechnician(tech.id),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ),
-                      
-                      // Edit and Delete
-                      IconButton(
-                        icon: const Icon(Icons.edit_rounded, size: 18),
-                        onPressed: () => _showEditTechDialog(context, cubit, tech),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete_outline_rounded, color: themeColor.error, size: 18),
-                        onPressed: () => cubit.removeTechnician(tech.id),
-                      ),
-                    ],
+                        if (tech.lastAssignedOrderIndex != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'آخر طلب تم تعيينه: الحجز رقم ${tech.lastAssignedOrderIndex}',
+                            style: TextStyle(fontSize: 10, color: themeColor.secondaryText),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 );
               },
@@ -1088,8 +1098,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
   // ============================================================================
 
   void _showAddTechDialog(BuildContext context, DispatchLabCubit cubit) {
-    _techNameController.clear();
-    _techCapacityController.text = '5';
+    final count = cubit.state.technicians.length;
+    final nextLetter = String.fromCharCode(65 + (count % 26)) + (count >= 26 ? '${(count / 26).floor() + 1}' : '');
+    _techNameController.text = nextLetter;
+    _techCapacityController.text = '${count + 1}';
     _techRatingController.text = '4.5';
 
     showDialog(

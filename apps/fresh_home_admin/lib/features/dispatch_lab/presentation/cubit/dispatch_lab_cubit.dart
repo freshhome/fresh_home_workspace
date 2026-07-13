@@ -22,11 +22,11 @@ class DispatchLabCubit extends Cubit<DispatchLabState> {
   void _initDefaultData() {
     // 1. Create Default Technicians
     final defaultTechs = [
-      const VirtualTechnician(id: 'tech_1', name: 'أحمد سعيد', dailyCapacity: 8, currentOrders: 0, rating: 4.9, isActive: true),
-      const VirtualTechnician(id: 'tech_2', name: 'محمد عبد الله', dailyCapacity: 5, currentOrders: 0, rating: 4.7, isActive: true),
-      const VirtualTechnician(id: 'tech_3', name: 'علي حسن', dailyCapacity: 10, currentOrders: 0, rating: 4.5, isActive: true),
-      const VirtualTechnician(id: 'tech_4', name: 'خالد عمر', dailyCapacity: 6, currentOrders: 0, rating: 4.8, isActive: true),
-      const VirtualTechnician(id: 'tech_5', name: 'ياسر مصطفى', dailyCapacity: 4, currentOrders: 0, rating: 4.2, isActive: true),
+      const VirtualTechnician(id: 'tech_1', name: 'A', dailyCapacity: 1, currentOrders: 0, rating: 4.5, isActive: true),
+      const VirtualTechnician(id: 'tech_2', name: 'B', dailyCapacity: 2, currentOrders: 0, rating: 4.5, isActive: true),
+      const VirtualTechnician(id: 'tech_3', name: 'C', dailyCapacity: 3, currentOrders: 0, rating: 4.5, isActive: true),
+      const VirtualTechnician(id: 'tech_4', name: 'D', dailyCapacity: 4, currentOrders: 0, rating: 4.5, isActive: true),
+      const VirtualTechnician(id: 'tech_5', name: 'E', dailyCapacity: 5, currentOrders: 0, rating: 4.5, isActive: true),
     ];
 
     // 2. Create Default Scenarios
