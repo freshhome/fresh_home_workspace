@@ -290,16 +290,23 @@ class _DispatchLabViewState extends State<DispatchLabView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.settings_input_component_rounded, color: themeColor.primary, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'إعدادات محرك القواعد (Pipeline)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: themeColor.textPrimary),
-                    ),
-                  ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings_input_component_rounded, color: themeColor.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'إعدادات محرك القواعد (Pipeline)',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: themeColor.textPrimary),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
