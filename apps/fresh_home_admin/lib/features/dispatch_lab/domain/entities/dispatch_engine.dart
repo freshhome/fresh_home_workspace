@@ -225,26 +225,95 @@ class DispatchEngine {
       }
     }
 
-    String overallReason = '';
-    if (tieWasBroken) {
-      overallReason = 'تم اختيار الفني (${winner.name}) بعد كسر التعادل بقاعدة (${tieBreaker.name}) بين الفنيين المتساوين: ${tiedAtTop.map((e) => e.name).join(', ')}.';
-    } else {
-      final List<String> winFactors = [];
-      for (final rule in rankingRules) {
-        if (finalSortedList.length > 1) {
-          final runnerUp = finalSortedList[1];
-          if (rule.compare(winner, runnerUp, booking) < 0) {
-            winFactors.add('الأفضل في (${rule.name}: ${rule.getMetricString(winner)} مقابل ${rule.getMetricString(runnerUp)} للمركز الثاني)');
-            break;
-          } else {
-            winFactors.add('تساوى في (${rule.name}: ${rule.getMetricString(winner)})');
-          }
+    final List<String> explanationSteps = [];
+
+    // 1. التصفية والاستبعاد
+    explanationSteps.add(
+      'اجتاز مرحلة التصفية (عنصر نشط ومتاح، وغير مكتمل السعة الكلية، ولم يتجاوز 50% من سعته قبل الجميع)'
+    );
+
+    // 2. التوزيع المتناسب المتداخل
+    final hasProportionalRule = rankingRules.any((r) => r.id == 'proportional_share');
+    if (hasProportionalRule) {
+      final winnerUtil = (winner.currentOrders + 1) / winner.dailyCapacity;
+      if (finalSortedList.length > 1) {
+        final runnerUp = finalSortedList[1];
+        final runnerUpUtil = (runnerUp.currentOrders + 1) / runnerUp.dailyCapacity;
+        
+        if (winnerUtil < runnerUpUtil) {
+          explanationSteps.add(
+            'التوزيع المتداخل: نسبة إشغاله المتوقعة بعد قبول هذا الطلب هي (${(winnerUtil * 100).toStringAsFixed(1)}%) وهي الأقل مقارنة بالمركز الثاني (${runnerUp.name}: ${(runnerUpUtil * 100).toStringAsFixed(1)}%)'
+          );
         } else {
-          winFactors.add('الفني المؤهل الوحيد');
+          explanationSteps.add(
+            'التوزيع المتداخل: نسبة إشغاله المتوقعة بعد قبول هذا الطلب هي (${(winnerUtil * 100).toStringAsFixed(1)}%) وهي متساوية مع فنيين آخرين، وتفوّق لكون سعته الكلية أكبر (${winner.dailyCapacity} مقابل ${runnerUp.dailyCapacity})'
+          );
         }
+      } else {
+        explanationSteps.add(
+          'التوزيع المتداخل: نسبة إشغاله المتوقعة بعد قبول هذا الطلب هي (${(winnerUtil * 100).toStringAsFixed(1)}%) وهو الفني المؤهل الوحيد'
+        );
       }
-      overallReason = 'تم اختيار الفني (${winner.name}) لكونه: ${winFactors.join(' ثم ')}.';
     }
+
+    // 3. التقييم
+    final hasRatingRule = rankingRules.any((r) => r.id == 'rating');
+    if (hasRatingRule) {
+      if (finalSortedList.length > 1) {
+        final runnerUp = finalSortedList[1];
+        if (winner.rating > runnerUp.rating) {
+          explanationSteps.add(
+            'التقييم: تقييمه هو (${winner.rating}) وهو الأعلى مقارنة بالمركز الثاني (${runnerUp.name}: ${runnerUp.rating})'
+          );
+        } else {
+          explanationSteps.add(
+            'التقييم: تقييمه هو (${winner.rating}) ومتساوٍ مع فنيين آخرين'
+          );
+        }
+      } else {
+        explanationSteps.add(
+          'التقييم: تقييمه هو (${winner.rating})'
+        );
+      }
+    }
+
+    // 4. الانتظار (FIFO)
+    final hasFifoRule = rankingRules.any((r) => r.id == 'idle_time');
+    if (hasFifoRule) {
+      if (finalSortedList.length > 1) {
+        final runnerUp = finalSortedList[1];
+        if (winner.lastAssignedOrderIndex == null) {
+          explanationSteps.add(
+            'الانتظار: لم يتم إسناد أي طلب له اليوم وهو الأكثر انتظاراً'
+          );
+        } else if (runnerUp.lastAssignedOrderIndex == null) {
+          explanationSteps.add(
+            'الانتظار: الفني المنافس لم يستلم طلبات بعد وتفوّق الفائز بالمعايير السابقة'
+          );
+        } else if (winner.lastAssignedOrderIndex! < runnerUp.lastAssignedOrderIndex!) {
+          explanationSteps.add(
+            'الانتظار: آخر طلب أُسند إليه كان الحجز رقم (${winner.lastAssignedOrderIndex}) وهو أقدم من المركز الثاني (${runnerUp.name}: الحجز رقم ${runnerUp.lastAssignedOrderIndex}) فهو الأطول انتظاراً'
+          );
+        } else {
+          explanationSteps.add(
+            'الانتظار: فترة انتظاره متساوية مع الآخرين'
+          );
+        }
+      } else {
+        explanationSteps.add(
+          'الانتظار: هو الفني الوحيد'
+        );
+      }
+    }
+
+    // 5. كسر التعادل العشوائي
+    if (tieWasBroken) {
+      explanationSteps.add(
+        'كسر التعادل: تم اختياره عشوائياً بقاعدة (${tieBreaker.name}) من بين الفنيين المتساوين تماماً في كل شيء: ${tiedAtTop.map((e) => e.name).join(', ')}'
+      );
+    }
+
+    final overallReason = 'تم اختيار الفني (${winner.name}) بالتفصيل التدريجي التالي:\n- ${explanationSteps.join('\n- ')}.';
 
     // Sort details so the winner is first, followed by remaining ranks, then excluded ones.
     detailsList.sort((a, b) {
