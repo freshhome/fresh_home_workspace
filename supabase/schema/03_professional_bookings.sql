@@ -14,7 +14,7 @@ DROP TABLE IF EXISTS public.bookings CASCADE;
 
 CREATE TABLE public.bookings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    readable_id TEXT UNIQUE, -- Format: FH-100001
+    readable_id TEXT UNIQUE, -- Format: FH-O-100001
     
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     technician_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
@@ -71,7 +71,7 @@ CREATE OR REPLACE FUNCTION public.fn_generate_booking_id()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.readable_id IS NULL THEN
-        NEW.readable_id := 'FH-' || nextval('public.booking_number_seq')::TEXT;
+        NEW.readable_id := 'FH-O-' || nextval('public.booking_number_seq')::TEXT;
     END IF;
     RETURN NEW;
 END;

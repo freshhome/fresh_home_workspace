@@ -101,11 +101,10 @@ class AdminBookingRemoteDataSourceImpl implements AdminBookingRemoteDataSource {
         'admin_reschedule_booking_atomic',
         params: {
           'p_booking_id': bookingId,
-          'p_new_date': newDateTime.toIso8601String().split(
-            'T',
-          )[0], // DATE expected
+          'p_new_date': newDateTime.toIso8601String().split('T')[0],
           'p_admin_id': adminId,
           'p_reason': reason,
+          'p_new_time': '${newDateTime.hour.toString().padLeft(2, '0')}:${newDateTime.minute.toString().padLeft(2, '0')}:00',
         },
       );
     } catch (e) {

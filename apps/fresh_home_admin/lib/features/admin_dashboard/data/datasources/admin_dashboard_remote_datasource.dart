@@ -52,7 +52,8 @@ class AdminDashboardRemoteDataSourceImpl implements AdminDashboardRemoteDataSour
       'admin_reschedule_booking_atomic',
       params: {
         'p_booking_id': bookingId,
-        'p_new_date': newDate.toIso8601String(),
+        'p_new_date': newDate.toIso8601String().split('T')[0],
+        'p_new_time': '${newDate.hour.toString().padLeft(2, '0')}:${newDate.minute.toString().padLeft(2, '0')}:00',
       },
     );
   }
