@@ -267,16 +267,30 @@ class _TechnicianOrderDetailsScreenState
             debugPrint(
               '❌ [TechnicianOrderDetails] Action Failed: ${state.transitionError}',
             );
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  state.transitionError!,
-                  style: const TextStyle(fontFamily: 'Cairo'),
+            
+            final allOrders = [
+              ...state.todayOrders,
+              ...state.upcomingGroups.expand((g) => g.orders),
+              ...state.historyGroups.expand((g) => g.orders),
+            ];
+            final orderForError = allOrders.where(
+              (o) => o.id == (widget.order?.id ?? widget.bookingId),
+            ).firstOrNull ?? widget.order;
+
+            if (state.transitionError!.contains('NO_OTHER_TECHNICIAN_AVAILABLE') && orderForError != null) {
+              _showNoOtherTechnicianAvailableDialog(context, orderForError);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    state.transitionError!,
+                    style: const TextStyle(fontFamily: 'Cairo'),
+                  ),
+                  backgroundColor: themeColor.error,
+                  behavior: SnackBarBehavior.floating,
                 ),
-                backgroundColor: themeColor.error,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+              );
+            }
           }
 
           // Dynamically load service details if widget.order was null but resolved from state
@@ -1277,6 +1291,111 @@ class _TechnicianOrderDetailsScreenState
       }
     } catch (e) {
       debugPrint('Error launching WhatsApp: $e');
+    }
+  }
+
+  void _showNoOtherTechnicianAvailableDialog(BuildContext context, Booking order) {
+    final textController = TextEditingController();
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.error,
+      animType: AnimType.bottomSlide,
+      body: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            "لا يمكن الاعتذار",
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text(
+              "لا يوجد إمكانية للإلغاء والاعتذار التلقائي عن هذا الطلب لعدم وجود فني متاح آخر. يرجى التواصل مع الإدارة عبر الواتساب لتوضيح سبب الاعتذار.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 14),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: TextField(
+              controller: textController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: "اكتب سبب الاعتذار هنا...",
+                hintStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+      btnOkText: "تواصل عبر الواتساب",
+      btnOkColor: Colors.green,
+      btnOkOnPress: () {
+        final reason = textController.text.trim();
+        _launchWhatsAppForApology(order, reason);
+      },
+      btnCancelText: "إغلاق",
+      btnCancelOnPress: () {},
+    ).show();
+  }
+
+  Future<void> _launchWhatsAppForApology(Booking order, String reason) async {
+    if (_adminWhatsAppNumber == null || _adminWhatsAppNumber!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "جاري تحميل رقم الإدارة، يرجى المحاولة بعد قليل...",
+            style: TextStyle(fontFamily: 'Cairo'),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    String techName = '';
+    try {
+      final profileCubit = GetIt.instance<ProfileCubit>();
+      final profileState = profileCubit.state;
+      if (profileState is ProfileLoaded) {
+        techName = profileState.profile.fullName;
+      }
+    } catch (e) {
+      debugPrint('Error getting technician profile from GetIt: $e');
+    }
+
+    final displayId = order.displayId;
+    final message =
+        "السلام عليكم ورحمة الله وبركاته،\n"
+        "أود الاعتذار عن الأوردر رقم: #$displayId\n"
+        "اسم الفني: $techName\n"
+        "السبب: ${reason.isNotEmpty ? reason : 'لم يتم تحديد السبب'}";
+
+    String cleanPhone = _adminWhatsAppNumber!.replaceAll(RegExp(r'[^0-9]'), '');
+    if (!cleanPhone.startsWith('2') &&
+        cleanPhone.length == 11 &&
+        cleanPhone.startsWith('01')) {
+      cleanPhone = '2$cleanPhone';
+    }
+
+    final Uri url = Uri.parse(
+      'https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}',
+    );
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Error launching admin WhatsApp for apology: $e');
     }
   }
 
