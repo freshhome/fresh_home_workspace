@@ -507,16 +507,6 @@ class _TechnicianOrderDetailsScreenState
             "نوع الخدمة",
             order.service.name[locale] ?? '',
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(height: 1, thickness: 0.5),
-          ),
-          _buildDetailRow(
-            context,
-            Icons.access_time_rounded,
-            "موعد الوصول المتوقع",
-            timeStr,
-          ),
 
           if (_subService != null ||
               (order.pricingInputs != null &&
@@ -538,21 +528,6 @@ class _TechnicianOrderDetailsScreenState
             ..._buildServiceComponentsList(context, order),
           ],
 
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(height: 1, thickness: 0.5),
-          ),
-          _buildDetailRow(
-            context,
-            Icons.payment_rounded,
-            "طريقة التحصيل المطلوبة",
-            order.paymentMethod?.toLowerCase() == 'instapay'
-                ? 'تحويل إنستا باي (InstaPay)'
-                : order.paymentMethod?.toLowerCase() == 'vodafone_cash'
-                ? 'تحويل فودافون كاش (Vodafone Cash)'
-                : 'نقداً (كاش)',
-            isHighlighted: false,
-          ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1, thickness: 0.5),
@@ -714,125 +689,79 @@ class _TechnicianOrderDetailsScreenState
     Booking order,
     bool canShowSensitive,
   ) {
-    final themeColor = context.themeColor;
     final phone = order.contact.phone.isNotEmpty
         ? order.contact.phone.first
         : '';
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: themeColor.cardBackground,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [themeColor.cardShadow],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "تفاصيل العميل",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: themeColor.textPrimary,
-              fontFamily: 'Cairo',
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          if (canShowSensitive) ...[
-            // Name
-            _buildDetailRow(
-              context,
-              Icons.person_rounded,
-              "اسم العميل",
-              order.contact.name,
-            ),
-            const SizedBox(height: 16),
-
-            // Address
-            _buildDetailRow(
-              context,
-              Icons.location_on_rounded,
-              "عنوان العميل",
-              "${order.address.city}, ${order.address.street}, مبنى ${order.address.buildingNumber}, دور ${order.address.floorNumber}, شقة ${order.address.apartmentNumber}",
-            ),
-            const SizedBox(height: 16),
-
-            // Phone with Copy
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDetailRow(
-                    context,
-                    Icons.phone_iphone_rounded,
-                    "رقم الهاتف",
-                    phone,
-                  ),
+    if (!canShowSensitive) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFBEB),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFFDE68A)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.lock_rounded, color: Color(0xFFD97706), size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'سيتم إظهار تفاصيل العميل والعنوان فور تأكيد موعد الطلب اليوم',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFB45309),
+                  fontFamily: 'Cairo',
                 ),
-                Material(
-                  color: themeColor.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                  child: InkWell(
-                    onTap: () {
-                      Clipboard.setData(ClipboardData(text: phone));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            "تم نسخ رقم الهاتف بنجاح",
-                            style: TextStyle(fontFamily: 'Cairo'),
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Icon(
-                        Icons.copy_rounded,
-                        size: 18,
-                        color: themeColor.primary,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-
-            const SizedBox(height: 24),
-
-            // Call & WhatsApp Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: _buildContactButton(
-                    context,
-                    "اتصال هاتفي",
-                    Icons.phone_enabled_rounded,
-                    themeColor.primary,
-                    () => _launchPhone(phone),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildContactButton(
-                    context,
-                    "واتساب",
-                    Icons.chat_rounded,
-                    const Color(0xFF25D366),
-                    () => _launchWhatsApp(phone),
-                  ),
-                ),
-              ],
-            ),
-          ] else ...[
-            // Privacy Placeholder
-            _buildPrivacyPlaceholder(context),
           ],
-        ],
-      ),
+        ),
+      );
+    }
+
+    return TechnicianSummaryCard(
+      address: order.address,
+      customerName: order.contact.name,
+      customerPhone: phone,
+      scheduledTime: order.startTimeSlot,
+      statusText: _getStatusArabicName(order.status),
+      onOpenMaps: () => _openGoogleMaps(order.address),
+      onCallPhone: () => _launchPhone(phone),
+      onWhatsAppPhone: () => _launchWhatsApp(phone),
     );
+  }
+
+  String _getStatusArabicName(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.assigned:
+        return 'في انتظار القبول';
+      case OrderStatus.accepted:
+        return 'في انتظار التأكيد اليومي';
+      case OrderStatus.ready:
+        return 'في انتظار التنفيذ';
+      case OrderStatus.onTheWay:
+        return 'في الطريق للموقع';
+      case OrderStatus.arrived:
+        return 'تم الوصول للموقع';
+      case OrderStatus.inProgress:
+        return 'جاري التنفيذ';
+      case OrderStatus.completed:
+        return 'مكتمل';
+      case OrderStatus.cancelled:
+        return 'ملغي';
+      default:
+        return 'في انتظار التنفيذ';
+    }
+  }
+
+  void _openGoogleMaps(Address address) async {
+    final query = AddressFormatter.toGoogleMapsQuery(address);
+    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   Widget _buildDetailRow(

@@ -31,12 +31,17 @@ import 'package:shared/data/service/repositories/service_repository_impl.dart';
 import '../../features/whatsapp_settings/data/repositories/whatsapp_settings_repository_impl.dart';
 import '../../features/whatsapp_settings/presentation/cubit/whatsapp_settings_cubit.dart';
 import '../../features/dispatch_lab/presentation/routes/dispatch_lab_routes.dart';
+import '../../features/geographic_management/di/geographic_management_di.dart';
+import '../../features/geographic_management/presentation/routes/geographic_management_routes.dart';
 
 final getIt = GetIt.instance;
 
 Future<void> initAppDI() async {
   // تفعيل وضع المسؤول للـ ServiceRepository لمنع فلترة كاش شجرة الخدمات للإدارة
   ServiceRepositoryImpl.isAdminMode = true;
+
+  // Initialize Geographic Management DI
+  initGeographicManagementDI();
 
   // Initialize shared features DI with navigation config for Admin
   await initSharedFeaturesDI(
@@ -54,7 +59,9 @@ Future<void> initAppDI() async {
       ...AdminFinanceRoutes.routes,
       ...ReviewsModerationRoutes.routes,
       ...DispatchLabRoutes.routes,
+      ...GeographicManagementRoutes.routes,
     ],
+
     navigationConfig: NavigationConfig(
       items: [
         // Home (Dashboard)

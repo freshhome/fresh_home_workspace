@@ -191,6 +191,8 @@ class UserAddressRemoteModel {
   final String buildingNumber;
   final String? floor;
   final String? apartment;
+  final double? latitude;
+  final double? longitude;
   final bool isPrimary;
 
   UserAddressRemoteModel({
@@ -201,6 +203,8 @@ class UserAddressRemoteModel {
     required this.buildingNumber,
     this.floor,
     this.apartment,
+    this.latitude,
+    this.longitude,
     required this.isPrimary,
   });
 
@@ -213,6 +217,8 @@ class UserAddressRemoteModel {
       buildingNumber: json['building_number'] as String,
       floor: json['floor'] as String?,
       apartment: json['apartment'] as String?,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
       isPrimary: json['is_primary'] as bool? ?? false,
     );
   }

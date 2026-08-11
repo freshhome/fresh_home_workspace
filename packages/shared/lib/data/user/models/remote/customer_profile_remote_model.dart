@@ -35,6 +35,7 @@ class CustomerProfileRemoteModel {
       addresses: json['user_addresses'] != null
           ? (json['user_addresses'] as List)
               .map((e) => AddressModel.fromJson(e as Map<String, dynamic>))
+              .where((a) => a.deletedAt == null)
               .toList()
           : [],
       phoneNumbers: json['user_phones'] != null

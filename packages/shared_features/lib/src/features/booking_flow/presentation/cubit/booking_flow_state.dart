@@ -55,10 +55,15 @@ class BookingFlowState {
   final String? manualClientPhone;
   final String? manualClientGovernorate;
   final String? manualClientCity;
+  final String? manualClientDistrict;
   final String? manualClientStreet;
   final String? manualClientBuilding;
   final String? manualClientFloor;
   final String? manualClientApartment;
+  final String? manualClientLandmark;
+  final String? manualClientPropertyType;
+  final double? manualClientLatitude;
+  final double? manualClientLongitude;
   final int validateManualClientTrigger;
 
   // ── Profile (Customer) ─────────────────────────────────────────────────────
@@ -96,10 +101,15 @@ class BookingFlowState {
     this.manualClientPhone,
     this.manualClientGovernorate,
     this.manualClientCity,
+    this.manualClientDistrict,
     this.manualClientStreet,
     this.manualClientBuilding,
     this.manualClientFloor,
     this.manualClientApartment,
+    this.manualClientLandmark,
+    this.manualClientPropertyType,
+    this.manualClientLatitude,
+    this.manualClientLongitude,
     this.validateManualClientTrigger = 0,
     this.currentUserProfile,
     this.status = BookingStatus.initial,
@@ -138,10 +148,15 @@ class BookingFlowState {
     String? manualClientPhone,
     String? manualClientGovernorate,
     String? manualClientCity,
+    String? manualClientDistrict,
     String? manualClientStreet,
     String? manualClientBuilding,
     String? manualClientFloor,
     String? manualClientApartment,
+    String? manualClientLandmark,
+    String? manualClientPropertyType,
+    double? manualClientLatitude,
+    double? manualClientLongitude,
     int? validateManualClientTrigger,
     UserProfile? currentUserProfile,
     BookingStatus? status,
@@ -180,11 +195,18 @@ class BookingFlowState {
       manualClientGovernorate:
           manualClientGovernorate ?? this.manualClientGovernorate,
       manualClientCity: manualClientCity ?? this.manualClientCity,
+      manualClientDistrict: manualClientDistrict ?? this.manualClientDistrict,
       manualClientStreet: manualClientStreet ?? this.manualClientStreet,
       manualClientBuilding: manualClientBuilding ?? this.manualClientBuilding,
       manualClientFloor: manualClientFloor ?? this.manualClientFloor,
       manualClientApartment:
           manualClientApartment ?? this.manualClientApartment,
+      manualClientLandmark: manualClientLandmark ?? this.manualClientLandmark,
+      manualClientPropertyType:
+          manualClientPropertyType ?? this.manualClientPropertyType,
+      manualClientLatitude: manualClientLatitude ?? this.manualClientLatitude,
+      manualClientLongitude:
+          manualClientLongitude ?? this.manualClientLongitude,
       validateManualClientTrigger:
           validateManualClientTrigger ?? this.validateManualClientTrigger,
       currentUserProfile: currentUserProfile ?? this.currentUserProfile,

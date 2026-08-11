@@ -90,15 +90,21 @@ class UserProfileMapper {
         createdAt: userModel.createdAt,
         updatedAt: userModel.updatedAt,
         preferredPaymentMethod: customerModel?.preferredPaymentMethod ?? 'cash',
-        addresses: customerModel?.addresses.map((a) => AddressMapper.fromModel(a)).toList() ?? 
+        addresses: customerModel?.addresses.map((a) => AddressMapper.toEntity(a)).where((a) => !a.isDeleted).toList() ?? 
                   userModel.addresses?.map((a) => Address(
                     id: a.id,
+                    userId: userModel.id,
                     governorate: a.governorate,
                     city: a.city,
-                    street: a.street,
-                    buildingNumber: a.buildingNumber,
-                    floorNumber: a.floor ?? '',
-                    apartmentNumber: a.apartment ?? '',
+                    district: a.city,
+                    streetOrCompound: a.street,
+                    buildingIdentifier: a.buildingNumber,
+                    floor: a.floor,
+                    apartmentOrUnit: a.apartment,
+                    latitude: a.latitude,
+                    longitude: a.longitude,
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
                   )).toList() ?? const [],
       );
     }

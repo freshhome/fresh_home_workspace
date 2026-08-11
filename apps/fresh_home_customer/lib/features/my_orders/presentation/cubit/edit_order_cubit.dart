@@ -97,22 +97,30 @@ class EditOrderCubit extends Cubit<EditOrderState> {
     bool isNewAddress = !addresses.any((a) =>
         a.governorate == usedAddress.governorate &&
         a.city == usedAddress.city &&
-        a.street == usedAddress.street &&
-        a.buildingNumber == usedAddress.buildingNumber &&
-        a.floorNumber == usedAddress.floorNumber &&
-        a.apartmentNumber == usedAddress.apartmentNumber);
+        a.streetOrCompound == usedAddress.streetOrCompound &&
+        a.buildingIdentifier == usedAddress.buildingIdentifier &&
+        a.floor == usedAddress.floor &&
+        a.apartmentOrUnit == usedAddress.apartmentOrUnit);
 
     bool isNewPhone = !phones.any((p) => p.phoneNumber == usedPhone);
 
     if (isNewAddress) {
       await profileRepository.addAddress(
         address: Address(
+          id: '',
+          userId: profile.uid,
           governorate: usedAddress.governorate,
           city: usedAddress.city,
-          street: usedAddress.street,
-          buildingNumber: usedAddress.buildingNumber,
-          floorNumber: usedAddress.floorNumber,
-          apartmentNumber: usedAddress.apartmentNumber,
+          district: usedAddress.district,
+          streetOrCompound: usedAddress.streetOrCompound,
+          buildingIdentifier: usedAddress.buildingIdentifier,
+          floor: usedAddress.floor,
+          apartmentOrUnit: usedAddress.apartmentOrUnit,
+          landmark: usedAddress.landmark,
+          latitude: usedAddress.latitude,
+          longitude: usedAddress.longitude,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         ),
       );
     }
@@ -138,10 +146,10 @@ class EditOrderCubit extends Cubit<EditOrderState> {
         (a) =>
             a.governorate == usedAddress.governorate &&
             a.city == usedAddress.city &&
-            a.street == usedAddress.street &&
-            a.buildingNumber == usedAddress.buildingNumber &&
-            a.floorNumber == usedAddress.floorNumber &&
-            a.apartmentNumber == usedAddress.apartmentNumber,
+            a.streetOrCompound == usedAddress.streetOrCompound &&
+            a.buildingIdentifier == usedAddress.buildingIdentifier &&
+            a.floor == usedAddress.floor &&
+            a.apartmentOrUnit == usedAddress.apartmentOrUnit,
         orElse: () => usedAddress,
       );
     });

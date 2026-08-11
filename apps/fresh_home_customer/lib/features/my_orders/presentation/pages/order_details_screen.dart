@@ -280,8 +280,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                           context,
                           'العنوان',
                           '${currentOrder.address.governorate}, ${currentOrder.address.city}\n'
-                              '${currentOrder.address.street}, مبنى ${currentOrder.address.buildingNumber}, '
-                              'دور ${currentOrder.address.floorNumber}, شقة ${currentOrder.address.apartmentNumber}',
+                              '${currentOrder.address.streetOrCompound}, مبنى ${currentOrder.address.buildingIdentifier}, '
+                              'دور ${currentOrder.address.floor ?? '-'}, شقة ${currentOrder.address.apartmentOrUnit ?? '-'}',
                           onEdit: canCancelOrEdit
                               ? () async {
                                   final result = await context.pushNamed(

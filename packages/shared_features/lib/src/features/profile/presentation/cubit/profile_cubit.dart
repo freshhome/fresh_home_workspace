@@ -10,6 +10,7 @@ import '../../domain/use_cases/update_address.dart';
 import '../../domain/use_cases/update_phone_number.dart';
 import '../../domain/use_cases/update_user_name.dart';
 import '../../domain/use_cases/update_profile.dart';
+import '../../domain/use_cases/set_primary_address.dart';
 
 part 'profile_state.dart';
 
@@ -21,6 +22,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   final UpdateAddressUseCase updateAddressUseCase;
   final DeleteAddressUseCase deleteAddressUseCase;
   final UpdateProfileUseCase updateProfileUseCase;
+  final SetPrimaryAddressUseCase setPrimaryAddressUseCase;
 
   ProfileCubit(
     this.loadProfileUseCase,
@@ -30,6 +32,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     this.updateAddressUseCase,
     this.deleteAddressUseCase,
     this.updateProfileUseCase,
+    this.setPrimaryAddressUseCase,
   ) : super(ProfileInitial());
 
   Future<void> load() async {
@@ -198,6 +201,18 @@ class ProfileCubit extends Cubit<ProfileState> {
     res.fold(
         (l) {
           print('ProfileCubit DeleteAddress Error: ${l.message}');
+          final currentProfile = state is ProfileLoaded ? (state as ProfileLoaded).profile : null;
+          emit(ProfileError(l, profile: currentProfile));
+        }, (profile) => emit(ProfileLoaded(profile)));
+  }
+
+  Future<void> setPrimaryAddress(int index) async {
+    emit(ProfileLoading());
+    final res = await setPrimaryAddressUseCase(index);
+    if (isClosed) return;
+    res.fold(
+        (l) {
+          print('ProfileCubit SetPrimaryAddress Error: ${l.message}');
           final currentProfile = state is ProfileLoaded ? (state as ProfileLoaded).profile : null;
           emit(ProfileError(l, profile: currentProfile));
         }, (profile) => emit(ProfileLoaded(profile)));

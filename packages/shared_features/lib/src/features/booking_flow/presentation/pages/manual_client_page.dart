@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
-import 'package:shared/presentation/localization/translations/app_localizations.dart';
-import 'package:shared/presentation/location/egypt_regions.dart';
+import 'package:get_it/get_it.dart';
+import 'package:shared/shared.dart';
 import '../cubit/booking_flow_cubit.dart';
 import '../cubit/booking_flow_state.dart';
 
-import 'package:shared/presentation/validators/input_validator.dart';
-
-import 'package:shared/presentation/widget/custom_text_form_field/base_text_form_field.dart';
-import '../widgets/selection_components.dart';
 
 /// Admin-only step: the admin enters the client's contact details manually.
 /// This replaces the profile-based [AddressPage] used in customer mode.
@@ -26,35 +21,89 @@ class _ManualClientPageState extends State<ManualClientPage> {
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _districtController = TextEditingController();
   final _streetController = TextEditingController();
   final _buildingController = TextEditingController();
   final _floorController = TextEditingController();
   final _apartmentController = TextEditingController();
+  final _landmarkController = TextEditingController();
 
   final _nameFocus = FocusNode();
   final _phoneFocus = FocusNode();
   final _governorateFocus = FocusNode();
   final _cityFocus = FocusNode();
+  final _districtFocus = FocusNode();
   final _streetFocus = FocusNode();
   final _buildingFocus = FocusNode();
   final _floorFocus = FocusNode();
   final _apartmentFocus = FocusNode();
+  final _landmarkFocus = FocusNode();
+
+  late final GeographicReferenceCubit _geoCubit;
 
   String? _selectedGovernorate;
   String? _selectedCity;
+  String _selectedPropertyType = 'residential';
 
   @override
   void initState() {
     super.initState();
+    _geoCubit = GetIt.I<GeographicReferenceCubit>();
+
     final state = context.read<BookingFlowCubit>().state;
     _nameController.text = state.manualClientName ?? '';
     _phoneController.text = state.manualClientPhone ?? '';
     _selectedGovernorate = state.manualClientGovernorate;
     _selectedCity = state.manualClientCity;
+    _districtController.text = state.manualClientDistrict ?? '';
     _streetController.text = state.manualClientStreet ?? '';
     _buildingController.text = state.manualClientBuilding ?? '';
     _floorController.text = state.manualClientFloor ?? '';
     _apartmentController.text = state.manualClientApartment ?? '';
+    _landmarkController.text = state.manualClientLandmark ?? '';
+    _selectedPropertyType = state.manualClientPropertyType ?? 'residential';
+
+    _geoCubit.loadGovernorates().then((_) {
+      if (state.address != null && state.address!.governorateId != null) {
+        _geoCubit.selectGovernorate(state.address!.governorateId).then((_) {
+          if (state.address!.cityId != null) {
+            _geoCubit.selectCity(state.address!.cityId).then((_) {
+              if (state.address!.districtId != null) {
+                _geoCubit.selectDistrict(state.address!.districtId);
+              }
+            });
+          }
+        });
+      } else if (_selectedGovernorate != null && _selectedGovernorate!.isNotEmpty) {
+        try {
+          final govs = _geoCubit.state.governorates;
+          final matchedGov = govs.firstWhere(
+            (g) => g.nameAr == _selectedGovernorate || g.nameEn == _selectedGovernorate,
+          );
+          _geoCubit.selectGovernorate(matchedGov.id).then((_) {
+            if (_selectedCity != null && _selectedCity!.isNotEmpty) {
+              try {
+                final cities = _geoCubit.state.cities;
+                final matchedCity = cities.firstWhere(
+                  (c) => c.nameAr == _selectedCity || c.nameEn == _selectedCity,
+                );
+                _geoCubit.selectCity(matchedCity.id).then((_) {
+                  if (_districtController.text.isNotEmpty) {
+                    try {
+                      final districts = _geoCubit.state.districts;
+                      final matchedDistrict = districts.firstWhere(
+                        (d) => d.nameAr == _districtController.text || d.nameEn == _districtController.text,
+                      );
+                      _geoCubit.selectDistrict(matchedDistrict.id);
+                    } catch (_) {}
+                  }
+                });
+              } catch (_) {}
+            }
+          });
+        } catch (_) {}
+      }
+    });
   }
 
   @override
@@ -62,36 +111,82 @@ class _ManualClientPageState extends State<ManualClientPage> {
     _scrollController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
+    _districtController.dispose();
     _streetController.dispose();
     _buildingController.dispose();
     _floorController.dispose();
     _apartmentController.dispose();
+    _landmarkController.dispose();
 
     _nameFocus.dispose();
     _phoneFocus.dispose();
     _governorateFocus.dispose();
     _cityFocus.dispose();
+    _districtFocus.dispose();
     _streetFocus.dispose();
     _buildingFocus.dispose();
     _floorFocus.dispose();
     _apartmentFocus.dispose();
+    _landmarkFocus.dispose();
     super.dispose();
   }
 
+  AddressPropertyType _parsePropertyType(String? type) {
+    if (type == 'office') return AddressPropertyType.office;
+    if (type == 'commercial') return AddressPropertyType.commercial;
+    if (type == 'landmark') return AddressPropertyType.landmark;
+    return AddressPropertyType.residential;
+  }
+
   void _syncToState() {
+    final locale = Localizations.localeOf(context).languageCode;
+    final geoState = _geoCubit.state;
+    final selectedGov = geoState.selectedGovernorate;
+    final selectedCity = geoState.selectedCity;
+    final selectedDistrict = geoState.selectedDistrict;
+
+    final govName = selectedGov?.getName(locale) ?? selectedGov?.nameAr ?? _selectedGovernorate ?? '';
+    final cityName = selectedCity?.getName(locale) ?? selectedCity?.nameAr ?? _selectedCity ?? '';
+    final districtName = selectedDistrict?.getName(locale) ??
+        (_districtController.text.trim().isNotEmpty ? _districtController.text.trim() : cityName);
+
+    final address = Address(
+      id: '',
+      userId: '',
+      governorate: govName,
+      city: cityName,
+      district: districtName,
+      governorateId: selectedGov?.id,
+      cityId: selectedCity?.id,
+      districtId: selectedDistrict?.id,
+      streetOrCompound: _streetController.text,
+      buildingIdentifier: _buildingController.text,
+      floor: _floorController.text,
+      apartmentOrUnit: _apartmentController.text,
+      propertyType: _selectedPropertyType,
+      landmark: _landmarkController.text,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
     context.read<BookingFlowCubit>().updateManualClientData(
       name: _nameController.text,
       phone: _phoneController.text,
-      governorate: _selectedGovernorate,
-      city: _selectedCity,
+      governorate: govName,
+      city: cityName,
+      district: districtName,
       street: _streetController.text,
       building: _buildingController.text,
       floor: _floorController.text,
       apartment: _apartmentController.text,
+      landmark: _landmarkController.text,
+      propertyType: _selectedPropertyType,
     );
+    context.read<BookingFlowCubit>().updateAddress(address);
   }
 
   void _validateAndProceed(AppLocalizations l10n) {
+    _syncToState();
     if (_formKey.currentState?.validate() ?? false) {
       context.read<BookingFlowCubit>().nextStep();
     } else {
@@ -134,9 +229,6 @@ class _ManualClientPageState extends State<ManualClientPage> {
   Widget build(BuildContext context) {
     final themeColor = context.themeColor;
     final l10n = AppLocalizations.of(context)!;
-
-    final governorates = EgyptRegions.getGovernorates(l10n);
-    final citiesMap = EgyptRegions.getCitiesMap(l10n);
 
     return BlocListener<BookingFlowCubit, BookingFlowState>(
       listenWhen: (prev, curr) =>
@@ -197,75 +289,218 @@ class _ManualClientPageState extends State<ManualClientPage> {
                 icon: Icons.location_on_rounded,
                 themeColor: themeColor,
                 children: [
-                  // Row for Governorate & City
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildLabeledField(
-                          label: l10n.address_governorate_label,
-                          child: SelectionField(
-                            value: _selectedGovernorate,
-                            hint: l10n.address_governorate_label,
-                            onTap: () async {
-                              final result = await showModalBottomSheet<String>(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => SelectionSheet(
-                                  title: l10n.address_governorate_label,
-                                  items: governorates,
-                                  selectedValue: _selectedGovernorate,
-                                ),
-                              );
-                              if (result != null) {
-                                setState(() {
-                                  _selectedGovernorate = result;
-                                  _selectedCity = null;
-                                });
-                                _syncToState();
-                              }
-                            },
-                            validator: (val) =>
-                                InputValidator.validateDropdownSelection(val, l10n: l10n),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildLabeledField(
-                          label: l10n.address_region_label,
-                          child: SelectionField(
-                            value: _selectedCity,
-                            hint: _selectedGovernorate == null
-                                ? l10n.address_select_governorate_first
-                                : l10n.address_select_city,
-                            onTap: _selectedGovernorate == null
-                                ? () {}
-                                : () async {
-                                    final result = await showModalBottomSheet<String>(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (context) => SelectionSheet(
-                                        title: l10n.address_region_label,
-                                        items: citiesMap[_selectedGovernorate] ?? [],
-                                        selectedValue: _selectedCity,
-                                      ),
-                                    );
-                                    if (result != null) {
-                                      setState(() => _selectedCity = result);
-                                      _syncToState();
-                                    }
-                                  },
-                            validator: (val) =>
-                                InputValidator.validateDropdownSelection(val, l10n: l10n),
-                          ),
-                        ),
-                      ),
-                    ],
+                  PropertyTypeSelector(
+                    selectedType: _parsePropertyType(_selectedPropertyType),
+                    onChanged: (type) {
+                      setState(() => _selectedPropertyType = type.name);
+                      _syncToState();
+                    },
                   ),
+                  const SizedBox(height: 16),
 
-                  const SizedBox(height: 20),
+                  BlocProvider.value(
+                    value: _geoCubit,
+                    child: BlocBuilder<GeographicReferenceCubit, GeographicReferenceState>(
+                      builder: (context, state) {
+                        final locale = Localizations.localeOf(context).languageCode;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Row for Governorate & City
+                            Row(
+                              children: [
+                                // 1. Governorate Dropdown
+                                Expanded(
+                                  child: _buildLabeledField(
+                                    label: l10n.address_governorate_label,
+                                    child: DropdownButtonFormField<int>(
+                                      dropdownColor: themeColor.cardBackground,
+                                      value: state.selectedGovernorateId,
+                                      focusNode: _governorateFocus,
+                                      decoration: InputDecoration(
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                        filled: true,
+                                        fillColor: themeColor.background.withValues(alpha: 0.5),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: themeColor.primary),
+                                        ),
+                                      ),
+                                      items: state.governorates
+                                          .map((g) => DropdownMenuItem<int>(
+                                                value: g.id,
+                                                child: Text(
+                                                  g.getName(locale),
+                                                  style: TextStyle(color: themeColor.textPrimary, fontSize: 13),
+                                                ),
+                                              ))
+                                          .toList(),
+                                      onChanged: state.isLoadingGovernorates
+                                          ? null
+                                          : (val) {
+                                              _geoCubit.selectGovernorate(val);
+                                              setState(() {
+                                                _selectedGovernorate = state.selectedGovernorate?.getName(locale);
+                                                _selectedCity = null;
+                                              });
+                                              _syncToState();
+                                            },
+                                      validator: (val) =>
+                                          InputValidator.validateDropdownSelection(val?.toString(), l10n: l10n),
+                                      hint: Text(
+                                        state.isLoadingGovernorates
+                                            ? 'تحميل...'
+                                            : l10n.address_governorate_label,
+                                        style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+
+                                // 2. City Dropdown
+                                Expanded(
+                                  child: _buildLabeledField(
+                                    label: l10n.address_region_label,
+                                    child: DropdownButtonFormField<int>(
+                                      dropdownColor: themeColor.cardBackground,
+                                      value: state.selectedCityId,
+                                      focusNode: _cityFocus,
+                                      decoration: InputDecoration(
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                        filled: true,
+                                        fillColor: themeColor.background.withValues(alpha: 0.5),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: themeColor.primary),
+                                        ),
+                                      ),
+                                      items: state.cities
+                                          .map((c) => DropdownMenuItem<int>(
+                                                value: c.id,
+                                                child: Text(
+                                                  c.getName(locale),
+                                                  style: TextStyle(color: themeColor.textPrimary, fontSize: 13),
+                                                ),
+                                              ))
+                                          .toList(),
+                                      onChanged: (state.selectedGovernorateId == null || state.isLoadingCities)
+                                          ? null
+                                          : (val) {
+                                              _geoCubit.selectCity(val);
+                                              setState(() {
+                                                _selectedCity = state.selectedCity?.getName(locale);
+                                              });
+                                              _syncToState();
+                                            },
+                                      validator: (val) =>
+                                          InputValidator.validateDropdownSelection(val?.toString(), l10n: l10n),
+                                      hint: Text(
+                                        state.isLoadingCities
+                                            ? 'تحميل...'
+                                            : (state.selectedGovernorateId == null
+                                                ? l10n.address_select_governorate_first
+                                                : l10n.address_select_city),
+                                        style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // 3. District Dropdown / Field
+                            if (state.districts.isNotEmpty) ...[
+                              _buildLabeledField(
+                                label: 'المنطقة / الحي',
+                                child: DropdownButtonFormField<int>(
+                                  dropdownColor: themeColor.cardBackground,
+                                  value: state.selectedDistrictId,
+                                  focusNode: _districtFocus,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                    filled: true,
+                                    fillColor: themeColor.background.withValues(alpha: 0.5),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide(color: themeColor.primary),
+                                    ),
+                                  ),
+                                  items: state.districts
+                                      .map((d) => DropdownMenuItem<int>(
+                                            value: d.id,
+                                            child: Text(
+                                              d.getName(locale),
+                                              style: TextStyle(color: themeColor.textPrimary, fontSize: 13),
+                                            ),
+                                          ))
+                                      .toList(),
+                                  onChanged: state.isLoadingDistricts
+                                      ? null
+                                      : (val) {
+                                          _geoCubit.selectDistrict(val);
+                                          if (val != null) {
+                                            final dist = state.districts.firstWhere((d) => d.id == val);
+                                            _districtController.text = dist.getName(locale);
+                                          }
+                                          _syncToState();
+                                        },
+                                  validator: (val) =>
+                                      InputValidator.validateDropdownSelection(val?.toString(), l10n: l10n),
+                                  hint: Text(
+                                    state.isLoadingDistricts ? 'تحميل...' : 'اختر الحي / المنطقة',
+                                    style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
+                                  ),
+                                ),
+                              ),
+                            ] else ...[
+                              _buildLabeledField(
+                                label: 'المنطقة / الحي',
+                                child: _buildTextFormField(
+                                  controller: _districtController,
+                                  focusNode: _districtFocus,
+                                  icon: Icons.location_city_rounded,
+                                  themeColor: themeColor,
+                                  hint: state.selectedCityId == null
+                                      ? 'اختر المدينة أولاً'
+                                      : 'أدخل اسم المنطقة أو الحي (مثال: الحي الأول)',
+                                  validator: (val) => InputValidator.validateEmpty(val, l10n: l10n),
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
                   _buildLabeledField(
                     label: l10n.address_street_label,
@@ -325,6 +560,18 @@ class _ManualClientPageState extends State<ManualClientPage> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildLabeledField(
+                    label: 'علامة مميزة (اختياري)',
+                    child: _buildTextFormField(
+                      controller: _landmarkController,
+                      focusNode: _landmarkFocus,
+                      icon: Icons.turned_in_not_rounded,
+                      themeColor: themeColor,
                     ),
                   ),
                 ],
@@ -518,18 +765,36 @@ class _ManualClientPageState extends State<ManualClientPage> {
   }
 
   void _autoFill(AppLocalizations l10n) {
-    setState(() {
-      _nameController.text = l10n.role_client;
-      _phoneController.text = "01012345678";
-      _selectedGovernorate = l10n.address_gov_cairo;
-      _selectedCity = l10n.address_city_fifth_settlement;
-      _streetController.text = "90 Street";
-      _buildingController.text = "10";
-      _floorController.text = "2";
-      _apartmentController.text = "5";
-    });
-    _syncToState();
-    
+    _nameController.text = l10n.role_client;
+    _phoneController.text = "01012345678";
+    _streetController.text = "90 Street";
+    _buildingController.text = "10";
+    _floorController.text = "2";
+    _apartmentController.text = "5";
+
+    final govs = _geoCubit.state.governorates;
+    if (govs.isNotEmpty) {
+      final firstGov = govs.first;
+      _geoCubit.selectGovernorate(firstGov.id).then((_) {
+        final cities = _geoCubit.state.cities;
+        if (cities.isNotEmpty) {
+          final firstCity = cities.first;
+          _geoCubit.selectCity(firstCity.id).then((_) {
+            final districts = _geoCubit.state.districts;
+            if (districts.isNotEmpty) {
+              _geoCubit.selectDistrict(districts.first.id);
+              _districtController.text = districts.first.getName('ar');
+            }
+            _syncToState();
+          });
+        } else {
+          _syncToState();
+        }
+      });
+    } else {
+      _syncToState();
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(l10n.booking_autofill_success),
@@ -539,3 +804,4 @@ class _ManualClientPageState extends State<ManualClientPage> {
     );
   }
 }
+

@@ -27,12 +27,15 @@ Map<String, dynamic> _$ServiceSnapshotModelToJson(
 AddressSnapshotModel _$AddressSnapshotModelFromJson(
         Map<String, dynamic> json) =>
     AddressSnapshotModel(
-      governorate: json['governorate'] as String,
-      city: json['city'] as String,
-      street: json['street'] as String,
-      buildingNumber: json['buildingNumber'] as String,
+      governorate: json['governorate'] as String? ?? '',
+      city: json['city'] as String? ?? '',
+      district: json['district'] as String? ?? '',
+      street: json['street'] as String? ?? '',
+      buildingNumber: json['buildingNumber'] as String? ?? '',
       apartmentNumber: json['apartmentNumber'] as String?,
       floorNumber: json['floorNumber'] as String?,
+      landmark: json['landmark'] as String?,
+      propertyType: json['propertyType'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
     );
@@ -42,10 +45,13 @@ Map<String, dynamic> _$AddressSnapshotModelToJson(
     <String, dynamic>{
       'governorate': instance.governorate,
       'city': instance.city,
+      'district': instance.district,
       'street': instance.street,
       'buildingNumber': instance.buildingNumber,
       'apartmentNumber': instance.apartmentNumber,
       'floorNumber': instance.floorNumber,
+      'landmark': instance.landmark,
+      'propertyType': instance.propertyType,
       'latitude': instance.latitude,
       'longitude': instance.longitude,
     };

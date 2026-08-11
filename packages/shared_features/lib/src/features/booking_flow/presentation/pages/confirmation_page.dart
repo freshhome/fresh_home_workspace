@@ -84,10 +84,10 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                 ? [
                     address.governorate,
                     address.city,
-                    address.street,
-                    l10n.booking_building_val(address.buildingNumber),
-                    address.apartmentNumber != null && address.apartmentNumber!.isNotEmpty
-                        ? l10n.booking_apartment_val(address.apartmentNumber!)
+                    address.streetOrCompound,
+                    l10n.booking_building_val(address.buildingIdentifier),
+                    address.apartmentOrUnit != null && address.apartmentOrUnit!.isNotEmpty
+                        ? l10n.booking_apartment_val(address.apartmentOrUnit!)
                         : null,
                   ].whereType<String>().join(', ')
                 : l10n.confirmation_no_address;

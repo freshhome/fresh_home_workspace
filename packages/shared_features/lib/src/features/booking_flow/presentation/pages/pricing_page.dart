@@ -8,6 +8,8 @@ import 'package:shared/presentation/presentation.dart';
 import '../cubit/booking_flow_cubit.dart';
 import '../cubit/booking_flow_state.dart';
 import '../widgets/dynamic_form_widgets.dart';
+import '../widgets/pricing_components/pricing_header_widget.dart';
+import '../widgets/pricing_components/pricing_summary_bar_widget.dart';
 
 class PricingPage extends StatefulWidget {
   const PricingPage({super.key});
@@ -150,7 +152,10 @@ class _PricingPageState extends State<PricingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildServiceHeader(state.service, priceEntity, themeText, themeColor),
+                PricingHeaderWidget(
+                  serviceName: state.service?.name[Localizations.localeOf(context).languageCode] ?? state.service?.name['ar'] ?? 'خدمة فريش هوم',
+                  pricingMethodLabel: priceEntity?.type.toString().split('.').last,
+                ),
                 const SizedBox(height: 12),
                 if (isDynamic)
                   DynamicFormRenderer(
@@ -206,7 +211,14 @@ class _PricingPageState extends State<PricingPage> {
                     const SizedBox(height: 24),
                   ],
                   PriceBreakdownCard(pricing: state.price!, showHeader: true),
+                  const SizedBox(height: 16),
                 ],
+                PricingSummaryBarWidget(
+                  totalPrice: state.price?.total ?? 0.0,
+                  originalPrice: state.price?.basePrice,
+                  isPriceCalculated: state.isPriceCalculated,
+                  onCalculate: () => context.read<BookingFlowCubit>().calculatePrice(),
+                ),
               ],
             ),
           );
@@ -216,112 +228,6 @@ class _PricingPageState extends State<PricingPage> {
   }
 
   // ── Service Header ─────────────────────────────────────────────────────────
-
-  Widget _buildServiceHeader(
-    BookedService? service,
-    PriceEntity? priceEntity,
-    AppTextThemeExtension themeText,
-    ThemeColorExtension themeColor,
-  ) {
-    if (service == null) return const SizedBox.shrink();
-    final l10n = AppLocalizations.of(context)!;
-    
-    String pricingMethodText = l10n.pricing_method_custom;
-    IconData pricingIcon = Icons.payments_outlined;
-    if (priceEntity != null) {
-      switch (priceEntity.type) {
-        case PricingMethod.fixed:
-          pricingMethodText = l10n.pricing_method_fixed;
-          pricingIcon = Icons.bookmark_added_rounded;
-          break;
-        case PricingMethod.perSquareMeter:
-          pricingMethodText = l10n.pricing_method_square_meter;
-          pricingIcon = Icons.square_foot_rounded;
-          break;
-        case PricingMethod.perLinearMeter:
-          pricingMethodText = l10n.pricing_method_linear_meter;
-          pricingIcon = Icons.linear_scale_rounded;
-          break;
-        case PricingMethod.perIssue:
-          pricingMethodText = l10n.pricing_method_issue;
-          pricingIcon = Icons.report_problem_rounded;
-          break;
-        case PricingMethod.unknown:
-          pricingMethodText = l10n.pricing_method_custom;
-          pricingIcon = Icons.payments_outlined;
-          break;
-        case PricingMethod.inspection:
-          pricingMethodText = l10n.pricing_method_custom;
-          pricingIcon = Icons.payments_outlined;
-          break;
-      }
-    }
-
-    final localeName = service.name[Localizations.localeOf(context).languageCode] ??
-        service.name['ar'] ??
-        service.name['en'] ??
-        '';
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            themeColor.primary.withValues(alpha: 0.1),
-            themeColor.primary.withValues(alpha: 0.02),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: themeColor.primary.withValues(alpha: 0.15),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: themeColor.primary.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              pricingIcon,
-              color: themeColor.primary,
-              size: 26,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  localeName,
-                  style: themeText.textBodyPrimary.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: themeColor.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  pricingMethodText,
-                  style: themeText.textCaption.copyWith(
-                    color: themeColor.primary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ── Area Input ─────────────────────────────────────────────────────────────
 

@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:shared/domain/booking/entities/booking/sub_entities/booking_components.dart';
-import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
-import 'package:shared/domain/user/entities/user/phone.dart';
 import 'package:shared/shared.dart';
 import 'package:shared_features/src/features/booking_flow/domain/booking_flow_config.dart';
 import 'package:shared_features/src/features/profile/domain/profile_domain.dart';
@@ -491,10 +488,15 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     String? phone,
     String? governorate,
     String? city,
+    String? district,
     String? street,
     String? building,
     String? floor,
     String? apartment,
+    String? landmark,
+    String? propertyType,
+    double? latitude,
+    double? longitude,
   }) {
     emit(
       state.copyWith(
@@ -502,10 +504,15 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         manualClientPhone: phone ?? state.manualClientPhone,
         manualClientGovernorate: governorate ?? state.manualClientGovernorate,
         manualClientCity: city ?? state.manualClientCity,
+        manualClientDistrict: district ?? state.manualClientDistrict,
         manualClientStreet: street ?? state.manualClientStreet,
         manualClientBuilding: building ?? state.manualClientBuilding,
         manualClientFloor: floor ?? state.manualClientFloor,
         manualClientApartment: apartment ?? state.manualClientApartment,
+        manualClientLandmark: landmark ?? state.manualClientLandmark,
+        manualClientPropertyType: propertyType ?? state.manualClientPropertyType,
+        manualClientLatitude: latitude ?? state.manualClientLatitude,
+        manualClientLongitude: longitude ?? state.manualClientLongitude,
       ),
     );
     _validateCurrentStep();
@@ -729,21 +736,33 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     if (config.requiresManualClientData) {
       final gov = state.manualClientGovernorate;
       final city = state.manualClientCity;
+      final district = state.manualClientDistrict;
       final street = state.manualClientStreet;
       final building = state.manualClientBuilding;
       final floor = state.manualClientFloor;
       final apartment = state.manualClientApartment;
+      final landmark = state.manualClientLandmark;
       if (gov == null || city == null || street == null || building == null) {
         return null;
       }
       return Address(
-        id: const Uuid().v4(),
+        id: '',
+        userId: state.currentUserProfile?.uid ?? '',
         governorate: gov,
         city: city,
-        street: street,
-        buildingNumber: building,
-        floorNumber: floor,
-        apartmentNumber: apartment,
+        district: (district != null && district.trim().isNotEmpty) ? district.trim() : city,
+        governorateId: state.address?.governorateId,
+        cityId: state.address?.cityId,
+        districtId: state.address?.districtId,
+        streetOrCompound: street,
+        buildingIdentifier: building,
+        floor: floor,
+        apartmentOrUnit: apartment,
+        landmark: landmark,
+        latitude: state.manualClientLatitude,
+        longitude: state.manualClientLongitude,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
     }
     return state.address;
@@ -776,10 +795,10 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
       (a) =>
           a.governorate == usedAddress.governorate &&
           a.city == usedAddress.city &&
-          a.street == usedAddress.street &&
-          a.buildingNumber == usedAddress.buildingNumber &&
-          a.floorNumber == usedAddress.floorNumber &&
-          a.apartmentNumber == usedAddress.apartmentNumber,
+          a.streetOrCompound == usedAddress.streetOrCompound &&
+          a.buildingIdentifier == usedAddress.buildingIdentifier &&
+          a.floor == usedAddress.floor &&
+          a.apartmentOrUnit == usedAddress.apartmentOrUnit,
     );
 
     final isNewPhone = !phones.any((p) => p.phoneNumber == usedPhone);
@@ -787,12 +806,20 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     if (isNewAddress) {
       await profileRepository!.addAddress(
         address: Address(
+          id: '',
+          userId: profile.uid,
           governorate: usedAddress.governorate,
           city: usedAddress.city,
-          street: usedAddress.street,
-          buildingNumber: usedAddress.buildingNumber,
-          floorNumber: usedAddress.floorNumber,
-          apartmentNumber: usedAddress.apartmentNumber,
+          district: usedAddress.district,
+          streetOrCompound: usedAddress.streetOrCompound,
+          buildingIdentifier: usedAddress.buildingIdentifier,
+          floor: usedAddress.floor,
+          apartmentOrUnit: usedAddress.apartmentOrUnit,
+          landmark: usedAddress.landmark,
+          latitude: usedAddress.latitude,
+          longitude: usedAddress.longitude,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         ),
       );
     }
@@ -822,10 +849,10 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         (a) =>
             a.governorate == usedAddress.governorate &&
             a.city == usedAddress.city &&
-            a.street == usedAddress.street &&
-            a.buildingNumber == usedAddress.buildingNumber &&
-            a.floorNumber == usedAddress.floorNumber &&
-            a.apartmentNumber == usedAddress.apartmentNumber,
+            a.streetOrCompound == usedAddress.streetOrCompound &&
+            a.buildingIdentifier == usedAddress.buildingIdentifier &&
+            a.floor == usedAddress.floor &&
+            a.apartmentOrUnit == usedAddress.apartmentOrUnit,
         orElse: () => usedAddress,
       );
     });

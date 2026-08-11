@@ -81,7 +81,7 @@ class BookingRemoteModel {
           : const ServiceSnapshotModel(id: '', subServiceId: '', name: {}, image: ''),
       address: json['address_snapshot'] != null
           ? AddressSnapshotModel.fromJson(json['address_snapshot'] as Map<String, dynamic>)
-          : const AddressSnapshotModel(governorate: '', city: '', street: '', buildingNumber: ''),
+          : const AddressSnapshotModel(governorate: '', city: '', district: '', street: '', buildingNumber: ''),
       price: json['price_snapshot'] != null
           ? PriceSnapshotModel.fromJson(json['price_snapshot'] as Map<String, dynamic>)
           : const PriceSnapshotModel(basePrice: 0.0, extraFees: 0.0, discount: 0.0, total: 0.0),

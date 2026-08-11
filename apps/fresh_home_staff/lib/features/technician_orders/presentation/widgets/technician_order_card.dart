@@ -155,7 +155,7 @@ class TechnicianOrderCard extends StatelessWidget {
                                   order.status == OrderStatus.onTheWay ||
                                   order.status == OrderStatus.arrived ||
                                   order.status == OrderStatus.inProgress)
-                              ? "${order.address.street}, ${order.address.buildingNumber}, ${order.address.city}"
+                              ? "${order.address.streetOrCompound}, ${order.address.buildingIdentifier}, ${order.address.city}"
                               : order.address.city,
                           isFullWidth: true,
                           themeColor: themeColor,

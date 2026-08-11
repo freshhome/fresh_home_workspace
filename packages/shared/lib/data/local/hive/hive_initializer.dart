@@ -9,8 +9,8 @@ import 'package:shared/data/service/models/local/services_updated_hive_model.dar
 import 'package:shared/data/service/models/local/sub_models/service_details_hive_model.dart';
 import 'package:shared/data/service/models/local/sub_models/service_price_hive_model.dart';
 import 'package:shared/data/service/models/local/pending_action_hive_model.dart';
-import 'package:shared/data/user/models/remote/phone_model.dart';
 import 'package:shared/data/user/models/address_model.dart';
+import 'package:shared/data/user/models/remote/phone_model.dart';
 import 'package:shared/data/user/models/local/client_profile_hive_model.dart';
 import 'package:shared/data/user/models/local/technician_profile_hive_model.dart';
 import 'package:shared/data/user/models/local/user_hive_model.dart';
@@ -22,7 +22,6 @@ class HiveInitializer {
 
   static Future<void> init() async {
     await Hive.initFlutter();
-    Hive.registerAdapter(AddressModelAdapter());
     Hive.registerAdapter(UserHiveModelAdapter());
 
     // Services Feature Adapters
@@ -38,6 +37,7 @@ class HiveInitializer {
     Hive.registerAdapter(ClientProfileHiveModelAdapter());
     Hive.registerAdapter(TechnicianProfileHiveModelAdapter());
     Hive.registerAdapter(PhoneModelAdapter());
+    Hive.registerAdapter(AddressModelAdapter());
 
     // Booking Core Adapters
     Hive.registerAdapter(OrderStatusAdapter());

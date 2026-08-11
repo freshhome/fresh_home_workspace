@@ -1,40 +1,17 @@
-
 import 'package:shared/data/user/models/address_model.dart';
 import 'package:shared/domain/user/entities/user/address.dart';
 
+/// Mapper class converting between Address Entity and AddressModel DTO.
 class AddressMapper {
+  static Address toEntity(AddressModel model) => model.toEntity();
 
-static Address fromModel(AddressModel model) {
-  return Address(
-    id: model.id,
-    governorate: model.governorate,
-    city: model.city,
-    street: model.street,
-    buildingNumber: model.buildingNumber,
-    floorNumber: model.floorNumber,
-    apartmentNumber: model.apartmentNumber,
-  );
-}
+  static AddressModel toModel(Address entity) => AddressModel.fromEntity(entity);
 
-static AddressModel toModel(Address entity) {
-  return AddressModel(
-    id: entity.id,
-    governorate: entity.governorate,
-    city: entity.city,
-    street: entity.street,
-    buildingNumber: entity.buildingNumber,
-    floorNumber: entity.floorNumber,
-    apartmentNumber: entity.apartmentNumber,
-  );
-}
+  static List<Address> toEntityList(List<AddressModel> models) {
+    return models.map((m) => m.toEntity()).toList();
+  }
 
-
-
-
-
-
-
-
-
-
+  static List<AddressModel> toModelList(List<Address> entities) {
+    return entities.map((e) => AddressModel.fromEntity(e)).toList();
+  }
 }

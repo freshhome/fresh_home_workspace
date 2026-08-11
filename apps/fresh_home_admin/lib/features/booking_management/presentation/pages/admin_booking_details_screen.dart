@@ -937,7 +937,7 @@ class _AdminBookingDetailsContent extends StatelessWidget {
   Widget _buildCustomerCard(BuildContext context, UserProfile? customer) {
     final address = booking.address;
     final fullAddress =
-        '${address.city}، ${address.street}، عمارة ${address.buildingNumber}${address.apartmentNumber != null ? '، شقة ${address.apartmentNumber}' : ''}${address.floorNumber != null ? '، دور ${address.floorNumber}' : ''}';
+        '${address.city}، ${address.streetOrCompound}، عمارة ${address.buildingIdentifier}${address.apartmentOrUnit != null ? '، شقة ${address.apartmentOrUnit}' : ''}${address.floor != null ? '، دور ${address.floor}' : ''}';
 
     // 1. Start with Manual Contact Data (Snapshot)
     String displayName = booking.contact.name;

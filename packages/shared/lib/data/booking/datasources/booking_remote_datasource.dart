@@ -282,7 +282,6 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
           .neq('code', '')
           .or('sub_service_id.eq.$subServiceId,sub_service_id.is.null');
 
-      if (response == null) return false;
       final list = response as List;
       if (list.isEmpty) return false;
 

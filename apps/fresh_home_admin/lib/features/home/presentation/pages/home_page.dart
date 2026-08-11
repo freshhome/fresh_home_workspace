@@ -203,6 +203,17 @@ class HomePage extends StatelessWidget {
                           context,
                         ).push('/admin/whatsapp-settings'),
                       ),
+                      // Geographic Reference Data Management
+                      _buildFeatureCard(
+                        context,
+                        title: 'المناطق والعناوين',
+                        icon: Icons.map_rounded,
+                        color: Colors.indigo,
+                        onTap: () => GoRouter.of(
+                          context,
+                        ).push('/admin/geographic-management'),
+                      ),
+
                       // Motion Review Playground
                       _buildFeatureCard(
                         context,

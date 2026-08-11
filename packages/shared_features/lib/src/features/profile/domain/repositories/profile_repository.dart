@@ -12,4 +12,5 @@ abstract class ProfileRepository {
   Future<Either<Failure, UserProfile>> addAddress({required Address address});
   Future<Either<Failure, UserProfile>> updateAddress({required int index, required Address address});
   Future<Either<Failure, UserProfile>> deleteAddress({required int index});
+  Future<Either<Failure, UserProfile>> setPrimaryAddress({required int index});
 }

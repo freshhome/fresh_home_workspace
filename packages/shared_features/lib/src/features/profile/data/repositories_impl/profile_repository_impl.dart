@@ -171,7 +171,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
           preferredPaymentMethod: 'cash',
           addresses:
               client?.addresses
-                  .map((a) => AddressMapper.fromModel(a))
+                  .map((a) => AddressMapper.toEntity(a))
                   .toList() ??
               const [],
         );
@@ -373,20 +373,28 @@ class ProfileRepositoryImpl implements ProfileRepository {
         );
       }
 
-      final profile = await _requireClientProfile(uid);
-      final updatedAddresses = List.of(profile.addresses)
-        ..add(AddressMapper.toModel(address));
+      final addressWithUser = address.userId.isEmpty ? address.copyWith(userId: uid) : address;
+      final model = AddressMapper.toModel(addressWithUser);
+      final jsonPayload = model.toJson();
+      if (jsonPayload['id'] == null || (jsonPayload['id'] as String).isEmpty) {
+        jsonPayload.remove('id');
+      }
 
-      final updated = CustomerProfileRemoteModel(
-        userId: uid,
-        preferredPaymentMethod: profile.preferredPaymentMethod,
-        addresses: updatedAddresses,
-        phoneNumbers: profile.phoneNumbers,
-      );
-      await clientProfileRemoteDataSource.saveClientProfile(updated);
+      try {
+        await supabase.from('user_addresses').insert(jsonPayload);
+      } on sb.PostgrestException catch (e) {
+        if (e.message.contains('property_type') || e.code == 'PGRST204') {
+          jsonPayload.remove('property_type');
+          await supabase.from('user_addresses').insert(jsonPayload);
+        } else {
+          rethrow;
+        }
+      }
 
       final unified = await _getUnifiedProfile(uid, forceRemote: true);
       return Right(await _enrichTechnicianProfile(unified));
+    } on sb.PostgrestException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExternalServiceError(e));
     } catch (e) {
@@ -409,25 +417,35 @@ class ProfileRepositoryImpl implements ProfileRepository {
       }
 
       final profile = await _requireClientProfile(uid);
-      if (index < 0 || index >= profile.addresses.length) {
-        return Left(
-          ServerFailure(message: 'address_not_found', code: 'not_found'),
-        );
+      final targetId = address.id.isNotEmpty
+          ? address.id
+          : (index >= 0 && index < profile.addresses.length ? profile.addresses[index].id : '');
+
+      if (targetId.isNotEmpty) {
+        final model = AddressMapper.toModel(address);
+        final payload = model.toJson();
+        try {
+          await supabase
+              .from('user_addresses')
+              .update(payload)
+              .eq('id', targetId);
+        } on sb.PostgrestException catch (e) {
+          if (e.message.contains('property_type') || e.code == 'PGRST204') {
+            payload.remove('property_type');
+            await supabase
+                .from('user_addresses')
+                .update(payload)
+                .eq('id', targetId);
+          } else {
+            rethrow;
+          }
+        }
       }
-
-      final updatedAddresses = List.of(profile.addresses);
-      updatedAddresses[index] = AddressMapper.toModel(address);
-
-      final updated = CustomerProfileRemoteModel(
-        userId: uid,
-        preferredPaymentMethod: profile.preferredPaymentMethod,
-        addresses: updatedAddresses,
-        phoneNumbers: profile.phoneNumbers,
-      );
-      await clientProfileRemoteDataSource.saveClientProfile(updated);
 
       final unified = await _getUnifiedProfile(uid, forceRemote: true);
       return Right(await _enrichTechnicianProfile(unified));
+    } on sb.PostgrestException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExternalServiceError(e));
     } catch (e) {
@@ -454,18 +472,71 @@ class ProfileRepositoryImpl implements ProfileRepository {
         );
       }
 
-      final updatedAddresses = List.of(profile.addresses)..removeAt(index);
-
-      final updated = CustomerProfileRemoteModel(
-        userId: uid,
-        preferredPaymentMethod: profile.preferredPaymentMethod,
-        addresses: updatedAddresses,
-        phoneNumbers: profile.phoneNumbers,
-      );
-      await clientProfileRemoteDataSource.saveClientProfile(updated);
+      final targetAddress = profile.addresses[index];
+      if (targetAddress.id.isNotEmpty) {
+        try {
+          await supabase
+              .from('user_addresses')
+              .update({
+                'deleted_at': DateTime.now().toIso8601String(),
+                'is_primary': false,
+              })
+              .eq('id', targetAddress.id);
+        } on sb.PostgrestException catch (_) {
+          await supabase
+              .from('user_addresses')
+              .delete()
+              .eq('id', targetAddress.id);
+        }
+      }
 
       final unified = await _getUnifiedProfile(uid, forceRemote: true);
       return Right(await _enrichTechnicianProfile(unified));
+    } on sb.PostgrestException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } on AppException catch (e) {
+      return Left(ErrorMapper.mapExternalServiceError(e));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserProfile>> setPrimaryAddress({
+    required int index,
+  }) async {
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) {
+        throw const AppAuthException(
+          'unauthenticated',
+          code: 'unauthenticated',
+        );
+      }
+      final profile = await _requireClientProfile(uid);
+      if (index < 0 || index >= profile.addresses.length) {
+        return Left(
+          ServerFailure(message: 'address_not_found', code: 'not_found'),
+        );
+      }
+
+      final targetAddress = profile.addresses[index];
+      if (targetAddress.id.isNotEmpty) {
+        await supabase
+            .from('user_addresses')
+            .update({'is_primary': false})
+            .eq('user_id', uid);
+
+        await supabase
+            .from('user_addresses')
+            .update({'is_primary': true})
+            .eq('id', targetAddress.id);
+      }
+
+      final unified = await _getUnifiedProfile(uid, forceRemote: true);
+      return Right(await _enrichTechnicianProfile(unified));
+    } on sb.PostgrestException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExternalServiceError(e));
     } catch (e) {

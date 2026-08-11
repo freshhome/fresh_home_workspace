@@ -1,8 +1,29 @@
 export 'entities/user/user_profile.dart';
 export 'entities/user/address.dart';
 export 'entities/user/phone.dart';
+export 'entities/user/governorate.dart';
+export 'entities/user/city.dart';
+export 'entities/user/district.dart';
+export 'value_objects/governorate_value.dart';
+export 'value_objects/city_value.dart';
+export 'value_objects/district_value.dart';
+export 'validation/address_validator.dart';
+export 'services/address_formatter.dart';
 export 'repositories/user_repository.dart';
+export 'repositories/address_repository.dart';
+export 'repositories/geographic_reference_repository.dart';
+export 'repositories/admin_geographic_reference_repository.dart';
+
 export 'use_cases/user/create_user_use_case.dart';
 export 'use_cases/user/get_user_by_id_use_case.dart';
 export 'use_cases/user/update_user_use_case.dart';
+export 'usecases/get_user_addresses_usecase.dart';
+export 'usecases/create_address_usecase.dart';
+export 'usecases/update_address_usecase.dart';
+export 'usecases/delete_address_usecase.dart';
+export 'usecases/set_primary_address_usecase.dart';
+export 'usecases/get_active_governorates_usecase.dart';
+export 'usecases/get_active_cities_by_governorate_usecase.dart';
+export 'usecases/get_active_districts_by_city_usecase.dart';
 export 'enums/user_role.dart';
+
