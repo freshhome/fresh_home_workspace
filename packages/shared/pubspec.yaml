@@ -55,6 +55,12 @@ dependencies:
   cached_network_image: ^3.4.1
   image: ^4.3.0
 
+  # ---------------------------------------------------------
+  # الخرائط (Maps)
+  # ---------------------------------------------------------
+  flutter_map: ^8.1.1
+  latlong2: ^0.9.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

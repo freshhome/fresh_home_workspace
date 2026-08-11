@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:shared/presentation/location/cubit/location_picker_cubit.dart';
 import 'package:shared/presentation/location/cubit/location_picker_state.dart';
 
 /// Production-grade Bottom Sheet for Selecting / Viewing Address GPS Location.
-class AddressLocationPickerSheet extends StatelessWidget {
+/// Uses flutter_map (OpenStreetMap) — no API key required.
+class AddressLocationPickerSheet extends StatefulWidget {
   final double? initialLatitude;
   final double? initialLongitude;
   final String title;
@@ -41,11 +44,44 @@ class AddressLocationPickerSheet extends StatelessWidget {
   }
 
   @override
+  State<AddressLocationPickerSheet> createState() =>
+      _AddressLocationPickerSheetState();
+}
+
+class _AddressLocationPickerSheetState
+    extends State<AddressLocationPickerSheet> {
+  late final MapController _mapController;
+
+  // Default center: Cairo, Egypt
+  static const double _defaultLat = 30.0444;
+  static const double _defaultLng = 31.2357;
+  static const double _defaultZoom = 13.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  LatLng _currentCenter(LocationPickerState state) {
+    return LatLng(
+      state.latitude ?? widget.initialLatitude ?? _defaultLat,
+      state.longitude ?? widget.initialLongitude ?? _defaultLng,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.8,
+      height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -71,7 +107,7 @@ class AddressLocationPickerSheet extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  title,
+                  widget.title,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -86,56 +122,92 @@ class AddressLocationPickerSheet extends StatelessWidget {
 
           const Divider(height: 1),
 
-          // Interactive Map Canvas Area
+          // Interactive Map Area
           Expanded(
             child: BlocBuilder<LocationPickerCubit, LocationPickerState>(
               builder: (context, state) {
                 final cubit = context.read<LocationPickerCubit>();
+                final center = _currentCenter(state);
 
                 return Stack(
                   children: [
-                    // Visual Map Container / Grid
-                    GestureDetector(
-                      onTapDown: (details) {
-                        // Interactive tap gesture simulation for manual pin selection
-                        final currentLat = state.latitude ?? 30.0444;
-                        final currentLng = state.longitude ?? 31.2357;
-                        // Small offset simulation on tap
-                        final newLat = currentLat + (details.localPosition.dy > 150 ? -0.005 : 0.005);
-                        final newLng = currentLng + (details.localPosition.dx > 150 ? 0.005 : -0.005);
-                        cubit.selectLocation(latitude: double.parse(newLat.toStringAsFixed(6)), longitude: double.parse(newLng.toStringAsFixed(6)));
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        height: double.infinity,
-                        color: Colors.blueGrey.shade50,
-                        child: CustomPaint(
-                          painter: _MapGridPainter(),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.location_on_rounded,
-                                  size: 48,
-                                  color: Colors.redAccent,
+                    // ── Real OpenStreetMap ──────────────────────────────────
+                    FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: center,
+                        initialZoom: _defaultZoom,
+                        minZoom: 5,
+                        maxZoom: 19,
+                        onTap: (tapPosition, point) {
+                          cubit.selectLocation(
+                            latitude: double.parse(
+                                point.latitude.toStringAsFixed(6)),
+                            longitude: double.parse(
+                                point.longitude.toStringAsFixed(6)),
+                          );
+                        },
+                      ),
+                      children: [
+                        // OpenStreetMap Tile Layer — no API key needed
+                        TileLayer(
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.freshhome.app',
+                          maxZoom: 19,
+                        ),
+
+                        // Selected Location Marker
+                        if (state.hasCoordinates)
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(
+                                  state.latitude!,
+                                  state.longitude!,
                                 ),
-                                const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black87,
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    state.hasCoordinates
-                                        ? '${state.latitude?.toStringAsFixed(5)}, ${state.longitude?.toStringAsFixed(5)}'
-                                        : 'انقر لتحديد الموقع على الخريطة',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                width: 60,
+                                height: 70,
+                                alignment: Alignment.topCenter,
+                                child: const _LocationPin(),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+
+                    // ── Coordinates Badge ───────────────────────────────────
+                    if (state.hasCoordinates)
+                      Positioned(
+                        top: 12,
+                        left: 16,
+                        right: 16,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.black87,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: const [
+                                BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 2))
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.location_on_rounded,
+                                    size: 14, color: Colors.redAccent),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '${state.latitude?.toStringAsFixed(5)},  ${state.longitude?.toStringAsFixed(5)}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
@@ -143,31 +215,109 @@ class AddressLocationPickerSheet extends StatelessWidget {
                           ),
                         ),
                       ),
-                    ),
 
-                    // Current Location GPS Button
+                    // ── Tap Hint (when no location selected) ───────────────
+                    if (!state.hasCoordinates)
+                      Positioned(
+                        top: 16,
+                        left: 16,
+                        right: 16,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.92),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: const [
+                                BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 2))
+                              ],
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.touch_app_rounded,
+                                    size: 16, color: Colors.blue),
+                                SizedBox(width: 6),
+                                Text(
+                                  'انقر على الخريطة لتحديد موقعك',
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // ── GPS Button ──────────────────────────────────────────
                     Positioned(
                       bottom: 20,
-                      right: 20,
-                      child: FloatingActionButton.small(
-                        heroTag: 'gps_btn',
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.blue,
-                        onPressed: () => cubit.requestCurrentLocation(),
-                        child: state.isLoadingLocation
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.my_location_rounded),
+                      right: 16,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Zoom In
+                          _MapControlButton(
+                            icon: Icons.add_rounded,
+                            onTap: () {
+                              final current = _mapController.camera.zoom;
+                              _mapController.move(
+                                  _mapController.camera.center,
+                                  (current + 1).clamp(5, 19));
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          // Zoom Out
+                          _MapControlButton(
+                            icon: Icons.remove_rounded,
+                            onTap: () {
+                              final current = _mapController.camera.zoom;
+                              _mapController.move(
+                                  _mapController.camera.center,
+                                  (current - 1).clamp(5, 19));
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          // Current GPS Location
+                          FloatingActionButton.small(
+                            heroTag: 'gps_btn_map',
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.blue,
+                            elevation: 4,
+                            onPressed: () async {
+                              await cubit.requestCurrentLocation();
+                              if (mounted) {
+                                final s = cubit.state;
+                                if (s.hasCoordinates) {
+                                  _mapController.move(
+                                    LatLng(s.latitude!, s.longitude!),
+                                    16.0,
+                                  );
+                                }
+                              }
+                            },
+                            child: state.isLoadingLocation
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.my_location_rounded),
+                          ),
+                        ],
                       ),
                     ),
 
-                    // Error / Warning Banner
+                    // ── Error Banner ────────────────────────────────────────
                     if (state.errorMessage != null)
                       Positioned(
-                        top: 12,
+                        bottom: 80,
                         left: 16,
                         right: 16,
                         child: Container(
@@ -192,11 +342,11 @@ class AddressLocationPickerSheet extends StatelessWidget {
             ),
           ),
 
-          // Bottom Action Bar
+          // ── Bottom Action Bar ─────────────────────────────────────────────
           BlocBuilder<LocationPickerCubit, LocationPickerState>(
             builder: (context, state) {
               return Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
@@ -210,17 +360,25 @@ class AddressLocationPickerSheet extends StatelessWidget {
                 child: Row(
                   children: [
                     if (state.hasCoordinates)
-                      TextButton(
+                      TextButton.icon(
                         onPressed: () {
                           context.read<LocationPickerCubit>().clearLocation();
                         },
-                        child: const Text('إلغاء الموقع', style: TextStyle(color: Colors.red)),
+                        icon: const Icon(Icons.delete_outline_rounded,
+                            size: 16, color: Colors.red),
+                        label: const Text('إلغاء',
+                            style: TextStyle(color: Colors.red)),
                       ),
                     const Spacer(),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        backgroundColor:
+                            state.hasCoordinates ? Colors.green : Colors.grey,
+                        foregroundColor: Colors.white,
                       ),
                       onPressed: state.hasCoordinates
                           ? () {
@@ -231,7 +389,7 @@ class AddressLocationPickerSheet extends StatelessWidget {
                             }
                           : null,
                       icon: const Icon(Icons.check_circle_rounded),
-                      label: const Text('تأكيد الموقع Selected'),
+                      label: const Text('تأكيد الموقع'),
                     ),
                   ],
                 ),
@@ -244,23 +402,77 @@ class AddressLocationPickerSheet extends StatelessWidget {
   }
 }
 
-class _MapGridPainter extends CustomPainter {
+// ─────────────────────────────────────────────────────────────────────────────
+// Widgets
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _LocationPin extends StatelessWidget {
+  const _LocationPin();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Colors.redAccent,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2.5),
+            boxShadow: const [
+              BoxShadow(
+                  color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))
+            ],
+          ),
+          child: const Icon(Icons.location_on_rounded,
+              color: Colors.white, size: 18),
+        ),
+        CustomPaint(
+          size: const Size(2, 14),
+          painter: _PinTailPainter(),
+        ),
+      ],
+    );
+  }
+}
+
+class _PinTailPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.blueGrey.withValues(alpha: 0.15)
-      ..strokeWidth = 1.0;
-
-
-    const step = 40.0;
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
+      ..color = Colors.redAccent
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+        Offset(size.width / 2, 0), Offset(size.width / 2, size.height), paint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _MapControlButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _MapControlButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 4,
+      borderRadius: BorderRadius.circular(8),
+      color: Colors.white,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, size: 20, color: Colors.black87),
+        ),
+      ),
+    );
+  }
 }

@@ -5,9 +5,6 @@ import 'package:shared/shared.dart';
 import '../cubit/booking_flow_cubit.dart';
 import '../cubit/booking_flow_state.dart';
 
-
-
-
 /// Address step for the **customer** booking flow.
 /// Renders saved addresses from the customer's profile + a manual form option.
 /// In admin mode this page is skipped; the address is entered in [ManualClientPage].
@@ -52,7 +49,9 @@ class _AddressPageState extends State<AddressPage> {
     final state = context.read<BookingFlowCubit>().state;
     final profile = state.currentUserProfile;
 
-    final addressesList = profile is CustomerProfile ? profile.addresses : const <Address>[];
+    final addressesList = profile is CustomerProfile
+        ? profile.addresses
+        : const <Address>[];
     final phoneList = profile?.phoneNumbers ?? [];
 
     _geoCubit.loadGovernorates().then((_) {
@@ -81,7 +80,7 @@ class _AddressPageState extends State<AddressPage> {
     if (state.contact != null) {
       final phone = state.contact!.phone.firstOrNull ?? '';
       _phoneController.text = phone;
-      
+
       final idx = phoneList.indexWhere((p) => p.phoneNumber == phone);
       _selectedPhoneIndex = idx != -1 ? idx : -1;
     } else {
@@ -89,8 +88,12 @@ class _AddressPageState extends State<AddressPage> {
         _selectedPhoneIndex = 0;
         final phone = phoneList[0].phoneNumber;
         _phoneController.text = phone;
-        final contactName = profile != null ? '${profile.firstName} ${profile.lastName}' : '';
-        context.read<BookingFlowCubit>().updateContact(Contact(name: contactName, phone: [phone]));
+        final contactName = profile != null
+            ? '${profile.firstName} ${profile.lastName}'
+            : '';
+        context.read<BookingFlowCubit>().updateContact(
+          Contact(name: contactName, phone: [phone]),
+        );
       }
     }
   }
@@ -124,10 +127,21 @@ class _AddressPageState extends State<AddressPage> {
     final selectedCity = geoState.selectedCity;
     final selectedDistrict = geoState.selectedDistrict;
 
-    final govName = selectedGov?.getName(locale) ?? selectedGov?.nameAr ?? _selectedGovernorate ?? '';
-    final cityName = selectedCity?.getName(locale) ?? selectedCity?.nameAr ?? _selectedCity ?? '';
-    final districtName = selectedDistrict?.getName(locale) ??
-        (_districtController.text.trim().isNotEmpty ? _districtController.text.trim() : cityName);
+    final govName =
+        selectedGov?.getName(locale) ??
+        selectedGov?.nameAr ??
+        _selectedGovernorate ??
+        '';
+    final cityName =
+        selectedCity?.getName(locale) ??
+        selectedCity?.nameAr ??
+        _selectedCity ??
+        '';
+    final districtName =
+        selectedDistrict?.getName(locale) ??
+        (_districtController.text.trim().isNotEmpty
+            ? _districtController.text.trim()
+            : cityName);
 
     final address = Address(
       id: '',
@@ -214,10 +228,21 @@ class _AddressPageState extends State<AddressPage> {
       final selectedCity = geoState.selectedCity;
       final selectedDistrict = geoState.selectedDistrict;
 
-      final govName = selectedGov?.getName(locale) ?? selectedGov?.nameAr ?? _selectedGovernorate ?? '';
-      final cityName = selectedCity?.getName(locale) ?? selectedCity?.nameAr ?? _selectedCity ?? '';
-      final districtName = selectedDistrict?.getName(locale) ??
-          (_districtController.text.trim().isNotEmpty ? _districtController.text.trim() : cityName);
+      final govName =
+          selectedGov?.getName(locale) ??
+          selectedGov?.nameAr ??
+          _selectedGovernorate ??
+          '';
+      final cityName =
+          selectedCity?.getName(locale) ??
+          selectedCity?.nameAr ??
+          _selectedCity ??
+          '';
+      final districtName =
+          selectedDistrict?.getName(locale) ??
+          (_districtController.text.trim().isNotEmpty
+              ? _districtController.text.trim()
+              : cityName);
 
       cubit.updateAddress(
         Address(
@@ -279,8 +304,7 @@ class _AddressPageState extends State<AddressPage> {
           final addressesList = state.currentUserProfile is CustomerProfile
               ? (state.currentUserProfile as CustomerProfile).addresses
               : const <Address>[];
-          final phoneList =
-              state.currentUserProfile?.phoneNumbers ?? [];
+          final phoneList = state.currentUserProfile?.phoneNumbers ?? [];
           final bool showSavedAddresses = addressesList.isNotEmpty;
 
           return SingleChildScrollView(
@@ -454,16 +478,29 @@ class _AddressPageState extends State<AddressPage> {
                         dropdownColor: themeColor.cardBackground,
                         value: state.selectedGovernorateId,
                         decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           filled: true,
-                          fillColor: themeColor.background.withValues(alpha: 0.5),
+                          fillColor: themeColor.background.withValues(
+                            alpha: 0.5,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                            borderSide: BorderSide(
+                              color: themeColor.unselectedItem.withValues(
+                                alpha: 0.1,
+                              ),
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                            borderSide: BorderSide(
+                              color: themeColor.unselectedItem.withValues(
+                                alpha: 0.1,
+                              ),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -471,26 +508,35 @@ class _AddressPageState extends State<AddressPage> {
                           ),
                         ),
                         items: state.governorates
-                            .map((g) => DropdownMenuItem<int>(
-                                  value: g.id,
-                                  child: Text(
-                                    g.getName(locale),
-                                    style: TextStyle(color: themeColor.textPrimary),
+                            .map(
+                              (g) => DropdownMenuItem<int>(
+                                value: g.id,
+                                child: Text(
+                                  g.getName(locale),
+                                  style: TextStyle(
+                                    color: themeColor.textPrimary,
                                   ),
-                                ))
+                                ),
+                              ),
+                            )
                             .toList(),
                         onChanged: state.isLoadingGovernorates
                             ? null
                             : (val) {
                                 _geoCubit.selectGovernorate(val);
                                 setState(() {
-                                  _selectedGovernorate = state.selectedGovernorate?.getName(locale);
+                                  _selectedGovernorate = state
+                                      .selectedGovernorate
+                                      ?.getName(locale);
                                   _selectedCity = null;
                                 });
                                 _onChanged();
                               },
                         validator: (val) =>
-                            InputValidator.validateDropdownSelection(val?.toString(), l10n: l10n),
+                            InputValidator.validateDropdownSelection(
+                              val?.toString(),
+                              l10n: l10n,
+                            ),
                         hint: Text(
                           state.isLoadingGovernorates
                               ? 'جاري تحميل المحافظات...'
@@ -508,16 +554,29 @@ class _AddressPageState extends State<AddressPage> {
                         dropdownColor: themeColor.cardBackground,
                         value: state.selectedCityId,
                         decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           filled: true,
-                          fillColor: themeColor.background.withValues(alpha: 0.5),
+                          fillColor: themeColor.background.withValues(
+                            alpha: 0.5,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                            borderSide: BorderSide(
+                              color: themeColor.unselectedItem.withValues(
+                                alpha: 0.1,
+                              ),
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                            borderSide: BorderSide(
+                              color: themeColor.unselectedItem.withValues(
+                                alpha: 0.1,
+                              ),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -525,31 +584,42 @@ class _AddressPageState extends State<AddressPage> {
                           ),
                         ),
                         items: state.cities
-                            .map((c) => DropdownMenuItem<int>(
-                                  value: c.id,
-                                  child: Text(
-                                    c.getName(locale),
-                                    style: TextStyle(color: themeColor.textPrimary),
+                            .map(
+                              (c) => DropdownMenuItem<int>(
+                                value: c.id,
+                                child: Text(
+                                  c.getName(locale),
+                                  style: TextStyle(
+                                    color: themeColor.textPrimary,
                                   ),
-                                ))
+                                ),
+                              ),
+                            )
                             .toList(),
-                        onChanged: (state.selectedGovernorateId == null || state.isLoadingCities)
+                        onChanged:
+                            (state.selectedGovernorateId == null ||
+                                state.isLoadingCities)
                             ? null
                             : (val) {
                                 _geoCubit.selectCity(val);
                                 setState(() {
-                                  _selectedCity = state.selectedCity?.getName(locale);
+                                  _selectedCity = state.selectedCity?.getName(
+                                    locale,
+                                  );
                                 });
                                 _onChanged();
                               },
                         validator: (val) =>
-                            InputValidator.validateDropdownSelection(val?.toString(), l10n: l10n),
+                            InputValidator.validateDropdownSelection(
+                              val?.toString(),
+                              l10n: l10n,
+                            ),
                         hint: Text(
                           state.isLoadingCities
                               ? 'جاري تحميل المدن...'
                               : (state.selectedGovernorateId == null
-                                  ? l10n.address_select_governorate_first
-                                  : l10n.address_select_city),
+                                    ? l10n.address_select_governorate_first
+                                    : l10n.address_select_city),
                           style: TextStyle(color: themeColor.secondaryText),
                         ),
                       ),
@@ -564,16 +634,29 @@ class _AddressPageState extends State<AddressPage> {
                           dropdownColor: themeColor.cardBackground,
                           value: state.selectedDistrictId,
                           decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                             filled: true,
-                            fillColor: themeColor.background.withValues(alpha: 0.5),
+                            fillColor: themeColor.background.withValues(
+                              alpha: 0.5,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                              borderSide: BorderSide(
+                                color: themeColor.unselectedItem.withValues(
+                                  alpha: 0.1,
+                                ),
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                              borderSide: BorderSide(
+                                color: themeColor.unselectedItem.withValues(
+                                  alpha: 0.1,
+                                ),
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -581,28 +664,41 @@ class _AddressPageState extends State<AddressPage> {
                             ),
                           ),
                           items: state.districts
-                              .map((d) => DropdownMenuItem<int>(
-                                    value: d.id,
-                                    child: Text(
-                                      d.getName(locale),
-                                      style: TextStyle(color: themeColor.textPrimary),
+                              .map(
+                                (d) => DropdownMenuItem<int>(
+                                  value: d.id,
+                                  child: Text(
+                                    d.getName(locale),
+                                    style: TextStyle(
+                                      color: themeColor.textPrimary,
                                     ),
-                                  ))
+                                  ),
+                                ),
+                              )
                               .toList(),
                           onChanged: state.isLoadingDistricts
                               ? null
                               : (val) {
                                   _geoCubit.selectDistrict(val);
                                   if (val != null) {
-                                    final dist = state.districts.firstWhere((d) => d.id == val);
-                                    _districtController.text = dist.getName(locale);
+                                    final dist = state.districts.firstWhere(
+                                      (d) => d.id == val,
+                                    );
+                                    _districtController.text = dist.getName(
+                                      locale,
+                                    );
                                   }
                                   _onChanged();
                                 },
                           validator: (val) =>
-                              InputValidator.validateDropdownSelection(val?.toString(), l10n: l10n),
+                              InputValidator.validateDropdownSelection(
+                                val?.toString(),
+                                l10n: l10n,
+                              ),
                           hint: Text(
-                            state.isLoadingDistricts ? 'جاري تحميل الأحياء...' : 'اختر الحي / المنطقة',
+                            state.isLoadingDistricts
+                                ? 'جاري تحميل الأحياء...'
+                                : 'اختر الحي / المنطقة',
                             style: TextStyle(color: themeColor.secondaryText),
                           ),
                         ),
@@ -617,14 +713,17 @@ class _AddressPageState extends State<AddressPage> {
                               : 'أدخل اسم المنطقة أو الحي (مثال: الحي الأول)',
                           enabled: state.selectedCityId != null,
                           radius: 16,
-                          fillColor: themeColor.background.withValues(alpha: 0.5),
+                          fillColor: themeColor.background.withValues(
+                            alpha: 0.5,
+                          ),
                           prefixIcon: Icon(
                             Icons.location_city_rounded,
                             color: themeColor.primary.withValues(alpha: 0.7),
                             size: 22,
                           ),
                           onChanged: (_) => _onChanged(),
-                          validator: (val) => InputValidator.validateEmpty(val, l10n: l10n),
+                          validator: (val) =>
+                              InputValidator.validateEmpty(val, l10n: l10n),
                         ),
                       ),
                     ],
@@ -633,161 +732,161 @@ class _AddressPageState extends State<AddressPage> {
               },
             ),
             const SizedBox(height: 16),
-          _buildLabeledField(
-            label: l10n.address_street_label,
-            child: BaseTextFormField(
-              controller: _streetController,
-              hint: l10n.address_street_hint,
-              radius: 16,
-              fillColor: themeColor.background.withValues(alpha: 0.5),
-              prefixIcon: Icon(
-                Icons.edit_road_rounded,
-                color: themeColor.primary.withValues(alpha: 0.7),
-                size: 22,
+            _buildLabeledField(
+              label: l10n.address_street_label,
+              child: BaseTextFormField(
+                controller: _streetController,
+                hint: l10n.address_street_hint,
+                radius: 16,
+                fillColor: themeColor.background.withValues(alpha: 0.5),
+                prefixIcon: Icon(
+                  Icons.edit_road_rounded,
+                  color: themeColor.primary.withValues(alpha: 0.7),
+                  size: 22,
+                ),
+                validator: (val) =>
+                    InputValidator.validateEmpty(val, l10n: l10n),
               ),
-              validator: (val) => InputValidator.validateEmpty(val, l10n: l10n),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          // Improved Numeric Grid
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
-            decoration: BoxDecoration(
-              color: themeColor.background.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: themeColor.unselectedItem.withValues(alpha: 0.1),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildNumericInputItem(
-                    label: l10n.address_building_label,
-                    controller: _buildingController,
-                    icon: Icons.home_work_rounded,
-                    themeColor: themeColor,
-                    l10n: l10n,
-                  ),
-                ),
-                _buildVerticalDivider(themeColor),
-                Expanded(
-                  child: _buildNumericInputItem(
-                    label: l10n.address_floor_label,
-                    controller: _floorController,
-                    icon: Icons.layers_rounded,
-                    themeColor: themeColor,
-                    l10n: l10n,
-                  ),
-                ),
-                _buildVerticalDivider(themeColor),
-                Expanded(
-                  child: _buildNumericInputItem(
-                    label: l10n.address_apartment_label,
-                    controller: _apartmentController,
-                    icon: Icons.door_front_door_rounded,
-                    themeColor: themeColor,
-                    l10n: l10n,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildLabeledField(
-            label: 'علامة مميزة (اختياري)',
-            child: BaseTextFormField(
-              controller: _landmarkController,
-              hint: 'مثال: بجوار مسجد المصطفى / أمام الصيدلية',
-              radius: 16,
-              fillColor: themeColor.background.withValues(alpha: 0.5),
-              prefixIcon: Icon(
-                Icons.turned_in_not_rounded,
-                color: themeColor.primary.withValues(alpha: 0.7),
-                size: 22,
-              ),
-              onChanged: (_) => _onChanged(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          InkWell(
-            onTap: () async {
-              final result = await AddressLocationPickerSheet.show(
-                context,
-                initialLatitude: _latitude,
-                initialLongitude: _longitude,
-              );
-              if (result != null) {
-                setState(() {
-                  _latitude = result.latitude;
-                  _longitude = result.longitude;
-                });
-                _onAddressChanged();
-              }
-            },
-
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            // Improved Numeric Grid
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
               decoration: BoxDecoration(
-                color: themeColor.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
+                color: themeColor.background.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: themeColor.primary.withValues(alpha: 0.3),
+                  color: themeColor.unselectedItem.withValues(alpha: 0.1),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.my_location_rounded,
-                    color: themeColor.primary,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'تحديد الموقع من الخريطة (GPS)',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: themeColor.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _latitude != null && _longitude != null
-                              ? 'الإحداثيات الحالية: $_latitude, $_longitude'
-                              : 'انقر لتحديد موقعك بدقة على الخريطة',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: themeColor.secondaryText,
-                          ),
-                        ),
-                      ],
+                    child: _buildNumericInputItem(
+                      label: l10n.address_building_label,
+                      controller: _buildingController,
+                      icon: Icons.home_work_rounded,
+                      themeColor: themeColor,
+                      l10n: l10n,
                     ),
                   ),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: themeColor.secondaryText,
+                  _buildVerticalDivider(themeColor),
+                  Expanded(
+                    child: _buildNumericInputItem(
+                      label: l10n.address_floor_label,
+                      controller: _floorController,
+                      icon: Icons.layers_rounded,
+                      themeColor: themeColor,
+                      l10n: l10n,
+                    ),
+                  ),
+                  _buildVerticalDivider(themeColor),
+                  Expanded(
+                    child: _buildNumericInputItem(
+                      label: l10n.address_apartment_label,
+                      controller: _apartmentController,
+                      icon: Icons.door_front_door_rounded,
+                      themeColor: themeColor,
+                      l10n: l10n,
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            _buildLabeledField(
+              label: 'علامة مميزة (اختياري)',
+              child: BaseTextFormField(
+                controller: _landmarkController,
+                hint: 'مثال: بجوار مسجد المصطفى / أمام الصيدلية',
+                radius: 16,
+                fillColor: themeColor.background.withValues(alpha: 0.5),
+                prefixIcon: Icon(
+                  Icons.turned_in_not_rounded,
+                  color: themeColor.primary.withValues(alpha: 0.7),
+                  size: 22,
+                ),
+                onChanged: (_) => _onChanged(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () async {
+                final result = await AddressLocationPickerSheet.show(
+                  context,
+                  initialLatitude: _latitude,
+                  initialLongitude: _longitude,
+                );
+                if (result != null) {
+                  setState(() {
+                    _latitude = result.latitude;
+                    _longitude = result.longitude;
+                  });
+                }
+              },
+
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: themeColor.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: themeColor.primary.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.my_location_rounded,
+                      color: themeColor.primary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'تحديد الموقع من الخريطة (GPS)',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: themeColor.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _latitude != null && _longitude != null
+                                ? 'الإحداثيات الحالية: $_latitude, $_longitude'
+                                : 'انقر لتحديد موقعك بدقة على الخريطة',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: themeColor.secondaryText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: themeColor.secondaryText,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
-
-
-
+    );
+  }
 
   Widget _buildPhoneForm(
     ThemeColorExtension themeColor,
@@ -1027,7 +1126,9 @@ class _AddressPageState extends State<AddressPage> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
-                            color: isSelected ? activeColor : themeColor.textPrimary,
+                            color: isSelected
+                                ? activeColor
+                                : themeColor.textPrimary,
                           ),
                         ),
                       ],
@@ -1145,7 +1246,9 @@ class _AddressPageState extends State<AddressPage> {
       try {
         final govs = _geoCubit.state.governorates;
         final matchedGov = govs.firstWhere(
-          (g) => g.nameAr == address.governorate || g.nameEn == address.governorate,
+          (g) =>
+              g.nameAr == address.governorate ||
+              g.nameEn == address.governorate,
         );
         _geoCubit.selectGovernorate(matchedGov.id).then((_) {
           try {
@@ -1157,7 +1260,9 @@ class _AddressPageState extends State<AddressPage> {
               try {
                 final districts = _geoCubit.state.districts;
                 final matchedDistrict = districts.firstWhere(
-                  (d) => d.nameAr == address.district || d.nameEn == address.district,
+                  (d) =>
+                      d.nameAr == address.district ||
+                      d.nameEn == address.district,
                 );
                 _geoCubit.selectDistrict(matchedDistrict.id);
               } catch (_) {}
@@ -1191,4 +1296,3 @@ class _AddressPageState extends State<AddressPage> {
     _landmarkController.clear();
   }
 }
-
