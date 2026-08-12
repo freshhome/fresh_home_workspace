@@ -51,16 +51,40 @@ class AddressLocationPickerSheet extends StatefulWidget {
 class _AddressLocationPickerSheetState
     extends State<AddressLocationPickerSheet> {
   late final MapController _mapController;
+  late final LocationPickerCubit _cubit;
 
-  // Default center: Cairo, Egypt
+  // Default center: Cairo, Egypt (used only as last-resort fallback)
   static const double _defaultLat = 30.0444;
   static const double _defaultLng = 31.2357;
   static const double _defaultZoom = 13.0;
+  static const double _gpsZoom = 16.0;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+    _cubit = context.read<LocationPickerCubit>();
+
+    // If no initial coordinates were provided, auto-detect current location
+    if (widget.initialLatitude == null && widget.initialLongitude == null) {
+      _autoDetectLocation();
+    }
+  }
+
+  /// Called once on open — fetches real GPS and moves camera to it.
+  Future<void> _autoDetectLocation() async {
+    await _cubit.requestCurrentLocation();
+    final s = _cubit.state;
+    if (mounted && s.hasCoordinates) {
+      // Small delay to let the map finish initial render before moving
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (mounted) {
+        _mapController.move(
+          LatLng(s.latitude!, s.longitude!),
+          _gpsZoom,
+        );
+      }
+    }
   }
 
   @override
@@ -76,8 +100,10 @@ class _AddressLocationPickerSheetState
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
+
     final theme = Theme.of(context);
 
     return Container(

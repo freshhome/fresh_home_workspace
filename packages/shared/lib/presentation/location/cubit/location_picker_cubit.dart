@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shared/core/error/failures.dart';
 import 'package:shared/presentation/location/cubit/location_picker_state.dart';
 
@@ -10,8 +11,15 @@ class LocationPickerCubit extends Cubit<LocationPickerState> {
           longitude: initialLongitude,
         ));
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Select Location
+  // ─────────────────────────────────────────────────────────────────────────
+
   /// Selects location coordinates with domain range and pairing validation.
-  Either<ValidationFailure, Unit> selectLocation({required double latitude, required double longitude}) {
+  Either<ValidationFailure, Unit> selectLocation({
+    required double latitude,
+    required double longitude,
+  }) {
     if (latitude < -90.0 || latitude > 90.0) {
       const failure = ValidationFailure(
         message: 'Latitude must be between -90.0 and 90.0.',
@@ -38,21 +46,35 @@ class LocationPickerCubit extends Cubit<LocationPickerState> {
     return right(unit);
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Clear Location
+  // ─────────────────────────────────────────────────────────────────────────
+
   /// Safely clears coordinates (sets both to null to prevent unpaired coordinates).
   void clearLocation() {
     emit(state.copyWith(clearCoordinates: true, clearError: true));
   }
 
-  /// Simulates / triggers current location request with fallback permission handling.
+  // ─────────────────────────────────────────────────────────────────────────
+  // Request Current Location (Real GPS via geolocator)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Requests the device's real GPS current location.
+  /// Falls back to a Cairo center point only if permission is permanently denied.
   Future<void> requestCurrentLocation({
+    /// Optional mock provider — used only in unit tests.
     Future<Map<String, double>> Function()? mockLocationProvider,
   }) async {
     emit(state.copyWith(isLoadingLocation: true, clearError: true));
 
     try {
+      // ── Test mock path ────────────────────────────────────────────────────
       if (mockLocationProvider != null) {
         final loc = await mockLocationProvider();
-        selectLocation(latitude: loc['latitude']!, longitude: loc['longitude']!);
+        selectLocation(
+          latitude: loc['latitude']!,
+          longitude: loc['longitude']!,
+        );
         emit(state.copyWith(
           isLoadingLocation: false,
           permissionStatus: LocationPermissionStatus.granted,
@@ -60,8 +82,58 @@ class LocationPickerCubit extends Cubit<LocationPickerState> {
         return;
       }
 
-      // Default fallback location for Greater Cairo Center (30.0444, 31.2357)
-      selectLocation(latitude: 30.0444, longitude: 31.2357);
+      // ── Real GPS path ─────────────────────────────────────────────────────
+
+      // 1. Check if location services are enabled on the device.
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        emit(state.copyWith(
+          isLoadingLocation: false,
+          permissionStatus: LocationPermissionStatus.denied,
+          errorMessage:
+              'خدمة الموقع مُعطَّلة على جهازك. يمكنك تحديد موقعك يدويًا على الخريطة.',
+        ));
+        return;
+      }
+
+      // 2. Check / request runtime permission.
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied) {
+        emit(state.copyWith(
+          isLoadingLocation: false,
+          permissionStatus: LocationPermissionStatus.denied,
+          errorMessage:
+              'تم رفض إذن الموقع. يمكنك تحديد موقعك يدويًا على الخريطة.',
+        ));
+        return;
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        emit(state.copyWith(
+          isLoadingLocation: false,
+          permissionStatus: LocationPermissionStatus.manualOnly,
+          errorMessage:
+              'تم رفض إذن الموقع نهائيًا. يُرجى السماح به من إعدادات التطبيق.',
+        ));
+        return;
+      }
+
+      // 3. Fetch current position.
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      selectLocation(
+        latitude: double.parse(position.latitude.toStringAsFixed(6)),
+        longitude: double.parse(position.longitude.toStringAsFixed(6)),
+      );
       emit(state.copyWith(
         isLoadingLocation: false,
         permissionStatus: LocationPermissionStatus.granted,
@@ -70,7 +142,8 @@ class LocationPickerCubit extends Cubit<LocationPickerState> {
       emit(state.copyWith(
         isLoadingLocation: false,
         permissionStatus: LocationPermissionStatus.denied,
-        errorMessage: 'Location access denied. You can still select your position on the map manually.',
+        errorMessage:
+            'تعذّر تحديد موقعك تلقائيًا. يمكنك تحديد موقعك يدويًا على الخريطة.',
       ));
     }
   }
