@@ -57,7 +57,7 @@ class _NewAccountFormFieldsState extends State<NewAccountFormFields> {
                   fillColor: themeColor.cardBackground,
                   radius: 16,
                   controller: widget.firstNameController,
-                  validator: InputValidator.validateEmpty,
+                  validator: (v) => InputValidator.validateName(v, fieldName: 'firstName', l10n: l10n),
                   hint: l10n.profile_first_name,
                   hintStyle: TextStyle(
                     color: themeColor.secondaryText.withValues(alpha: 0.5),
@@ -79,7 +79,7 @@ class _NewAccountFormFieldsState extends State<NewAccountFormFields> {
                   fillColor: themeColor.cardBackground,
                   radius: 16,
                   controller: widget.lastNameController,
-                  validator: InputValidator.validateEmpty,
+                  validator: (v) => InputValidator.validateName(v, fieldName: 'lastName', l10n: l10n),
                   hint: l10n.profile_last_name,
                   hintStyle: TextStyle(
                     color: themeColor.secondaryText.withValues(alpha: 0.5),
@@ -105,7 +105,7 @@ class _NewAccountFormFieldsState extends State<NewAccountFormFields> {
             radius: 16,
             controller: widget.emailController,
             keyboardType: TextInputType.emailAddress,
-            validator: InputValidator.validateEmail,
+            validator: (v) => InputValidator.validateEmail(v, l10n: l10n),
             hint: l10n.login_email_label,
             hintStyle: TextStyle(
               color: themeColor.secondaryText.withValues(alpha: 0.5),
@@ -117,7 +117,7 @@ class _NewAccountFormFieldsState extends State<NewAccountFormFields> {
           const SizedBox(height: 5),
           BaseTextFormField(
             controller: widget.passwordController,
-            validator: InputValidator.validateEmpty,
+            validator: (v) => InputValidator.validatePassword(v, l10n: l10n),
             hint: l10n.login_password_label,
             obscureText: _obscurePassword,
             fillColor: themeColor.cardBackground,

@@ -56,7 +56,7 @@ class _LoginFormFieldsState extends State<LoginFormFields> {
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
             autofillHints: const [AutofillHints.email],
-            validator: InputValidator.validateEmail,
+            validator: (v) => InputValidator.validateEmail(v, l10n: l10n),
             hint: l10n.login_email_label,
             hintStyle: TextStyle(
               color: themeColor.secondaryText.withValues(alpha: 0.5),
@@ -69,7 +69,7 @@ class _LoginFormFieldsState extends State<LoginFormFields> {
 
           BaseTextFormField(
             controller: widget.passwordController,
-            validator: InputValidator.validateEmpty,
+            validator: (v) => InputValidator.validatePassword(v, l10n: l10n),
             hint: l10n.login_password_label,
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.done,
