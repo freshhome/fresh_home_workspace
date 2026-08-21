@@ -74,6 +74,15 @@ class BaseTextFormField extends StatefulWidget {
   /// ✅ نص يظهر في نهاية حقل الإدخال (مثل العملة أو الوحدة)
   final String? suffixText;
 
+  /// ✅ إجراء لوحة المفاتيح (Next, Done, Search, etc.)
+  final TextInputAction? textInputAction;
+
+  /// ✅ يتم استدعاؤها عند الضغط على زر الإجراء في لوحة المفاتيح
+  final ValueChanged<String>? onFieldSubmitted;
+
+  /// ✅ تلميحات الإكمال التلقائي
+  final Iterable<String>? autofillHints;
+
   const BaseTextFormField({
     super.key,
     required this.hint,
@@ -100,6 +109,9 @@ class BaseTextFormField extends StatefulWidget {
     this.initialValue,
     this.focusNode,
     this.suffixText,
+    this.textInputAction,
+    this.onFieldSubmitted,
+    this.autofillHints,
   });
 
   @override
@@ -171,6 +183,9 @@ class _BaseTextFormFieldState extends State<BaseTextFormField> {
         readOnly: widget.readOnly,
         autofocus: widget.autofocus,
         keyboardType: widget.keyboardType,
+        textInputAction: widget.textInputAction,
+        onFieldSubmitted: widget.onFieldSubmitted,
+        autofillHints: widget.autofillHints,
         maxLines: widget.maxLines,
         decoration: InputDecoration(
           filled: true,

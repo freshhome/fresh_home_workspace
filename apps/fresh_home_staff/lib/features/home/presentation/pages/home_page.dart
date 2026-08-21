@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_features/shared_features.dart';
 import 'package:shared/shared.dart';

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared/shared.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:shared_features/shared_features.dart';
@@ -38,8 +36,8 @@ class _TechnicianOrderDetailsScreenState
   final List<String> _selectedOptions = [];
   final Map<String, dynamic> _originalInputs = {};
   final List<String> _originalSelectedOptions = [];
+  // ignore: unused_field
   BookingPricing? _calculatedPricing;
-  bool _isCalculating = false;
   String? _adminWhatsAppNumber;
   bool _loadingAdminWhatsApp = false;
 
@@ -109,7 +107,7 @@ class _TechnicianOrderDetailsScreenState
         locale: locale,
       );
       for (final f in formatted) {
-        details += "- ${f.label}: ${f.displayValue} ${f.unit ?? ''}\n".trim() + "\n";
+        details += '${"- ${f.label}: ${f.displayValue} ${f.unit ?? ''}".trim()}\n';
       }
 
       final windows = order.pricingInputs!['windows'];
@@ -479,7 +477,6 @@ class _TechnicianOrderDetailsScreenState
   Widget _buildRequestDetailsCard(BuildContext context, Booking order) {
     final themeColor = context.themeColor;
     final locale = Localizations.localeOf(context).languageCode;
-    final timeStr = DateFormat('hh:mm a', locale).format(order.scheduledAt);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -822,78 +819,7 @@ class _TechnicianOrderDetailsScreenState
     );
   }
 
-  Widget _buildContactButton(
-    BuildContext context,
-    String label,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return ElevatedButton(
-      onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 0,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'Cairo',
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildPrivacyPlaceholder(BuildContext context) {
-    final themeColor = context.themeColor;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: themeColor.warning.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: themeColor.warning.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.lock_rounded, color: themeColor.warning, size: 32),
-          const SizedBox(height: 12),
-          Text(
-            "بيانات العميل مخفية",
-            style: TextStyle(
-              fontSize: 16,
-              color: themeColor.warning,
-              fontWeight: FontWeight.w900,
-              fontFamily: 'Cairo',
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "سيتم فتح بيانات التواصل والعنوان الكامل بمجرد تأكيد موعد الطلب لليوم.",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: themeColor.warning.withValues(alpha: 0.8),
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Cairo',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ── ACTION SECTION ─────────────────────────────────────────────────────
   Widget _buildActionSection(

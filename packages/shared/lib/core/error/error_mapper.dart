@@ -34,12 +34,32 @@ class ErrorMapper {
         return AuthFailure(message: 'بريد إلكتروني غير صحيح', code: code);
       case 'user_not_found':
       case 'user-not-found':
-        return AuthFailure(message: 'المستخدم غير موجود', code: code);
+        return AuthFailure(message: 'البريد الإلكتروني غير مسجل، يرجى إنشاء حساب جديد أولاً', code: code);
+      case 'user_already_exists':
+      case 'user-already-exists':
+      case 'email_exists':
+        return AuthFailure(
+          message: 'هذا البريد الإلكتروني مسجل مسبقاً. يرجى تسجيل الدخول أو استخدام "نسيت كلمة المرور"',
+          code: code,
+        );
       case 'invalid_credentials':
         return AuthFailure(message: 'بيانات الدخول غير صحيحة', code: code);
       case 'email_not_confirmed':
         return AuthFailure(message: 'يجب تأكيد البريد الإلكتروني أولاً', code: code);
+      case 'session_expired':
+      case 'token_expired':
+      case 'jwt_expired':
+      case 'bad_jwt':
+        return AuthFailure(message: 'انتهت صلاحية الجلسة، يرجى تسجيل الدخول مجدداً', code: 'session_expired');
+      case 'invalid_otp':
+      case 'otp_disabled':
+      case 'bad_code':
+        return AuthFailure(message: 'رمز التحقق غير صحيح، يرجى التأكد وإعادة المحاولة', code: code);
+      case 'otp_expired':
+        return AuthFailure(message: 'انتهت صلاحية رمز التحقق، يرجى طلب رمز جديد', code: code);
       case 'too_many_requests':
+      case 'over_request_rate_limit':
+      case 'over_email_send_rate_limit':
         return AuthFailure(message: 'محاولات كثيرة جداً، يرجى المحاولة لاحقاً', code: code);
       case 'network_request_failed':
         return NetworkFailure(message: 'فشل في الاتصال بالشبكة', code: code);

@@ -71,7 +71,14 @@ class SplashCubit extends Cubit<SplashState> {
         },
         (isLoggedIn) async {
           if (isLoggedIn) {
-            // ✅ Read role directly from Supabase JWT claims (Zero Round-Trip Verification)
+            // ✅ Customer App (Client Role) doesn't need strict role verification
+            if (appRole == UserRole.client) {
+              debugPrint('🚀 [SplashCubit] Client Role detected - Emitting SplashUserLoggedInState');
+              emit(SplashUserLoggedInState());
+              return;
+            }
+
+            // 1️⃣ Fast Path: Read role directly from Supabase JWT claims (Zero Round-Trip Verification)
             final session = Supabase.instance.client.auth.currentSession;
             final appMetadata = session?.user.appMetadata ?? {};
             final rolesClaim = appMetadata['roles'];
@@ -96,14 +103,41 @@ class SplashCubit extends Cubit<SplashState> {
             );
 
             if (hasRole) {
-              debugPrint('🚀 [SplashCubit] Emitting SplashUserLoggedInState');
+              debugPrint('🚀 [SplashCubit] Emitting SplashUserLoggedInState from JWT claim');
               emit(SplashUserLoggedInState());
-            } else {
-              debugPrint(
-                '⚠️ [SplashCubit] Emitting SplashUserPendingApprovalState',
-              );
-              emit(SplashUserPendingApprovalState());
+              return;
             }
+
+            // 2️⃣ Reliable Fallback: Verify role via database / Hive cached profile
+            debugPrint(
+              '🔍 [SplashCubit] Role not in JWT claims - Falling back to verifyRoleUseCase for role: ${appRole.name}',
+            );
+            final roleResult = await verifyRoleUseCase(appRole.name);
+
+            if (isClosed) return;
+
+            roleResult.fold(
+              (failure) {
+                debugPrint(
+                  '⚠️ [SplashCubit] Fallback role verification failed: ${failure.message}',
+                );
+                emit(SplashErrorState(failure));
+                emit(SplashUserPendingApprovalState());
+              },
+              (verifiedRole) {
+                if (verifiedRole) {
+                  debugPrint(
+                    '🚀 [SplashCubit] Verified role via DB/Cache - Emitting SplashUserLoggedInState',
+                  );
+                  emit(SplashUserLoggedInState());
+                } else {
+                  debugPrint(
+                    '⚠️ [SplashCubit] Role verification rejected - Emitting SplashUserPendingApprovalState',
+                  );
+                  emit(SplashUserPendingApprovalState());
+                }
+              },
+            );
           } else {
             debugPrint('ℹ️ [SplashCubit] User NOT logged in');
 

@@ -54,6 +54,8 @@ class _AuthListenerState extends State<AuthListener> {
       debugPrint('user_metadata: ${user?.userMetadata}');
       debugPrint('============================================');
 
+      if (!mounted) return;
+
       if ((event == supabase.AuthChangeEvent.signedIn || event == supabase.AuthChangeEvent.initialSession) && session != null) {
         final authCubit = context.read<AuthCubit>();
         
@@ -63,13 +65,15 @@ class _AuthListenerState extends State<AuthListener> {
         }
 
         debugPrint('🔵 [AuthListener] User signed in event detected - Verifying role for app: ${widget.appRole}');
-        if (mounted) {
-          authCubit.onAuthCallback(appRoleToString(widget.appRole));
-        }
+        authCubit.onAuthCallback(appRoleToString(widget.appRole));
+      } else if (event == supabase.AuthChangeEvent.passwordRecovery) {
+        debugPrint('🔑 [AuthListener] Password recovery event detected - Redirecting to /reset-password');
+        final router = GetIt.I<AppRouterConfig>().router;
+        router.go(AppRoutes.resetPassword);
       } else if (event == supabase.AuthChangeEvent.signedOut) {
         final authCubit = context.read<AuthCubit>();
         debugPrint('🔴 [AuthListener] User signed out event detected - Resetting AuthCubit state');
-        if (mounted && authCubit.state is! AuthInitial) {
+        if (authCubit.state is! AuthInitial) {
           authCubit.reset();
         }
       }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared/core/constants/app_routes.dart';
 import 'package:shared/presentation/dialogs/dialog_helper.dart';
 import 'package:shared/presentation/extensions/failure_extension.dart';
 import 'package:shared/presentation/localization/translations/app_localizations.dart';
@@ -70,7 +71,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   context,
                   message: l10n.auth_reset_password_success,
                   onOkPress: () {
-                    context.go('/login');
+                    context.read<AuthCubit>().signOut();
+                    context.go(AppRoutes.login);
                   },
                 );
               } else if (state is AuthErrorState) {

@@ -26,12 +26,12 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Supabase Login Callback -->
+            <!-- Supabase Authentication & Recovery Callbacks -->
             <intent-filter android:label="supabase">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.freshhome.admin" android:host="login-callback" />
+                <data android:scheme="com.freshhome.admin" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

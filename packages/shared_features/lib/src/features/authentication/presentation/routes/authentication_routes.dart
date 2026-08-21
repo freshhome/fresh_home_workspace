@@ -31,6 +31,17 @@ class AuthenticationRoutes {
       ),
     ),
     GoRoute(
+      path: AppRoutes.verifyOtp,
+      name: AppRoutes.verifyOtp,
+      builder: (context, state) {
+        final email = state.extra as String?;
+        return BlocProvider.value(
+          value: GetIt.I<AuthCubit>(),
+          child: OtpVerificationPage(email: email),
+        );
+      },
+    ),
+    GoRoute(
       path: AppRoutes.resetPassword,
       name: AppRoutes.resetPassword,
       builder: (context, state) => BlocProvider.value(

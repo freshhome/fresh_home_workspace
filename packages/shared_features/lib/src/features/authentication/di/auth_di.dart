@@ -42,11 +42,12 @@ Future<void> initAuthDI(
   getIt.registerLazySingleton(() => SignUpUseCase(getIt()));
   getIt.registerLazySingleton(() => ResendVerificationCodeUseCase(getIt()));
   getIt.registerLazySingleton(() => ResetPasswordUseCase(getIt()));
-  getIt.registerLazySingleton(() => SignOutUseCase(getIt()));
+  getIt.registerLazySingleton(() => SignOutUseCase(getIt(), getIt()));
   getIt.registerLazySingleton(() => SignInWithGoogleUseCase(getIt()));
   getIt.registerLazySingleton(() => EnsureRoleUseCase(getIt()));
   getIt.registerLazySingleton(() => VerifyRoleUseCase(getIt()));
   getIt.registerLazySingleton(() => UpdatePasswordUseCase(getIt()));
+  getIt.registerLazySingleton(() => VerifyRecoveryOtpUseCase(getIt()));
 
   // Cubit
   getIt.registerLazySingleton(
@@ -56,6 +57,7 @@ Future<void> initAuthDI(
       getIt(), // ResendVerificationCodeUseCase
       getIt(), // ResetPasswordUseCase
       getIt(), // UpdatePasswordUseCase
+      getIt(), // VerifyRecoveryOtpUseCase
       getIt(), // SignInWithGoogleUseCase
       getIt(), // SignOutUseCase
       getIt(), // StopRealtimeSyncUseCase

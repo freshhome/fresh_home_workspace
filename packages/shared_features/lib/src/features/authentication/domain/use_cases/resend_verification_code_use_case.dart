@@ -7,7 +7,7 @@ class ResendVerificationCodeUseCase {
 
   ResendVerificationCodeUseCase(this.repository);
 
-  Future<Either<Failure, void>> call(String email, String password) async {
-    return await repository.resendVerificationCode(email, password);
+  Future<Either<Failure, void>> call(String email) async {
+    return await repository.resendVerificationCode(email);
   }
 }

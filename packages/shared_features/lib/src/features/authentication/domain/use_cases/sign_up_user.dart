@@ -10,8 +10,15 @@ class SignUpUseCase {
     String email,
     String password,
     String firstName,
-    String lastName,
-  ) async {
-    return userRepositories.signUp(email, password, firstName, lastName);
+    String lastName, {
+    String? redirectTo,
+  }) async {
+    return userRepositories.signUp(
+      email,
+      password,
+      firstName,
+      lastName,
+      redirectTo: redirectTo,
+    );
   }
 }

@@ -31,8 +31,9 @@ class UserRepositoryImpl implements UserRepositories {
     String email,
     String password,
     String firstName,
-    String lastName,
-  ) async {
+    String lastName, {
+    String? redirectTo,
+  }) async {
     try {
       final response = await authDataSource.signUp(
         email: email,
@@ -42,6 +43,7 @@ class UserRepositoryImpl implements UserRepositories {
           'last_name': lastName,
           'app_type': defaultRole.name,
         },
+        emailRedirectTo: redirectTo,
       );
 
       if (response.user != null) {
@@ -153,12 +155,15 @@ class UserRepositoryImpl implements UserRepositories {
   }
 
   @override
-  Future<Either<Failure, void>> resendVerificationCode(
-    String email,
-    String password,
-  ) async {
-    // Supabase allows simple resend via auth.resend
-    return Left(UnknownFailure(message: 'Use Supabase resend instead'));
+  Future<Either<Failure, void>> resendVerificationCode(String email) async {
+    try {
+      await authDataSource.resendVerificationCode(email);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(ErrorMapper.mapExternalServiceError(e));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
   }
 
   @override
@@ -305,6 +310,22 @@ class UserRepositoryImpl implements UserRepositories {
     } catch (e) {
       debugPrint('❌ [UserRepositoryImpl] getCurrentUser failed: $e');
       return null;
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> verifyRecoveryOtp({
+    required String email,
+    required String token,
+  }) async {
+    try {
+      await authDataSource.verifyRecoveryOtp(email: email, token: token);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(ErrorMapper.mapExternalServiceError(e));
+    } catch (e) {
+      debugPrint('❌ [UserRepositoryImpl] verifyRecoveryOtp failed: $e');
+      return Left(UnknownFailure(message: e.toString()));
     }
   }
 }

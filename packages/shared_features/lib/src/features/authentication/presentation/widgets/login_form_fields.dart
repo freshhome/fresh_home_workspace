@@ -12,11 +12,13 @@ import 'package:shared/presentation/theme/components/colors/theme_color_extensio
 class LoginFormFields extends StatefulWidget {
   final TextEditingController? emailController;
   final TextEditingController? passwordController;
+  final VoidCallback? onSubmitted;
 
   const LoginFormFields({
     super.key,
     required this.emailController,
     required this.passwordController,
+    this.onSubmitted,
   });
 
   @override
@@ -52,6 +54,8 @@ class _LoginFormFieldsState extends State<LoginFormFields> {
             radius: 16,
             controller: widget.emailController,
             keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.email],
             validator: InputValidator.validateEmail,
             hint: l10n.login_email_label,
             hintStyle: TextStyle(
@@ -68,6 +72,9 @@ class _LoginFormFieldsState extends State<LoginFormFields> {
             validator: InputValidator.validateEmpty,
             hint: l10n.login_password_label,
             obscureText: _obscurePassword,
+            textInputAction: TextInputAction.done,
+            autofillHints: const [AutofillHints.password],
+            onFieldSubmitted: (_) => widget.onSubmitted?.call(),
             fillColor: themeColor.cardBackground,
             radius: 16,
             prefixIcon: Container(

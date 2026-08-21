@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:get_it/get_it.dart';
 import 'package:shared/core/constants/app_routes.dart';
+import 'package:shared/core/navigation/navigation_config.dart';
 import 'package:shared/presentation/dialogs/dialog_helper.dart';
 import 'package:shared/presentation/extensions/failure_extension.dart';
 import 'package:shared/presentation/localization/translations/app_localizations.dart';
@@ -126,10 +128,14 @@ class _AuthScreenState extends State<AuthScreen> {
           debugPrint('📝 [AuthScreen] Redirecting to LoginPage (index 0)');
           context.read<AuthCubit>().goToPage(0);
         } else {
-          debugPrint('🏠 [AuthScreen] Redirecting to HOME');
+          String destination = AppRoutes.home;
+          try {
+            destination = GetIt.I<NavigationConfig>().initialPath;
+          } catch (_) {}
+          debugPrint('🏠 [AuthScreen] Redirecting to destination: $destination');
           // إغلاق أي حوار مفتوح (سواء التحميل أو حوار النجاح) بشكل آمن لتفادي تعليق الشاشة
           Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
-          context.go(AppRoutes.home);
+          context.go(destination);
         }
       }
 

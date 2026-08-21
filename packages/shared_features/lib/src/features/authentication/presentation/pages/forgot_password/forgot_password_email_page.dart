@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:go_router/go_router.dart';
+import 'package:shared/core/constants/app_routes.dart';
 import 'package:shared/presentation/dialogs/dialog_helper.dart';
 import 'package:shared/presentation/extensions/failure_extension.dart';
 import 'package:shared/presentation/localization/translations/app_localizations.dart';
+import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
 import 'package:shared/presentation/validators/input_validator.dart';
 import 'package:shared/presentation/widget/animated_background/animated_background.dart';
 import 'package:shared/presentation/widget/custom_text_form_field/base_text_form_field.dart';
@@ -29,9 +32,18 @@ class _ForgotPasswordEmailPageState extends State<ForgotPasswordEmailPage> {
     super.dispose();
   }
 
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      context.read<AuthCubit>().resetPassword(
+        email: emailController.text.trim(),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final themeColor = context.themeColor;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -40,40 +52,30 @@ class _ForgotPasswordEmailPageState extends State<ForgotPasswordEmailPage> {
         elevation: 0,
         leading: Navigator.of(context).canPop()
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+                icon: Icon(Icons.arrow_back_ios_new, color: themeColor.textPrimary),
                 onPressed: () => Navigator.of(context).pop(),
               )
             : null,
         title: Text(
           l10n.forgot_password,
-          style: const TextStyle(
-            color: Colors.black87,
+          style: TextStyle(
+            color: themeColor.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
       body: Stack(
         children: [
-          // Subtle Gradient Background (matching AuthScreen)
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFE0F2F1), Colors.white, Color(0xFFE3F2FD)],
-              ),
-            ),
+            color: themeColor.background,
           ),
           const AnimatedBackground(),
 
           BlocConsumer<AuthCubit, AuthState>(
             listener: (context, state) {
               if (state is ResetPasswordSuccess) {
-                DialogHelper.showSuccess(
-                  context,
-                  message: l10n.password_reset_sent_success,
-                  onOkPress: () => Navigator.of(context).pop(),
-                );
+                final email = emailController.text.trim();
+                context.go(AppRoutes.verifyOtp, extra: email);
               } else if (state is AuthErrorState) {
                 DialogHelper.showError(
                   context,
@@ -105,33 +107,30 @@ class _ForgotPasswordEmailPageState extends State<ForgotPasswordEmailPage> {
                                 style: Theme.of(context).textTheme.titleSmall
                                     ?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
+                                      color: themeColor.textPrimary,
                                     ),
                               ),
                               const SizedBox(height: 10),
                               BaseTextFormField(
                                 controller: emailController,
                                 keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.done,
+                                autofillHints: const [AutofillHints.email],
+                                onFieldSubmitted: (_) => _submit(),
                                 validator: InputValidator.validateEmail,
                                 hint: l10n.login_email_label,
-                                prefixIcon: const Icon(
+                                prefixIcon: Icon(
                                   Icons.email_outlined,
-                                  color: Color(0xFF6B7280),
+                                  color: themeColor.secondaryText,
                                 ),
-                                fillColor: Colors.white,
+                                fillColor: themeColor.cardBackground,
                                 radius: 16,
                               ),
                               const SizedBox(height: 30),
                               MyCustomButton(
                                 text: l10n.send_reset_link,
                                 isLoading: state is AuthLoadingState,
-                                onPressed: () {
-                                  if (_formKey.currentState!.validate()) {
-                                    context.read<AuthCubit>().resetPassword(
-                                      email: emailController.text.trim(),
-                                    );
-                                  }
-                                },
+                                onPressed: _submit,
                               ),
                             ],
                           ),

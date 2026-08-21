@@ -37,6 +37,7 @@ class AppRouterConfig {
         AppRoutes.login,
         AppRoutes.signUp,
         AppRoutes.forgotPassword,
+        AppRoutes.verifyOtp,
         AppRoutes.resetPassword,
         AppRoutes.onboarding,
       ];
@@ -60,7 +61,10 @@ class AppRouterConfig {
 
       // User is logged in.
       // 1. If trying to access auth pages (login, sign-up, etc.), redirect to home or initial path
-      if (isPublicRoute && path != AppRoutes.splash && path != AppRoutes.resetPassword) {
+      if (isPublicRoute &&
+          path != AppRoutes.splash &&
+          path != AppRoutes.verifyOtp &&
+          path != AppRoutes.resetPassword) {
         try {
           final initialPath = GetIt.I<NavigationConfig>().initialPath;
           debugPrint('🔓 [Router Guard] Authenticated user on public page -> redirecting to $initialPath');
@@ -68,6 +72,12 @@ class AppRouterConfig {
         } catch (_) {
           return null;
         }
+      }
+
+      // Explicitly allow verify-otp and reset-password pages for recovery sessions without redirecting to home
+      if (path == AppRoutes.verifyOtp || path == AppRoutes.resetPassword) {
+        debugPrint('🔑 [Router Guard] Allowing access to $path route');
+        return null;
       }
 
       // 2. Perform role checking (except for customer app since it allows any logged-in user)
@@ -79,35 +89,46 @@ class AppRouterConfig {
       }
 
       if (defaultRole != null && defaultRole != UserRole.client) {
-        UserHiveModel? cachedUser;
-        try {
-          if (Hive.isBoxOpen(HiveBoxNames.userBox)) {
-            final box = Hive.box(HiveBoxNames.userBox);
-            cachedUser = box.get('current_user') as UserHiveModel?;
-          }
-        } catch (e) {
-          debugPrint('⚠️ [Router Guard] Error accessing Hive userBox: $e');
+        // Fast-path: Check JWT app_metadata for zero-latency role match
+        final authRoles = currentUser.appMetadata['roles'];
+        bool hasRoleInMetadata = false;
+        if (authRoles is List) {
+          hasRoleInMetadata = authRoles.any((r) => r.toString().toLowerCase() == defaultRole!.name.toLowerCase());
+        } else if (authRoles is String) {
+          hasRoleInMetadata = authRoles.toLowerCase() == defaultRole.name.toLowerCase();
         }
 
-        if (cachedUser == null) {
-          // If logged in but no profile cached yet, let them remain on splash/pending or redirect to splash to load it
-          if (path != AppRoutes.splash && path != AppRoutes.pendingApproval) {
-            debugPrint('⚠️ [Router Guard] Authenticated but no cached profile -> redirecting to splash');
-            return AppRoutes.splash;
+        if (!hasRoleInMetadata) {
+          UserHiveModel? cachedUser;
+          try {
+            if (Hive.isBoxOpen(HiveBoxNames.userBox)) {
+              final box = Hive.box(HiveBoxNames.userBox);
+              cachedUser = box.get('current_user') as UserHiveModel?;
+            }
+          } catch (e) {
+            debugPrint('⚠️ [Router Guard] Error accessing Hive userBox: $e');
           }
-          return null;
-        }
 
-        // Map cached role codes to UserRoles
-        final userRoles = userRoleFromCode(codes: cachedUser.rolesCodes);
-        final hasRequiredRole = userRoles.contains(defaultRole);
-
-        if (!hasRequiredRole) {
-          if (path != AppRoutes.pendingApproval) {
-            debugPrint('🚫 [Router Guard] User does not have role: ${defaultRole.name} -> redirecting to pending approval');
-            return AppRoutes.pendingApproval;
+          if (cachedUser == null) {
+            // If logged in but no profile cached yet, let them remain on splash/pending or redirect to splash to load it
+            if (path != AppRoutes.splash && path != AppRoutes.pendingApproval) {
+              debugPrint('⚠️ [Router Guard] Authenticated but no cached profile -> redirecting to splash');
+              return AppRoutes.splash;
+            }
+            return null;
           }
-          return null;
+
+          // Map cached role codes to UserRoles
+          final userRoles = userRoleFromCode(codes: cachedUser.rolesCodes);
+          final hasRequiredRole = userRoles.contains(defaultRole);
+
+          if (!hasRequiredRole) {
+            if (path != AppRoutes.pendingApproval) {
+              debugPrint('🚫 [Router Guard] User does not have role: ${defaultRole.name} -> redirecting to pending approval');
+              return AppRoutes.pendingApproval;
+            }
+            return null;
+          }
         }
       }
 

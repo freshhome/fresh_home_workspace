@@ -47,6 +47,7 @@ class LoginView extends StatelessWidget {
                   LoginFormFields(
                     emailController: emailController,
                     passwordController: passwordController,
+                    onSubmitted: onBlueButtonPressed,
                   ),
                   const SizedBox(height: 20),
                   BuildButtonsSection(

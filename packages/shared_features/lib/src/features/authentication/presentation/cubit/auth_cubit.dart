@@ -19,12 +19,12 @@ class AuthCubit extends Cubit<AuthState> {
   final StopRealtimeSyncUseCase stopRealtimeSyncUseCase;
   final EnsureRoleUseCase ensureRoleUseCase;
   final VerifyRoleUseCase verifyRoleUseCase;
+  final VerifyRecoveryOtpUseCase verifyRecoveryOtpUseCase;
   final FcmTokenManager fcmTokenManager;
   final UserRole defaultRole;
   final String googleRedirectUrl;
   
   String? _lastEmail;
-  String? _lastPassword;
   String? _userId;
 
   String? get userId => _userId;
@@ -35,6 +35,7 @@ class AuthCubit extends Cubit<AuthState> {
     this.resendVerificationCodeUseCase,
     this.resetPasswordUseCase,
     this.updatePasswordUseCase,
+    this.verifyRecoveryOtpUseCase,
     this.signInWithGoogleUseCase,
     this.signOutUseCase,
     this.stopRealtimeSyncUseCase,
@@ -50,8 +51,8 @@ class AuthCubit extends Cubit<AuthState> {
 
 
   Future<void> signIn({required String email,required String password}) async {
+    if (state is AuthLoadingState) return;
     _lastEmail = email;
-    _lastPassword = password;
     emit(AuthLoadingState());
     
     final result = await signInUseCase(email, password);
@@ -98,35 +99,37 @@ class AuthCubit extends Cubit<AuthState> {
 
 
   Future<void> signUp({required String email,required String password,required String firstName,required String lastName}) async {
+    if (state is AuthLoadingState) return;
     emit(AuthLoadingState());
-    final result = await signUpUseCase(email, password,firstName,lastName);
+    _lastEmail = email;
+    final result = await signUpUseCase(
+      email,
+      password,
+      firstName,
+      lastName,
+      redirectTo: googleRedirectUrl,
+    );
     if (isClosed) return;
     result.fold((l) => emit(AuthErrorState(l)), (r) => emit(SignUpSuccess()));
   }
 
   Future<void> resendVerificationCode() async {
-    if (_lastEmail == null || _lastPassword == null) return;
+    if (_lastEmail == null) return;
+    if (state is AuthLoadingState) return;
     
     emit(AuthLoadingState());
-    final result = await resendVerificationCodeUseCase(_lastEmail!, _lastPassword!);
+    final result = await resendVerificationCodeUseCase(_lastEmail!);
     if (isClosed) return;
     result.fold(
       (failure) => emit(AuthErrorState(failure)),
-      (_) {
-         // Re-emit error state with special code to indicate success message should be shown, 
-         // OR better, emit a specific success state or handle it in UI.
-         // For simplicity and reusing existing dialog logic, let's assume we show success 
-         // but we need a way to tell the UI it worked.
-         // Let's use a specific success state for this action? 
-         // Or just show success dialog via DialogHelper manually if needed.
-         // Actually, let's emit a state that listener can pick up.
-         emit(ResendVerificationSuccess());
-      },
+      (_) => emit(ResendVerificationSuccess()),
     );
   }
 
   Future<void> resetPassword({required String email}) async {
+    if (state is AuthLoadingState) return;
     emit(AuthLoadingState());
+    _lastEmail = email;
     final result = await resetPasswordUseCase(email, redirectTo: googleRedirectUrl);
     if (isClosed) return;
     result.fold(
@@ -135,7 +138,24 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
+  Future<void> verifyRecoveryOtp({required String otp, String? email}) async {
+    final targetEmail = email ?? _lastEmail;
+    if (targetEmail == null) {
+      emit(AuthErrorState(const ServerFailure(message: 'البريد الإلكتروني غير متوفر، يرجى المحاولة مرة أخرى')));
+      return;
+    }
+    if (state is AuthLoadingState) return;
+    emit(AuthLoadingState());
+    final result = await verifyRecoveryOtpUseCase(email: targetEmail, token: otp);
+    if (isClosed) return;
+    result.fold(
+      (failure) => emit(AuthErrorState(failure)),
+      (_) => emit(OtpVerificationSuccess()),
+    );
+  }
+
   Future<void> updatePassword({required String newPassword}) async {
+    if (state is AuthLoadingState) return;
     emit(AuthLoadingState());
     final result = await updatePasswordUseCase(newPassword);
     if (isClosed) return;
@@ -146,6 +166,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signInWithGoogle() async {
+    if (state is AuthLoadingState) return;
     emit(AuthLoadingState());
     final result = await signInWithGoogleUseCase(redirectTo: googleRedirectUrl);
     if (isClosed) return;
@@ -156,6 +177,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signOut() async {
+    if (state is AuthLoadingState) return;
     emit(AuthLoadingState());
     
     // 🗑️ Delete FCM token BEFORE logout while we are still authenticated
