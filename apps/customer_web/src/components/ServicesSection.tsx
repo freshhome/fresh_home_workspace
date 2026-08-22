@@ -273,7 +273,6 @@ export default function ServicesSection() {
                 <button
                   onClick={() => {
                     setSearchQuery("");
-                    setActiveFilter("");
                   }}
                   className="absolute left-3 p-1.5 hover:bg-slate-200 text-slate-400 hover:text-slate-700 rounded-full transition-colors"
                   aria-label="مسح البحث"
@@ -281,31 +280,6 @@ export default function ServicesSection() {
                   <X className="w-4 h-4" />
                 </button>
               )}
-            </div>
-
-            {/* Quick Filter Tag Chips */}
-            <div className="flex items-center gap-1.5 sm:gap-2 mt-3 overflow-x-auto pb-1 pt-0.5 no-scrollbar text-right">
-              <span className="text-[11px] font-bold text-slate-400 shrink-0 ml-1 flex items-center gap-1">
-                <SlidersHorizontal className="w-3 h-3 text-[#0091FF]" />
-                <span>اقتراحات سريعة:</span>
-              </span>
-
-              {quickFilterTags.map((tag) => {
-                const isActive = activeFilter === tag.query || (tag.query === "" && searchQuery === "");
-                return (
-                  <button
-                    key={tag.label}
-                    onClick={() => handleQuickFilter(tag.query)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 border ${
-                      isActive
-                        ? "bg-[#0D327D] text-white border-[#0D327D] shadow-sm shadow-blue-900/20"
-                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-blue-50 hover:text-[#0091FF] hover:border-blue-200"
-                    }`}
-                  >
-                    {tag.label}
-                  </button>
-                );
-              })}
             </div>
 
             {/* Live Suggestion Overlay Dropdown (When focused & typing) */}
