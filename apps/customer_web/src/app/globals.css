@@ -2,15 +2,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F8FAFC;
-  --foreground: #111827;
+  --background: #FFFFFF;
+  --foreground: #0F172A;
   
   --primary: #0D327D;
+  --primary-glow: #0091FF;
   --secondary: #2ECC71;
-  --text-primary: #111827;
-  --text-secondary: #6B7280;
-  --card-bg: #FFFFFF;
-  --service-bg: #F0F8FF;
+  --accent-cyan: #22A5FC;
+  --card-dark: #071739;
+  --card-darker: #050D24;
+}
+
+.dark {
+  --background: #040A1C;
+  --foreground: #F8FAFC;
+  
+  --primary: #22A5FC;
+  --primary-glow: #0091FF;
+  --secondary: #2ECC71;
+  --accent-cyan: #38BDF8;
+  --card-dark: #071739;
+  --card-darker: #020713;
 }
 
 @theme inline {
@@ -18,19 +30,69 @@
   --color-foreground: var(--foreground);
   
   --color-primary: var(--primary);
+  --color-primary-glow: var(--primary-glow);
   --color-secondary: var(--secondary);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-card-bg: var(--card-bg);
-  --color-service-bg: var(--service-bg);
+  --color-accent-cyan: var(--accent-cyan);
+  --color-card-dark: var(--card-dark);
+  --color-card-darker: var(--card-darker);
   
   --font-sans: 'Cairo', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Cairo', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode overrides for background and surface containers */
+.dark body {
+  background: #040A1C;
+  color: #F8FAFC;
+}
+
+.dark #services,
+.dark .bg-\[\#F8FAFC\] {
+  background-color: #06112C !important;
+}
+
+.dark .bg-white {
+  background-color: #081B44 !important;
+  border-color: rgba(34, 165, 252, 0.15) !important;
+  color: #F8FAFC !important;
+}
+
+.dark .text-slate-900,
+.dark .text-slate-800 {
+  color: #F8FAFC !important;
+}
+
+.dark .text-slate-700,
+.dark .text-slate-600 {
+  color: #CBD5E1 !important;
+}
+
+.dark .text-slate-500,
+.dark .text-slate-400 {
+  color: #94A3B8 !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .bg-slate-50 {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(0, 145, 255, 0.12) !important;
 }
 
 /* Custom scrollbar for premium look */
@@ -41,26 +103,43 @@ body {
 ::-webkit-scrollbar-track {
   background: #F1F5F9;
 }
+.dark ::-webkit-scrollbar-track {
+  background: #06112C;
+}
 ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
   border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #1E3A8A;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 145, 255, 0.4);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  50% {
+    box-shadow: 0 0 30px rgba(0, 145, 255, 0.7);
   }
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+.glow-button {
+  box-shadow: 0 4px 20px rgba(0, 145, 255, 0.4);
+  transition: all 0.3s ease;
 }
 
+.glow-button:hover {
+  box-shadow: 0 6px 28px rgba(0, 145, 255, 0.65);
+  transform: translateY(-2px);
+}
+
+.glow-whatsapp {
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.35);
+}
+
+.glow-whatsapp:hover {
+  box-shadow: 0 6px 28px rgba(37, 211, 102, 0.55);
+}

@@ -1277,8 +1277,56 @@ abstract class AppLocalizations {
   /// No description provided for @validation_email_invalid.
   ///
   /// In ar, this message translates to:
-  /// **'يرجى إدخال بريد إلكتروني صحيح'**
+  /// **'يرجى إدخال بريد إلكتروني صحيح (مثال: name@example.com)'**
   String get validation_email_invalid;
+
+  /// No description provided for @validation_password_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرجاء إدخال كلمة المرور'**
+  String get validation_password_required;
+
+  /// No description provided for @validation_password_min_length.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل'**
+  String get validation_password_min_length;
+
+  /// No description provided for @validation_confirm_password_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرجاء تأكيد كلمة المرور'**
+  String get validation_confirm_password_required;
+
+  /// No description provided for @validation_passwords_match.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمتا المرور غير متطابقتين'**
+  String get validation_passwords_match;
+
+  /// No description provided for @validation_retype_password.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعد كتابة كلمة المرور'**
+  String get validation_retype_password;
+
+  /// No description provided for @validation_first_name_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى إدخال الاسم الأول'**
+  String get validation_first_name_required;
+
+  /// No description provided for @validation_last_name_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى إدخال اسم العائلة'**
+  String get validation_last_name_required;
+
+  /// No description provided for @validation_name_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى إدخال اسم صحيح يتكون من حروف فقط'**
+  String get validation_name_invalid;
 
   /// No description provided for @validation_schedule_required.
   ///
@@ -3619,36 +3667,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'خدمات {serviceName}'**
   String booking_services_of(Object serviceName);
-
-  /// No description provided for @validation_password_required.
-  ///
-  /// In ar, this message translates to:
-  /// **'الرجاء إدخال كلمة المرور'**
-  String get validation_password_required;
-
-  /// No description provided for @validation_password_min_length.
-  ///
-  /// In ar, this message translates to:
-  /// **'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل'**
-  String get validation_password_min_length;
-
-  /// No description provided for @validation_confirm_password_required.
-  ///
-  /// In ar, this message translates to:
-  /// **'الرجاء تأكيد كلمة المرور'**
-  String get validation_confirm_password_required;
-
-  /// No description provided for @validation_passwords_match.
-  ///
-  /// In ar, this message translates to:
-  /// **'كلمتا المرور غير متطابقتين'**
-  String get validation_passwords_match;
-
-  /// No description provided for @validation_retype_password.
-  ///
-  /// In ar, this message translates to:
-  /// **'أعد كتابة كلمة المرور'**
-  String get validation_retype_password;
 
   /// No description provided for @auth_save_new_password.
   ///

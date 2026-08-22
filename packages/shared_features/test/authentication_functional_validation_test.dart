@@ -413,6 +413,31 @@ void main() {
       await authCubit.close();
     });
 
+    test('9b. Forgot Password with Unregistered Email -> Emits AuthErrorState [PASS]', () async {
+      final authCubit = createAuthCubit(
+        resetPasswordUseCase: FakeResetPasswordUseCase(
+          shouldSucceed: false,
+          failure: const AuthFailure(
+            message: 'لا يوجد حساب مسجل بهذا البريد الإلكتروني',
+            code: 'user_not_found',
+          ),
+        ),
+        defaultRole: UserRole.admin,
+      );
+
+      final states = <AuthState>[];
+      authCubit.stream.listen(states.add);
+
+      await authCubit.resetPassword(email: 'notfound@freshhome.com');
+      await pumpEventQueue();
+
+      expect(states, contains(isA<AuthLoadingState>()));
+      expect(states.last, isA<AuthErrorState>());
+      final errorState = states.last as AuthErrorState;
+      expect(errorState.failure.code, 'user_not_found');
+      await authCubit.close();
+    });
+
     test('10. Reset Password -> Updates password -> UpdatePasswordSuccess -> New Login succeeds [PASS]', () async {
       final authCubit = createAuthCubit(
         signInUseCase: FakeSignInUseCase(shouldSucceed: true),

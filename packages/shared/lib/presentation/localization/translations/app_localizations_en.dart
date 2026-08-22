@@ -609,10 +609,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get validation_required => 'This field cannot be empty';
 
   @override
-  String get validation_email_required => 'Please enter email';
+  String get validation_email_required => 'Please enter email address';
 
   @override
-  String get validation_email_invalid => 'Please enter a valid email address';
+  String get validation_email_invalid =>
+      'Please enter a valid email address (e.g. name@example.com)';
+
+  @override
+  String get validation_password_required => 'Please enter password';
+
+  @override
+  String get validation_password_min_length =>
+      'Password must be at least 6 characters';
+
+  @override
+  String get validation_confirm_password_required => 'Please confirm password';
+
+  @override
+  String get validation_passwords_match => 'Passwords do not match';
+
+  @override
+  String get validation_retype_password => 'Confirm password';
+
+  @override
+  String get validation_first_name_required => 'Please enter first name';
+
+  @override
+  String get validation_last_name_required => 'Please enter last name';
+
+  @override
+  String get validation_name_invalid =>
+      'Please enter a valid name using letters only';
 
   @override
   String get validation_schedule_required =>
@@ -1859,22 +1886,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String booking_services_of(Object serviceName) {
     return '$serviceName Services';
   }
-
-  @override
-  String get validation_password_required => 'Please enter password';
-
-  @override
-  String get validation_password_min_length =>
-      'Password must be at least 6 characters';
-
-  @override
-  String get validation_confirm_password_required => 'Please confirm password';
-
-  @override
-  String get validation_passwords_match => 'Passwords do not match';
-
-  @override
-  String get validation_retype_password => 'Confirm password';
 
   @override
   String get auth_save_new_password => 'Save new password';

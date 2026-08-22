@@ -91,9 +91,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
     /// 3️⃣ Errors
     if (state is AuthErrorState) {
-      print("------------------------------------------------");
-      print(state.failure.message);
-      print("------------------------------------------------");
+      debugPrint("------------------------------------------------");
+      debugPrint(state.failure.message);
+      debugPrint("------------------------------------------------");
       if (state.failure.code == 'email_not_verified') {
         DialogHelper.show(
           context,

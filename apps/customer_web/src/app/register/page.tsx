@@ -3,10 +3,11 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ShieldCheck, Mail, Lock, User, Phone, ArrowRight, AlertCircle } from "lucide-react";
+import { ShieldCheck, Mail, Lock, User, Phone, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Logo from "@/components/Logo";
 
 function RegisterContent() {
   const router = useRouter();
@@ -72,7 +73,7 @@ function RegisterContent() {
           data: {
             first_name: firstName.trim(),
             last_name: lastName.trim(),
-            app_type: "client", // Triggers role = client in public.user_roles
+            app_type: "client",
           }
         }
       });
@@ -80,7 +81,7 @@ function RegisterContent() {
       if (error) throw error;
 
       if (data?.user) {
-        // 2. Check if a session exists (auto-signin enabled)
+        // 2. Check if session exists
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           // 3. Save phone number in user_phones
@@ -95,7 +96,6 @@ function RegisterContent() {
               });
           } catch (phoneErr) {
             console.error("Phone registration warning:", phoneErr);
-            // Don't fail the registration if phone insert fails (e.g. RLS transient or duplicate)
           }
 
           setSuccessMsg("تم إنشاء الحساب بنجاح! جاري تحويلك...");
@@ -104,7 +104,6 @@ function RegisterContent() {
             router.refresh();
           }, 1500);
         } else {
-          // Session doesn't exist, email confirmation required
           setSuccessMsg("تم إنشاء الحساب بنجاح! يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب.");
         }
       } else {
@@ -119,137 +118,155 @@ function RegisterContent() {
   };
 
   return (
-    <div className="max-w-md mx-auto my-8 px-4">
-      <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-slate-200/60 shadow-[0_8px_32px_rgba(0,0,0,0.03)] text-right">
-        {/* Back link */}
-        <Link 
-          href="/login" 
-          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-primary transition-colors mb-6"
-        >
-          <ArrowRight className="w-3.5 h-3.5" />
-          <span>الرجوع لصفحة تسجيل الدخول</span>
-        </Link>
+    <div className="max-w-md mx-auto my-10 px-4 font-sans">
+      <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl text-right">
+        {/* Top Header & Brand Logo */}
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+          <Logo size="sm" />
+          <Link 
+            href="/login" 
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-[#0091FF] transition-colors"
+          >
+            <span>تسجيل الدخول</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
 
         <div className="mb-6">
-          <h2 className="text-2xl font-black text-slate-800 font-sans">إنشاء حساب جديد</h2>
-          <p className="text-slate-400 text-xs mt-1">
-            سجل معنا للاستفادة من حفظ عناوينك وتتبع حجوزاتك بسهولة.
+          <h2 className="text-xl font-black text-slate-900 font-sans">إنشاء حساب جديد</h2>
+          <p className="text-slate-500 text-xs mt-1 font-medium">
+            سجل معنا في Fresh Home للاستفادة من حفظ عناوينك ومتابعة طلباتك بسهولة.
           </p>
         </div>
 
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600" />
             <span>{successMsg}</span>
           </div>
         )}
 
-        <form onSubmit={handleRegister} className="space-y-4">
+        <form onSubmit={handleRegister} className="space-y-3.5">
+          {/* Name Row */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-600">الاسم الأول</label>
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700">الاسم الأول</label>
               <div className="relative flex items-center">
-                <User className="absolute right-3 w-4 h-4 text-slate-400" />
                 <input 
                   type="text" 
-                  placeholder="محمد"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full p-2.5 pr-9 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-slate-800 focus:ring-2 focus:ring-primary/10 transition-all placeholder-slate-300"
+                  placeholder="محمد"
+                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-right font-sans"
                   required
                 />
+                <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5" />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-600">الاسم الأخير</label>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700">اسم العائلة</label>
               <div className="relative flex items-center">
-                <User className="absolute right-3 w-4 h-4 text-slate-400" />
                 <input 
                   type="text" 
-                  placeholder="علي"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full p-2.5 pr-9 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-slate-800 focus:ring-2 focus:ring-primary/10 transition-all placeholder-slate-300"
+                  placeholder="أحمد"
+                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-right font-sans"
                   required
                 />
+                <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5" />
               </div>
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-600">البريد الإلكتروني</label>
+          {/* Email Field */}
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-slate-700">البريد الإلكتروني</label>
             <div className="relative flex items-center">
-              <Mail className="absolute right-3.5 w-4 h-4 text-slate-400" />
               <input 
                 type="email" 
-                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-3 pr-10 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-left text-slate-800 focus:ring-2 focus:ring-primary/10 transition-all placeholder-slate-300"
+                placeholder="name@example.com"
+                className="w-full p-3 pl-9 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-left font-sans"
                 required
               />
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3" />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-600">رقم الهاتف (الواتساب)</label>
+          {/* Phone Field */}
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-slate-700">رقم الهاتف (محمول مصري)</label>
             <div className="relative flex items-center">
-              <Phone className="absolute right-3.5 w-4 h-4 text-slate-400" />
               <input 
                 type="tel" 
-                placeholder="01012345678"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full p-3 pr-10 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-left text-slate-800 focus:ring-2 focus:ring-primary/10 transition-all placeholder-slate-300"
+                placeholder="01012345678"
+                className="w-full p-3 pl-9 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-left font-sans"
                 required
               />
+              <Phone className="w-4 h-4 text-slate-400 absolute left-3" />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-600">كلمة المرور</label>
-            <div className="relative flex items-center">
-              <Lock className="absolute right-3.5 w-4 h-4 text-slate-400" />
-              <input 
-                type="password" 
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-3 pr-10 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-left text-slate-800 focus:ring-2 focus:ring-primary/10 transition-all placeholder-slate-300"
-                required
-              />
+          {/* Password Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700">كلمة المرور</label>
+              <div className="relative flex items-center">
+                <input 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-left font-sans"
+                  required
+                />
+                <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-2.5" />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-600">تأكيد كلمة المرور</label>
-            <div className="relative flex items-center">
-              <Lock className="absolute right-3.5 w-4 h-4 text-slate-400" />
-              <input 
-                type="password" 
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full p-3 pr-10 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-left text-slate-800 focus:ring-2 focus:ring-primary/10 transition-all placeholder-slate-300"
-                required
-              />
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700">تأكيد كلمة المرور</label>
+              <div className="relative flex items-center">
+                <input 
+                  type="password" 
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-left font-sans"
+                  required
+                />
+                <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-2.5" />
+              </div>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-primary text-white font-extrabold text-xs shadow-md shadow-primary/10 hover:bg-primary/95 transition-all active:scale-[0.99] disabled:opacity-50"
+            className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-[#0091FF] to-[#0077E6] text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 glow-button cursor-pointer"
           >
-            {loading ? "جاري إنشاء الحساب..." : "إنشاء حسابي الجديد"}
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            <span>إنشاء الحساب</span>
           </button>
+
+          <div className="text-center pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium">
+            <span>لديك حساب بالفعل؟ </span>
+            <Link href={`/login?redirect=${encodeURIComponent(redirectPath)}`} className="text-[#0091FF] font-black hover:underline">
+              تسجيل الدخول
+            </Link>
+          </div>
         </form>
       </div>
     </div>
@@ -258,13 +275,11 @@ function RegisterContent() {
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <Header />
-      <main className="flex-grow flex items-center justify-center py-8">
+      <main className="flex-1 flex items-center justify-center pt-24 pb-16">
         <Suspense fallback={
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
-          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#0091FF]"></div>
         }>
           <RegisterContent />
         </Suspense>

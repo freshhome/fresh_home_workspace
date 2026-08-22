@@ -1,8 +1,13 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import ServicesGrid from "@/components/ServicesGrid";
-import PopularServices from "@/components/PopularServices";
-import TrustSection from "@/components/TrustSection";
+import ServicesSection from "@/components/ServicesSection";
+import PostConstructionBanner from "@/components/PostConstructionBanner";
+import HowItWorksSection from "@/components/HowItWorksSection";
+import PricingTeaser from "@/components/PricingTeaser";
+import QualityAdvantage from "@/components/QualityAdvantage";
+import LocationsSection from "@/components/LocationsSection";
+import FaqSection from "@/components/FaqSection";
+import BottomCtaBanner from "@/components/BottomCtaBanner";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -10,22 +15,15 @@ export default function Home() {
     "@context": "https://schema.org",
     "@type": "HomeAndConstructionBusiness",
     "name": "فريش هوم | Fresh Home",
-    "image": "https://dsddwqdixsdhaspfafuy.supabase.co/storage/v1/object/public/service_images/service_assets/core/images/app_icon_customer.png",
+    "image": "/images/hero_transformation.jpg",
     "url": "https://freshhome-egypt.com",
-    "telephone": "+201012345678",
+    "telephone": "+201000000000",
     "priceRange": "$$",
     "address": {
       "@type": "PostalAddress",
-      "streetAddress": "المعادي، شارع 9",
-      "addressLocality": "القاهرة",
+      "addressLocality": "القاهرة والجيزة",
       "addressRegion": "القاهرة",
-      "postalCode": "11728",
       "addressCountry": "EG"
-    },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": 29.9602,
-      "longitude": 31.2569
     },
     "openingHoursSpecification": {
       "@type": "OpeningHoursSpecification",
@@ -40,11 +38,7 @@ export default function Home() {
       ],
       "opens": "08:00",
       "closes": "22:00"
-    },
-    "sameAs": [
-      "https://www.facebook.com/freshhome",
-      "https://www.instagram.com/freshhome"
-    ]
+    }
   };
 
   return (
@@ -55,24 +49,41 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrgData) }}
       />
 
-      {/* Header Bar */}
+      {/* Navigation Header */}
       <Header />
-      
-      <main className="flex-1">
-        {/* Banner with main copy & stats */}
+
+      <main className="flex-1 overflow-hidden">
+        {/* 1. Hero Section + Floating Trust Bar */}
         <Hero />
-        
-        {/* Main Service Categories */}
-        <ServicesGrid />
-        
-        {/* Popular Sub-services list */}
-        <PopularServices />
-        
-        {/* Core trust guarantees */}
-        <TrustSection />
+
+        {/* 2. All Services Showcase Grid */}
+        <ServicesSection />
+
+        {/* 3. Featured Post-Construction Banner with Before & After */}
+        <PostConstructionBanner />
+
+        {/* 4. How It Works (4 Steps Stepper) */}
+        <HowItWorksSection />
+
+        {/* 5. Pricing Teaser & Calculator */}
+        <PricingTeaser />
+
+        {/* 6. Quality & Advantage Section */}
+        <QualityAdvantage />
+
+        {/* 7. Coverage & Locations (Cairo & Giza) */}
+        <LocationsSection />
+
+        {/* 8. FAQ Accordion with 3D Glowing Lamp/Chair */}
+        <div id="faq">
+          <FaqSection />
+        </div>
+
+        {/* 9. Bottom High-Impact CTA Banner */}
+        <BottomCtaBanner />
       </main>
-      
-      {/* Footer info & support details */}
+
+      {/* 10. Official Footer */}
       <Footer />
     </>
   );

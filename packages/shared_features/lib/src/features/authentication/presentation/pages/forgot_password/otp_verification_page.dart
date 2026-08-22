@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/core/constants/app_routes.dart';
 import 'package:shared/presentation/dialogs/dialog_helper.dart';
 import 'package:shared/presentation/extensions/failure_extension.dart';
-import 'package:shared/presentation/localization/translations/app_localizations.dart';
 import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
 import 'package:shared/presentation/widget/animated_background/animated_background.dart';
 import 'package:shared/presentation/widget/glass_container.dart';

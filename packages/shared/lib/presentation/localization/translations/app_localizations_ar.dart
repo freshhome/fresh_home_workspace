@@ -608,7 +608,33 @@ class AppLocalizationsAr extends AppLocalizations {
   String get validation_email_required => 'يرجى إدخال البريد الإلكتروني';
 
   @override
-  String get validation_email_invalid => 'يرجى إدخال بريد إلكتروني صحيح';
+  String get validation_email_invalid =>
+      'يرجى إدخال بريد إلكتروني صحيح (مثال: name@example.com)';
+
+  @override
+  String get validation_password_required => 'الرجاء إدخال كلمة المرور';
+
+  @override
+  String get validation_password_min_length =>
+      'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل';
+
+  @override
+  String get validation_confirm_password_required => 'الرجاء تأكيد كلمة المرور';
+
+  @override
+  String get validation_passwords_match => 'كلمتا المرور غير متطابقتين';
+
+  @override
+  String get validation_retype_password => 'أعد كتابة كلمة المرور';
+
+  @override
+  String get validation_first_name_required => 'يرجى إدخال الاسم الأول';
+
+  @override
+  String get validation_last_name_required => 'يرجى إدخال اسم العائلة';
+
+  @override
+  String get validation_name_invalid => 'يرجى إدخال اسم صحيح يتكون من حروف فقط';
 
   @override
   String get validation_schedule_required =>
@@ -1850,22 +1876,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String booking_services_of(Object serviceName) {
     return 'خدمات $serviceName';
   }
-
-  @override
-  String get validation_password_required => 'الرجاء إدخال كلمة المرور';
-
-  @override
-  String get validation_password_min_length =>
-      'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل';
-
-  @override
-  String get validation_confirm_password_required => 'الرجاء تأكيد كلمة المرور';
-
-  @override
-  String get validation_passwords_match => 'كلمتا المرور غير متطابقتين';
-
-  @override
-  String get validation_retype_password => 'أعد كتابة كلمة المرور';
 
   @override
   String get auth_save_new_password => 'حفظ كلمة المرور الجديدة';

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
   User, MapPin, Phone, Clock, AlertCircle, 
-  CheckCircle, Plus, Trash2, ShieldCheck, LogOut, ChevronLeft 
+  CheckCircle, Plus, Trash2, ShieldCheck, LogOut, ChevronLeft, ArrowRight 
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
@@ -160,55 +160,51 @@ function ProfileContent() {
           created_at, 
           scheduled_day, 
           start_time_slot, 
-          contact_name, 
           service_snapshot, 
           pricing_inputs
         `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
-      
+
       if (!error && data) {
         setBookings(data);
       }
     } catch (e) {
-      console.error(e);
+      console.error("Error loading bookings:", e);
     } finally {
       setLoadingBookings(false);
     }
   }
 
-  // Update profile handler
+  // Update profile handler (Writes to profiles table as SSOT)
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setProfileSuccess("");
     setUpdatingProfile(true);
+    setProfileSuccess("");
 
     try {
-      // 1. Update public.profiles table directly (Single Source of Truth)
+      // 1. Update public.profiles
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
           first_name: firstName.trim(),
-          last_name: lastName.trim()
+          last_name: lastName.trim(),
         })
         .eq("id", user.id);
-      
+
       if (profileError) throw profileError;
 
-      // 2. Update auth metadata for consistency
-      const { data, error } = await supabase.auth.updateUser({
+      // 2. Sync user metadata for backward compatibility
+      await supabase.auth.updateUser({
         data: {
           first_name: firstName.trim(),
-          last_name: lastName.trim()
+          last_name: lastName.trim(),
         }
       });
 
-      if (error) throw error;
-
-      setUser(data.user);
-      setProfileSuccess("تم تحديث بيانات ملفك الشخصي بنجاح.");
+      setProfileSuccess("تم تحديث البيانات بنجاح!");
+      setTimeout(() => setProfileSuccess(""), 4000);
     } catch (err: any) {
-      console.error("Update profile error:", err);
       alert("فشل تحديث البيانات: " + err.message);
     } finally {
       setUpdatingProfile(false);
@@ -219,11 +215,10 @@ function ProfileContent() {
   const handleAddPhone = async (e: React.FormEvent) => {
     e.preventDefault();
     setPhoneError("");
-    const phoneClean = newPhone.trim();
-    const phoneRegex = /^(010|011|012|015)\d{8}$/;
 
-    if (!phoneRegex.test(phoneClean)) {
-      setPhoneError("رقم الهاتف غير صحيح. أدخل رقم محمول مصري مكون من 11 رقماً.");
+    const phoneRegex = /^(010|011|012|015)\d{8}$/;
+    if (!phoneRegex.test(newPhone.trim())) {
+      setPhoneError("رقم الهاتف غير صحيح. يرجى إدخال رقم محمول مصري صحيح (مثال: 01012345678).");
       return;
     }
 
@@ -233,9 +228,9 @@ function ProfileContent() {
         .from("user_phones")
         .insert({
           user_id: user.id,
-          phone_number: phoneClean,
-          is_primary: phones.length === 0, // Mark as primary if it's the first number
-          is_verified: true
+          phone_number: newPhone.trim(),
+          is_primary: phones.length === 0,
+          is_verified: true,
         });
 
       if (error) throw error;
@@ -244,7 +239,7 @@ function ProfileContent() {
       loadPhones(user.id);
     } catch (err: any) {
       console.error("Add phone error:", err);
-      setPhoneError(err.message || "فشل إدراج رقم الهاتف. قد يكون مضافاً مسبقاً.");
+      setPhoneError(err.message || "حدث خطأ أثناء إضافة رقم الهاتف.");
     } finally {
       setAddingPhone(false);
     }
@@ -374,22 +369,22 @@ function ProfileContent() {
   if (loading) {
     return (
       <div className="py-24 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#0091FF]"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-right">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-right font-sans">
       {/* Title section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-6 mb-8">
         <div>
-          <h1 className="text-2xl font-black text-slate-800">الملف الشخصي والحساب</h1>
-          <p className="text-slate-400 text-xs mt-1">أهلاً بك، يمكنك إدارة بياناتك وعناوينك وتتبع سجل حجوزاتك هنا.</p>
+          <h1 className="text-2xl font-black text-slate-900">الملف الشخصي والحساب</h1>
+          <p className="text-slate-500 text-xs mt-1 font-medium">أهلاً بك، يمكنك إدارة بياناتك وعناوينك وتتبع سجل طلباتك هنا.</p>
         </div>
         <button
           onClick={handleLogOut}
-          className="flex items-center gap-2 p-2 px-4 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition-all cursor-pointer"
+          className="flex items-center gap-2 py-2 px-4 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition-all cursor-pointer shadow-sm"
         >
           <LogOut className="w-4 h-4" />
           <span>تسجيل الخروج</span>
@@ -398,11 +393,11 @@ function ProfileContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Navigation Sidebar */}
-        <aside className="lg:col-span-3 space-y-2 bg-white p-4 rounded-2xl border border-slate-200/60 shadow-xs">
+        <aside className="lg:col-span-3 space-y-2 bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
           <button
             onClick={() => setActiveTab("info")}
-            className={`w-full flex items-center gap-3 p-3 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "info" ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-50"
+            className={`w-full flex items-center gap-3 p-3.5 rounded-2xl text-xs font-black transition-all ${
+              activeTab === "info" ? "bg-[#0D327D] text-white shadow-md shadow-blue-900/20" : "text-slate-600 hover:bg-slate-50"
             }`}
           >
             <User className="w-4 h-4 shrink-0" />
@@ -410,8 +405,8 @@ function ProfileContent() {
           </button>
           <button
             onClick={() => setActiveTab("phones")}
-            className={`w-full flex items-center gap-3 p-3 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "phones" ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-50"
+            className={`w-full flex items-center gap-3 p-3.5 rounded-2xl text-xs font-black transition-all ${
+              activeTab === "phones" ? "bg-[#0D327D] text-white shadow-md shadow-blue-900/20" : "text-slate-600 hover:bg-slate-50"
             }`}
           >
             <Phone className="w-4 h-4 shrink-0" />
@@ -419,8 +414,8 @@ function ProfileContent() {
           </button>
           <button
             onClick={() => setActiveTab("addresses")}
-            className={`w-full flex items-center gap-3 p-3 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "addresses" ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-50"
+            className={`w-full flex items-center gap-3 p-3.5 rounded-2xl text-xs font-black transition-all ${
+              activeTab === "addresses" ? "bg-[#0D327D] text-white shadow-md shadow-blue-900/20" : "text-slate-600 hover:bg-slate-50"
             }`}
           >
             <MapPin className="w-4 h-4 shrink-0" />
@@ -428,8 +423,8 @@ function ProfileContent() {
           </button>
           <button
             onClick={() => setActiveTab("bookings")}
-            className={`w-full flex items-center gap-3 p-3 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "bookings" ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-50"
+            className={`w-full flex items-center gap-3 p-3.5 rounded-2xl text-xs font-black transition-all ${
+              activeTab === "bookings" ? "bg-[#0D327D] text-white shadow-md shadow-blue-900/20" : "text-slate-600 hover:bg-slate-50"
             }`}
           >
             <Clock className="w-4 h-4 shrink-0" />
@@ -438,18 +433,18 @@ function ProfileContent() {
         </aside>
 
         {/* Dynamic Panels */}
-        <section className="lg:col-span-9 bg-white rounded-2xl border border-slate-200/60 p-6 shadow-xs min-h-[380px]">
+        <section className="lg:col-span-9 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm min-h-[380px]">
           
           {/* TAB 1: BASIC INFO */}
           {activeTab === "info" && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-black text-slate-800">البيانات الأساسية لحسابك</h3>
-                <p className="text-slate-400 text-xs">تحديث اسمك ومعلومات الاتصال الأساسية.</p>
+                <h3 className="text-base font-black text-slate-900">البيانات الأساسية لحسابك</h3>
+                <p className="text-slate-500 text-xs font-medium">تحديث اسمك ومعلومات الاتصال الأساسية.</p>
               </div>
 
               {profileSuccess && (
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold flex items-center gap-2">
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   <span>{profileSuccess}</span>
                 </div>
@@ -458,22 +453,22 @@ function ProfileContent() {
               <form onSubmit={handleUpdateProfile} className="space-y-4 max-w-lg">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-600">الاسم الأول</label>
+                    <label className="block text-xs font-bold text-slate-700">الاسم الأول</label>
                     <input 
                       type="text" 
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-slate-800"
+                      className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-slate-800 font-sans"
                       required
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-600">الاسم الأخير</label>
+                    <label className="block text-xs font-bold text-slate-700">الاسم الأخير</label>
                     <input 
                       type="text" 
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-slate-800"
+                      className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-slate-800 font-sans"
                       required
                     />
                   </div>
@@ -485,14 +480,14 @@ function ProfileContent() {
                     type="email" 
                     value={user?.email || ""}
                     disabled
-                    className="w-full p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-slate-400 text-xs font-bold focus:outline-none text-left"
+                    className="w-full p-3 rounded-xl border border-slate-100 bg-slate-100/70 text-slate-400 text-xs font-bold focus:outline-none text-left font-sans"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={updatingProfile}
-                  className="py-2.5 px-6 rounded-xl bg-primary text-white font-extrabold text-xs shadow-md shadow-primary/10 hover:bg-primary/95 transition-all active:scale-[0.99] disabled:opacity-50"
+                  className="py-3 px-8 rounded-xl bg-[#0091FF] hover:bg-[#0077E6] text-white font-black text-xs shadow-md shadow-blue-500/20 transition-all glow-button disabled:opacity-50 cursor-pointer"
                 >
                   {updatingProfile ? "جاري التحديث..." : "حفظ التغييرات"}
                 </button>
@@ -504,12 +499,12 @@ function ProfileContent() {
           {activeTab === "phones" && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-black text-slate-800">إدارة أرقام الهواتف</h3>
-                <p className="text-slate-400 text-xs">أرقام الهواتف المستخدمة لتأكيد طلباتك والتواصل معك عبر واتساب.</p>
+                <h3 className="text-base font-black text-slate-900">إدارة أرقام الهواتف</h3>
+                <p className="text-slate-500 text-xs font-medium">أرقام الهواتف المستخدمة لتأكيد طلباتك والتواصل معك عبر واتساب.</p>
               </div>
 
               {phoneError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold flex items-center gap-2">
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-rose-500" />
                   <span>{phoneError}</span>
                 </div>
@@ -518,20 +513,20 @@ function ProfileContent() {
               {/* Add phone number form */}
               <form onSubmit={handleAddPhone} className="flex gap-2 items-end max-w-md">
                 <div className="flex-1 space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-600">إضافة رقم هاتف جديد</label>
+                  <label className="block text-xs font-bold text-slate-700">إضافة رقم هاتف جديد</label>
                   <input 
                     type="tel" 
                     placeholder="مثال: 01012345678"
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-slate-800 text-left"
+                    className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-slate-800 text-left font-sans"
                     required
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={addingPhone}
-                  className="p-2.5 rounded-xl bg-primary hover:bg-primary/95 text-white font-extrabold text-xs shadow-md transition-all shrink-0 flex items-center gap-1.5 cursor-pointer h-[41px]"
+                  className="p-3 rounded-xl bg-[#0091FF] hover:bg-[#0077E6] text-white font-black text-xs shadow-md transition-all shrink-0 flex items-center gap-1.5 cursor-pointer h-[44px]"
                 >
                   <Plus className="w-4 h-4" />
                   <span>إضافة</span>
@@ -539,37 +534,36 @@ function ProfileContent() {
               </form>
 
               {/* Phones List */}
-              <div className="space-y-2 pt-4 border-t border-slate-100 max-w-lg">
+              <div className="space-y-2.5 pt-4 border-t border-slate-100 max-w-lg">
                 {phones.length === 0 ? (
                   <p className="text-xs font-bold text-slate-400 py-4">لم تقم بإضافة أي أرقام هواتف حتى الآن.</p>
                 ) : (
                   phones.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50">
+                    <div key={p.id} className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 bg-[#F8FAFC]">
                       <div className="flex items-center gap-3">
-                        <span className="text-xs font-black text-slate-700 font-sans tracking-wide">{p.phone_number}</span>
+                        <span className="text-xs font-black text-slate-800 font-sans tracking-wide">{p.phone_number}</span>
                         {p.is_primary ? (
-                          <span className="text-[9px] font-black text-secondary bg-secondary/10 px-2 py-0.5 rounded-full">
-                            الرقم الأساسي
+                          <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-md font-bold">
+                            رئيسي
                           </span>
                         ) : (
                           <button
                             type="button"
                             onClick={() => handleSetPrimaryPhone(p.id)}
-                            className="text-[9px] font-bold text-slate-400 hover:text-primary hover:underline transition-colors cursor-pointer"
+                            className="text-[10px] text-[#0091FF] hover:underline font-bold"
                           >
-                            تعيين كأساسي
+                            تعيين كرئيسي
                           </button>
                         )}
                       </div>
-                      {!p.is_primary && (
-                        <button
-                          onClick={() => handleDeletePhone(p.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
-                          title="حذف الرقم"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePhone(p.id)}
+                        className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
+                        title="حذف الرقم"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ))
                 )}
@@ -581,143 +575,162 @@ function ProfileContent() {
           {activeTab === "addresses" && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-black text-slate-800">إدارة العناوين المسجلة</h3>
-                <p className="text-slate-400 text-xs">احفظ عناوينك لتسريع عملية حجز الخدمات وتعبئتها تلقائياً.</p>
+                <h3 className="text-base font-black text-slate-900">العناوين المسجلة</h3>
+                <p className="text-slate-500 text-xs font-medium">إدارة وتحديد عناوين منزلك أو مقرات عملك لتسريع عملية الحجز.</p>
               </div>
 
               {addressError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold flex items-center gap-2">
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-rose-500" />
                   <span>{addressError}</span>
                 </div>
               )}
 
-              {/* Add Address Form */}
-              <form onSubmit={handleAddAddress} className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-4 max-w-xl">
-                <span className="block text-xs font-black text-slate-700">إضافة عنوان تسليم جديد</span>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-bold text-slate-500">المحافظة</label>
-                    <select 
-                      value={newAddress.governorate}
-                      onChange={(e) => {
-                        const gov = e.target.value;
-                        const defaultCity = REGIONS_MAP[gov]?.[0] || "";
-                        setNewAddress({ ...newAddress, governorate: gov, city: defaultCity });
-                      }}
-                      className="w-full p-2 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:outline-none"
-                    >
-                      {Object.keys(REGIONS_MAP).map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-bold text-slate-500">المنطقة</label>
-                    <select 
-                      value={newAddress.city}
-                      onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                      className="w-full p-2 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:outline-none"
-                    >
-                      {(REGIONS_MAP[newAddress.governorate] || []).map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+              {/* Add address toggle */}
+              {!addingAddress ? (
+                <button
+                  type="button"
+                  onClick={() => setAddingAddress(true)}
+                  className="flex items-center gap-2 py-2.5 px-5 rounded-xl border border-[#0091FF]/30 bg-blue-50 text-[#0091FF] hover:bg-blue-100 text-xs font-black transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>إضافة عنوان جديد</span>
+                </button>
+              ) : (
+                <form onSubmit={handleAddAddress} className="space-y-4 p-5 rounded-2xl border border-slate-200 bg-[#F8FAFC] max-w-xl">
+                  <h4 className="text-xs font-black text-slate-800">بيانات العنوان الجديد</h4>
 
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-bold text-slate-500">اسم الشارع</label>
-                  <input 
-                    type="text" 
-                    placeholder="مثال: شارع 9، أمام بنك مصر"
-                    value={newAddress.street}
-                    onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
-                    className="w-full p-2 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-slate-800"
-                    required
-                  />
-                </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700">المحافظة</label>
+                      <select
+                        value={newAddress.governorate}
+                        onChange={(e) => setNewAddress({ ...newAddress, governorate: e.target.value, city: REGIONS_MAP[e.target.value][0] })}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:border-[#0091FF] focus:outline-none"
+                      >
+                        {Object.keys(REGIONS_MAP).map((gov) => (
+                          <option key={gov} value={gov}>{gov}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700">المدينة / المنطقة</label>
+                      <select
+                        value={newAddress.city}
+                        onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:border-[#0091FF] focus:outline-none"
+                      >
+                        {REGIONS_MAP[newAddress.governorate]?.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-bold text-slate-500">رقم المبنى</label>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">اسم الشارع</label>
                     <input 
-                      type="text"
-                      value={newAddress.building}
-                      onChange={(e) => setNewAddress({ ...newAddress, building: e.target.value })}
-                      className="w-full p-2 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none text-center bg-white"
+                      type="text" 
+                      placeholder="مثال: شارع مصدق"
+                      value={newAddress.street}
+                      onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:border-[#0091FF] focus:outline-none"
                       required
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-bold text-slate-500">رقم الدور</label>
-                    <input 
-                      type="text"
-                      value={newAddress.floor}
-                      onChange={(e) => setNewAddress({ ...newAddress, floor: e.target.value })}
-                      className="w-full p-2 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none text-center bg-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-bold text-slate-500">رقم الشقة</label>
-                    <input 
-                      type="text"
-                      value={newAddress.apartment}
-                      onChange={(e) => setNewAddress({ ...newAddress, apartment: e.target.value })}
-                      className="w-full p-2 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none text-center bg-white"
-                    />
-                  </div>
-                </div>
 
-                <button
-                  type="submit"
-                  disabled={addingAddress}
-                  className="py-2 px-5 rounded-xl bg-primary text-white font-extrabold text-xs shadow-md hover:bg-primary/95 transition-all cursor-pointer"
-                >
-                  {addingAddress ? "جاري الحفظ..." : "حفظ العنوان"}
-                </button>
-              </form>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700">رقم العمارة</label>
+                      <input 
+                        type="text" 
+                        placeholder="14"
+                        value={newAddress.building}
+                        onChange={(e) => setNewAddress({ ...newAddress, building: e.target.value })}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:border-[#0091FF] focus:outline-none"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700">الدور</label>
+                      <input 
+                        type="text" 
+                        placeholder="3"
+                        value={newAddress.floor}
+                        onChange={(e) => setNewAddress({ ...newAddress, floor: e.target.value })}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:border-[#0091FF] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700">رقم الشقة</label>
+                      <input 
+                        type="text" 
+                        placeholder="5"
+                        value={newAddress.apartment}
+                        onChange={(e) => setNewAddress({ ...newAddress, apartment: e.target.value })}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:border-[#0091FF] focus:outline-none"
+                      />
+                    </div>
+                  </div>
 
-              {/* Address List */}
-              <div className="space-y-3 pt-4 border-t border-slate-100 max-w-xl">
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="submit"
+                      className="py-2 px-5 rounded-xl bg-[#0091FF] text-white text-xs font-black shadow-sm cursor-pointer hover:bg-[#0077E6]"
+                    >
+                      حفظ العنوان
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAddingAddress(false)}
+                      className="py-2 px-4 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-100"
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Addresses List */}
+              <div className="space-y-3 pt-2">
                 {addresses.length === 0 ? (
-                  <p className="text-xs font-bold text-slate-400 py-4">لم تقم بإضافة أي عناوين حتى الآن.</p>
+                  <p className="text-xs font-bold text-slate-400 py-4">لم تقم بحفظ أي عناوين بعد.</p>
                 ) : (
                   addresses.map((addr) => (
-                    <div key={addr.id} className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
-                      <div className="space-y-1 text-right">
+                    <div key={addr.id} className="p-4 rounded-2xl border border-slate-100 bg-[#F8FAFC] flex items-center justify-between gap-4">
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-black text-slate-800">
-                            {addr.governorate}، {addr.city}
-                          </span>
-                          {addr.is_primary ? (
-                            <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                              الأساسي
+                          <span className="text-xs font-black text-slate-900">{addr.city}، {addr.governorate}</span>
+                          {addr.is_primary && (
+                            <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-md font-bold">
+                              العنوان الافتراضي
                             </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleSetPrimaryAddress(addr.id)}
-                              className="text-[9px] font-bold text-slate-400 hover:text-primary hover:underline transition-colors cursor-pointer"
-                            >
-                              تعيين كأساسي
-                            </button>
                           )}
                         </div>
-                        <p className="text-[10px] font-bold text-slate-500">
-                          {addr.street} - مبنى {addr.building_number} {addr.floor ? `- الدور ${addr.floor}` : ""} {addr.apartment ? `- شقة ${addr.apartment}` : ""}
+                        <p className="text-xs text-slate-500 font-medium">
+                          شارع {addr.street} - مبنى {addr.building_number} {addr.floor ? `- دور ${addr.floor}` : ""} {addr.apartment ? `- شقة ${addr.apartment}` : ""}
                         </p>
                       </div>
-                      {!addr.is_primary && (
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        {!addr.is_primary && (
+                          <button
+                            type="button"
+                            onClick={() => handleSetPrimaryAddress(addr.id)}
+                            className="text-[10px] text-[#0091FF] hover:underline font-bold"
+                          >
+                            جعله افتراضي
+                          </button>
+                        )}
                         <button
+                          type="button"
                           onClick={() => handleDeleteAddress(addr.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
+                          className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
                           title="حذف العنوان"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
-                      )}
+                      </div>
                     </div>
                   ))
                 )}
@@ -725,85 +738,58 @@ function ProfileContent() {
             </div>
           )}
 
-          {/* TAB 4: BOOKING HISTORY */}
+          {/* TAB 4: BOOKINGS */}
           {activeTab === "bookings" && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-black text-slate-800">سجل حجوزات الخدمات</h3>
-                <p className="text-slate-400 text-xs">قائمة بالخدمات التي قمت بطلبها وحالة تتبعها.</p>
+                <h3 className="text-base font-black text-slate-900">سجل الحجوزات والطلبات</h3>
+                <p className="text-slate-500 text-xs font-medium">عرض ومتابعة كافة الطلبات السابقة والحالية.</p>
               </div>
 
               {loadingBookings ? (
                 <div className="py-12 flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#0091FF]"></div>
                 </div>
               ) : bookings.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 space-y-2">
-                  <Clock className="w-8 h-8 mx-auto text-slate-350" />
-                  <p className="text-xs font-bold">لا توجد حجوزات مسجلة تحت حسابك بعد.</p>
-                  <Link href="/" className="text-primary font-black text-xs hover:underline inline-block mt-2">
-                    احجز أولى خدماتك الآن من هنا
+                <div className="text-center py-12 space-y-3">
+                  <Clock className="w-10 h-10 text-slate-300 mx-auto" />
+                  <p className="text-xs font-bold text-slate-500">لا توجد لديك أي طلبات سابقة حتى الآن.</p>
+                  <Link href="/" className="inline-block px-5 py-2.5 rounded-xl bg-[#0091FF] text-white text-xs font-bold shadow-sm">
+                    احجز خدمة جديدة
                   </Link>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {bookings.map((b) => {
-                    const servTitle = b.service_snapshot?.title || "خدمة منزلية";
-                    const isCompleted = b.status === "completed";
-                    const isCancelled = b.status === "cancelled";
-                    const createdDate = new Date(b.created_at).toLocaleDateString("ar-EG", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric"
-                    });
-                    
-                    return (
-                      <div key={b.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded-2xl border border-slate-150 bg-white/80 hover:bg-slate-50/50 hover:border-slate-300 transition-all gap-4">
-                        <div className="space-y-1 text-right">
-                          <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="text-xs font-black text-slate-800">{servTitle}</span>
-                            <span className="text-[9px] text-slate-400 font-bold">({createdDate})</span>
-                          </div>
-                          <div className="text-[10px] text-slate-500 font-bold flex items-center gap-3">
-                            <span>موعد الزيارة: {b.scheduled_day}</span>
-                            <span>الساعة: {b.start_time_slot}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0">
-                          {/* Status Badge */}
-                          <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
-                            isCompleted 
-                              ? "bg-emerald-50 border-emerald-100 text-emerald-700" 
-                              : isCancelled 
-                                ? "bg-rose-50 border-rose-100 text-rose-700" 
-                                : "bg-primary/5 border-primary/10 text-primary"
-                          }`}>
-                            {b.status === "created" && "تم تسجيل الطلب"}
-                            {b.status === "assigned" && "تم التعيين"}
-                            {b.status === "accepted" && "مؤكد"}
-                            {b.status === "on_the_way" && "الفني بالطريق"}
-                            {b.status === "arrived" && "الفني بالموقع"}
-                            {b.status === "in_progress" && "جاري العمل"}
-                            {b.status === "completed" && "اكتمل بنجاح"}
-                            {b.status === "cancelled" && "ملغي"}
+                  {bookings.map((b) => (
+                    <Link
+                      key={b.id}
+                      href={`/orders?bookingId=${b.id}`}
+                      className="block p-4 rounded-2xl border border-slate-100 bg-[#F8FAFC] hover:border-[#0091FF]/30 transition-all group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-black text-slate-900 group-hover:text-[#0091FF] transition-colors">
+                            {b.service_snapshot?.title || "خدمة منزلية"}
+                          </h4>
+                          <span className="text-[10px] text-slate-400 font-bold block mt-1">
+                            تاريخ الحجز: {new Date(b.created_at).toLocaleDateString("ar-EG", { day: "numeric", month: "short", year: "numeric" })}
                           </span>
-
-                          <Link
-                            href={`/orders?bookingId=${b.id}`}
-                            className="flex items-center gap-1.5 text-xs font-black text-primary hover:underline hover:text-primary/80 transition-colors"
-                          >
-                            <span>تتبع وتفاصيل</span>
-                            <ChevronLeft className="w-3.5 h-3.5 transform rotate-180 sm:rotate-0" />
-                          </Link>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-blue-50 text-[#0091FF] border border-blue-100">
+                            {b.status}
+                          </span>
+                          <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-[#0091FF] group-hover:-translate-x-1 transition-all" />
                         </div>
                       </div>
-                    );
-                  })}
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
           )}
+
         </section>
       </div>
     </div>
@@ -812,13 +798,11 @@ function ProfileContent() {
 
 export default function ProfilePage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <Header />
-      <main className="flex-grow">
+      <main className="flex-1 pt-24 pb-16">
         <Suspense fallback={
-          <div className="flex justify-center items-center py-24">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
-          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#0091FF]"></div>
         }>
           <ProfileContent />
         </Suspense>

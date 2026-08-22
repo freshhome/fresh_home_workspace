@@ -3,10 +3,11 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ShieldCheck, Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import { ShieldCheck, Mail, Lock, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Logo from "@/components/Logo";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -69,7 +70,6 @@ function LoginContent() {
   const handleGoogleLogin = async () => {
     setErrorMsg("");
     try {
-      // Get origin dynamically in client
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const redirectTo = `${origin}${redirectPath}`;
 
@@ -96,15 +96,27 @@ function LoginContent() {
     setErrorMsg("");
     setSuccessMsg("");
 
-    if (!email.trim()) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
       setErrorMsg("يرجى كتابة البريد الإلكتروني أولاً.");
       return;
     }
 
     setLoading(true);
     try {
+      const { data: exists, error: rpcError } = await supabase.rpc('check_email_exists', {
+        p_email: normalizedEmail,
+      });
+
+      if (rpcError) throw rpcError;
+
+      if (!exists) {
+        setErrorMsg("لا يوجد حساب مسجل بهذا البريد الإلكتروني.");
+        return;
+      }
+
       const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo: `${origin}/login`,
       });
 
@@ -123,37 +135,40 @@ function LoginContent() {
   };
 
   return (
-    <div className="max-w-md mx-auto my-12 px-4">
-      <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-slate-200/60 shadow-[0_8px_32px_rgba(0,0,0,0.03)] text-right">
-        {/* Back option */}
-        <Link 
-          href="/" 
-          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-primary transition-colors mb-6"
-        >
-          <ArrowRight className="w-3.5 h-3.5" />
-          <span>العودة للرئيسية</span>
-        </Link>
+    <div className="max-w-md mx-auto my-12 px-4 font-sans">
+      <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl text-right">
+        {/* Top Back & Brand Logo */}
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+          <Logo size="sm" />
+          <Link 
+            href="/" 
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-[#0091FF] transition-colors"
+          >
+            <span>الرئيسية</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
 
-        <div className="mb-8">
-          <h2 className="text-2xl font-black text-slate-800 font-sans">
+        <div className="mb-6">
+          <h2 className="text-xl font-black text-slate-900 font-sans">
             {resetMode ? "إعادة تعيين كلمة المرور" : "تسجيل الدخول"}
           </h2>
-          <p className="text-slate-400 text-xs mt-1">
+          <p className="text-slate-500 text-xs mt-1 font-medium">
             {resetMode 
               ? "أدخل بريدك الإلكتروني وسنرسل لك رابطاً لاستعادة حسابك." 
-              : "مرحباً بك مجدداً في فريش هوم! سجل دخولك لمتابعة حجوزاتك."}
+              : "مرحباً بك مجدداً في Fresh Home! سجل دخولك لمتابعة طلباتك."}
           </p>
         </div>
 
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600" />
             <span>{successMsg}</span>
           </div>
@@ -163,113 +178,109 @@ function LoginContent() {
           /* Password Reset Form */
           <form onSubmit={handlePasswordReset} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-600">البريد الإلكتروني</label>
+              <label className="block text-xs font-bold text-slate-700">البريد الإلكتروني</label>
               <div className="relative flex items-center">
-                <Mail className="absolute right-3.5 w-4 h-4 text-slate-400" />
                 <input 
                   type="email" 
-                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-3 pr-10 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-left text-slate-800 focus:ring-2 focus:ring-primary/10 transition-all placeholder-slate-300"
+                  placeholder="name@example.com"
+                  className="w-full p-3 pl-10 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-left font-sans"
                   required
                 />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3" />
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-primary text-white font-extrabold text-xs shadow-md shadow-primary/10 hover:bg-primary/95 transition-all active:scale-[0.99] disabled:opacity-50"
+              className="w-full py-3.5 rounded-xl bg-[#0091FF] hover:bg-[#0077E6] text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 glow-button"
             >
-              {loading ? "جاري الإرسال..." : "إرسال رابط الاستعادة"}
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>إرسال رابط الاستعادة</span>
             </button>
 
             <button
               type="button"
-              onClick={() => {
-                setResetMode(false);
-                setErrorMsg("");
-              }}
-              className="w-full text-center text-xs font-bold text-slate-500 hover:text-slate-700 block mt-2 transition-colors"
+              onClick={() => { setResetMode(false); setErrorMsg(""); setSuccessMsg(""); }}
+              className="w-full text-center text-xs font-bold text-slate-500 hover:text-slate-800 pt-2"
             >
-              الرجوع لتسجيل الدخول
+              تذكرت كلمة المرور؟ تسجيل الدخول
             </button>
           </form>
         ) : (
-          /* Login Form */
+          /* Standard Login Form */
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-600">البريد الإلكتروني</label>
+              <label className="block text-xs font-bold text-slate-700">البريد الإلكتروني</label>
               <div className="relative flex items-center">
-                <Mail className="absolute right-3.5 w-4 h-4 text-slate-400" />
                 <input 
                   type="email" 
-                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-3 pr-10 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-left text-slate-800 focus:ring-2 focus:ring-primary/10 transition-all placeholder-slate-300"
+                  placeholder="name@example.com"
+                  className="w-full p-3 pl-10 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-left font-sans"
                   required
                 />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3" />
               </div>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label className="block text-xs font-bold text-slate-600">كلمة المرور</label>
+                <label className="block text-xs font-bold text-slate-700">كلمة المرور</label>
                 <button
                   type="button"
-                  onClick={() => {
-                    setResetMode(true);
-                    setErrorMsg("");
-                    setSuccessMsg("");
-                  }}
-                  className="text-[10px] font-bold text-primary hover:underline"
+                  onClick={() => { setResetMode(true); setErrorMsg(""); setSuccessMsg(""); }}
+                  className="text-[11px] font-bold text-[#0091FF] hover:underline"
                 >
                   نسيت كلمة المرور؟
                 </button>
               </div>
               <div className="relative flex items-center">
-                <Lock className="absolute right-3.5 w-4 h-4 text-slate-400" />
                 <input 
                   type="password" 
-                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full p-3 pr-10 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-left text-slate-800 focus:ring-2 focus:ring-primary/10 transition-all placeholder-slate-300"
+                  placeholder="••••••••"
+                  className="w-full p-3 pl-10 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-left font-sans"
                   required
                 />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3" />
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-primary text-white font-extrabold text-xs shadow-md shadow-primary/10 hover:bg-primary/95 transition-all active:scale-[0.99] disabled:opacity-50"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#0091FF] to-[#0077E6] text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 glow-button cursor-pointer"
             >
-              {loading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>تسجيل الدخول</span>
             </button>
 
-            {/* Divider */}
-            <div className="relative flex py-2 items-center">
-              <div className="flex-grow border-t border-slate-200"></div>
-              <span className="flex-shrink mx-4 text-slate-400 text-[10px] font-bold">أو سجل دخولك عبر</span>
-              <div className="flex-grow border-t border-slate-200"></div>
+            {/* Google OAuth Login */}
+            <div className="pt-2">
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="flex-shrink mx-3 text-[11px] font-bold text-slate-400">أو من خلال</span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="w-full mt-2 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-2.5 transition-colors shadow-sm"
+              >
+                <GoogleIcon className="w-4 h-4" />
+                <span>المتابعة باستخدام Google</span>
+              </button>
             </div>
 
-            {/* Google OAuth Login Button */}
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              className="w-full py-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
-            >
-              <GoogleIcon className="w-4 h-4 text-red-500 fill-red-500" />
-              <span>حساب جوجل (Google)</span>
-            </button>
-
-            <div className="text-center pt-4 border-t border-slate-100 text-xs text-slate-500">
+            <div className="text-center pt-4 border-t border-slate-100 text-xs text-slate-500 font-medium">
               <span>ليس لديك حساب؟ </span>
-              <Link href={`/register?redirect=${encodeURIComponent(redirectPath)}`} className="text-primary font-black hover:underline">
+              <Link href={`/register?redirect=${encodeURIComponent(redirectPath)}`} className="text-[#0091FF] font-black hover:underline">
                 إنشاء حساب جديد
               </Link>
             </div>
@@ -282,13 +293,11 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <Header />
-      <main className="flex-grow flex items-center justify-center py-8">
+      <main className="flex-1 flex items-center justify-center pt-24 pb-16">
         <Suspense fallback={
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
-          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#0091FF]"></div>
         }>
           <LoginContent />
         </Suspense>

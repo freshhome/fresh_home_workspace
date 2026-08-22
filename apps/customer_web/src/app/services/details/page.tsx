@@ -11,6 +11,17 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabase";
 
+function resolveServiceImage(imageStr?: string | null): string | null {
+  if (!imageStr || typeof imageStr !== "string") return null;
+  const clean = imageStr.trim();
+  if (!clean) return null;
+  if (clean.startsWith("http://") || clean.startsWith("https://") || clean.startsWith("/")) {
+    return clean;
+  }
+  const { data } = supabase.storage.from("service_images").getPublicUrl(clean);
+  return data?.publicUrl || null;
+}
+
 const parseDetailItem = (item: any, isArabic: boolean = true) => {
   if (!item) return null;
   
@@ -45,7 +56,6 @@ const parseDetailItem = (item: any, isArabic: boolean = true) => {
     return String(field);
   };
 
-  // 2. Direct keys: { icon, title, points, icon_id, icon_path }
   const title = getMultilingualText(item.title);
   
   let points: string[] = [];
@@ -94,7 +104,10 @@ function ServiceDetailsContent() {
           .single();
 
         if (error) throw error;
-        setService(data);
+        setService({
+          ...data,
+          imageUrl: resolveServiceImage(data.image),
+        });
 
         // 2. Fetch reviews from unified details view
         const { data: reviewsData, error: reviewsError } = await supabase
@@ -143,10 +156,10 @@ function ServiceDetailsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
         <Header />
         <main className="flex-1 flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-[#0091FF]"></div>
         </main>
         <Footer />
       </div>
@@ -155,11 +168,13 @@ function ServiceDetailsContent() {
 
   if (!service) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
         <Header />
-        <main className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500">
-          <p>عذراً، لم نتمكن من العثور على الخدمة المطلوبة.</p>
-          <Link href="/" className="mt-4 text-primary font-bold hover:underline">العودة للرئيسية</Link>
+        <main className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 text-center">
+          <p className="text-sm font-bold">عذراً، لم نتمكن من العثور على الخدمة المطلوبة.</p>
+          <Link href="/" className="mt-4 px-6 py-2 rounded-xl bg-[#0091FF] text-white text-xs font-black shadow-md">
+            العودة للرئيسية
+          </Link>
         </main>
         <Footer />
       </div>
@@ -170,41 +185,25 @@ function ServiceDetailsContent() {
   
   if (isUnavailable) {
     return (
-      <div className="min-h-screen relative flex flex-col font-sans overflow-hidden bg-gradient-to-br from-[#E0F2F1] via-white to-[#E3F2FD]">
-        {/* Animated background elements */}
-        <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-teal-100/40 blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-sky-100/40 blur-[120px] animate-pulse" />
-        
+      <div className="min-h-screen bg-[#071739] text-white flex flex-col font-sans justify-between">
         <Header />
-        
-        <main className="flex-1 flex items-center justify-center p-6 z-10">
-          <div className="backdrop-blur-md bg-white/75 border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.06)] rounded-[32px] max-w-md w-full p-8 text-center flex flex-col items-center">
-            
-            {/* Animated Icon */}
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
-              <Sparkles className="w-10 h-10 text-primary" />
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="bg-[#0D2A68]/80 border border-blue-800/60 rounded-3xl max-w-md w-full p-8 text-center space-y-5 shadow-2xl">
+            <div className="w-16 h-16 bg-[#0091FF]/20 rounded-2xl flex items-center justify-center mx-auto text-[#22A5FC]">
+              <Sparkles className="w-8 h-8" />
             </div>
-            
-            {/* Title */}
-            <h2 className="text-xl lg:text-2xl font-extrabold text-slate-800 mb-3">
-              الخدمة ستتوفر قريباً
-            </h2>
-            
-            {/* Description */}
-            <p className="text-slate-500 text-sm leading-relaxed mb-8">
-              نعمل حالياً على تجهيز هذه الخدمة بأعلى معايير الجودة لتكون متاحة لحجزك قريباً جداً.
+            <h2 className="text-xl font-black text-white">الخدمة ستتوفر قريباً</h2>
+            <p className="text-slate-300 text-xs leading-relaxed">
+              نعمل حالياً على تجهيز هذه الخدمة بأعلى معايير الجودة لتكون متاحة لحجزك قريباً.
             </p>
-            
-            {/* Back Button */}
             <button 
               onClick={() => router.back()}
-              className="w-full bg-primary hover:bg-primary/95 text-white font-extrabold py-4 px-6 rounded-2xl shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+              className="w-full bg-[#0091FF] hover:bg-[#0077E6] text-white font-black py-3.5 px-6 rounded-xl shadow-lg transition-all text-xs"
             >
               العودة للخلف
             </button>
           </div>
         </main>
-        
         <Footer />
       </div>
     );
@@ -253,17 +252,17 @@ function ServiceDetailsContent() {
     : service.instructions?.ar || service.instructions?.en || "";
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <Header />
 
-      <main className="flex-1 py-10 pb-28 lg:pb-10">
+      <main className="flex-1 pt-24 pb-28 lg:pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Breadcrumb / Back button */}
+          {/* Breadcrumb / Top Actions */}
           <div className="mb-6 flex items-center justify-between">
             <Link 
               href={`/services?serviceId=${serviceId}`}
-              className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors text-xs font-bold"
+              className="flex items-center gap-2 text-slate-500 hover:text-[#0091FF] transition-colors text-xs font-bold bg-white px-3.5 py-1.5 rounded-full border border-slate-200 shadow-sm"
             >
               <ArrowRight className="w-4 h-4" />
               <span>العودة لقائمة الخدمات</span>
@@ -271,10 +270,10 @@ function ServiceDetailsContent() {
             
             <button 
               onClick={toggleFavorite}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-bold transition-all ${
                 isFavorite 
-                  ? "bg-rose-50 border-rose-200 text-rose-500" 
-                  : "bg-white border-slate-200 hover:border-slate-350 text-slate-500"
+                  ? "bg-rose-50 border-rose-200 text-rose-500 shadow-sm" 
+                  : "bg-white border-slate-200 hover:border-slate-300 text-slate-600 shadow-sm"
               }`}
             >
               <Heart className={`w-4 h-4 ${isFavorite ? "fill-rose-500" : ""}`} />
@@ -284,53 +283,53 @@ function ServiceDetailsContent() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            {/* Left Column: Details, Inclusions, Reviews */}
+            {/* Main Details Column (Right in RTL) */}
             <div className="lg:col-span-8 space-y-6">
               
-              {/* Alert for Paused/Suspended Services */}
+              {/* Alert for Paused Services */}
               {isPaused && (
-                <div className="bg-amber-50 border border-amber-200/80 text-amber-800 rounded-[22px] p-5 text-right flex items-start gap-3 shadow-[0_8px_40px_rgba(0,0,0,0.02)]">
-                  <Sparkles className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-3xl p-5 text-right flex items-start gap-3 shadow-sm">
+                  <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <h3 className="font-extrabold text-sm text-slate-800">تنويه: ستتوفر هذه الخدمة قريباً</h3>
-                    <p className="text-slate-600 text-xs leading-relaxed font-light">
-                      نعمل حالياً على تجهيز هذه الخدمة بأعلى معايير الجودة لتكون متاحة لحجزك قريباً جداً. يمكنك طلب إعلامك فور توفرها.
+                    <h3 className="font-extrabold text-sm">تنويه: ستتوفر هذه الخدمة قريباً</h3>
+                    <p className="text-slate-600 text-xs leading-relaxed">
+                      نعمل حالياً على تجهيز هذه الخدمة بأعلى معايير الجودة لتكون متاحة لحجزك قريباً جداً.
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Header Info Card */}
-              <div className="bg-white rounded-[22px] border border-slate-100 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.05)] text-right">
+              {/* Service Hero Header Card */}
+              <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm text-right">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                  {/* Service Image */}
-                  <div className="w-24 h-24 rounded-[22px] bg-service-bg border border-primary/5 flex items-center justify-center p-4 shrink-0 shadow-inner">
-                    {service.image ? (
+                  {/* Service Icon */}
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center p-3.5 shrink-0 overflow-hidden">
+                    {service.imageUrl ? (
                       <img 
-                        src={service.image} 
+                        src={service.imageUrl} 
                         alt={arTitle} 
                         className="w-full h-full object-contain"
                       />
                     ) : (
-                      <Sparkles className="w-10 h-10 text-primary/45" />
+                      <Sparkles className="w-10 h-10 text-[#0091FF]" />
                     )}
                   </div>
 
                   {/* Text */}
                   <div className="space-y-3 flex-1 w-full text-center sm:text-right">
-                    <h1 className="text-xl sm:text-2xl font-black text-slate-800 leading-tight">
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
                       {arTitle}
                     </h1>
                     {arDesc && (
-                      <p className="text-slate-500 text-sm leading-relaxed font-light">
+                      <p className="text-slate-500 text-xs sm:text-sm leading-relaxed font-medium">
                         {arDesc}
                       </p>
                     )}
                     
-                    {/* Trust guarantee mini-badge */}
-                    <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-secondary border border-emerald-100 text-[10px] font-black px-3 py-1 rounded-md mt-2">
+                    {/* Trust guarantee badge */}
+                    <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black px-3 py-1 rounded-full">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>مشمول بضمان الجودة من فريش هوم</span>
+                      <span>مشمول بضمان الجودة والأمان من Fresh Home</span>
                     </div>
                   </div>
                 </div>
@@ -338,51 +337,49 @@ function ServiceDetailsContent() {
 
               {/* What's included (Inclusions) */}
               {inclusions.length > 0 && (
-                <div className="bg-white rounded-[22px] border border-slate-100 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.05)] text-right">
-                  <h2 className="text-base font-black text-slate-800 mb-6 pb-2 border-b border-slate-100">
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm text-right">
+                  <h2 className="text-base font-black text-slate-900 mb-6 pb-2 border-b border-slate-100">
                     تفاصيل ومميزات الخدمة
                   </h2>
-                  <div className="space-y-4">
+                  <div className="space-y-3.5">
                     {inclusions.map((item: any, idx: number) => {
-                      const parsed = parseDetailItem(item, true); // true for Arabic
+                      const parsed = parseDetailItem(item, true);
                       if (!parsed) return null;
 
                       return (
                         <div 
                           key={idx} 
-                          className="bg-slate-50 rounded-2xl border border-slate-150 overflow-hidden text-right"
+                          className="bg-[#F8FAFC] rounded-2xl border border-slate-200/70 overflow-hidden text-right"
                         >
-                          {/* Accordion Header */}
                           <details className="group" open={idx === 0}>
                             <summary className="flex items-center justify-between p-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#0091FF] flex items-center justify-center shrink-0">
                                   {parsed.icon ? (
                                     <img 
                                       src={parsed.icon} 
                                       alt={parsed.title} 
-                                      className="w-6 h-6 object-contain" 
+                                      className="w-5 h-5 object-contain" 
                                     />
                                   ) : (
-                                    <Sparkles className="w-5 h-5" />
+                                    <Sparkles className="w-4 h-4" />
                                   )}
                                 </div>
-                                <span className="font-extrabold text-sm text-slate-800">
+                                <span className="font-extrabold text-xs sm:text-sm text-slate-800">
                                   {parsed.title}
                                 </span>
                               </div>
                               <span className="transition-transform duration-200 group-open:-rotate-90">
-                                <ChevronLeft className="w-4 h-4 text-primary" />
+                                <ChevronLeft className="w-4 h-4 text-[#0091FF]" />
                               </span>
                             </summary>
                             
-                            {/* Accordion Body */}
                             {parsed.points && parsed.points.length > 0 && (
-                              <div className="px-6 pb-4 pt-1 border-t border-slate-150/60 bg-white">
-                                <ul className="space-y-3">
+                              <div className="px-5 pb-4 pt-1 border-t border-slate-200/60 bg-white">
+                                <ul className="space-y-2.5 pt-2">
                                   {parsed.points.map((pt: string, pIdx: number) => (
-                                    <li key={pIdx} className="flex items-start gap-2.5 text-xs text-slate-600 leading-relaxed pt-2">
-                                      <Check className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
+                                    <li key={pIdx} className="flex items-start gap-2 text-xs text-slate-600 leading-relaxed font-medium">
+                                      <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                                       <span>{pt}</span>
                                     </li>
                                   ))}
@@ -399,15 +396,15 @@ function ServiceDetailsContent() {
 
               {/* What's NOT included (Exclusions) */}
               {exclusions.length > 0 && (
-                <div className="bg-white rounded-[22px] border border-slate-100 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.05)] text-right">
-                  <h2 className="text-base font-black text-slate-800 mb-4 pb-2 border-b border-slate-100">
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm text-right">
+                  <h2 className="text-base font-black text-slate-900 mb-4 pb-2 border-b border-slate-100">
                     الخدمة لا تشمل:
                   </h2>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-500">
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600">
                     {exclusions.map((item: any, idx: number) => {
                       const text = !item ? "" : typeof item === "string" ? item : (item.ar || item.en || String(item));
                       return (
-                        <li key={idx} className="flex items-center gap-2 bg-slate-50/50 p-3 rounded-xl border border-slate-100/50">
+                        <li key={idx} className="flex items-center gap-2 bg-rose-50/60 p-3 rounded-xl border border-rose-100 font-medium">
                           <X className="w-4 h-4 text-rose-500 shrink-0" />
                           <span>{text}</span>
                         </li>
@@ -419,12 +416,12 @@ function ServiceDetailsContent() {
 
               {/* Service Instructions */}
               {arInstructions && (
-                <div className="bg-amber-50/30 rounded-[22px] border border-amber-100/70 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.02)] text-right space-y-4">
-                  <h2 className="text-base font-black text-amber-900 mb-2 pb-2 border-b border-amber-150 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-amber-600 shrink-0" />
-                    <span>تعليمات وإرشادات الخدمة</span>
+                <div className="bg-amber-50/50 rounded-3xl border border-amber-200/70 p-6 shadow-sm text-right space-y-3">
+                  <h2 className="text-sm font-black text-amber-900 pb-2 border-b border-amber-200/60 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>تعليمات وإرشادات هامة للخدمة</span>
                   </h2>
-                  <p className="text-sm text-slate-700 leading-relaxed font-light whitespace-pre-line">
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium whitespace-pre-line">
                     {arInstructions}
                   </p>
                 </div>
@@ -432,11 +429,11 @@ function ServiceDetailsContent() {
 
               {/* Reviews Section */}
               {reviews.length > 0 && (
-                <div className="bg-white rounded-[22px] border border-slate-100 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.05)] text-right">
-                  <h2 className="text-base font-black text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm text-right">
+                  <h2 className="text-base font-black text-slate-900 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
                     <span>آراء وتقييمات العملاء</span>
-                    <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">
-                      {reviews.length} تقييم
+                    <span className="text-xs bg-blue-50 text-[#0091FF] px-2.5 py-0.5 rounded-full font-bold">
+                      {reviews.length} تقييم موثق
                     </span>
                   </h2>
 
@@ -445,10 +442,10 @@ function ServiceDetailsContent() {
                       const custName = `${rev.customer_first_name || "عميل"} ${rev.customer_last_name || ""}`.trim() || "عميل فريش هوم";
                       const date = rev.created_at ? new Date(rev.created_at).toLocaleDateString("ar-EG", { day: "numeric", month: "short", year: "numeric" }) : "";
                       return (
-                        <div key={rev.id} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 space-y-2">
+                        <div key={rev.id} className="p-4 rounded-2xl border border-slate-100 bg-[#F8FAFC] space-y-2">
                           <div className="flex justify-between items-center text-xs">
                             <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                              <div className="w-7 h-7 rounded-full bg-blue-100 text-[#0091FF] flex items-center justify-center">
                                 {rev.customer_avatar_url ? (
                                   <img 
                                     src={rev.customer_avatar_url} 
@@ -456,25 +453,25 @@ function ServiceDetailsContent() {
                                     className="w-full h-full rounded-full object-cover" 
                                   />
                                 ) : (
-                                  <User className="w-4 h-4" />
+                                  <User className="w-3.5 h-3.5" />
                                 )}
                               </div>
-                              <span className="font-extrabold text-slate-700">{custName}</span>
+                              <span className="font-extrabold text-slate-800">{custName}</span>
                             </div>
-                            <span className="text-slate-400 font-bold">{date}</span>
+                            <span className="text-slate-400 font-bold text-[10px]">{date}</span>
                           </div>
                           
-                          <div className="flex items-center gap-1 text-amber-500 py-1">
+                          <div className="flex items-center gap-1 text-amber-500 py-0.5">
                             {Array.from({ length: 5 }).map((_, i) => (
                               <Star 
                                 key={i} 
-                                className={`w-3.5 h-3.5 ${i < rev.rating_value ? "fill-amber-500 text-amber-500" : "text-slate-200"}`} 
+                                className={`w-3 h-3 ${i < rev.rating_value ? "fill-amber-500 text-amber-500" : "text-slate-200"}`} 
                               />
                             ))}
                           </div>
 
                           {rev.feedback_text && (
-                            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-light">
+                            <p className="text-xs text-slate-600 leading-relaxed font-medium">
                               {rev.feedback_text}
                             </p>
                           )}
@@ -487,38 +484,38 @@ function ServiceDetailsContent() {
 
             </div>
 
-            {/* Right Column: Pricing & Booking Sidebar */}
+            {/* Sidebar Column: Sticky Pricing Card */}
             <div className="lg:col-span-4 sticky top-24">
-              <div className="bg-white rounded-[22px] border border-slate-100 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.05)] text-right space-y-6">
+              <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-sm text-right space-y-6">
                 <div>
-                  <span className="text-slate-550 text-[10px] font-black uppercase tracking-wider block">
+                  <span className="text-slate-400 text-[10px] font-black uppercase tracking-wider block">
                     {priceLabel}
                   </span>
                   <div className="flex items-baseline gap-2 mt-1 justify-end">
-                    <span className="text-2xl sm:text-3xl font-black text-primary">
+                    <span className="text-2xl sm:text-3xl font-black text-[#0D327D]">
                       {startingPrice}
                     </span>
-                    <span className="text-sm font-bold text-slate-650">
+                    <span className="text-xs font-bold text-slate-500">
                       {unitText}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-500 block mt-1.5 leading-normal font-light">
+                  <span className="text-[10px] text-slate-400 block mt-1.5 leading-normal font-medium">
                     * يتم حساب السعر النهائي بدقة بناءً على المواصفات في الخطوة التالية.
                   </span>
                 </div>
 
-                <div className="border-t border-slate-100 pt-4 space-y-3.5 text-xs text-slate-650 leading-relaxed font-normal">
+                <div className="border-t border-slate-100 pt-4 space-y-3 text-xs text-slate-600 leading-relaxed font-medium">
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-secondary shrink-0" />
-                    <span>تسعير فوري يعتمد على البيانات التي تدخلها</span>
+                    <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>تسعير فوري ومباشر حسب المساحة والمواصفات</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-secondary shrink-0" />
-                    <span>ضمان الجودة الخاص بفريش هوم</span>
+                    <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>ضمان الجودة والاستلام التام الخاص بـ Fresh Home</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-secondary shrink-0" />
-                    <span>نحرص على سلامة منزلك ومحتوياته أثناء العمل</span>
+                    <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>فنيون معتمدون ومفحوصون أمنياً ومهنياً</span>
                   </div>
                 </div>
 
@@ -527,14 +524,14 @@ function ServiceDetailsContent() {
                     href={`https://wa.me/${whatsappNumber}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:opacity-95 text-white font-extrabold py-3.5 rounded-xl text-center shadow-lg shadow-emerald-500/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
+                    className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black py-3.5 rounded-xl text-center shadow-lg transition-all glow-whatsapp text-xs"
                   >
                     <span>أبلغني عند التوفر (واتساب)</span>
                   </a>
                 ) : (
                   <Link
                     href={`/booking?serviceId=${serviceId}&subServiceId=${subServiceId}`}
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-extrabold py-3.5 rounded-xl text-center shadow-lg shadow-primary/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#0091FF] to-[#0077E6] hover:opacity-95 text-white font-black py-3.5 rounded-xl text-center shadow-lg shadow-blue-500/20 transition-all glow-button text-xs"
                   >
                     <Calendar className="w-4 h-4" />
                     <span>احجز الخدمة الآن</span>
@@ -549,11 +546,11 @@ function ServiceDetailsContent() {
       </main>
 
       {/* Floating Bottom Booking Bar for Mobile */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-xl border-t border-slate-200/60 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] px-5 py-4 flex items-center justify-between gap-4">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200 px-5 py-3.5 flex items-center justify-between gap-4 shadow-xl">
         <div className="text-right font-sans">
-          <span className="text-[10px] font-bold text-slate-400 block leading-tight">السعر التقريبي يبدأ من</span>
+          <span className="text-[10px] font-bold text-slate-400 block leading-tight">السعر يبدأ من</span>
           <div className="flex items-baseline gap-1 mt-0.5">
-            <span className="text-xl font-black text-primary">{startingPrice}</span>
+            <span className="text-lg font-black text-[#0D327D]">{startingPrice}</span>
             <span className="text-[10px] font-bold text-slate-500">{unitText}</span>
           </div>
         </div>
@@ -563,17 +560,17 @@ function ServiceDetailsContent() {
             href={`https://wa.me/${whatsappNumber}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 max-w-[200px] flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:opacity-95 text-white font-extrabold py-3 px-4 rounded-xl text-center shadow-md shadow-emerald-500/20 active:scale-95 transition-all text-xs"
+            className="flex-1 max-w-[200px] flex items-center justify-center gap-1.5 bg-[#25D366] text-white font-bold py-2.5 px-4 rounded-xl text-center text-xs shadow-md"
           >
             <span>أبلغني عند التوفر</span>
           </a>
         ) : (
           <Link
             href={`/booking?serviceId=${serviceId}&subServiceId=${subServiceId}`}
-            className="flex-1 max-w-[200px] flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary to-[#22A5FC] hover:opacity-95 text-white font-extrabold py-3 px-4 rounded-xl text-center shadow-md shadow-primary/20 active:scale-95 transition-all text-xs"
+            className="flex-1 max-w-[200px] flex items-center justify-center gap-1.5 bg-[#0091FF] text-white font-bold py-2.5 px-4 rounded-xl text-center shadow-md text-xs"
           >
-            <Calendar className="w-4 h-4" />
-            <span>احجز الخدمة الآن</span>
+            <Calendar className="w-3.5 h-3.5" />
+            <span>احجز الآن</span>
           </Link>
         )}
       </div>
@@ -586,8 +583,8 @@ function ServiceDetailsContent() {
 export default function ServiceDetailsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-[#0091FF]"></div>
       </div>
     }>
       <ServiceDetailsContent />

@@ -168,6 +168,20 @@ class SupabaseAuthDataSourceImpl implements AuthRemoteDataSource {
 
       final normalizedEmail = email.trim().toLowerCase();
 
+      // Check if email exists before sending reset email
+      final exists = await _supabase.rpc(
+        'check_email_exists',
+        params: {'p_email': normalizedEmail},
+      );
+
+      if (exists != true) {
+        debugPrint('⚠️ [SupabaseAuthDataSource] Email $normalizedEmail is not registered');
+        throw const SupabaseExceptionApp(
+          'user_not_found',
+          code: 'user_not_found',
+        );
+      }
+
       await _supabase.auth.resetPasswordForEmail(normalizedEmail, redirectTo: redirectTo);
 
       debugPrint('================ AUTH DEBUG ================');
@@ -183,6 +197,7 @@ class SupabaseAuthDataSourceImpl implements AuthRemoteDataSource {
       debugPrint('============================================');
       throw SupabaseExceptionApp(e.message, code: e.code);
     } catch (e, stackTrace) {
+      if (e is SupabaseExceptionApp) rethrow;
       debugPrint('================ AUTH DEBUG ================');
       debugPrint('DEBUG AUTH sendPasswordResetEmail EXCEPTION');
       debugPrint('message: $e');
