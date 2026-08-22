@@ -137,23 +137,24 @@ function LoginContent() {
   return (
     <div className="max-w-md mx-auto my-12 px-4 font-sans">
       <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl text-right">
-        {/* Top Back & Brand Logo */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-          <Logo size="sm" />
+        {/* Top Back navigation */}
+        <div className="flex items-center justify-between mb-4">
           <Link 
             href="/" 
             className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-[#0091FF] transition-colors"
           >
-            <span>الرئيسية</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+            <span>العودة للرئيسية</span>
           </Link>
         </div>
 
-        <div className="mb-6">
-          <h2 className="text-xl font-black text-slate-900 font-sans">
+        {/* Centered Lottie Logo Animation Header */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <Logo size="lg" animated={true} />
+          <h2 className="text-xl font-black text-slate-900 font-sans mt-4">
             {resetMode ? "إعادة تعيين كلمة المرور" : "تسجيل الدخول"}
           </h2>
-          <p className="text-slate-500 text-xs mt-1 font-medium">
+          <p className="text-slate-500 text-xs mt-1 font-medium max-w-xs">
             {resetMode 
               ? "أدخل بريدك الإلكتروني وسنرسل لك رابطاً لاستعادة حسابك." 
               : "مرحباً بك مجدداً في Fresh Home! سجل دخولك لمتابعة طلباتك."}

@@ -120,21 +120,22 @@ function RegisterContent() {
   return (
     <div className="max-w-md mx-auto my-10 px-4 font-sans">
       <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl text-right">
-        {/* Top Header & Brand Logo */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-          <Logo size="sm" />
+        {/* Top Header Navigation */}
+        <div className="flex items-center justify-between mb-4">
           <Link 
             href="/login" 
             className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-[#0091FF] transition-colors"
           >
-            <span>تسجيل الدخول</span>
+            <span>لديك حساب؟ تسجيل الدخول</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        <div className="mb-6">
-          <h2 className="text-xl font-black text-slate-900 font-sans">إنشاء حساب جديد</h2>
-          <p className="text-slate-500 text-xs mt-1 font-medium">
+        {/* Centered Lottie Logo Animation Header */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <Logo size="lg" animated={true} />
+          <h2 className="text-xl font-black text-slate-900 font-sans mt-4">إنشاء حساب جديد</h2>
+          <p className="text-slate-500 text-xs mt-1 font-medium max-w-xs">
             سجل معنا في Fresh Home للاستفادة من حفظ عناوينك ومتابعة طلباتك بسهولة.
           </p>
         </div>

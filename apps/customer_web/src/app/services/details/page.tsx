@@ -29,7 +29,6 @@ const parseDetailItem = (item: any, isArabic: boolean = true) => {
     return { title: item, points: [], icon: null };
   }
 
-  // 1. Check if it has multilingual subkeys 'ar' or 'en'
   if (item.ar || item.en) {
     const langContent = isArabic ? (item.ar || item.en) : (item.en || item.ar);
     if (langContent) {
@@ -46,7 +45,6 @@ const parseDetailItem = (item: any, isArabic: boolean = true) => {
     }
   }
 
-  // Helper to extract text from a field that could be string or object
   const getMultilingualText = (field: any) => {
     if (!field) return "";
     if (typeof field === "string") return field;
@@ -89,14 +87,12 @@ function ServiceDetailsContent() {
       return;
     }
 
-    // Check favorite status from localStorage
     const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
     setIsFavorite(favorites.includes(subServiceId));
 
     async function fetchData() {
       setLoading(true);
       try {
-        // 1. Fetch subservice details
         const { data, error } = await supabase
           .from("active_services_tree")
           .select("*")
@@ -109,7 +105,6 @@ function ServiceDetailsContent() {
           imageUrl: resolveServiceImage(data.image),
         });
 
-        // 2. Fetch reviews from unified details view
         const { data: reviewsData, error: reviewsError } = await supabase
           .from("view_reviews_with_details")
           .select("*")
@@ -121,7 +116,6 @@ function ServiceDetailsContent() {
           setReviews(reviewsData || []);
         }
 
-        // 3. Fetch whatsapp number
         const { data: wsData } = await supabase
           .from("system_settings")
           .select("value")
@@ -156,7 +150,7 @@ function ServiceDetailsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#040A1C] flex flex-col font-sans">
         <Header />
         <main className="flex-1 flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-[#0091FF]"></div>
@@ -168,9 +162,9 @@ function ServiceDetailsContent() {
 
   if (!service) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#040A1C] flex flex-col font-sans">
         <Header />
-        <main className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 text-center">
+        <main className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 dark:text-slate-400 text-center">
           <p className="text-sm font-bold">عذراً، لم نتمكن من العثور على الخدمة المطلوبة.</p>
           <Link href="/" className="mt-4 px-6 py-2 rounded-xl bg-[#0091FF] text-white text-xs font-black shadow-md">
             العودة للرئيسية
@@ -213,7 +207,6 @@ function ServiceDetailsContent() {
   const arTitle = service.title?.ar || service.title || "تفاصيل الخدمة";
   const arDesc = service.description?.ar || service.description || "";
 
-  // Pricing details formatting
   let startingPrice = 250;
   let priceLabel = "السعر الأساسي التقديري";
   let unitText = "ج.م";
@@ -236,23 +229,17 @@ function ServiceDetailsContent() {
     priceLabel = "رسوم المعاينة الميدانية";
   }
 
-  // Parse inclusions / details
-  const inclusions = Array.isArray(service.details) 
-    ? service.details 
-    : [];
-
-  // Parse exclusions
+  const inclusions = Array.isArray(service.details) ? service.details : [];
   const exclusions = Array.isArray(service.not_included)
     ? service.not_included
     : service.not_included?.ar?.points || service.not_included?.en?.points || [];
 
-  // Parse instructions
   const arInstructions = typeof service.instructions === "string"
     ? service.instructions
     : service.instructions?.ar || service.instructions?.en || "";
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#040A1C] flex flex-col font-sans transition-colors duration-300">
       <Header />
 
       <main className="flex-1 pt-24 pb-28 lg:pb-16">
@@ -262,7 +249,7 @@ function ServiceDetailsContent() {
           <div className="mb-6 flex items-center justify-between">
             <Link 
               href={`/services?serviceId=${serviceId}`}
-              className="flex items-center gap-2 text-slate-500 hover:text-[#0091FF] transition-colors text-xs font-bold bg-white px-3.5 py-1.5 rounded-full border border-slate-200 shadow-sm"
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-[#0091FF] dark:hover:text-[#22A5FC] transition-colors text-xs font-bold bg-white dark:bg-[#071739] px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-blue-900/50 shadow-sm"
             >
               <ArrowRight className="w-4 h-4" />
               <span>العودة لقائمة الخدمات</span>
@@ -272,8 +259,8 @@ function ServiceDetailsContent() {
               onClick={toggleFavorite}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-bold transition-all ${
                 isFavorite 
-                  ? "bg-rose-50 border-rose-200 text-rose-500 shadow-sm" 
-                  : "bg-white border-slate-200 hover:border-slate-300 text-slate-600 shadow-sm"
+                  ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-500 shadow-sm" 
+                  : "bg-white dark:bg-[#071739] border-slate-200 dark:border-blue-900/50 hover:border-slate-300 text-slate-600 dark:text-slate-300 shadow-sm"
               }`}
             >
               <Heart className={`w-4 h-4 ${isFavorite ? "fill-rose-500" : ""}`} />
@@ -283,16 +270,16 @@ function ServiceDetailsContent() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            {/* Main Details Column (Right in RTL) */}
+            {/* Main Details Column */}
             <div className="lg:col-span-8 space-y-6">
               
               {/* Alert for Paused Services */}
               {isPaused && (
-                <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-3xl p-5 text-right flex items-start gap-3 shadow-sm">
-                  <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-200 rounded-3xl p-5 text-right flex items-start gap-3 shadow-sm">
+                  <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <div className="space-y-1">
                     <h3 className="font-extrabold text-sm">تنويه: ستتوفر هذه الخدمة قريباً</h3>
-                    <p className="text-slate-600 text-xs leading-relaxed">
+                    <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
                       نعمل حالياً على تجهيز هذه الخدمة بأعلى معايير الجودة لتكون متاحة لحجزك قريباً جداً.
                     </p>
                   </div>
@@ -300,10 +287,10 @@ function ServiceDetailsContent() {
               )}
 
               {/* Service Hero Header Card */}
-              <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm text-right">
+              <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                   {/* Service Icon */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center p-3.5 shrink-0 overflow-hidden">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/40 flex items-center justify-center p-3.5 shrink-0 overflow-hidden">
                     {service.imageUrl ? (
                       <img 
                         src={service.imageUrl} 
@@ -311,23 +298,23 @@ function ServiceDetailsContent() {
                         className="w-full h-full object-contain"
                       />
                     ) : (
-                      <Sparkles className="w-10 h-10 text-[#0091FF]" />
+                      <Sparkles className="w-10 h-10 text-[#0091FF] dark:text-[#22A5FC]" />
                     )}
                   </div>
 
                   {/* Text */}
                   <div className="space-y-3 flex-1 w-full text-center sm:text-right">
-                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
                       {arTitle}
                     </h1>
                     {arDesc && (
-                      <p className="text-slate-500 text-xs sm:text-sm leading-relaxed font-medium">
+                      <p className="text-slate-500 dark:text-slate-300 text-xs sm:text-sm leading-relaxed font-medium">
                         {arDesc}
                       </p>
                     )}
                     
                     {/* Trust guarantee badge */}
-                    <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black px-3 py-1 rounded-full">
+                    <div className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 text-[11px] font-black px-3.5 py-1 rounded-full">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       <span>مشمول بضمان الجودة والأمان من Fresh Home</span>
                     </div>
@@ -337,8 +324,8 @@ function ServiceDetailsContent() {
 
               {/* What's included (Inclusions) */}
               {inclusions.length > 0 && (
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm text-right">
-                  <h2 className="text-base font-black text-slate-900 mb-6 pb-2 border-b border-slate-100">
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right">
+                  <h2 className="text-base font-black text-slate-900 dark:text-white mb-6 pb-2 border-b border-slate-100 dark:border-slate-800">
                     تفاصيل ومميزات الخدمة
                   </h2>
                   <div className="space-y-3.5">
@@ -349,12 +336,12 @@ function ServiceDetailsContent() {
                       return (
                         <div 
                           key={idx} 
-                          className="bg-[#F8FAFC] rounded-2xl border border-slate-200/70 overflow-hidden text-right"
+                          className="bg-[#F8FAFC] dark:bg-[#050D24] rounded-2xl border border-slate-200/70 dark:border-blue-900/40 overflow-hidden text-right"
                         >
                           <details className="group" open={idx === 0}>
                             <summary className="flex items-center justify-between p-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#0091FF] flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center shrink-0">
                                   {parsed.icon ? (
                                     <img 
                                       src={parsed.icon} 
@@ -365,20 +352,20 @@ function ServiceDetailsContent() {
                                     <Sparkles className="w-4 h-4" />
                                   )}
                                 </div>
-                                <span className="font-extrabold text-xs sm:text-sm text-slate-800">
+                                <span className="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-slate-200">
                                   {parsed.title}
                                 </span>
                               </div>
                               <span className="transition-transform duration-200 group-open:-rotate-90">
-                                <ChevronLeft className="w-4 h-4 text-[#0091FF]" />
+                                <ChevronLeft className="w-4 h-4 text-[#0091FF] dark:text-[#22A5FC]" />
                               </span>
                             </summary>
                             
                             {parsed.points && parsed.points.length > 0 && (
-                              <div className="px-5 pb-4 pt-1 border-t border-slate-200/60 bg-white">
+                              <div className="px-5 pb-4 pt-1 border-t border-slate-200/60 dark:border-blue-900/30 bg-white dark:bg-[#071739]">
                                 <ul className="space-y-2.5 pt-2">
                                   {parsed.points.map((pt: string, pIdx: number) => (
-                                    <li key={pIdx} className="flex items-start gap-2 text-xs text-slate-600 leading-relaxed font-medium">
+                                    <li key={pIdx} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
                                       <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                                       <span>{pt}</span>
                                     </li>
@@ -396,15 +383,15 @@ function ServiceDetailsContent() {
 
               {/* What's NOT included (Exclusions) */}
               {exclusions.length > 0 && (
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm text-right">
-                  <h2 className="text-base font-black text-slate-900 mb-4 pb-2 border-b border-slate-100">
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right">
+                  <h2 className="text-base font-black text-slate-900 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
                     الخدمة لا تشمل:
                   </h2>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600">
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 dark:text-slate-300">
                     {exclusions.map((item: any, idx: number) => {
                       const text = !item ? "" : typeof item === "string" ? item : (item.ar || item.en || String(item));
                       return (
-                        <li key={idx} className="flex items-center gap-2 bg-rose-50/60 p-3 rounded-xl border border-rose-100 font-medium">
+                        <li key={idx} className="flex items-center gap-2 bg-rose-50/60 dark:bg-rose-950/30 p-3 rounded-xl border border-rose-100 dark:border-rose-900/40 font-medium">
                           <X className="w-4 h-4 text-rose-500 shrink-0" />
                           <span>{text}</span>
                         </li>
@@ -416,12 +403,12 @@ function ServiceDetailsContent() {
 
               {/* Service Instructions */}
               {arInstructions && (
-                <div className="bg-amber-50/50 rounded-3xl border border-amber-200/70 p-6 shadow-sm text-right space-y-3">
-                  <h2 className="text-sm font-black text-amber-900 pb-2 border-b border-amber-200/60 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <div className="bg-amber-50/50 dark:bg-amber-950/20 rounded-3xl border border-amber-200/70 dark:border-amber-900/40 p-6 shadow-sm text-right space-y-3">
+                  <h2 className="text-sm font-black text-amber-900 dark:text-amber-200 pb-2 border-b border-amber-200/60 dark:border-amber-900/30 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                     <span>تعليمات وإرشادات هامة للخدمة</span>
                   </h2>
-                  <p className="text-xs text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium whitespace-pre-line">
                     {arInstructions}
                   </p>
                 </div>
@@ -429,10 +416,10 @@ function ServiceDetailsContent() {
 
               {/* Reviews Section */}
               {reviews.length > 0 && (
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm text-right">
-                  <h2 className="text-base font-black text-slate-900 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right">
+                  <h2 className="text-base font-black text-slate-900 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <span>آراء وتقييمات العملاء</span>
-                    <span className="text-xs bg-blue-50 text-[#0091FF] px-2.5 py-0.5 rounded-full font-bold">
+                    <span className="text-xs bg-blue-50 dark:bg-blue-950/60 text-[#0091FF] dark:text-[#22A5FC] px-2.5 py-0.5 rounded-full font-bold border border-blue-100 dark:border-blue-900/40">
                       {reviews.length} تقييم موثق
                     </span>
                   </h2>
@@ -442,10 +429,10 @@ function ServiceDetailsContent() {
                       const custName = `${rev.customer_first_name || "عميل"} ${rev.customer_last_name || ""}`.trim() || "عميل فريش هوم";
                       const date = rev.created_at ? new Date(rev.created_at).toLocaleDateString("ar-EG", { day: "numeric", month: "short", year: "numeric" }) : "";
                       return (
-                        <div key={rev.id} className="p-4 rounded-2xl border border-slate-100 bg-[#F8FAFC] space-y-2">
+                        <div key={rev.id} className="p-4 rounded-2xl border border-slate-100 dark:border-blue-900/30 bg-[#F8FAFC] dark:bg-[#050D24] space-y-2">
                           <div className="flex justify-between items-center text-xs">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full bg-blue-100 text-[#0091FF] flex items-center justify-center">
+                              <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center">
                                 {rev.customer_avatar_url ? (
                                   <img 
                                     src={rev.customer_avatar_url} 
@@ -456,22 +443,22 @@ function ServiceDetailsContent() {
                                   <User className="w-3.5 h-3.5" />
                                 )}
                               </div>
-                              <span className="font-extrabold text-slate-800">{custName}</span>
+                              <span className="font-extrabold text-slate-800 dark:text-slate-200">{custName}</span>
                             </div>
-                            <span className="text-slate-400 font-bold text-[10px]">{date}</span>
+                            <span className="text-slate-400 dark:text-slate-500 font-bold text-[10px]">{date}</span>
                           </div>
                           
                           <div className="flex items-center gap-1 text-amber-500 py-0.5">
                             {Array.from({ length: 5 }).map((_, i) => (
                               <Star 
                                 key={i} 
-                                className={`w-3 h-3 ${i < rev.rating_value ? "fill-amber-500 text-amber-500" : "text-slate-200"}`} 
+                                className={`w-3 h-3 ${i < rev.rating_value ? "fill-amber-500 text-amber-500" : "text-slate-200 dark:text-slate-700"}`} 
                               />
                             ))}
                           </div>
 
                           {rev.feedback_text && (
-                            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
                               {rev.feedback_text}
                             </p>
                           )}
@@ -486,25 +473,25 @@ function ServiceDetailsContent() {
 
             {/* Sidebar Column: Sticky Pricing Card */}
             <div className="lg:col-span-4 sticky top-24">
-              <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-sm text-right space-y-6">
+              <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-7 shadow-sm text-right space-y-6">
                 <div>
-                  <span className="text-slate-400 text-[10px] font-black uppercase tracking-wider block">
+                  <span className="text-slate-400 dark:text-slate-400 text-[10px] font-black uppercase tracking-wider block">
                     {priceLabel}
                   </span>
                   <div className="flex items-baseline gap-2 mt-1 justify-end">
-                    <span className="text-2xl sm:text-3xl font-black text-[#0D327D]">
+                    <span className="text-2xl sm:text-3xl font-black text-[#0D327D] dark:text-[#22A5FC]">
                       {startingPrice}
                     </span>
-                    <span className="text-xs font-bold text-slate-500">
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
                       {unitText}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400 block mt-1.5 leading-normal font-medium">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-1.5 leading-normal font-medium">
                     * يتم حساب السعر النهائي بدقة بناءً على المواصفات في الخطوة التالية.
                   </span>
                 </div>
 
-                <div className="border-t border-slate-100 pt-4 space-y-3 text-xs text-slate-600 leading-relaxed font-medium">
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>تسعير فوري ومباشر حسب المساحة والمواصفات</span>
@@ -546,12 +533,12 @@ function ServiceDetailsContent() {
       </main>
 
       {/* Floating Bottom Booking Bar for Mobile */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200 px-5 py-3.5 flex items-center justify-between gap-4 shadow-xl">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-[#071739]/95 backdrop-blur-xl border-t border-slate-200 dark:border-blue-900/50 px-5 py-3.5 flex items-center justify-between gap-4 shadow-xl">
         <div className="text-right font-sans">
           <span className="text-[10px] font-bold text-slate-400 block leading-tight">السعر يبدأ من</span>
           <div className="flex items-baseline gap-1 mt-0.5">
-            <span className="text-lg font-black text-[#0D327D]">{startingPrice}</span>
-            <span className="text-[10px] font-bold text-slate-500">{unitText}</span>
+            <span className="text-lg font-black text-[#0D327D] dark:text-[#22A5FC]">{startingPrice}</span>
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{unitText}</span>
           </div>
         </div>
         
@@ -583,7 +570,7 @@ function ServiceDetailsContent() {
 export default function ServiceDetailsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#040A1C] flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-[#0091FF]"></div>
       </div>
     }>

@@ -1,8 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #FFFFFF;
+  --background: #F8FAFC;
   --foreground: #0F172A;
   
   --primary: #0D327D;
@@ -23,6 +25,16 @@
   --accent-cyan: #38BDF8;
   --card-dark: #071739;
   --card-darker: #020713;
+
+  --bg-page: #040A1C;
+  --bg-surface: #071739;
+  --bg-surface-elevated: #0B214E;
+  --bg-input: #050D24;
+  --border-color: rgba(34, 165, 252, 0.18);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-heading: #FFFFFF;
 }
 
 @theme inline {
@@ -47,29 +59,52 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Cairo', sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Dark mode overrides for background and surface containers */
-.dark body {
-  background: #040A1C;
-  color: #F8FAFC;
-}
+/* =========================================================================
+   Universal Dark Mode Rules for All Booking & Details Screens
+   ========================================================================= */
 
-.dark #services,
+.dark body,
+.dark main,
+.dark .bg-slate-50,
 .dark .bg-\[\#F8FAFC\] {
-  background-color: #06112C !important;
+  background-color: var(--bg-page) !important;
 }
 
-.dark .bg-white {
-  background-color: #081B44 !important;
-  border-color: rgba(34, 165, 252, 0.15) !important;
-  color: #F8FAFC !important;
+.dark .bg-white,
+.dark .bg-white\/90,
+.dark .bg-white\/95 {
+  background-color: var(--bg-surface) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+  background-color: var(--bg-input) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #0091FF !important;
+  box-shadow: 0 0 0 2px rgba(0, 145, 255, 0.25) !important;
 }
 
 .dark .text-slate-900,
-.dark .text-slate-800 {
-  color: #F8FAFC !important;
+.dark .text-slate-800,
+.dark .text-slate-750 {
+  color: var(--text-heading) !important;
 }
 
 .dark .text-slate-700,
@@ -79,20 +114,58 @@ body {
 
 .dark .text-slate-500,
 .dark .text-slate-400 {
-  color: #94A3B8 !important;
+  color: var(--text-muted) !important;
+}
+
+.dark .text-primary {
+  color: #22A5FC !important;
 }
 
 .dark .border-slate-200,
+.dark .border-slate-200\/80,
+.dark .border-slate-200\/70,
+.dark .border-slate-200\/60,
+.dark .border-slate-200\/50,
+.dark .border-slate-150,
 .dark .border-slate-100 {
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--border-color) !important;
 }
 
-.dark .bg-slate-50 {
-  background-color: rgba(255, 255, 255, 0.04) !important;
-}
-
-.dark .bg-blue-50 {
+.dark .bg-primary\/5,
+.dark .bg-primary\/10 {
   background-color: rgba(0, 145, 255, 0.12) !important;
+  border-color: rgba(0, 145, 255, 0.25) !important;
+}
+
+.dark .bg-emerald-50,
+.dark .bg-emerald-50\/30,
+.dark .bg-emerald-50\/20 {
+  background-color: rgba(46, 204, 113, 0.12) !important;
+  border-color: rgba(46, 204, 113, 0.25) !important;
+  color: #4ADE80 !important;
+}
+
+.dark .bg-rose-50,
+.dark .bg-rose-50\/60,
+.dark .bg-rose-50\/30,
+.dark .bg-rose-50\/20 {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+  border-color: rgba(244, 63, 94, 0.25) !important;
+  color: #FB7185 !important;
+}
+
+.dark .bg-amber-50,
+.dark .bg-amber-50\/50 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+  color: #FCD34D !important;
+}
+
+.dark .bg-blue-50,
+.dark .bg-blue-50\/50 {
+  background-color: rgba(0, 145, 255, 0.12) !important;
+  border-color: rgba(0, 145, 255, 0.25) !important;
+  color: #38BDF8 !important;
 }
 
 /* Custom scrollbar for premium look */
