@@ -453,28 +453,28 @@ function OrderTrackingContent() {
     <>
       <Header />
       
-      <main className="flex-1 bg-slate-50 py-10">
+      <main className="flex-1 bg-[#F8FAFC] dark:bg-[#040A1C] py-10 transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           
           {/* WhatsApp Pending Confirmation Banner */}
           {booking?.is_whatsapp_confirmed === false && (
-            <div className="relative overflow-hidden bg-white/70 backdrop-blur-md border border-amber-250/30 rounded-3xl p-6 sm:p-8 text-center space-y-6 shadow-[0_8px_32px_0_rgba(245,158,11,0.06)]">
+            <div className="relative overflow-hidden bg-white dark:bg-[#071739] border border-amber-200 dark:border-amber-900/60 rounded-3xl p-6 sm:p-8 text-center space-y-6 shadow-sm">
               {/* Decorative gradient blur background blobs */}
-              <div className="absolute -left-12 -top-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -z-10"></div>
-              <div className="absolute -right-12 -bottom-12 w-32 h-32 bg-amber-600/10 rounded-full blur-2xl -z-10"></div>
+              <div className="absolute -left-12 -top-12 w-32 h-32 bg-amber-500/10 dark:bg-amber-500/15 rounded-full blur-2xl -z-10"></div>
+              <div className="absolute -right-12 -bottom-12 w-32 h-32 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-full blur-2xl -z-10"></div>
 
               <div className="flex flex-col items-center gap-3">
-                <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-full flex items-center justify-center shadow-inner animate-pulse">
+                <div className="w-16 h-16 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center shadow-xs animate-pulse">
                   <Clock className="w-8 h-8 stroke-[2.5]" />
                 </div>
                 
                 {timeLeft !== null && (
-                  <div className={`px-4 py-1.5 rounded-full text-xs font-black font-mono border tracking-wider transition-all duration-300 shadow-sm ${
+                  <div className={`px-4 py-1.5 rounded-full text-xs font-black font-sans border tracking-wider transition-all duration-300 shadow-2xs ${
                     timeLeft === 0 
-                      ? "bg-rose-50 border-rose-200/50 text-rose-600" 
+                      ? "bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400" 
                       : timeLeft < 600 
-                        ? "bg-rose-50 border-rose-200/50 text-rose-500 animate-pulse" 
-                        : "bg-amber-50 border-amber-250/50 text-amber-600"
+                        ? "bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 animate-pulse" 
+                        : "bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300"
                   }`}>
                     {timeLeft === 0 ? (
                       "انتهت صلاحية مهلة التأكيد التلقائي ⚠️"
@@ -486,9 +486,9 @@ function OrderTrackingContent() {
               </div>
 
               <div className="space-y-2">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-800">طلبك في انتظار التأكيد عبر واتساب</h1>
-                <p className="text-slate-500 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
-                  تم تسجيل حجزك بنجاح كضيف. يرجى إرسال رسالة التأكيد عبر واتساب للحفاظ على موعد الزيارة وتجنب إلغاء الحجز تلقائياً خلال 60 دقيقة.
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">طلبك في انتظار التأكيد عبر واتساب</h1>
+                <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed font-medium">
+                  تم تسجيل حجزك بنجاح. يرجى إرسال رسالة التأكيد عبر واتساب للحفاظ على موعد الزيارة وتجنب إلغاء الحجز تلقائياً خلال 60 دقيقة.
                 </p>
               </div>
 
@@ -500,14 +500,14 @@ function OrderTrackingContent() {
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold px-8 py-3 rounded-2xl text-xs transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 duration-200"
+                  className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba56] text-white font-black px-8 py-3 rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 duration-200 cursor-pointer"
                 >
                   <Send className="w-4 h-4 fill-white" />
                   <span>تأكيد سريع عبر واتساب الشركة</span>
                 </a>
                 <Link 
                   href="/"
-                  className="inline-flex items-center justify-center bg-white border border-slate-250 hover:bg-slate-50 text-slate-700 font-extrabold px-8 py-3 rounded-2xl text-xs transition-all duration-200 shadow-sm"
+                  className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 font-bold px-8 py-3 rounded-2xl text-xs transition-all duration-200 shadow-2xs cursor-pointer"
                 >
                   العودة للرئيسية
                 </Link>
@@ -517,14 +517,14 @@ function OrderTrackingContent() {
 
           {/* Success Banner Celebration (Only for confirmed bookings) */}
           {isSuccess && booking?.is_whatsapp_confirmed !== false && (
-            <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-6 text-center space-y-4 shadow-sm">
-              <div className="w-14 h-14 bg-secondary text-slate-900 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-secondary/20">
+            <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 rounded-3xl p-6 text-center space-y-4 shadow-sm">
+              <div className="w-14 h-14 bg-[#2ECC71] text-white rounded-2xl flex items-center justify-center mx-auto shadow-md shadow-emerald-500/20">
                 <CheckCircle className="w-8 h-8 stroke-[2.5]" />
               </div>
               <div className="space-y-1">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-800">تهانينا! تم تسجيل طلبك بنجاح</h1>
-                <p className="text-slate-500 text-xs sm:text-sm">
-                  تم إرسال حجزك لقاعدة بيانات فريش هوم بنجاح. رقم الحجز الخاص بك هو <strong className="text-primary font-black select-all">{finalBookingId}</strong>.
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">تهانينا! تم تسجيل طلبك بنجاح</h1>
+                <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-medium">
+                  تم إرسال حجزك لقاعدة بيانات فريش هوم بنجاح. رقم الحجز الخاص بك هو <strong className="text-[#0091FF] dark:text-[#22A5FC] font-black select-all">{finalBookingId}</strong>.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
@@ -532,14 +532,14 @@ function OrderTrackingContent() {
                   href={buildWhatsAppUrl(whatsappNumber, `مرحباً، أود الاستفسار بخصوص حجزي برقم ${finalBookingId}`)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba56] text-white font-bold px-6 py-2.5 rounded-xl text-xs transition-all shadow-md shadow-emerald-500/10"
+                  className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba56] text-white font-black px-6 py-2.5 rounded-xl text-xs transition-all shadow-md shadow-emerald-500/10 cursor-pointer"
                 >
                   <Send className="w-4 h-4 fill-white" />
                   <span>تواصل عبر واتساب الشركة</span>
                 </a>
                 <Link 
                   href="/"
-                  className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold px-6 py-2.5 rounded-xl text-xs"
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold px-6 py-2.5 rounded-xl text-xs transition-colors"
                 >
                   العودة للرئيسية
                 </Link>
@@ -551,14 +551,14 @@ function OrderTrackingContent() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             {/* Live tracking timeline */}
-            <div className="lg:col-span-8 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-6">
-              <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+            <div className="lg:col-span-8 bg-white dark:bg-[#071739] rounded-3xl p-6 border border-slate-200/90 dark:border-blue-900/50 shadow-sm space-y-6 transition-colors">
+              <div className="flex justify-between items-center border-b border-slate-100 dark:border-blue-900/40 pb-4">
                 <div>
-                  <span className="text-[10px] text-slate-400 font-bold block">معرف الحجز الخاص بك</span>
-                  <h2 className="text-base sm:text-lg font-black text-primary font-sans select-all">{finalBookingId}</h2>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block">معرف الحجز الخاص بك</span>
+                  <h2 className="text-base sm:text-lg font-black text-[#0091FF] dark:text-[#22A5FC] font-mono select-all">{finalBookingId}</h2>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-secondary bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full font-bold">
-                  <span className="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/50 px-3 py-1 rounded-full font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                   <span>تحديث فوري نشط</span>
                 </div>
               </div>
@@ -566,8 +566,8 @@ function OrderTrackingContent() {
               {/* Steps timeline view */}
               <div className="relative pl-4 space-y-6">
                 {activeStep === -1 ? (
-                  <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 flex gap-3 text-xs text-rose-800">
-                    <span className="font-black">تم إلغاء هذا الطلب من قبل الإدارة أو العميل.</span>
+                  <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-xl p-4 flex gap-3 text-xs text-rose-700 dark:text-rose-300 font-bold">
+                    <span>تم إلغاء هذا الطلب من قبل الإدارة أو العميل.</span>
                   </div>
                 ) : (
                   TIMELINE_STEPS.map((step, idx) => {
@@ -579,25 +579,29 @@ function OrderTrackingContent() {
                         {/* Timeline dot and connector */}
                         <div className="flex flex-col items-center relative">
                           <div 
-                            className={`w-6 h-6 rounded-full flex items-center justify-center z-10 transition-all border-4 bg-white ${
-                              isCompleted ? "border-secondary text-secondary" : isActive ? "border-primary text-primary scale-110" : "border-slate-100 text-slate-300"
+                            className={`w-6 h-6 rounded-full flex items-center justify-center z-10 transition-all border-2 ${
+                              isCompleted 
+                                ? "border-[#2ECC71] bg-[#2ECC71] text-white" 
+                                : isActive 
+                                  ? "border-[#0091FF] bg-[#0091FF] text-white scale-110 shadow-md shadow-blue-500/25" 
+                                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-[#071739] text-slate-300"
                             }`}
                           >
-                            {isCompleted && <Check className="w-3.5 h-3.5 text-white bg-secondary rounded-full" />}
+                            {isCompleted ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <span className="w-1.5 h-1.5 rounded-full bg-current"></span>}
                           </div>
                           {idx < TIMELINE_STEPS.length - 1 && (
                             <div className={`absolute top-6 bottom-0 w-0.5 -z-0 ${
-                              idx < activeStep ? "bg-secondary" : "bg-slate-100"
+                              idx < activeStep ? "bg-[#2ECC71]" : "bg-slate-100 dark:bg-slate-800"
                             }`}></div>
                           )}
                         </div>
 
                         {/* Step Labels */}
                         <div className="flex-1 pb-2">
-                          <h4 className={`text-xs font-black ${isActive ? "text-primary" : isCompleted ? "text-slate-700" : "text-slate-400"}`}>
+                          <h4 className={`text-xs font-black ${isActive ? "text-[#0091FF] dark:text-[#22A5FC]" : isCompleted ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500"}`}>
                             {step.label}
                           </h4>
-                          <span className="text-[9px] font-bold text-slate-400 block mt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block mt-0.5">
                             {isActive ? "نشط حالياً" : isCompleted ? "مكتمل" : step.time}
                           </span>
                         </div>
@@ -612,30 +616,30 @@ function OrderTrackingContent() {
             <div className="lg:col-span-4 space-y-6">
               
               {/* Technician details card */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
-                <span className="text-[10px] text-slate-400 font-bold block border-b border-slate-100 pb-2">الفني المخصص لطلبك</span>
+              <div className="bg-white dark:bg-[#071739] rounded-3xl p-6 border border-slate-200/90 dark:border-blue-900/50 shadow-sm space-y-4 transition-colors">
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block border-b border-slate-100 dark:border-blue-900/40 pb-2">الفني المخصص لطلبك</span>
                 
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-primary/10 text-primary flex items-center justify-center rounded-xl font-bold shrink-0">
+                  <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/60 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 flex items-center justify-center rounded-2xl font-bold shrink-0">
                     <Award className="w-6 h-6 stroke-[2]" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-extrabold text-slate-800 leading-normal">{finalTech.name}</h4>
+                    <h4 className="text-xs font-extrabold text-slate-900 dark:text-white leading-normal">{finalTech.name}</h4>
                     <div className="flex items-center gap-1.5 mt-1 text-xs">
                       <div className="flex items-center text-amber-500 font-bold gap-0.5">
                         <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                         <span>{finalTech.rating}</span>
                       </div>
-                      <span className="text-slate-400">• {finalTech.jobs} خدمة منجزة</span>
+                      <span className="text-slate-400 dark:text-slate-500">• {finalTech.jobs} خدمة منجزة</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Call buttons */}
-                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100">
+                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 dark:border-blue-900/40">
                   <a 
                     href={`tel:${finalTech.phone}`}
-                    className="flex items-center justify-center gap-1.5 border border-primary text-primary hover:bg-primary/5 font-bold py-2.5 rounded-xl text-[10px] sm:text-xs transition-colors"
+                    className="flex items-center justify-center gap-1.5 border border-slate-200 dark:border-blue-900/60 hover:border-[#0091FF] text-slate-700 dark:text-slate-200 hover:text-[#0091FF] font-bold py-2.5 rounded-xl text-[10px] sm:text-xs transition-colors cursor-pointer"
                   >
                     <Phone className="w-3.5 h-3.5" />
                     <span>اتصال تلفني</span>
@@ -644,7 +648,7 @@ function OrderTrackingContent() {
                     href={buildWhatsAppUrl(finalTech.phone, `مرحباً، أود الاستفسار بخصوص الحجز رقم ${finalBookingId}`)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 border border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold py-2.5 rounded-xl text-[10px] sm:text-xs transition-colors"
+                    className="flex items-center justify-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-bold py-2.5 rounded-xl text-[10px] sm:text-xs transition-colors cursor-pointer"
                   >
                     <span>واتساب الفني</span>
                   </a>
@@ -653,20 +657,20 @@ function OrderTrackingContent() {
 
               {/* Order Info Summary */}
               {booking && (
-                <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-3.5 text-xs">
-                  <span className="text-[10px] text-slate-400 font-bold block border-b border-slate-100 pb-2">بيانات تفاصيل الحجز</span>
+                <div className="bg-white dark:bg-[#071739] rounded-3xl p-6 border border-slate-200/90 dark:border-blue-900/50 shadow-sm space-y-3.5 text-xs transition-colors">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block border-b border-slate-100 dark:border-blue-900/40 pb-2">بيانات تفاصيل الحجز</span>
                   <div className="flex justify-between">
-                    <span className="text-slate-500 font-bold">تاريخ الزيارة:</span>
-                    <span className="font-extrabold text-slate-800">{displayDay}</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold">تاريخ الزيارة:</span>
+                    <span className="font-black text-slate-900 dark:text-white">{displayDay}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500 font-bold">موعد الوصول:</span>
-                    <span className="font-extrabold text-slate-800">ساعة {displayTime}</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold">موعد الوصول:</span>
+                    <span className="font-black text-slate-900 dark:text-white">ساعة {displayTime}</span>
                   </div>
 
-                  <div className="flex justify-between border-t border-slate-100 pt-3">
-                    <span className="text-slate-500 font-bold">الخدمة المطلوبة:</span>
-                    <span className="font-extrabold text-primary">{getServiceTitle(booking.service_snapshot)}</span>
+                  <div className="flex justify-between border-t border-slate-100 dark:border-blue-900/40 pt-3">
+                    <span className="text-slate-500 dark:text-slate-400 font-bold">الخدمة المطلوبة:</span>
+                    <span className="font-black text-[#0091FF] dark:text-[#22A5FC]">{getServiceTitle(booking.service_snapshot)}</span>
                   </div>
 
                   {/* مواصفات الخدمة والمدخلات */}
@@ -686,8 +690,8 @@ function OrderTrackingContent() {
                     if (inputKeys.length === 0) return null;
 
                     return (
-                      <div className="border-t border-slate-100 pt-3 space-y-2">
-                        <span className="text-slate-500 font-bold block mb-1">المواصفات والتفاصيل:</span>
+                      <div className="border-t border-slate-100 dark:border-blue-900/40 pt-3 space-y-2">
+                        <span className="text-slate-500 dark:text-slate-400 font-bold block mb-1">المواصفات والتفاصيل:</span>
                         <div className="grid grid-cols-1 gap-1.5">
                           {inputKeys.map((key) => {
                             const val = pricingInputs[key];
@@ -741,9 +745,9 @@ function OrderTrackingContent() {
                             if (typeof val === "number" && val <= 0 && key !== "area") return null;
 
                             return (
-                              <div key={key} className="flex justify-between text-[11px] bg-slate-50/70 px-2.5 py-1.5 rounded-lg border border-slate-100/80">
-                                <span className="text-slate-550 font-medium">{label}:</span>
-                                <span className="font-bold text-slate-850">
+                              <div key={key} className="flex justify-between text-[11px] bg-slate-50 dark:bg-[#050D24] px-2.5 py-1.5 rounded-lg border border-slate-200/60 dark:border-blue-900/40">
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">{label}:</span>
+                                <span className="font-black text-slate-800 dark:text-slate-200">
                                   {displayValue} {unit}
                                 </span>
                               </div>
@@ -756,8 +760,8 @@ function OrderTrackingContent() {
 
                   {/* الخدمات الإضافية */}
                   {booking.pricing_inputs?.selected_options && booking.pricing_inputs.selected_options.length > 0 && (
-                    <div className="border-t border-slate-100 pt-3 space-y-2">
-                      <span className="text-slate-500 font-bold block mb-1">الخدمات الإضافية:</span>
+                    <div className="border-t border-slate-100 dark:border-blue-900/40 pt-3 space-y-2">
+                      <span className="text-slate-500 dark:text-slate-400 font-bold block mb-1">الخدمات الإضافية:</span>
                       <div className="space-y-1.5">
                         {booking.pricing_inputs.selected_options.map((addonKey: string, idx: number) => {
                           const optionObj = booking.price_config?.options?.find((opt: any) => opt.key === addonKey);
@@ -780,9 +784,9 @@ function OrderTrackingContent() {
                           }
 
                           return (
-                            <div key={idx} className="flex justify-between text-[11px] bg-emerald-50/30 text-emerald-800 px-2.5 py-1.5 rounded-lg border border-emerald-100/40">
-                              <span className="font-semibold">✨ {addonLabel}</span>
-                              {addonPrice && <span className="font-bold text-emerald-600">{addonPrice}</span>}
+                            <div key={idx} className="flex justify-between text-[11px] bg-emerald-50/40 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 px-2.5 py-1.5 rounded-lg border border-emerald-200/50 dark:border-emerald-900/40">
+                              <span className="font-bold">✨ {addonLabel}</span>
+                              {addonPrice && <span className="font-black text-emerald-600 dark:text-emerald-400">{addonPrice}</span>}
                             </div>
                           );
                         })}
@@ -791,23 +795,23 @@ function OrderTrackingContent() {
                   )}
 
                   {addressSnap.street && (
-                    <div className="border-t border-slate-100 pt-3 space-y-1">
-                      <span className="text-slate-500 font-bold block">العنوان المسجل للخدمة:</span>
-                      <p className="text-[11px] text-slate-700 font-semibold leading-relaxed">
-                        {addressSnap.governorate}، {addressSnap.city}، {addressSnap.street}، عمارة {addressSnap.building}، دور {addressSnap.floor}، شقة {addressSnap.apartment}
+                    <div className="border-t border-slate-100 dark:border-blue-900/40 pt-3 space-y-1">
+                      <span className="text-slate-500 dark:text-slate-400 font-bold block">العنوان المسجل للخدمة:</span>
+                      <p className="text-[11px] text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
+                        {addressSnap.governorate}، {addressSnap.city}، {addressSnap.district ? `${addressSnap.district}، ` : ""}{addressSnap.street_or_compound || addressSnap.street}، عمارة {addressSnap.building_identifier || addressSnap.building}{addressSnap.floor ? `، دور ${addressSnap.floor}` : ""}{addressSnap.apartment_or_unit || addressSnap.apartment ? `، شقة ${addressSnap.apartment_or_unit || addressSnap.apartment}` : ""}{addressSnap.landmark ? ` (${addressSnap.landmark})` : ""}
                       </p>
                     </div>
                   )}
                   {booking.price_snapshot?.total && (
-                    <div className="border-t border-slate-100 pt-3 flex justify-between font-black text-primary text-sm">
+                    <div className="border-t border-slate-100 dark:border-blue-900/40 pt-3 flex justify-between font-black text-slate-900 dark:text-white text-sm">
                       <span>القيمة الإجمالية للطلب:</span>
-                      <span>{booking.price_snapshot.total} ج.م</span>
+                      <span className="text-[#0091FF] dark:text-[#22A5FC] font-black">{booking.price_snapshot.total} ج.م</span>
                     </div>
                   )}
 
                   {/* Cancel Booking option for logged-in users */}
                   {user && !["completed", "cancelled"].includes(booking.status) && (
-                    <div className="border-t border-slate-100 pt-4 mt-3">
+                    <div className="border-t border-slate-100 dark:border-blue-900/40 pt-4 mt-3">
                       <button
                         type="button"
                         onClick={async () => {
@@ -824,9 +828,9 @@ function OrderTrackingContent() {
                             alert("فشل إلغاء الحجز: " + err.message);
                           }
                         }}
-                        className="w-full py-2.5 rounded-xl border border-rose-250 hover:bg-rose-50 text-rose-600 font-extrabold text-xs transition-all cursor-pointer text-center"
+                        className="w-full py-2.5 rounded-xl border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-extrabold text-xs transition-all cursor-pointer text-center"
                       >
-                        إلغاء هذا الحجز (Cancel Booking)
+                        إلغاء هذا الحجز
                       </button>
                     </div>
                   )}
@@ -834,19 +838,20 @@ function OrderTrackingContent() {
               )}
 
               {/* Quick support info block */}
-              <div className="bg-primary/5 border border-primary/10 rounded-2xl p-5 space-y-3">
-                <h4 className="font-extrabold text-primary text-sm">هل لديك أي استفسار أو مشكلة؟</h4>
-                <p className="text-slate-500 text-xs leading-relaxed font-light">
-                  خدمة العملاء في فريش هوم متوفرة لمساعدتك في أي وقت. يمكنك النقر على الرابط للتواصل المباشر معنا عبر الواتساب.
+              <div className="bg-blue-50/60 dark:bg-[#071739] border border-blue-100 dark:border-blue-900/50 rounded-3xl p-5 space-y-3 transition-colors">
+                <h4 className="font-black text-slate-900 dark:text-white text-sm">هل لديك أي استفسار أو تعديل؟</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed font-medium">
+                  فريق خدمة العملاء في فريش هوم متاح على مدار الساعة لمساعدتك والتنسيق معك عبر واتساب.
                 </p>
                 <div className="pt-2">
                   <a 
                     href={`https://wa.me/${whatsappNumber.replace(/\+/g, "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-emerald-650 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-md inline-block transition-colors"
+                    className="bg-[#25D366] hover:bg-[#20ba56] text-white font-black px-5 py-2.5 rounded-xl text-xs shadow-sm inline-flex items-center gap-2 transition-all cursor-pointer"
                   >
-                    تواصل عبر الواتساب
+                    <Send className="w-3.5 h-3.5 fill-white" />
+                    <span>تواصل عبر الواتساب</span>
                   </a>
                 </div>
               </div>
@@ -858,49 +863,52 @@ function OrderTrackingContent() {
       
       {/* WhatsApp Confirmation Dialog Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-all duration-300" dir="rtl">
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 max-w-md w-full border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.15)] space-y-6 transform transition-all scale-100 relative text-right">
+        <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-all duration-300" dir="rtl">
+          <div className="bg-white dark:bg-[#071739] rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200/90 dark:border-blue-900/60 shadow-2xl space-y-5 transform transition-all scale-100 relative text-right overflow-hidden">
             
             {/* Decorative colored glow in modal */}
-            <div className="absolute -right-8 -top-8 w-24 h-24 bg-amber-500/15 rounded-full blur-2xl -z-10"></div>
-            <div className="absolute -left-8 -bottom-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -z-10"></div>
+            <div className="absolute -right-12 -top-12 w-32 h-32 bg-amber-500/15 dark:bg-amber-500/20 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+            <div className="absolute -left-12 -bottom-12 w-32 h-32 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-full blur-3xl -z-10 pointer-events-none"></div>
 
-            <div className="w-16 h-16 bg-amber-500/10 text-amber-600 rounded-full flex items-center justify-center mx-auto shadow-inner border border-amber-500/20 animate-pulse">
+            <div className="w-16 h-16 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto shadow-xs border border-amber-200 dark:border-amber-800/60 animate-pulse">
               <Clock className="w-8 h-8 stroke-[2.5]" />
             </div>
             
             <div className="space-y-3 text-center">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-800">تأكيد حجزك عبر الواتساب ⚠️</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">تأكيد حجزك عبر واتساب</h2>
               
               {timeLeft !== null && (
-                <div className={`inline-block px-4 py-1.5 rounded-full text-xs font-black font-mono border tracking-wider transition-all duration-300 shadow-sm ${
+                <div className={`inline-block px-4 py-1.5 rounded-full text-xs font-black font-sans border tracking-wider transition-all duration-300 shadow-2xs ${
                   timeLeft === 0 
-                    ? "bg-rose-50 border-rose-200/50 text-rose-600" 
+                    ? "bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400" 
                     : timeLeft < 600 
-                      ? "bg-rose-50 border-rose-200/50 text-rose-500 animate-pulse" 
-                      : "bg-amber-50 border-amber-250/50 text-amber-600"
+                      ? "bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 animate-pulse" 
+                      : "bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300"
                 }`}>
                   {timeLeft === 0 ? (
-                    "انتهت صلاحية مهلة التأكيد ⚠️"
+                    "انتهت مهلة التأكيد التلقائي ⚠️"
                   ) : (
                     `الوقت المتبقي للتأكيد: ${formatTimeLeft(timeLeft)}`
                   )}
                 </div>
               )}
               
-              <p className="text-slate-500 text-xs sm:text-sm leading-relaxed max-w-xs mx-auto">
+              <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xs mx-auto font-medium">
                 يرجى إرسال تفاصيل حجزك عبر الواتساب لتأكيد الموعد مع الإدارة خلال المهلة الزمنية.
               </p>
               
-              <div className="bg-amber-500/5 border border-amber-200/40 rounded-2xl p-4 text-[11px] sm:text-xs text-amber-800 text-right space-y-1">
-                <strong>لماذا هذه الخطوة؟</strong>
-                <p className="leading-relaxed text-slate-600">
-                  لحجز الموعد وتأكيده وضمان عدم إلغائه تلقائياً بعد مرور 60 دقيقة من تسجيل الطلب.
+              <div className="bg-blue-50/70 dark:bg-[#050D24] border border-blue-100 dark:border-blue-900/50 rounded-2xl p-4 text-right space-y-1">
+                <strong className="text-xs font-black text-[#0091FF] dark:text-[#22A5FC] block flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>لماذا هذه الخطوة؟</span>
+                </strong>
+                <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                  لحجز الموعد وتأكيده مع الفني المعتمد وضمان عدم إلغائه تلقائياً بعد مرور 60 دقيقة من تسجيل الطلب.
                 </p>
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5 pt-1">
               <a
                 href={`https://wa.me/${whatsappNumber.replace("+", "").replace(/\s/g, "").trim()}?text=${encodeURIComponent(
                   `مرحباً،
@@ -923,7 +931,7 @@ function OrderTrackingContent() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setShowConfirmModal(false)}
-                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition-all shadow-md shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99] text-center"
+                className="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba56] text-white font-black py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99] text-center cursor-pointer"
               >
                 <Send className="w-4 h-4 fill-white" />
                 <span>إرسال تفاصيل الحجز وتأكيده عبر واتساب</span>
@@ -932,7 +940,7 @@ function OrderTrackingContent() {
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(false)}
-                className="w-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-650 font-bold py-3.5 px-6 rounded-2xl text-xs transition-colors"
+                className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 font-bold py-3 px-6 rounded-2xl text-xs transition-colors cursor-pointer"
               >
                 سأقوم بالتأكيد لاحقاً (خلال المهلة)
               </button>
