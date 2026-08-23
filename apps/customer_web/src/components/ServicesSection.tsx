@@ -386,8 +386,7 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
         onMouseLeave={() => resumeAutoScrollAfterDelay(2000)}
         onTouchStart={pauseAutoScroll}
         onTouchEnd={() => resumeAutoScrollAfterDelay(3500)}
-        onPointerDown={pauseAutoScroll}
-        className="flex gap-3.5 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory no-scrollbar text-right px-0.5 touch-pan-x select-none"
+        className="flex gap-3.5 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory no-scrollbar text-right px-0.5 touch-auto overscroll-x-contain"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {category.subServices.map((service) => {
