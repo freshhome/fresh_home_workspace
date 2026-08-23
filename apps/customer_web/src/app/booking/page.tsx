@@ -1058,8 +1058,8 @@ function BookingFlowContent() {
                         )}
                       </div>
 
-                      {/* Grid of Interactive Tree Options */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 pt-1">
+                      {/* Grid of Minimal Interactive Service Cards (Icon + Title Only) */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-1">
                         {currentLevelNodes.map((node) => {
                           const nodeChildren = getChildren(node.id);
                           const isBookableLeaf = node.is_bookable === true && nodeChildren.length === 0;
@@ -1068,8 +1068,10 @@ function BookingFlowContent() {
                           const iconUrl = resolveIconUrl(node.image);
 
                           return (
-                            <div
+                            <button
+                              type="button"
                               key={node.id}
+                              disabled={isPaused}
                               onClick={() => {
                                 if (isBookableLeaf) {
                                   setSelectedSubService(node);
@@ -1078,61 +1080,41 @@ function BookingFlowContent() {
                                   setSelectedPath([...selectedPath, node]);
                                 }
                               }}
-                              className={`p-4 sm:p-5 rounded-2xl border text-right transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer bg-white dark:bg-[#071739] hover:shadow-lg hover:-translate-y-1 ${
+                              className={`p-3.5 sm:p-5 rounded-2xl border text-center transition-all duration-200 flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative ${
                                 isPaused
-                                  ? "border-amber-200/90 dark:border-amber-900/50 hover:border-amber-400"
-                                  : "border-slate-200/90 dark:border-blue-900/50 hover:border-[#0091FF]/60"
+                                  ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
+                                  : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
                               }`}
                             >
-                              <div className="flex items-start justify-between gap-3">
-                                {/* Icon Badge */}
-                                <div className={`w-12 h-12 rounded-2xl ${
-                                  isPaused 
-                                    ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-900/40" 
-                                    : "bg-blue-50 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
-                                } flex items-center justify-center p-2.5 group-hover:scale-105 transition-all shrink-0 shadow-2xs`}>
-                                  {iconUrl ? (
-                                    <img src={iconUrl} alt="" className="w-full h-full object-contain" />
-                                  ) : (
-                                    <NodeIcon className="w-6 h-6" />
-                                  )}
-                                </div>
+                              {/* Top mini-badge for sub-branches or direct booking */}
+                              {isPaused ? (
+                                <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                                  متوقفة
+                                </span>
+                              ) : nodeChildren.length > 0 ? (
+                                <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/40">
+                                  {nodeChildren.length}
+                                </span>
+                              ) : null}
 
-                                {/* Status Badges */}
-                                <div className="flex flex-col items-end gap-1">
-                                  {isPaused ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 text-[10px] font-black">
-                                      <Clock className="w-3 h-3" />
-                                      <span>متوقفة مؤقتاً</span>
-                                    </span>
-                                  ) : isBookableLeaf ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40 text-[10px] font-extrabold">
-                                      <Zap className="w-3 h-3" />
-                                      <span>حجز مباشر</span>
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 text-[10px] font-extrabold">
-                                      <Layers className="w-3 h-3" />
-                                      <span>{nodeChildren.length > 0 ? `${nodeChildren.length} تفريعات` : "استعراض الخيارات"}</span>
-                                    </span>
-                                  )}
-                                </div>
+                              {/* Icon Badge */}
+                              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${
+                                isPaused 
+                                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-900/40" 
+                                  : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
+                              } flex items-center justify-center p-2.5 group-hover:scale-105 transition-all shrink-0 shadow-2xs`}>
+                                {iconUrl ? (
+                                  <img src={iconUrl} alt="" className="w-full h-full object-contain" />
+                                ) : (
+                                  <NodeIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+                                )}
                               </div>
 
-                              <div className="space-y-1">
-                                <h3 className="text-base font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors">
-                                  {node.title?.ar || node.title}
-                                </h3>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-2 leading-relaxed">
-                                  {node.description?.ar || node.description || "خدمة معتمدة بأعلى معايير الجودة"}
-                                </p>
-                              </div>
-
-                              <div className="pt-2 border-t border-slate-100 dark:border-blue-900/30 flex items-center justify-between text-xs font-bold text-[#0091FF] dark:text-[#22A5FC]">
-                                <span>{isBookableLeaf ? "تخصيص وحساب السعر" : "استعراض تفريعات الخدمة"}</span>
-                                <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
-                              </div>
-                            </div>
+                              {/* Service Title */}
+                              <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors mt-2.5 leading-snug line-clamp-2">
+                                {node.title?.ar || node.title}
+                              </h3>
+                            </button>
                           );
                         })}
                       </div>
