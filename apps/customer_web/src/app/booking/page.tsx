@@ -7,43 +7,15 @@ import {
   ShieldCheck, ArrowLeft, ArrowRight, CheckCircle2, 
   MapPin, Calendar, CreditCard, Clock, Check, ShieldAlert, Sparkles,
   Layers, Zap, ChevronLeft, ChevronRight, Home, Wrench, Wind, Armchair, 
-  AppWindow, Bug, RefreshCw
+  AppWindow, Bug, RefreshCw, Plus, Building, Navigation
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabase";
+import { GEOGRAPHIC_HIERARCHY } from "@/lib/geo";
 
 // Step titles
 const STEPS = ["حساب السعر", "اختيار الموعد", "العنوان", "المراجعة والتأكيد"];
-
-const REGIONS_MAP: Record<string, string[]> = {
-  "القاهرة": [
-    "الزمالك",
-    "جاردن سيتي",
-    "المعادي",
-    "مصر الجديدة",
-    "التجمع الخامس",
-    "القاهرة الجديدة",
-    "الرحاب",
-    "مدينتي",
-    "مدينة نصر",
-    "المقطم",
-    "الشروق",
-    "أخرى"
-  ],
-  "الجيزة": [
-    "الشيخ زايد",
-    "6 أكتوبر",
-    "المهندسين",
-    "الدقي",
-    "العجوزة",
-    "حدائق الأهرام",
-    "الهرم",
-    "فيصل",
-    "إمبابة",
-    "أخرى"
-  ]
-};
 
 const formatDateLocal = (date: Date): string => {
   const yyyy = date.getFullYear();
@@ -307,18 +279,28 @@ function BookingFlowContent() {
   const [pricingInputs, setPricingInputs] = useState<Record<string, any>>({});
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   
-  // Schedule Address & Phone States
+  // Schedule Address & Phone States (Address System V2)
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const [manualDateText, setManualDateText] = useState("");
+  
   const [address, setAddress] = useState({
     governorate: "القاهرة",
-    city: "الزمالك",
-    street: "",
-    building: "",
+    city: "التجمع الخامس",
+    district: "الحي الأول",
+    street_or_compound: "",
+    building_identifier: "",
     floor: "",
-    apartment: ""
+    apartment_or_unit: "",
+    landmark: ""
   });
+  const [customDistrict, setCustomDistrict] = useState("");
+  
+  // Saved Addresses for Logged In User
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressMode, setSelectedAddressMode] = useState<"saved" | "new">("new");
+  const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | null>(null);
+
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
@@ -344,7 +326,7 @@ function BookingFlowContent() {
   const [showMobilePriceModal, setShowMobilePriceModal] = useState(false);
   const dateScrollRef = useRef<HTMLDivElement>(null);
 
-  // Load user profile details if logged in
+  // Load user profile details and saved addresses if logged in
   useEffect(() => {
     if (typeof window !== "undefined") {
       setLoginRedirectUrl(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
@@ -393,21 +375,30 @@ function BookingFlowContent() {
             // ignore
           }
 
+          // Fetch all saved user addresses (Address V2)
           try {
             const { data: addrData } = await supabase
               .from("user_addresses")
               .select("*")
               .eq("user_id", userId)
-              .eq("is_primary", true)
-              .maybeSingle();
-            if (addrData) {
+              .is("deleted_at", null)
+              .order("is_primary", { ascending: false });
+            
+            if (addrData && addrData.length > 0) {
+              setSavedAddresses(addrData);
+              const primary = addrData.find((a: any) => a.is_primary) || addrData[0];
+              setSelectedSavedAddressId(primary.id);
+              setSelectedAddressMode("saved");
+              
               setAddress({
-                governorate: addrData.governorate || "القاهرة",
-                city: addrData.city || "الزمالك",
-                street: addrData.street || "",
-                building: addrData.building_number || "",
-                floor: addrData.floor || "",
-                apartment: addrData.apartment || ""
+                governorate: primary.governorate || "القاهرة",
+                city: primary.city || "التجمع الخامس",
+                district: primary.district || "الحي الأول",
+                street_or_compound: primary.street_or_compound || primary.street || "",
+                building_identifier: primary.building_identifier || primary.building_number || "",
+                floor: primary.floor || "",
+                apartment_or_unit: primary.apartment_or_unit || primary.apartment || "",
+                landmark: primary.landmark || ""
               });
             }
           } catch {
@@ -463,7 +454,6 @@ function BookingFlowContent() {
         }
       } catch (e) {
         console.warn("Using fallback services tree for booking flow:", e);
-        // Fallback initialization
         if (initialSubServiceId) {
           const target = FALLBACK_SERVICES_TREE.find((n: any) => n.id === initialSubServiceId);
           if (target) {
@@ -488,10 +478,6 @@ function BookingFlowContent() {
   // Children and Leaf Node helpers
   const getChildren = (parentId: string | null) => {
     return allTreeServices.filter(s => s.parent_id === parentId);
-  };
-
-  const hasChildren = (nodeId: string) => {
-    return allTreeServices.some(s => s.parent_id === nodeId);
   };
 
   // Current level nodes based on selectedPath
@@ -741,28 +727,70 @@ function BookingFlowContent() {
     }
   };
 
+  // Step validation
   const isStepValid = () => {
     switch (currentStep) {
       case 0:
         return subServiceId !== "" && priceDetails.total > 0;
       case 1:
         return scheduledDate !== "" && scheduledTime !== "" && availabilityMap[scheduledDate] !== false;
-      case 2:
-        return address.street.trim() !== "" && address.building.trim() !== "";
-      case 3:
+      case 2: {
+        const effDistrict = address.district === "أخرى" ? customDistrict.trim() : address.district.trim();
+        return (
+          address.governorate.trim() !== "" &&
+          address.city.trim() !== "" &&
+          effDistrict !== "" &&
+          address.street_or_compound.trim() !== "" &&
+          address.building_identifier.trim() !== ""
+        );
+      }
+      case 3: {
         const phoneRegex = /^(010|011|012|015)\d{8}$/;
         return phoneRegex.test(phone.trim()) && name.trim() !== "";
+      }
       default:
         return false;
     }
   };
 
+  // Geographic changes handler
   const handleGovernorateChange = (gov: string) => {
-    const defaultCity = REGIONS_MAP[gov]?.[0] || "";
+    const defaultCity = Object.keys(GEOGRAPHIC_HIERARCHY[gov] || {})[0] || "";
+    const defaultDistricts = GEOGRAPHIC_HIERARCHY[gov]?.[defaultCity] || [];
+    const defaultDistrict = defaultDistricts[0] || "";
     setAddress({
       ...address,
       governorate: gov,
-      city: defaultCity
+      city: defaultCity,
+      district: defaultDistrict
+    });
+    setCustomDistrict("");
+  };
+
+  const handleCityChange = (c: string) => {
+    const defaultDistricts = GEOGRAPHIC_HIERARCHY[address.governorate]?.[c] || [];
+    const defaultDistrict = defaultDistricts[0] || "";
+    setAddress({
+      ...address,
+      city: c,
+      district: defaultDistrict
+    });
+    setCustomDistrict("");
+  };
+
+  // Selecting a saved address
+  const handleSelectSavedAddress = (addr: any) => {
+    setSelectedSavedAddressId(addr.id);
+    setSelectedAddressMode("saved");
+    setAddress({
+      governorate: addr.governorate || "القاهرة",
+      city: addr.city || "التجمع الخامس",
+      district: addr.district || "الحي الأول",
+      street_or_compound: addr.street_or_compound || addr.street || "",
+      building_identifier: addr.building_identifier || addr.building_number || "",
+      floor: addr.floor || "",
+      apartment_or_unit: addr.apartment_or_unit || addr.apartment || "",
+      landmark: addr.landmark || ""
     });
   };
 
@@ -820,14 +848,43 @@ function BookingFlowContent() {
         time24 = `${hour.toString().padStart(2, '0')}:${parts[1] || '00'}:00`;
       }
 
+      const finalDistrict = address.district === "أخرى" ? customDistrict.trim() : address.district.trim();
+
+      // Address System V2 Snapshot Payload
       const addressSnapshot = {
         governorate: address.governorate,
         city: address.city,
-        street: address.street,
-        building_number: address.building,
-        floor: address.floor,
-        apartment: address.apartment
+        district: finalDistrict,
+        street_or_compound: address.street_or_compound.trim(),
+        building_identifier: address.building_identifier.trim(),
+        floor: address.floor.trim(),
+        apartment_or_unit: address.apartment_or_unit.trim(),
+        landmark: address.landmark.trim(),
+        // Legacy field aliases for backwards compatibility
+        street: address.street_or_compound.trim(),
+        building: address.building_identifier.trim(),
+        apartment: address.apartment_or_unit.trim()
       };
+
+      // Save new address to user profile if user is logged in
+      if (userId && selectedAddressMode === "new") {
+        try {
+          await supabase.from("user_addresses").insert({
+            user_id: userId,
+            governorate: address.governorate,
+            city: address.city,
+            district: finalDistrict,
+            street_or_compound: address.street_or_compound.trim(),
+            building_identifier: address.building_identifier.trim(),
+            floor: address.floor.trim() || null,
+            apartment_or_unit: address.apartment_or_unit.trim() || null,
+            landmark: address.landmark.trim() || null,
+            is_primary: savedAddresses.length === 0
+          });
+        } catch (addrErr) {
+          console.warn("Failed to persist address to profile:", addrErr);
+        }
+      }
 
       const serviceSnapshot = {
         title: selectedSubService?.title?.ar || selectedSubService?.title || "حجز خدمة فريش هوم"
@@ -1494,73 +1551,232 @@ function BookingFlowContent() {
                 </div>
               )}
 
-              {/* STEP 3: ADDRESS */}
+              {/* STEP 3: ADDRESS SYSTEM V2 */}
               {currentStep === 2 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-black text-slate-800 dark:text-white">عنوان تقديم الخدمة</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">يرجى كتابة تفاصيل العنوان بدقة لضمان وصول الفني في الموعد المحدد.</p>
+                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
+                      العنوان الجغرافي المعتمد
+                    </span>
+                    <h2 className="text-xl font-black text-slate-900 dark:text-white">عنوان تقديم الخدمة</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">
+                      يرجى تحديد المحافظة والحي ورقم المبنى بدقة لضمان وصول الفني المعتمد في الموعد المحدد.
+                    </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">المحافظة</label>
-                      <select
-                        value={address.governorate}
-                        onChange={(e) => handleGovernorateChange(e.target.value)}
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                      >
-                        <option value="القاهرة">القاهرة</option>
-                        <option value="الجيزة">الجيزة</option>
-                      </select>
-                    </div>
+                  {/* If user has saved addresses: Select from saved or enter new */}
+                  {savedAddresses.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black text-slate-800 dark:text-slate-200">عناوينك المحفوظة</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (selectedAddressMode === "saved") {
+                              setSelectedAddressMode("new");
+                              setSelectedSavedAddressId(null);
+                            } else {
+                              setSelectedAddressMode("saved");
+                              if (savedAddresses[0]) {
+                                handleSelectSavedAddress(savedAddresses[0]);
+                              }
+                            }
+                          }}
+                          className="text-[11px] font-extrabold text-[#0091FF] dark:text-[#22A5FC] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          {selectedAddressMode === "saved" ? (
+                            <>
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>إدخال عنوان آخر</span>
+                            </>
+                          ) : (
+                            <>
+                              <Navigation className="w-3.5 h-3.5" />
+                              <span>اختيار من عناويني المحفوظة</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
 
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">المنطقة / الحي</label>
-                      <select
-                        value={address.city}
-                        onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                      >
-                        {REGIONS_MAP[address.governorate]?.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
+                      {selectedAddressMode === "saved" && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {savedAddresses.map((addr) => {
+                            const isSelected = selectedSavedAddressId === addr.id;
+                            const fullText = `${addr.governorate || ""}، ${addr.city || ""} - ${addr.district || ""} - ${addr.street_or_compound || addr.street || ""}، مبنى ${addr.building_identifier || addr.building_number || ""}`;
+                            return (
+                              <div
+                                key={addr.id}
+                                onClick={() => handleSelectSavedAddress(addr)}
+                                className={`p-4 rounded-2xl border text-right transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                                  isSelected 
+                                    ? "border-[#0091FF] bg-blue-50/70 dark:bg-blue-950/50 shadow-sm" 
+                                    : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-slate-300"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className={`w-4 h-4 ${isSelected ? "text-[#0091FF]" : "text-slate-400"}`} />
+                                    <span className="text-xs font-black text-slate-900 dark:text-white">
+                                      {addr.city} - {addr.district || addr.governorate}
+                                    </span>
+                                  </div>
+                                  {addr.is_primary && (
+                                    <span className="text-[9px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 px-2 py-0.5 rounded-md">
+                                      الافتراضي
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+                                  {fullText}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
+                  )}
 
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">اسم الشارع</label>
-                      <input
-                        type="text"
-                        placeholder="مثال: شارع مصدق، بجوار مسجد الصفا"
-                        value={address.street}
-                        onChange={(e) => setAddress({ ...address, street: e.target.value })}
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                      />
-                    </div>
+                  {/* Address V2 Input Form (when in new mode or fallback) */}
+                  {(selectedAddressMode === "new" || savedAddresses.length === 0) && (
+                    <div className="space-y-4 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-blue-900/50 bg-slate-50/50 dark:bg-[#050D24]/60">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* 1. Governorate */}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            المحافظة <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={address.governorate}
+                            onChange={(e) => handleGovernorateChange(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                          >
+                            {Object.keys(GEOGRAPHIC_HIERARCHY).map((gov) => (
+                              <option key={gov} value={gov}>{gov}</option>
+                            ))}
+                          </select>
+                        </div>
 
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">رقم العمارة / المبنى</label>
-                      <input
-                        type="text"
-                        placeholder="مثال: 14 ب"
-                        value={address.building}
-                        onChange={(e) => setAddress({ ...address, building: e.target.value })}
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                      />
-                    </div>
+                        {/* 2. City */}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            المدينة / المنطقة <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={address.city}
+                            onChange={(e) => handleCityChange(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                          >
+                            {Object.keys(GEOGRAPHIC_HIERARCHY[address.governorate] || {}).map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
+                        </div>
 
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">الدور والشقة (اختياري)</label>
-                      <input
-                        type="text"
-                        placeholder="مثال: الدور الرابع - شقة 8"
-                        value={address.floor}
-                        onChange={(e) => setAddress({ ...address, floor: e.target.value })}
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                      />
+                        {/* 3. District */}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            الحي / المجاورة <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={address.district}
+                            onChange={(e) => setAddress({ ...address, district: e.target.value })}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                          >
+                            {(GEOGRAPHIC_HIERARCHY[address.governorate]?.[address.city] || ["أخرى"]).map((d) => (
+                              <option key={d} value={d}>{d}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Custom District if "أخرى" */}
+                      {address.district === "أخرى" && (
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            اسم الحي / المنطقة المخصصة <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="اكتب اسم الحي أو المنطقة هنا..."
+                            value={customDistrict}
+                            onChange={(e) => setCustomDistrict(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                          />
+                        </div>
+                      )}
+
+                      {/* 4. Street or Compound */}
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                          اسم الشارع أو الكومباوند <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="مثال: شارع التسعين الشمالي / كمبوند ميفيدا"
+                          value={address.street_or_compound}
+                          onChange={(e) => setAddress({ ...address, street_or_compound: e.target.value })}
+                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                        />
+                      </div>
+
+                      {/* 5. Building, Floor, Apartment */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            رقم / اسم المبنى أو الفيلا <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="مثال: عمارة 42 أو فيلا 18"
+                            value={address.building_identifier}
+                            onChange={(e) => setAddress({ ...address, building_identifier: e.target.value })}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            الدور / الطابق <span className="text-slate-400 font-normal">(اختياري)</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="مثال: الدور 3"
+                            value={address.floor}
+                            onChange={(e) => setAddress({ ...address, floor: e.target.value })}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            رقم الشقة / الوحدة <span className="text-slate-400 font-normal">(اختياري)</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="مثال: شقة 5"
+                            value={address.apartment_or_unit}
+                            onChange={(e) => setAddress({ ...address, apartment_or_unit: e.target.value })}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* 6. Landmark */}
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                          علامة مميزة بالقرب من العقار <span className="text-slate-400 font-normal">(اختياري)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="مثال: بجوار مستشفى الجوي التخصصي / أمام النادي الأهلي"
+                          value={address.landmark}
+                          onChange={(e) => setAddress({ ...address, landmark: e.target.value })}
+                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -1797,12 +2013,17 @@ function BookingFlowContent() {
                         </div>
                       )}
 
-                      {/* Location */}
-                      {currentStep >= 2 && address.street && (
+                      {/* Location Address V2 Breakdown */}
+                      {currentStep >= 2 && (address.street_or_compound || address.building_identifier) && (
                         <div className="space-y-1 border-t border-slate-100 dark:border-blue-900/30 pt-3">
                           <span className="font-bold block text-slate-400">العنوان:</span>
                           <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">
-                            {address.governorate}، {address.city} - {address.street}
+                            {address.governorate}، {address.city} - {address.district === "أخرى" ? customDistrict : address.district}
+                          </p>
+                          <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                            {address.street_or_compound}، مبنى {address.building_identifier}
+                            {address.floor ? `، طابق ${address.floor}` : ""}
+                            {address.apartment_or_unit ? `، شقة ${address.apartment_or_unit}` : ""}
                           </p>
                         </div>
                       )}

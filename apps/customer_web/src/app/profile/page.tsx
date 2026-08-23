@@ -11,34 +11,7 @@ import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-const REGIONS_MAP: Record<string, string[]> = {
-  "القاهرة": [
-    "الزمالك",
-    "جاردن سيتي",
-    "المعادي",
-    "مصر الجديدة",
-    "التجمع الخامس",
-    "القاهرة الجديدة",
-    "الرحاب",
-    "مدينتي",
-    "مدينة نصر",
-    "المقطم",
-    "الشروق",
-    "أخرى"
-  ],
-  "الجيزة": [
-    "الشيخ زايد",
-    "6 أكتوبر",
-    "المهندسين",
-    "الدقي",
-    "العجوزة",
-    "حدائق الأهرام",
-    "الهرم",
-    "فيصل",
-    "إمبابة",
-    "أخرى"
-  ]
-};
+import { GEOGRAPHIC_HIERARCHY } from "@/lib/geo";
 
 function ProfileContent() {
   const router = useRouter();
@@ -58,17 +31,20 @@ function ProfileContent() {
   const [addingPhone, setAddingPhone] = useState(false);
   const [phoneError, setPhoneError] = useState("");
 
-  // Addresses state
+  // Addresses state (Address V2)
   const [addresses, setAddresses] = useState<any[]>([]);
   const [addingAddress, setAddingAddress] = useState(false);
   const [newAddress, setNewAddress] = useState({
     governorate: "القاهرة",
-    city: "المعادي",
-    street: "",
-    building: "",
+    city: "التجمع الخامس",
+    district: "الحي الأول",
+    street_or_compound: "",
+    building_identifier: "",
     floor: "",
-    apartment: "",
+    apartment_or_unit: "",
+    landmark: ""
   });
+  const [profileCustomDistrict, setProfileCustomDistrict] = useState("");
   const [addressError, setAddressError] = useState("");
 
   // Bookings state
@@ -230,13 +206,15 @@ function ProfileContent() {
     }
   };
 
-  // Add address handler
+  // Add address handler (Address V2)
   const handleAddAddress = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddressError("");
 
-    if (!newAddress.street.trim() || !newAddress.building.trim()) {
-      setAddressError("يرجى ملء اسم الشارع ورقم المبنى.");
+    const effDistrict = newAddress.district === "أخرى" ? profileCustomDistrict.trim() : newAddress.district.trim();
+
+    if (!newAddress.street_or_compound.trim() || !newAddress.building_identifier.trim() || !effDistrict) {
+      setAddressError("يرجى ملء كافة الحقول الإجبارية (المحافظة، المدينة، الحي، الشارع، المبنى).");
       return;
     }
 
@@ -248,10 +226,12 @@ function ProfileContent() {
           user_id: user.id,
           governorate: newAddress.governorate,
           city: newAddress.city,
-          street: newAddress.street.trim(),
-          building_number: newAddress.building.trim(),
-          floor: newAddress.floor.trim(),
-          apartment: newAddress.apartment.trim(),
+          district: effDistrict,
+          street_or_compound: newAddress.street_or_compound.trim(),
+          building_identifier: newAddress.building_identifier.trim(),
+          floor: newAddress.floor.trim() || null,
+          apartment_or_unit: newAddress.apartment_or_unit.trim() || null,
+          landmark: newAddress.landmark.trim() || null,
           is_primary: addresses.length === 0,
         });
 
@@ -259,12 +239,16 @@ function ProfileContent() {
 
       setNewAddress({
         governorate: "القاهرة",
-        city: "المعادي",
-        street: "",
-        building: "",
+        city: "التجمع الخامس",
+        district: "الحي الأول",
+        street_or_compound: "",
+        building_identifier: "",
         floor: "",
-        apartment: "",
+        apartment_or_unit: "",
+        landmark: ""
       });
+      setProfileCustomDistrict("");
+      setAddingAddress(false);
       loadAddresses(user.id);
     } catch (err: any) {
       console.error("Add address error:", err);
@@ -545,8 +529,8 @@ function ProfileContent() {
           {activeTab === "addresses" && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-black text-slate-900 dark:text-white">العناوين المسجلة</h3>
-                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">إدارة وتحديد عناوين منزلك أو مقرات عملك لتسريع عملية الحجز.</p>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">العناوين المسجلة (Address V2)</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">حدد عناوين منزلك أو مقرات عملك لاستخدامها بضغطة زر عند الحجز.</p>
               </div>
 
               {addressError && (
@@ -570,59 +554,121 @@ function ProfileContent() {
                 <form onSubmit={handleAddAddress} className="space-y-4 p-5 rounded-2xl border border-slate-200 dark:border-blue-900/50 bg-[#F8FAFC] dark:bg-[#050D24] max-w-xl">
                   <h4 className="text-xs font-black text-slate-800 dark:text-white">بيانات العنوان الجديد</h4>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* 1. Governorate */}
                     <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">المحافظة</label>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        المحافظة <span className="text-rose-500">*</span>
+                      </label>
                       <select
                         value={newAddress.governorate}
-                        onChange={(e) => setNewAddress({ ...newAddress, governorate: e.target.value, city: REGIONS_MAP[e.target.value][0] })}
+                        onChange={(e) => {
+                          const gov = e.target.value;
+                          const defaultCity = Object.keys(GEOGRAPHIC_HIERARCHY[gov] || {})[0] || "";
+                          const defaultDistricts = GEOGRAPHIC_HIERARCHY[gov]?.[defaultCity] || [];
+                          setNewAddress({
+                            ...newAddress,
+                            governorate: gov,
+                            city: defaultCity,
+                            district: defaultDistricts[0] || ""
+                          });
+                          setProfileCustomDistrict("");
+                        }}
                         className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
                       >
-                        {Object.keys(REGIONS_MAP).map((gov) => (
+                        {Object.keys(GEOGRAPHIC_HIERARCHY).map((gov) => (
                           <option key={gov} value={gov}>{gov}</option>
                         ))}
                       </select>
                     </div>
+
+                    {/* 2. City */}
                     <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">المدينة / المنطقة</label>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        المدينة / المنطقة <span className="text-rose-500">*</span>
+                      </label>
                       <select
                         value={newAddress.city}
-                        onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                        onChange={(e) => {
+                          const c = e.target.value;
+                          const defaultDistricts = GEOGRAPHIC_HIERARCHY[newAddress.governorate]?.[c] || [];
+                          setNewAddress({
+                            ...newAddress,
+                            city: c,
+                            district: defaultDistricts[0] || ""
+                          });
+                          setProfileCustomDistrict("");
+                        }}
                         className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
                       >
-                        {REGIONS_MAP[newAddress.governorate]?.map((c) => (
+                        {Object.keys(GEOGRAPHIC_HIERARCHY[newAddress.governorate] || {}).map((c) => (
                           <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* 3. District */}
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        الحي / المجاورة <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        value={newAddress.district}
+                        onChange={(e) => setNewAddress({ ...newAddress, district: e.target.value })}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
+                      >
+                        {(GEOGRAPHIC_HIERARCHY[newAddress.governorate]?.[newAddress.city] || ["أخرى"]).map((d) => (
+                          <option key={d} value={d}>{d}</option>
                         ))}
                       </select>
                     </div>
                   </div>
 
+                  {newAddress.district === "أخرى" && (
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        اسم الحي / المنطقة المخصصة <span className="text-rose-500">*</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="اكتب اسم الحي..."
+                        value={profileCustomDistrict}
+                        onChange={(e) => setProfileCustomDistrict(e.target.value)}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
+                      />
+                    </div>
+                  )}
+
                   <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">اسم الشارع</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      اسم الشارع أو الكومباوند <span className="text-rose-500">*</span>
+                    </label>
                     <input 
                       type="text" 
-                      placeholder="مثال: شارع مصدق"
-                      value={newAddress.street}
-                      onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
+                      placeholder="مثال: شارع التسعين الشمالي / كمبوند ميفيدا"
+                      value={newAddress.street_or_compound}
+                      onChange={(e) => setNewAddress({ ...newAddress, street_or_compound: e.target.value })}
                       className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
                       required
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">رقم العمارة</label>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        رقم / اسم المبنى أو الفيلا <span className="text-rose-500">*</span>
+                      </label>
                       <input 
                         type="text" 
-                        placeholder="14"
-                        value={newAddress.building}
-                        onChange={(e) => setNewAddress({ ...newAddress, building: e.target.value })}
+                        placeholder="14 ب"
+                        value={newAddress.building_identifier}
+                        onChange={(e) => setNewAddress({ ...newAddress, building_identifier: e.target.value })}
                         className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
                         required
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">الدور</label>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">الدور / الطابق</label>
                       <input 
                         type="text" 
                         placeholder="3"
@@ -632,15 +678,26 @@ function ProfileContent() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">رقم الشقة</label>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">رقم الشقة / الوحدة</label>
                       <input 
                         type="text" 
                         placeholder="5"
-                        value={newAddress.apartment}
-                        onChange={(e) => setNewAddress({ ...newAddress, apartment: e.target.value })}
+                        value={newAddress.apartment_or_unit}
+                        onChange={(e) => setNewAddress({ ...newAddress, apartment_or_unit: e.target.value })}
                         className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">علامة مميزة (اختياري)</label>
+                    <input 
+                      type="text" 
+                      placeholder="مثال: بجوار مستشفى الجوي"
+                      value={newAddress.landmark}
+                      onChange={(e) => setNewAddress({ ...newAddress, landmark: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
+                    />
                   </div>
 
                   <div className="flex gap-2 pt-2">
@@ -653,7 +710,7 @@ function ProfileContent() {
                     <button
                       type="button"
                       onClick={() => setAddingAddress(false)}
-                      className="py-2 px-4 rounded-xl border border-slate-200 dark:border-blue-900/50 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800"
+                      className="py-2 px-4 rounded-xl border border-slate-200 dark:border-blue-900/50 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                     >
                       إلغاء
                     </button>
@@ -666,43 +723,48 @@ function ProfileContent() {
                 {addresses.length === 0 ? (
                   <p className="text-xs font-bold text-slate-400 py-4">لم تقم بحفظ أي عناوين بعد.</p>
                 ) : (
-                  addresses.map((addr) => (
-                    <div key={addr.id} className="p-4 rounded-2xl border border-slate-100 dark:border-blue-900/40 bg-[#F8FAFC] dark:bg-[#050D24] flex items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-black text-slate-900 dark:text-white">{addr.city}، {addr.governorate}</span>
-                          {addr.is_primary && (
-                            <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 px-2 py-0.5 rounded-md font-bold">
-                              العنوان الافتراضي
+                  addresses.map((addr) => {
+                    const fullDetails = `${addr.street_or_compound || addr.street || ""} - مبنى ${addr.building_identifier || addr.building_number || ""}${addr.floor ? ` - دور ${addr.floor}` : ""}${addr.apartment_or_unit || addr.apartment ? ` - شقة ${addr.apartment_or_unit || addr.apartment}` : ""}${addr.landmark ? ` (${addr.landmark})` : ""}`;
+                    return (
+                      <div key={addr.id} className="p-4 rounded-2xl border border-slate-100 dark:border-blue-900/40 bg-[#F8FAFC] dark:bg-[#050D24] flex items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-slate-900 dark:text-white">
+                              {addr.city}، {addr.district ? `${addr.district} - ` : ""}{addr.governorate}
                             </span>
-                          )}
+                            {addr.is_primary && (
+                              <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 px-2 py-0.5 rounded-md font-bold">
+                                العنوان الافتراضي
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                            {fullDetails}
+                          </p>
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                          شارع {addr.street} - مبنى {addr.building_number} {addr.floor ? `- دور ${addr.floor}` : ""} {addr.apartment ? `- شقة ${addr.apartment}` : ""}
-                        </p>
-                      </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
-                        {!addr.is_primary && (
+                        <div className="flex items-center gap-3 shrink-0">
+                          {!addr.is_primary && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetPrimaryAddress(addr.id)}
+                              className="text-[10px] text-[#0091FF] dark:text-[#22A5FC] hover:underline font-bold cursor-pointer"
+                            >
+                              جعله افتراضي
+                            </button>
+                          )}
                           <button
                             type="button"
-                            onClick={() => handleSetPrimaryAddress(addr.id)}
-                            className="text-[10px] text-[#0091FF] dark:text-[#22A5FC] hover:underline font-bold"
+                            onClick={() => handleDeleteAddress(addr.id)}
+                            className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
+                            title="حذف العنوان"
                           >
-                            جعله افتراضي
+                            <Trash2 className="w-4 h-4" />
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteAddress(addr.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
-                          title="حذف العنوان"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
