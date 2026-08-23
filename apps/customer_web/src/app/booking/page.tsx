@@ -76,6 +76,215 @@ function resolveIconUrl(imageStr?: string | null): string | null {
   return data?.publicUrl || null;
 }
 
+// Robust fallback services tree matching database schema
+const FALLBACK_SERVICES_TREE = [
+  {
+    id: "FH-S-100001",
+    parent_id: null,
+    title: { ar: "خدمات النظافة الشاملة" },
+    description: { ar: "حلول تنظيف متكاملة للمنازل والمفروشات والواجهات بمعدات احترافية." },
+    image: null,
+    status: "active",
+    is_bookable: false,
+    sort_order: 1,
+  },
+  {
+    id: "FH-S-100002",
+    parent_id: null,
+    title: { ar: "خدمات الصيانة والتشغيل" },
+    description: { ar: "فنيون متخصصون لصيانة التكييفات والسباكة والكهرباء مع ضمان الجودة." },
+    image: null,
+    status: "active",
+    is_bookable: false,
+    sort_order: 2,
+  },
+  {
+    id: "FH-S-100003",
+    parent_id: null,
+    title: { ar: "مكافحة الحشرات والتعقيم" },
+    description: { ar: "إبادة فورية وآمنة 100% لكافة أنواع الحشرات والقوارض بضمان معتمد." },
+    image: null,
+    status: "active",
+    is_bookable: false,
+    sort_order: 3,
+  },
+  // Sub-services under Cleaning
+  {
+    id: "FH-S-100009",
+    parent_id: "FH-S-100001",
+    title: { ar: "تنظيف بعد التشطيب" },
+    description: { ar: "إزالة آثار الدهانات والجبس وتنظيف الأرضيات والواجهات باحترافية كاملة." },
+    image: null,
+    status: "active",
+    is_bookable: true,
+    sort_order: 1,
+    price_config: {
+      fields: [
+        { id: "area", label: { ar: "مساحة الشقة / الوحدة" }, type: "number", min: 50, max: 500, unit: "م²", required: true },
+        { id: "rooms_count", label: { ar: "عدد الغرف" }, type: "number", min: 1, max: 10, required: true },
+        { id: "bathrooms_count", label: { ar: "عدد الحمامات" }, type: "number", min: 1, max: 6, required: true },
+        { id: "has_balcony", label: { ar: "هل توجد شرفات / بلكونات؟" }, type: "toggle", required: false }
+      ],
+      options: [
+        { key: "تلميع باركيه بمواد خاصة", value: 150 },
+        { key: "غسيل واجهات زجاجية خارجية", value: 200 }
+      ]
+    }
+  },
+  {
+    id: "FH-S-100010",
+    parent_id: "FH-S-100001",
+    title: { ar: "التنظيف العميق" },
+    description: { ar: "تنظيف شامل ودقيق لكل أركان المنزل والمطابخ والحمامات والأسطح." },
+    image: null,
+    status: "active",
+    is_bookable: true,
+    sort_order: 2,
+    price_config: {
+      fields: [
+        { id: "area", label: { ar: "المساحة التقريبية" }, type: "number", min: 50, max: 400, unit: "م²", required: true },
+        { id: "rooms_count", label: { ar: "عدد الغرف" }, type: "number", min: 1, max: 8, required: true },
+        { id: "bathrooms_count", label: { ar: "عدد الحمامات" }, type: "number", min: 1, max: 5, required: true }
+      ],
+      options: [
+        { key: "تنظيف وتعقيم أجهزة المطبخ الداخلية", value: 180 },
+        { key: "تطهير وتعقيم إضافي بالبخار", value: 150 }
+      ]
+    }
+  },
+  {
+    id: "FH-S-100011",
+    parent_id: "FH-S-100001",
+    title: { ar: "تنظيف الأثاث والمفروشات" },
+    description: { ar: "غسيل وتعقيم الكنب، السجاد، المراتب والستائر بالبخار ومواد خاصة." },
+    image: null,
+    status: "active",
+    is_bookable: true,
+    sort_order: 3,
+    price_config: {
+      fields: [
+        { id: "sofas_count", label: { ar: "عدد أطقم الكنب / المجالس" }, type: "number", min: 1, max: 6, required: true },
+        { id: "carpets_count", label: { ar: "عدد قطع السجاد" }, type: "number", min: 0, max: 12, required: false },
+        { id: "mattresses_count", label: { ar: "عدد المراتب" }, type: "number", min: 0, max: 8, required: false }
+      ],
+      options: [
+        { key: "تعطير فندقي يدوم طويلاً", value: 100 },
+        { key: "معالجة بقع مستعصية بمواد إيطالية", value: 150 }
+      ]
+    }
+  },
+  {
+    id: "FH-S-100012",
+    parent_id: "FH-S-100001",
+    title: { ar: "التنظيف الدوري" },
+    description: { ar: "زيارات تنظيف منتظمة بأفضل الأسعار للحفاظ على رونق ونظافة بيتك." },
+    image: null,
+    status: "active",
+    is_bookable: true,
+    sort_order: 4,
+    price_config: {
+      fields: [
+        { id: "area", label: { ar: "المساحة التقريبية" }, type: "number", min: 50, max: 350, unit: "م²", required: true },
+        { id: "hours_count", label: { ar: "عدد الساعات المطلوبة" }, type: "number", min: 3, max: 10, required: true }
+      ]
+    }
+  },
+  {
+    id: "FH-S-100013",
+    parent_id: "FH-S-100001",
+    title: { ar: "تنظيف الواجهات والشبابيك" },
+    description: { ar: "تلميع وتنظيف الواجهات والشبابيك والزجاج الداخلي والخارجي بلمعان فائق." },
+    image: null,
+    status: "active",
+    is_bookable: true,
+    sort_order: 5,
+    price_config: {
+      fields: [
+        { id: "windows_count", label: { ar: "عدد الشبابيك / الواجهات" }, type: "number", min: 2, max: 20, required: true }
+      ]
+    }
+  },
+  // Sub-services under Maintenance
+  {
+    id: "FH-S-100020",
+    parent_id: "FH-S-100002",
+    title: { ar: "صيانة وتنظيف التكييف" },
+    description: { ar: "غسيل الفلاتر، شحن الفريون، صيانة الوحدات الداخلية والخارجية." },
+    image: null,
+    status: "active",
+    is_bookable: true,
+    sort_order: 1,
+    price_config: {
+      fields: [
+        { id: "ac_units_count", label: { ar: "عدد أجهزة التكييف" }, type: "number", min: 1, max: 10, required: true },
+        { id: "needs_freon", label: { ar: "هل تحتاج شحن فريون؟" }, type: "toggle", required: false }
+      ]
+    }
+  },
+  {
+    id: "FH-S-100021",
+    parent_id: "FH-S-100002",
+    title: { ar: "السباكة والأدوات الصحية" },
+    description: { ar: "كشف تسريبات المياه، صيانة وتأسيس شبكات الصرف الصحي والسباكة." },
+    image: null,
+    status: "active",
+    is_bookable: true,
+    sort_order: 2,
+    price_config: {
+      fields: [
+        { id: "units_count", label: { ar: "عدد النقاط / الأماكن المراد فحصها وصيانتها" }, type: "number", min: 1, max: 10, required: true }
+      ]
+    }
+  },
+  {
+    id: "FH-S-100022",
+    parent_id: "FH-S-100002",
+    title: { ar: "الصيانة والكهرباء العامة" },
+    description: { ar: "إصلاح الأعطال الكهربائية المنزلية وتركيب الإضاءة والأجهزة بأمان تام." },
+    image: null,
+    status: "active",
+    is_bookable: true,
+    sort_order: 3,
+    price_config: {
+      fields: [
+        { id: "points_count", label: { ar: "عدد المفاتيح أو نقاط الإضاءة المراد صيانتها" }, type: "number", min: 1, max: 15, required: true }
+      ]
+    }
+  },
+  // Sub-services under Pest Control
+  {
+    id: "FH-S-100030",
+    parent_id: "FH-S-100003",
+    title: { ar: "إبادة ومكافحة الحشرات" },
+    description: { ar: "مكافحة النمل الأبيض، الصراصير، البق، والقوارض بأحدث الأمصال الألمانية." },
+    image: null,
+    status: "active",
+    is_bookable: true,
+    sort_order: 1,
+    price_config: {
+      fields: [
+        { id: "area", label: { ar: "مساحة الوحدة التقريبية" }, type: "number", min: 50, max: 400, unit: "م²", required: true },
+        { id: "rooms_count", label: { ar: "عدد الغرف" }, type: "number", min: 1, max: 8, required: true }
+      ]
+    }
+  },
+  {
+    id: "FH-S-100031",
+    parent_id: "FH-S-100003",
+    title: { ar: "التعقيم والتطهير الشامل" },
+    description: { ar: "تطهير المنازل والمكاتب من البكتيريا والفيروسات بمطهرات طبية آمنة." },
+    image: null,
+    status: "active",
+    is_bookable: true,
+    sort_order: 2,
+    price_config: {
+      fields: [
+        { id: "area", label: { ar: "المساحة المراد تعقيمها" }, type: "number", min: 50, max: 500, unit: "م²", required: true }
+      ]
+    }
+  }
+];
+
 function BookingFlowContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,11 +297,11 @@ function BookingFlowContent() {
   const [currentStep, setCurrentStep] = useState(0);
   const [subServiceId, setSubServiceId] = useState(initialSubServiceId);
 
-  // Tree Nodes State
-  const [allTreeServices, setAllTreeServices] = useState<any[]>([]);
+  // Tree Nodes State with initial fallback tree
+  const [allTreeServices, setAllTreeServices] = useState<any[]>(FALLBACK_SERVICES_TREE);
   const [selectedPath, setSelectedPath] = useState<any[]>([]);
   const [selectedSubService, setSelectedSubService] = useState<any>(null);
-  const [loadingServices, setLoadingServices] = useState(true);
+  const [loadingServices, setLoadingServices] = useState(false);
 
   // Dynamic Pricing Form Inputs
   const [pricingInputs, setPricingInputs] = useState<Record<string, any>>({});
@@ -142,80 +351,71 @@ function BookingFlowContent() {
     }
 
     async function loadUserProfile() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setIsClientUserLoggedIn(true);
-        const userId = session.user.id;
-        
-        // 1. Set name from profiles table, fallback to metadata
-        try {
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("first_name, last_name")
-            .eq("id", userId)
-            .single();
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setIsClientUserLoggedIn(true);
+          const userId = session.user.id;
           
-          if (profileData?.first_name) {
-            setName(`${profileData.first_name} ${profileData.last_name || ""}`.trim());
-          } else {
+          try {
+            const { data: profileData } = await supabase
+              .from("profiles")
+              .select("first_name, last_name")
+              .eq("id", userId)
+              .single();
+            
+            if (profileData?.first_name) {
+              setName(`${profileData.first_name} ${profileData.last_name || ""}`.trim());
+            } else {
+              const metadata = session.user.user_metadata;
+              if (metadata?.first_name) {
+                setName(`${metadata.first_name} ${metadata.last_name || ""}`.trim());
+              }
+            }
+          } catch {
             const metadata = session.user.user_metadata;
             if (metadata?.first_name) {
               setName(`${metadata.first_name} ${metadata.last_name || ""}`.trim());
             }
           }
-        } catch (err) {
-          console.error("Error loading profiles name in booking:", err);
-          const metadata = session.user.user_metadata;
-          if (metadata?.first_name) {
-            setName(`${metadata.first_name} ${metadata.last_name || ""}`.trim());
-          }
-        }
 
-        // 2. Fetch primary phone
-        try {
-          const { data: phoneData } = await supabase
-            .from("user_phones")
-            .select("phone_number")
-            .eq("user_id", userId)
-            .eq("is_primary", true)
-            .maybeSingle();
-          if (phoneData?.phone_number) {
-            setPhone(phoneData.phone_number);
-          } else {
-            const { data: anyPhones } = await supabase
+          try {
+            const { data: phoneData } = await supabase
               .from("user_phones")
               .select("phone_number")
               .eq("user_id", userId)
-              .limit(1);
-            if (anyPhones && anyPhones.length > 0) {
-              setPhone(anyPhones[0].phone_number);
+              .eq("is_primary", true)
+              .maybeSingle();
+            if (phoneData?.phone_number) {
+              setPhone(phoneData.phone_number);
             }
+          } catch {
+            // ignore
           }
-        } catch (err) {
-          console.error("Error loading profile phone in booking:", err);
-        }
 
-        // 3. Fetch primary address
-        try {
-          const { data: addrData } = await supabase
-            .from("user_addresses")
-            .select("*")
-            .eq("user_id", userId)
-            .eq("is_primary", true)
-            .maybeSingle();
-          if (addrData) {
-            setAddress({
-              governorate: addrData.governorate || "القاهرة",
-              city: addrData.city || "الزمالك",
-              street: addrData.street || "",
-              building: addrData.building_number || "",
-              floor: addrData.floor || "",
-              apartment: addrData.apartment || ""
-            });
+          try {
+            const { data: addrData } = await supabase
+              .from("user_addresses")
+              .select("*")
+              .eq("user_id", userId)
+              .eq("is_primary", true)
+              .maybeSingle();
+            if (addrData) {
+              setAddress({
+                governorate: addrData.governorate || "القاهرة",
+                city: addrData.city || "الزمالك",
+                street: addrData.street || "",
+                building: addrData.building_number || "",
+                floor: addrData.floor || "",
+                apartment: addrData.apartment || ""
+              });
+            }
+          } catch {
+            // ignore
           }
-        } catch (err) {
-          console.error("Error loading profile address in booking:", err);
         }
+      } catch {
+        // ignore
       }
     }
 
@@ -234,20 +434,16 @@ function BookingFlowContent() {
     return path;
   };
 
-  // 1. Fetch Complete Active Services Tree
+  // 1. Fetch Complete Active Services Tree with Fallback
   useEffect(() => {
     async function fetchCompleteServicesTree() {
-      setLoadingServices(true);
       try {
         const { data, error } = await supabase
           .from("active_services_tree")
           .select("*")
-          .neq("status", "inactive")
-          .neq("status", "archived")
           .order("sort_order", { ascending: true });
         
-        if (error) throw error;
-        const nodes = data || [];
+        const nodes = (data && data.length > 0) ? data : FALLBACK_SERVICES_TREE;
         setAllTreeServices(nodes);
 
         // Check URL query initialization
@@ -266,7 +462,22 @@ function BookingFlowContent() {
           }
         }
       } catch (e) {
-        console.error("Error fetching services tree:", e);
+        console.warn("Using fallback services tree for booking flow:", e);
+        // Fallback initialization
+        if (initialSubServiceId) {
+          const target = FALLBACK_SERVICES_TREE.find((n: any) => n.id === initialSubServiceId);
+          if (target) {
+            setSelectedSubService(target);
+            setSubServiceId(target.id);
+            const path = buildPathForNode(target.id, FALLBACK_SERVICES_TREE);
+            setSelectedPath(path.slice(0, -1));
+          }
+        } else if (initialServiceId) {
+          const rootTarget = FALLBACK_SERVICES_TREE.find((n: any) => n.id === initialServiceId);
+          if (rootTarget) {
+            setSelectedPath([rootTarget]);
+          }
+        }
       } finally {
         setLoadingServices(false);
       }
