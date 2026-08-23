@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, Suspense, useRef } from "react";
+import { useState, useEffect, Suspense, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { 
   ShieldCheck, ArrowLeft, ArrowRight, CheckCircle2, 
-  MapPin, Calendar, CreditCard, Clock, Check, ShieldAlert, Sparkles
+  MapPin, Calendar, CreditCard, Clock, Check, ShieldAlert, Sparkles,
+  Layers, Zap, ChevronLeft, ChevronRight, Home, Wrench, Wind, Armchair, 
+  AppWindow, Bug, RefreshCw
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -50,22 +52,45 @@ const formatDateLocal = (date: Date): string => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+// Helper fallback icon
+function getServiceFallbackIcon(title: string) {
+  const t = (title || "").toLowerCase();
+  if (t.includes("تشطيب") || t.includes("بعد التشطيب") || t.includes("عميق") || t.includes("نظافة")) return Sparkles;
+  if (t.includes("أثاث") || t.includes("كنب") || t.includes("سجاد") || t.includes("مفروشات") || t.includes("مجالس")) return Armchair;
+  if (t.includes("زجاج") || t.includes("واجهات") || t.includes("شبابيك")) return AppWindow;
+  if (t.includes("تكييف") || t.includes("تبريد") || t.includes("فريون")) return Wind;
+  if (t.includes("سباكة") || t.includes("صيانة") || t.includes("كهرباء")) return Wrench;
+  if (t.includes("حشرات") || t.includes("مكافحة") || t.includes("إبادة") || t.includes("تعقيم")) return Bug;
+  return Home;
+}
+
+// Helper to resolve service icon path from Supabase storage or URLs
+function resolveIconUrl(imageStr?: string | null): string | null {
+  if (!imageStr || typeof imageStr !== "string") return null;
+  const clean = imageStr.trim();
+  if (!clean) return null;
+  if (clean.startsWith("http://") || clean.startsWith("https://") || clean.startsWith("/")) {
+    return clean;
+  }
+  const { data } = supabase.storage.from("service_images").getPublicUrl(clean);
+  return data?.publicUrl || null;
+}
+
 function BookingFlowContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
   // URL params pre-selection
-  const initialServiceId = searchParams.get("serviceId") || "FH-S-100001"; // Default to cleaning
+  const initialServiceId = searchParams.get("serviceId") || "";
   const initialSubServiceId = searchParams.get("subServiceId") || "";
 
   // State Management
   const [currentStep, setCurrentStep] = useState(0);
-  const [serviceId, setServiceId] = useState(initialServiceId);
   const [subServiceId, setSubServiceId] = useState(initialSubServiceId);
 
-  // DB Loaded Data
-  const [mainServices, setMainServices] = useState<any[]>([]);
-  const [subServices, setSubServices] = useState<any[]>([]);
+  // Tree Nodes State
+  const [allTreeServices, setAllTreeServices] = useState<any[]>([]);
+  const [selectedPath, setSelectedPath] = useState<any[]>([]);
   const [selectedSubService, setSelectedSubService] = useState<any>(null);
   const [loadingServices, setLoadingServices] = useState(true);
 
@@ -92,6 +117,24 @@ function BookingFlowContent() {
   const [loginRedirectUrl, setLoginRedirectUrl] = useState("/login");
   const [isClientUserLoggedIn, setIsClientUserLoggedIn] = useState(false);
 
+  // Pricing calculation state
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [hasCalculated, setHasCalculated] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [priceDetails, setPriceDetails] = useState({
+    basePrice: 0,
+    extraFees: 0,
+    discount: 0,
+    total: 0,
+    metadata: {}
+  });
+  const [animatePrice, setAnimatePrice] = useState(false);
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
+  const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+  const [showMobilePriceModal, setShowMobilePriceModal] = useState(false);
+  const dateScrollRef = useRef<HTMLDivElement>(null);
+
   // Load user profile details if logged in
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -104,7 +147,7 @@ function BookingFlowContent() {
         setIsClientUserLoggedIn(true);
         const userId = session.user.id;
         
-        // 1. Set name from profiles table (Single Source of Truth), fallback to metadata
+        // 1. Set name from profiles table, fallback to metadata
         try {
           const { data: profileData } = await supabase
             .from("profiles")
@@ -139,7 +182,6 @@ function BookingFlowContent() {
           if (phoneData?.phone_number) {
             setPhone(phoneData.phone_number);
           } else {
-            // Fallback: fetch any phone
             const { data: anyPhones } = await supabase
               .from("user_phones")
               .select("phone_number")
@@ -161,119 +203,96 @@ function BookingFlowContent() {
             .eq("user_id", userId)
             .eq("is_primary", true)
             .maybeSingle();
-          
           if (addrData) {
             setAddress({
-              governorate: addrData.governorate,
-              city: addrData.city,
-              street: addrData.street,
+              governorate: addrData.governorate || "القاهرة",
+              city: addrData.city || "الزمالك",
+              street: addrData.street || "",
               building: addrData.building_number || "",
               floor: addrData.floor || "",
               apartment: addrData.apartment || ""
             });
-          } else {
-            // Fallback: fetch any address
-            const { data: anyAddrs } = await supabase
-              .from("user_addresses")
-              .select("*")
-              .eq("user_id", userId)
-              .limit(1);
-            if (anyAddrs && anyAddrs.length > 0) {
-              setAddress({
-                governorate: anyAddrs[0].governorate,
-                city: anyAddrs[0].city,
-                street: anyAddrs[0].street,
-                building: anyAddrs[0].building_number || "",
-                floor: anyAddrs[0].floor || "",
-                apartment: anyAddrs[0].apartment || ""
-              });
-            }
           }
         } catch (err) {
           console.error("Error loading profile address in booking:", err);
         }
       }
     }
+
     loadUserProfile();
   }, []);
 
-  // Availability states
-  const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
-  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
-
-  // OTP Verification States
-  const [isServiceLocked, setIsServiceLocked] = useState(!!initialSubServiceId);
-  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
-
-  // DB Final Pricing Output State
-  const [priceDetails, setPriceDetails] = useState({
-    basePrice: 0,
-    extraFees: 0,
-    discount: 0,
-    total: 0,
-    metadata: {} as any
-  });
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [hasCalculated, setHasCalculated] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [animatePrice, setAnimatePrice] = useState(false);
-  const [showMobilePriceModal, setShowMobilePriceModal] = useState(false);
-  const dateScrollRef = useRef<HTMLDivElement>(null);
-
-  // 1. Fetch main service categories
-  useEffect(() => {
-    async function fetchMainServices() {
-      try {
-        const { data, error } = await supabase
-          .from("active_services_tree")
-          .select("*")
-          .is("parent_id", null)
-          .order("sort_order", { ascending: true });
-        
-        if (error) throw error;
-        setMainServices(data || []);
-      } catch (e) {
-        console.error("Error fetching main services:", e);
-      }
+  // Helper to build ancestry path
+  const buildPathForNode = (nodeId: string, nodes: any[]): any[] => {
+    const path: any[] = [];
+    let current = nodes.find(n => n.id === nodeId);
+    while (current) {
+      path.unshift(current);
+      if (!current.parent_id) break;
+      current = nodes.find(n => n.id === current.parent_id);
     }
-    fetchMainServices();
-  }, []);
+    return path;
+  };
 
-  // 2. Fetch sub services for selected main category
+  // 1. Fetch Complete Active Services Tree
   useEffect(() => {
-    async function fetchSubServices() {
-      if (!serviceId) return;
+    async function fetchCompleteServicesTree() {
       setLoadingServices(true);
       try {
         const { data, error } = await supabase
           .from("active_services_tree")
           .select("*")
-          .eq("parent_id", serviceId)
-          .eq("is_bookable", true)
+          .neq("status", "inactive")
+          .neq("status", "archived")
           .order("sort_order", { ascending: true });
         
         if (error) throw error;
-        setSubServices(data || []);
+        const nodes = data || [];
+        setAllTreeServices(nodes);
 
-        // Pick initial sub-service
-        const initialSub = data?.find((s: any) => s.id === initialSubServiceId) || data?.[0];
-        if (initialSub) {
-          setSelectedSubService(initialSub);
-          setSubServiceId(initialSub.id);
-        } else {
-          setSelectedSubService(null);
-          setSubServiceId("");
+        // Check URL query initialization
+        if (initialSubServiceId) {
+          const target = nodes.find((n: any) => n.id === initialSubServiceId);
+          if (target) {
+            setSelectedSubService(target);
+            setSubServiceId(target.id);
+            const path = buildPathForNode(target.id, nodes);
+            setSelectedPath(path.slice(0, -1));
+          }
+        } else if (initialServiceId) {
+          const rootTarget = nodes.find((n: any) => n.id === initialServiceId);
+          if (rootTarget) {
+            setSelectedPath([rootTarget]);
+          }
         }
       } catch (e) {
-        console.error("Error fetching sub services:", e);
+        console.error("Error fetching services tree:", e);
       } finally {
         setLoadingServices(false);
       }
     }
-    fetchSubServices();
-  }, [serviceId]);
+    fetchCompleteServicesTree();
+  }, [initialServiceId, initialSubServiceId]);
 
-  // 2.5 Fetch availability for the sub-service
+  // Children and Leaf Node helpers
+  const getChildren = (parentId: string | null) => {
+    return allTreeServices.filter(s => s.parent_id === parentId);
+  };
+
+  const hasChildren = (nodeId: string) => {
+    return allTreeServices.some(s => s.parent_id === nodeId);
+  };
+
+  // Current level nodes based on selectedPath
+  const currentParent = selectedPath.length > 0 ? selectedPath[selectedPath.length - 1] : null;
+  const currentLevelNodes = useMemo(() => {
+    if (!currentParent) {
+      return allTreeServices.filter(s => s.parent_id === null);
+    }
+    return allTreeServices.filter(s => s.parent_id === currentParent.id);
+  }, [allTreeServices, currentParent]);
+
+  // 2. Fetch availability when subServiceId is active
   useEffect(() => {
     async function fetchAvailability() {
       if (!subServiceId || subServiceId.includes("mock")) return;
@@ -282,7 +301,7 @@ function BookingFlowContent() {
         const today = new Date();
         const startDateStr = formatDateLocal(today);
         const endDate = new Date();
-        endDate.setDate(today.getDate() + 30); // next 30 days
+        endDate.setDate(today.getDate() + 30);
         const endDateStr = formatDateLocal(endDate);
 
         const { data, error } = await supabase.rpc("get_available_days", {
@@ -328,11 +347,10 @@ function BookingFlowContent() {
     }
   }, [selectedSubService]);
 
-  // 4. Explicit validation and calculation call to DB calculate_booking_price RPC
+  // 4. Calculate Price RPC Call
   const handleCalculate = async () => {
     if (!subServiceId || subServiceId.includes("mock")) return;
 
-    // Validate and auto-adjust fields
     const errors: Record<string, string> = {};
     const adjustedInputs = { ...pricingInputs };
     let hasAdjustments = false;
@@ -355,7 +373,6 @@ function BookingFlowContent() {
             }
           }
         } else {
-          // If not required but entered
           if (val !== undefined && val !== null && val !== "" && field.type === "number" && val !== 0 && val !== "0") {
             const num = Number(val);
             if (field.min !== undefined && num < field.min && num > 0) {
@@ -375,7 +392,6 @@ function BookingFlowContent() {
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
-      // Scroll to the first error
       const firstErrorKey = Object.keys(errors)[0];
       const errorEl = document.getElementById(`field-container-${firstErrorKey}`);
       if (errorEl) {
@@ -384,11 +400,9 @@ function BookingFlowContent() {
       return;
     }
 
-    // Clear validation errors
     setValidationErrors({});
     setIsCalculating(true);
 
-    // Clean up empty fields from the inputs to prevent database casting exceptions
     const inputs = { ...adjustedInputs };
     Object.keys(inputs).forEach(key => {
       if (inputs[key] === "" || inputs[key] === undefined || inputs[key] === null) {
@@ -420,7 +434,6 @@ function BookingFlowContent() {
           setAnimatePrice(true);
         }, 50);
 
-        // Show mobile modal if on mobile screen
         if (typeof window !== "undefined" && window.innerWidth < 1024) {
           setShowMobilePriceModal(true);
         }
@@ -433,7 +446,7 @@ function BookingFlowContent() {
     }
   };
 
-  // Helper to parse DD-MM-YYYY or YYYY-MM-DD manually typed dates
+  // Helper to parse manual date
   const parseManualDate = (text: string): Date | null => {
     const parts = text.trim().split(/[-\/]/);
     if (parts.length === 3) {
@@ -468,7 +481,7 @@ function BookingFlowContent() {
     }
   };
 
-  // Sync typed date input to scheduledDate state when valid and available
+  // Sync typed date input to scheduledDate
   useEffect(() => {
     if (manualDateText.trim() === "") {
       setScheduledDate("");
@@ -533,52 +546,6 @@ function BookingFlowContent() {
     }
   };
 
-  // Dynamic validation for manually entered dates
-  let dateWarningText = "";
-  let nextAvailableSuggestion: string | null = null;
-
-  const todayDate = new Date();
-  todayDate.setHours(0, 0, 0, 0);
-
-  if (manualDateText.trim() !== "") {
-    const parsedDate = parseManualDate(manualDateText);
-    if (!parsedDate) {
-      dateWarningText = "صيغة التاريخ غير صحيحة. يرجى الإدخال بصيغة (يوم-شهر-سنة) مثل: 27-06-2026";
-    } else {
-      if (parsedDate < todayDate) {
-        dateWarningText = "يرجى اختيار تاريخ اليوم أو تاريخ في المستقبل.";
-      } else {
-        const diffTime = parsedDate.getTime() - todayDate.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays > 30) {
-          dateWarningText = "لا يمكن اختيار تاريخ بعد أكثر من شهر (30 يوماً) من تاريخ اليوم.";
-        } else {
-          const formatted = formatDateLocal(parsedDate);
-          if (availabilityMap[formatted] === false) {
-            dateWarningText = "عذراً، هذا اليوم غير متوفر حالياً من قبل الفنيين.";
-            
-            // Find nearest next available day within 30 days limit from today
-            let foundNext = null;
-            const searchDate = new Date(parsedDate);
-            for (let d = 1; d <= 30; d++) {
-              searchDate.setDate(searchDate.getDate() + 1);
-              const diffFromToday = Math.ceil((searchDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
-              if (diffFromToday > 30) {
-                break; // Out of range
-              }
-              const searchStr = formatDateLocal(searchDate);
-              if (availabilityMap[searchStr] !== false) {
-                foundNext = searchStr;
-                break;
-              }
-            }
-            nextAvailableSuggestion = foundNext;
-          }
-        }
-      }
-    }
-  }
-
   const handleGovernorateChange = (gov: string) => {
     const defaultCity = REGIONS_MAP[gov]?.[0] || "";
     setAddress({
@@ -610,20 +577,16 @@ function BookingFlowContent() {
     }
   };
 
-
-
   // Complete Booking flow calling create_atomic_booking
   const handleCompleteBooking = async () => {
     setIsSubmittingBooking(true);
     try {
-      // 1. Check if there is an active logged-in user session
       let userId: string | null = null;
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         userId = session.user.id;
       }
 
-      // 2. If user is logged in, attempt to register their phone number if not already present
       if (userId) {
         await supabase
           .from("user_phones")
@@ -633,11 +596,8 @@ function BookingFlowContent() {
             is_primary: true,
             is_verified: true
           });
-        // We do not throw on phone insert error for logged-in users to prevent blocking the booking
-        // if the phone number already exists or is already linked.
       }
 
-      // 4. Convert chosen time (e.g. "09:00 ص") to 24h format (e.g. "09:00:00")
       let time24 = "09:00:00";
       const timeClean = scheduledTime.replace(" ص", "").replace(" م", "").trim();
       const isPm = scheduledTime.includes("م");
@@ -649,7 +609,6 @@ function BookingFlowContent() {
         time24 = `${hour.toString().padStart(2, '0')}:${parts[1] || '00'}:00`;
       }
 
-      // Build snapshots payloads
       const addressSnapshot = {
         governorate: address.governorate,
         city: address.city,
@@ -660,7 +619,7 @@ function BookingFlowContent() {
       };
 
       const serviceSnapshot = {
-        title: selectedSubService?.title?.ar || selectedSubService?.title || "حجز خدمة ويب"
+        title: selectedSubService?.title?.ar || selectedSubService?.title || "حجز خدمة فريش هوم"
       };
 
       const pricingPayload = {
@@ -671,11 +630,10 @@ function BookingFlowContent() {
         name: name.trim()
       };
 
-      // 5. Invoke atomic booking transaction RPC
       const { data: bookingId, error: bookingError } = await supabase.rpc("create_atomic_booking", {
         p_user_id: userId,
         p_sub_service_id: subServiceId,
-        p_technician_id: null, // Let system auto-assign available technician
+        p_technician_id: null,
         p_scheduled_day: scheduledDate,
         p_address_snapshot: addressSnapshot,
         p_service_snapshot: serviceSnapshot,
@@ -748,64 +706,222 @@ function BookingFlowContent() {
             {/* Step Content */}
             <div className="lg:col-span-8 bg-white dark:bg-[#071739] rounded-3xl p-5 sm:p-7 border border-slate-200/80 dark:border-blue-900/50 shadow-sm min-h-[420px] flex flex-col justify-between transition-colors">
               
-              {/* STEP 1: PRICING */}
+              {/* STEP 1: HIERARCHICAL SELECTION & PRICING */}
               {currentStep === 0 && (
                 <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-black text-slate-800">تعديل مواصفات وحساب تسعير الخدمة</h2>
-                    <p className="text-slate-400 text-xs">أدخل المقاسات الحقيقية والتفاصيل للحصول على سعر نهائي موثوق.</p>
-                    {isServiceLocked && selectedSubService && (
-                      <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                        <Sparkles className="w-3.5 h-3.5 text-primary" />
-                        <span>الخدمة المحددة: {selectedSubService.title?.ar || selectedSubService.title}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {!isServiceLocked && (
-                    <div className="grid grid-cols-3 gap-3">
-                      {mainServices.map((serve) => (
-                        <button 
-                          type="button"
-                          key={serve.id}
-                          onClick={() => { setServiceId(serve.id); }}
-                          className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${serviceId === serve.id ? "border-primary bg-primary/5 text-primary" : "border-slate-200 text-slate-500"}`}
-                        >
-                          {serve.title?.ar || serve.title}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
                   {loadingServices ? (
-                    <div className="py-12 flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+                    <div className="py-20 flex flex-col items-center justify-center space-y-3">
+                      <div className="animate-spin rounded-full h-9 w-9 border-t-2 border-[#0091FF]"></div>
+                      <span className="text-xs font-bold text-slate-400">جاري تحميل الخدمات وقواعد التسعير...</span>
                     </div>
-                  ) : (
-                    <div className="space-y-6 pt-4 border-t border-slate-100">
-                      {/* Sub-service Selection */}
-                      {!isServiceLocked && (
-                        <div className="space-y-2 pb-4 border-b border-slate-100">
-                          <label className="block text-sm font-bold text-slate-700">نوع الخدمة الفرعية</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {subServices.map((sub) => (
-                              <button
-                                type="button"
-                                key={sub.id}
-                                onClick={() => { setSelectedSubService(sub); setSubServiceId(sub.id); }}
-                                className={`p-3 rounded-xl border text-xs font-bold text-right transition-all ${subServiceId === sub.id ? "border-primary bg-primary/5 text-primary" : "border-slate-200 text-slate-600"}`}
-                              >
-                                <span className="block font-black">{sub.title?.ar || sub.title}</span>
-                                <span className="block text-[9px] text-slate-400 font-normal mt-0.5 leading-normal">{sub.description?.ar || sub.description}</span>
-                              </button>
-                            ))}
+                  ) : !selectedSubService ? (
+                    /* 1. HIERARCHICAL TREE SELECTION MODE */
+                    <div className="space-y-5 animate-fade-in">
+                      {/* Breadcrumbs Navigation Bar (when inside a branch) */}
+                      {selectedPath.length > 0 && (
+                        <div className="flex items-center justify-between bg-blue-50/80 dark:bg-blue-950/40 p-2.5 sm:p-3 rounded-2xl border border-blue-100 dark:border-blue-900/40 text-xs">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedPath([])}
+                              className="font-bold text-[#0091FF] dark:text-[#22A5FC] hover:underline cursor-pointer"
+                            >
+                              الرئيسية
+                            </button>
+                            {selectedPath.map((node, idx) => {
+                              const isLast = idx === selectedPath.length - 1;
+                              return (
+                                <div key={node.id} className="flex items-center gap-1.5">
+                                  <span className="text-slate-400">/</span>
+                                  <button
+                                    type="button"
+                                    disabled={isLast}
+                                    onClick={() => setSelectedPath(selectedPath.slice(0, idx + 1))}
+                                    className={`${
+                                      isLast 
+                                        ? "font-black text-slate-900 dark:text-white" 
+                                        : "font-bold text-[#0091FF] dark:text-[#22A5FC] hover:underline cursor-pointer"
+                                    }`}
+                                  >
+                                    {node.title?.ar || node.title}
+                                  </button>
+                                </div>
+                              );
+                            })}
                           </div>
+                          
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPath(selectedPath.slice(0, -1))}
+                            className="text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:text-[#0091FF] flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 transition-all shrink-0 cursor-pointer shadow-2xs"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                            <span>رجوع خطوة</span>
+                          </button>
                         </div>
                       )}
 
+                      {/* Header Title based on Current Depth */}
+                      <div>
+                        {selectedPath.length === 0 ? (
+                          <>
+                            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
+                              الخطوة 1: اختيار الخدمة
+                            </span>
+                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                              برجاء تحديد نوع الخدمة المطلوبة
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                              اختر القسم الرئيسي المناسب للبدء في تخصيص طلبك وتحديد السعر النهائي
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
+                              {currentParent?.title?.ar || currentParent?.title}
+                            </span>
+                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                              يرجى اختيار الخدمة المناسبة
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                              اختر من الخدمات والخيارات المتاحة أدناه للمتابعة إلى التخصيص وحساب التكلفة
+                            </p>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Grid of Interactive Tree Options */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 pt-1">
+                        {currentLevelNodes.map((node) => {
+                          const nodeChildren = getChildren(node.id);
+                          const isBookableLeaf = node.is_bookable === true && nodeChildren.length === 0;
+                          const isPaused = node.status === "paused";
+                          const NodeIcon = getServiceFallbackIcon(node.title?.ar || node.title || "");
+                          const iconUrl = resolveIconUrl(node.image);
+
+                          return (
+                            <div
+                              key={node.id}
+                              onClick={() => {
+                                if (isBookableLeaf) {
+                                  setSelectedSubService(node);
+                                  setSubServiceId(node.id);
+                                } else {
+                                  setSelectedPath([...selectedPath, node]);
+                                }
+                              }}
+                              className={`p-4 sm:p-5 rounded-2xl border text-right transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer bg-white dark:bg-[#071739] hover:shadow-lg hover:-translate-y-1 ${
+                                isPaused
+                                  ? "border-amber-200/90 dark:border-amber-900/50 hover:border-amber-400"
+                                  : "border-slate-200/90 dark:border-blue-900/50 hover:border-[#0091FF]/60"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                {/* Icon Badge */}
+                                <div className={`w-12 h-12 rounded-2xl ${
+                                  isPaused 
+                                    ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-900/40" 
+                                    : "bg-blue-50 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
+                                } flex items-center justify-center p-2.5 group-hover:scale-105 transition-all shrink-0 shadow-2xs`}>
+                                  {iconUrl ? (
+                                    <img src={iconUrl} alt="" className="w-full h-full object-contain" />
+                                  ) : (
+                                    <NodeIcon className="w-6 h-6" />
+                                  )}
+                                </div>
+
+                                {/* Status Badges */}
+                                <div className="flex flex-col items-end gap-1">
+                                  {isPaused ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 text-[10px] font-black">
+                                      <Clock className="w-3 h-3" />
+                                      <span>متوقفة مؤقتاً</span>
+                                    </span>
+                                  ) : isBookableLeaf ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40 text-[10px] font-extrabold">
+                                      <Zap className="w-3 h-3" />
+                                      <span>حجز مباشر</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 text-[10px] font-extrabold">
+                                      <Layers className="w-3 h-3" />
+                                      <span>{nodeChildren.length > 0 ? `${nodeChildren.length} تفريعات` : "استعراض الخيارات"}</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-1">
+                                <h3 className="text-base font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors">
+                                  {node.title?.ar || node.title}
+                                </h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-2 leading-relaxed">
+                                  {node.description?.ar || node.description || "خدمة معتمدة بأعلى معايير الجودة"}
+                                </p>
+                              </div>
+
+                              <div className="pt-2 border-t border-slate-100 dark:border-blue-900/30 flex items-center justify-between text-xs font-bold text-[#0091FF] dark:text-[#22A5FC]">
+                                <span>{isBookableLeaf ? "تخصيص وحساب السعر" : "استعراض تفريعات الخدمة"}</span>
+                                <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    /* 2. DYNAMIC PRICING FORM MODE (Leaf Bookable Service Selected) */
+                    <div className="space-y-6 animate-fade-in">
+                      {/* Selected Service Banner with Full Path and Change Button */}
+                      <div className="bg-gradient-to-r from-blue-50/90 to-indigo-50/60 dark:from-[#050D24] dark:to-[#071739] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 flex items-center justify-between gap-3 shadow-xs">
+                        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                          <div className="w-12 h-12 rounded-2xl bg-white dark:bg-[#071739] border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] shrink-0 shadow-2xs">
+                            {selectedSubService.image ? (
+                              <img src={resolveIconUrl(selectedSubService.image) || ""} alt="" className="w-7 h-7 object-contain" />
+                            ) : (
+                              <Sparkles className="w-6 h-6" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-[10px] font-extrabold text-[#0091FF] dark:text-[#22A5FC] flex items-center gap-1 truncate">
+                              {buildPathForNode(selectedSubService.id, allTreeServices).map((p, i, arr) => (
+                                <span key={p.id}>{p.title?.ar || p.title}{i < arr.length - 1 ? " / " : ""}</span>
+                              ))}
+                            </div>
+                            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white truncate mt-0.5">
+                              {selectedSubService.title?.ar || selectedSubService.title}
+                            </h3>
+                          </div>
+                        </div>
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedSubService(null);
+                            setSubServiceId("");
+                            setHasCalculated(false);
+                            setAnimatePrice(false);
+                          }}
+                          className="px-3.5 py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 text-slate-700 dark:text-slate-200 hover:text-[#0091FF] hover:border-[#0091FF] text-xs font-black transition-all shrink-0 cursor-pointer shadow-2xs flex items-center gap-1.5"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          <span>تغيير الخدمة</span>
+                        </button>
+                      </div>
+
+                      {/* Header */}
+                      <div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white">
+                          تعديل مواصفات وحساب تسعير الخدمة
+                        </h2>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">
+                          أدخل المقاسات الحقيقية والتفاصيل للحصول على سعر نهائي دقيق وموثوق.
+                        </p>
+                      </div>
+
                       {/* Dynamic price input fields based on active catalog schema */}
                       {selectedSubService?.price_config?.fields && selectedSubService.price_config.fields.length > 0 ? (
-                        <div className="space-y-4 pt-4 border-t border-slate-100">
+                        <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-blue-900/40">
                           {selectedSubService.price_config.fields.map((field: any) => {
                             const val = pricingInputs[field.id];
                             const hasError = !!validationErrors[field.id];
@@ -815,13 +931,13 @@ function BookingFlowContent() {
                               <div 
                                 key={field.id} 
                                 id={`field-container-${field.id}`} 
-                                className={`p-4 rounded-2xl border transition-all duration-200 bg-slate-50/20 hover:bg-slate-50/50 ${
-                                  hasError ? "border-red-200 bg-red-50/5" : "border-slate-150 hover:border-slate-200"
+                                className={`p-4 rounded-2xl border transition-all duration-200 bg-slate-50/50 dark:bg-[#050D24]/60 hover:bg-slate-50 dark:hover:bg-[#050D24] ${
+                                  hasError ? "border-red-300 dark:border-red-900 bg-red-50/10" : "border-slate-200/80 dark:border-blue-900/40 hover:border-slate-300"
                                 }`}
                               >
                                 <div className="flex gap-4 items-start">
                                   {hasIcon && (
-                                    <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/80 dark:border-blue-900/50 overflow-hidden flex items-center justify-center shrink-0 shadow-xs">
                                       <img 
                                         src={field.icon} 
                                         alt={field.label?.ar || field.label || ""} 
@@ -834,14 +950,14 @@ function BookingFlowContent() {
                                     {/* Field Label & Description */}
                                     <div className="space-y-1">
                                       <div className="flex justify-between items-center">
-                                        <label className="block text-xs font-black text-slate-800">
+                                        <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
                                           {field.label?.ar || field.label} {field.unit ? `(${field.unit})` : ""}
                                           {field.required && <span className="text-rose-500 mr-1">*</span>}
                                           {!field.required && <span className="text-[9px] text-slate-400 font-bold mr-1.5">(اختياري)</span>}
                                         </label>
                                         
                                         {field.type === "number" && field.id === "area" && (
-                                          <span className="text-xs font-black text-primary bg-primary/5 px-2 py-0.5 rounded-lg">
+                                          <span className="text-xs font-black text-[#0091FF] bg-blue-50 dark:bg-blue-950/80 px-2 py-0.5 rounded-lg border border-blue-100 dark:border-blue-900/50">
                                             {val !== "" && val !== undefined && val !== null ? val : "0"} {field.unit || "م²"}
                                           </span>
                                         )}
@@ -864,7 +980,7 @@ function BookingFlowContent() {
                                                 const currentVal = (val === "" || val === undefined || val === null) ? (field.min || 50) : Number(val);
                                                 handleFieldChange(field.id, Math.max(field.min || 50, currentVal - 10));
                                               }}
-                                              className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200/60 font-extrabold text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-colors"
+                                              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-blue-900/50 font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 transition-colors cursor-pointer"
                                             >
                                               -
                                             </button>
@@ -891,8 +1007,8 @@ function BookingFlowContent() {
                                                     }
                                                   }
                                                 }}
-                                                className={`w-full p-1.5 pl-7 rounded-xl border text-center text-xs font-black focus:outline-none bg-white font-sans [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
-                                                  hasError ? 'border-red-500 focus:border-red-500 bg-red-50/15' : 'border-slate-200 focus:border-primary'
+                                                className={`w-full p-1.5 pl-7 rounded-xl border text-center text-xs font-black focus:outline-none bg-white dark:bg-[#071739] text-slate-900 dark:text-white font-sans [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                                                  hasError ? 'border-red-500 focus:border-red-500 bg-red-50/15' : 'border-slate-200 dark:border-blue-900/60 focus:border-[#0091FF]'
                                                 }`}
                                               />
                                               <span className="absolute left-2 text-[8px] font-extrabold text-slate-400 pointer-events-none">
@@ -905,7 +1021,7 @@ function BookingFlowContent() {
                                                 const currentVal = (val === "" || val === undefined || val === null) ? (field.min || 50) : Number(val);
                                                 handleFieldChange(field.id, Math.min(field.max || 400, currentVal + 10));
                                               }}
-                                              className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200/60 font-extrabold text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-colors"
+                                              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-blue-900/50 font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 transition-colors cursor-pointer"
                                             >
                                               +
                                             </button>
@@ -918,11 +1034,11 @@ function BookingFlowContent() {
                                                 const currentVal = (val === "" || val === undefined || val === null) ? 0 : Number(val);
                                                 handleFieldChange(field.id, Math.max(field.min || 0, currentVal - 1));
                                               }}
-                                              className="w-9 h-9 rounded-xl bg-slate-150 border border-slate-200/60 font-extrabold text-slate-700 flex items-center justify-center hover:bg-slate-250 transition-all active:scale-90"
+                                              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-blue-900/50 font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 transition-all cursor-pointer"
                                             >
                                               -
                                             </button>
-                                            <span className="text-sm font-black w-8 text-center text-slate-800">
+                                            <span className="text-sm font-black w-8 text-center text-slate-800 dark:text-white">
                                               {(val === "" || val === undefined || val === null) ? "0" : val}
                                             </span>
                                             <button 
@@ -932,7 +1048,7 @@ function BookingFlowContent() {
                                                 if (field.max !== undefined && currentVal >= field.max) return;
                                                 handleFieldChange(field.id, currentVal + 1);
                                               }}
-                                              className="w-9 h-9 rounded-xl bg-slate-150 border border-slate-200/60 font-extrabold text-slate-700 flex items-center justify-center hover:bg-slate-250 transition-all active:scale-90"
+                                              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-blue-900/50 font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 transition-all cursor-pointer"
                                             >
                                               +
                                             </button>
@@ -960,61 +1076,67 @@ function BookingFlowContent() {
                                               onClick={() => handleFieldChange(field.id, true)}
                                               className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${
                                                 isTrueSelected 
-                                                  ? "border-primary bg-primary/5 text-primary font-bold shadow-sm shadow-primary/10" 
-                                                  : `bg-white hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200"}`
+                                                  ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/60 text-[#0091FF] font-bold shadow-xs" 
+                                                  : `bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300 hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200 dark:border-blue-900/50"}`
                                               }`}
                                             >
                                               <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
-                                                isTrueSelected ? "border-primary bg-primary" : "border-slate-300 bg-white"
+                                                isTrueSelected ? "border-[#0091FF] bg-[#0091FF]" : "border-slate-300 bg-white"
                                               }`}>
                                                 {isTrueSelected && <div className="w-1 h-1 rounded-full bg-white" />}
                                               </div>
-                                              <span className="text-xs font-bold text-slate-750">{trueLabel}</span>
+                                              <span className="text-xs font-bold">{trueLabel}</span>
                                             </div>
 
                                             <div 
                                               onClick={() => handleFieldChange(field.id, false)}
                                               className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${
                                                 isFalseSelected 
-                                                  ? "border-primary bg-primary/5 text-primary font-bold shadow-sm shadow-primary/10" 
-                                                  : `bg-white hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200"}`
+                                                  ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/60 text-[#0091FF] font-bold shadow-xs" 
+                                                  : `bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300 hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200 dark:border-blue-900/50"}`
                                               }`}
                                             >
                                               <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
-                                                isFalseSelected ? "border-primary bg-primary" : "border-slate-300 bg-white"
+                                                isFalseSelected ? "border-[#0091FF] bg-[#0091FF]" : "border-slate-300 bg-white"
                                               }`}>
                                                 {isFalseSelected && <div className="w-1 h-1 rounded-full bg-white" />}
                                               </div>
-                                              <span className="text-xs font-bold text-slate-750">{falseLabel}</span>
+                                              <span className="text-xs font-bold">{falseLabel}</span>
                                             </div>
                                           </div>
                                         );
                                       })()}
 
-                                      {field.type === "dropdown" && (
-                                        <div className="relative max-w-[280px]">
-                                          <select
-                                            value={val ?? ""}
-                                            onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                                            className={`w-full p-2.5 rounded-xl border text-xs font-bold bg-white focus:outline-none transition-colors appearance-none pr-10 ${
-                                              hasError ? 'border-red-500 focus:border-red-500 bg-red-50/15' : 'border-slate-200 focus:border-primary'
-                                            }`}
-                                          >
-                                            <option value="">-- اختر قيمة --</option>
-                                            {(field.options || []).map((opt: any) => (
-                                              <option key={opt.id} value={opt.id}>
+                                      {field.type === "dropdown" && field.options && (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                          {field.options.map((opt: any) => {
+                                            const isSelected = val === opt.id;
+                                            return (
+                                              <button
+                                                type="button"
+                                                key={opt.id}
+                                                onClick={() => handleFieldChange(field.id, opt.id)}
+                                                className={`p-2.5 rounded-xl border text-xs font-bold transition-all ${
+                                                  isSelected
+                                                    ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] shadow-xs"
+                                                    : "border-slate-200 dark:border-blue-900/50 text-slate-700 dark:text-slate-300 bg-white dark:bg-[#071739] hover:bg-slate-50"
+                                                }`}
+                                              >
                                                 {opt.label?.ar || opt.label}
-                                              </option>
-                                            ))}
-                                          </select>
-                                          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
-                                            <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                              <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path>
-                                            </svg>
-                                          </div>
+                                              </button>
+                                            );
+                                          })}
                                         </div>
                                       )}
                                     </div>
+
+                                    {/* Error Message */}
+                                    {hasError && (
+                                      <p className="text-[10px] font-bold text-red-500 flex items-center gap-1 animate-fade-in">
+                                        <ShieldAlert className="w-3 h-3" />
+                                        <span>{validationErrors[field.id]}</span>
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -1022,33 +1144,39 @@ function BookingFlowContent() {
                           })}
                         </div>
                       ) : (
-                        <div className="text-center text-xs text-slate-400 py-6">اختر خدمة لعرض خيارات تسعيرها التفصيلية.</div>
+                        <div className="py-8 text-center bg-slate-50 dark:bg-[#050D24] rounded-2xl border border-slate-200/80 dark:border-blue-900/40 p-4">
+                          <p className="text-xs font-bold text-slate-500">
+                            هذه الخدمة جاهزة للتسعير المباشر. اضغط على زر "احسب السعر" أدناه.
+                          </p>
+                        </div>
                       )}
 
-                      {/* Add-ons selection */}
+                      {/* Addons selection */}
                       {selectedSubService?.price_config?.options && selectedSubService.price_config.options.length > 0 && (
-                        <div className="space-y-3 pt-4 border-t border-slate-150">
-                          <label className="block text-sm font-bold text-slate-700">خيارات وخدمات إضافية مقترحة</label>
-                          <div className="space-y-2">
+                        <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-blue-900/40">
+                          <label className="block text-xs font-black text-slate-800 dark:text-white">إضافات اختيارية مقترحة</label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             {selectedSubService.price_config.options.map((addon: any) => {
-                              const isSelected = selectedAddons.includes(addon.key);
+                              const isChecked = selectedAddons.includes(addon.key);
                               return (
-                                <div 
+                                <div
                                   key={addon.key}
                                   onClick={() => handleToggleAddon(addon.key)}
-                                  className={`p-3.5 rounded-xl border flex justify-between items-center cursor-pointer transition-all ${
-                                    isSelected ? "border-primary bg-primary/5 text-primary" : "border-slate-200 hover:border-slate-350"
+                                  className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                                    isChecked 
+                                      ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/50 text-[#0091FF]" 
+                                      : "border-slate-200 dark:border-blue-900/40 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300 hover:border-slate-300"
                                   }`}
                                 >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
-                                      isSelected ? "bg-primary border-primary text-white" : "border-slate-300 bg-white"
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-4 h-4 rounded-md border flex items-center justify-center ${
+                                      isChecked ? "border-[#0091FF] bg-[#0091FF] text-white" : "border-slate-300 bg-white dark:bg-slate-800"
                                     }`}>
-                                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                      {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                                     </div>
-                                    <span className="text-xs font-bold text-slate-700">{addon.key}</span>
+                                    <span className="text-xs font-bold">{addon.key}</span>
                                   </div>
-                                  <span className="text-xs font-black text-slate-500">+{addon.value} ج.م</span>
+                                  <span className="text-[11px] font-black">+{addon.value} ج.م</span>
                                 </div>
                               );
                             })}
@@ -1060,167 +1188,96 @@ function BookingFlowContent() {
                 </div>
               )}
 
-              {/* STEP 2: SCHEDULE */}
+              {/* STEP 2: SCHEDULE APPOINTMENT */}
               {currentStep === 1 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-black text-slate-800">اختر موعد وصول الفني المناسب</h2>
-                    <p className="text-slate-400 text-xs">حدد اليوم والفترة الزمنية لتلبية الطلب.</p>
+                    <h2 className="text-xl font-black text-slate-800 dark:text-white">اختيار موعد ويوم الزيارة</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 font-medium">حدد التاريخ والوقت المناسب لحضور فريق العمل المعتمد لمنزلك.</p>
                   </div>
 
-                  {/* Dates list (Horizontal Scroll + Manual Date Input) */}
-                  <div className="space-y-4">
-                    <style dangerouslySetInnerHTML={{__html: `
-                      .no-scrollbar::-webkit-scrollbar {
-                        display: none;
-                      }
-                      .no-scrollbar {
-                        -ms-overflow-style: none;
-                        scrollbar-width: none;
-                      }
-                    `}} />
-                    
-                    <div className="flex justify-between items-center">
-                      <label className="block text-sm font-bold text-slate-700">الأيام المتاحة للحجز</label>
-                      <span className="text-[10px] text-slate-400 hidden sm:inline">اسحب أفقياً لعرض المزيد من الأيام</span>
-                    </div>
-
-                    {/* Horizontal scrollable date strip with arrow indicators */}
-                    <div className="relative flex items-center group/slider">
-                      {/* Right Arrow (RTL back) */}
-                      <button
-                        type="button"
-                        onClick={() => scrollDates('right')}
-                        className="absolute right-0 z-10 w-8 h-8 rounded-full bg-white/95 border border-slate-200 shadow-md flex items-center justify-center text-slate-500 hover:text-primary hover:bg-slate-50 active:scale-90 transition-all select-none"
-                        title="السابق"
-                      >
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-
-                      <div 
-                        ref={dateScrollRef}
-                        className="flex overflow-x-auto gap-2.5 pb-2 pt-1 px-9 snap-x snap-mandatory no-scrollbar w-full scroll-smooth"
-                      >
-                        {Array.from({ length: 14 }).map((_, i) => {
-                          const dateObj = new Date();
-                          dateObj.setDate(dateObj.getDate() + i + 1);
-                          const formatted = formatDateLocal(dateObj);
-                          const dayName = dateObj.toLocaleDateString("ar-EG", { weekday: "long" });
-                          const dateLabel = dateObj.toLocaleDateString("ar-EG", { day: "numeric", month: "short" });
-
-                          const isAvailable = availabilityMap[formatted] !== false;
-                          const isSelected = scheduledDate === formatted;
-
-                          return (
-                            <button
-                              type="button"
-                              key={formatted}
-                              disabled={!isAvailable}
-                              onClick={() => {
-                                setScheduledDate(formatted);
-                                const parts = formatted.split("-");
-                                if (parts.length === 3) {
-                                  setManualDateText(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                                }
-                              }}
-                              className={`snap-start shrink-0 min-w-[92px] p-2.5 rounded-xl border text-center transition-all flex flex-col justify-center gap-0.5 select-none ${
-                                isSelected 
-                                  ? "bg-primary border-primary text-white shadow-md shadow-primary/10 scale-[1.02]" 
-                                  : isAvailable
-                                    ? "bg-emerald-50/30 border-emerald-200/50 hover:border-emerald-400 text-emerald-700 hover:bg-emerald-50/60 cursor-pointer"
-                                    : "bg-rose-50/20 border-rose-200/20 text-rose-400/80 cursor-not-allowed opacity-60"
-                              }`}
-                            >
-                              <span className={`text-[9px] block font-bold ${isSelected ? "text-white/80" : "text-slate-400"}`}>{dayName}</span>
-                              <span className="text-xs block font-black">{dateLabel}</span>
-                              <span className={`text-[8px] font-bold block mt-0.5 ${isSelected ? "text-white/90" : isAvailable ? "text-emerald-600" : "text-rose-400"}`}>
-                                {isAvailable ? "متاح" : "غير متاح"}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Left Arrow (RTL forward) */}
-                      <button
-                        type="button"
-                        onClick={() => scrollDates('left')}
-                        className="absolute left-0 z-10 w-8 h-8 rounded-full bg-white/95 border border-slate-200 shadow-md flex items-center justify-center text-slate-500 hover:text-primary hover:bg-slate-50 active:scale-90 transition-all select-none"
-                        title="التالي"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Styled Manual Input Alternative */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100/80">
-                      <div className="space-y-0.5 text-right">
-                        <span className="text-xs font-bold text-slate-700 block">أو اكتب تاريخاً مخصصاً (يوم-شهر-سنة):</span>
-                        <span className="text-[9px] text-slate-400 block">مثال: 28-06-2026 (خلال الـ 30 يوماً القادمة)</span>
-                      </div>
-                      <div className="relative flex items-center w-full sm:w-auto">
-                        <input 
-                          type="text"
-                          placeholder="مثال: 28-06-2026"
-                          value={manualDateText}
-                          onChange={(e) => setManualDateText(e.target.value)}
-                          className="w-full sm:w-[160px] p-2 px-3 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-800 focus:border-primary focus:outline-none hover:border-slate-350 transition-colors placeholder-slate-300"
-                        />
+                  {/* Date picker */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-black text-slate-800 dark:text-white">اليوم المفضل (خلال 30 يوماً)</label>
+                      <div className="flex gap-1">
+                        <button type="button" onClick={() => scrollDates('right')} className="p-1 rounded-lg border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 hover:bg-slate-100 transition-colors cursor-pointer">
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                        <button type="button" onClick={() => scrollDates('left')} className="p-1 rounded-lg border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 hover:bg-slate-100 transition-colors cursor-pointer">
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
 
-                    {/* Error & Warning banners */}
-                    {dateWarningText && (
-                      <div className="flex flex-col gap-2 p-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold transition-all">
-                        <div className="flex items-center gap-2">
-                          <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
-                          <span>{dateWarningText}</span>
-                        </div>
+                    <div 
+                      ref={dateScrollRef}
+                      className="flex gap-2 overflow-x-auto pb-2 scroll-smooth no-scrollbar"
+                      style={{ scrollbarWidth: 'none' }}
+                    >
+                      {Array.from({ length: 30 }).map((_, idx) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + idx);
+                        const dateStr = formatDateLocal(d);
+                        const isSelected = scheduledDate === dateStr;
+                        const isAvailable = availabilityMap[dateStr] !== false;
                         
-                        {/* Nearest available suggestion trigger */}
-                        {nextAvailableSuggestion && (() => {
-                          const nextAvailDateObj = new Date(nextAvailableSuggestion);
-                          const formattedNextLabel = nextAvailDateObj.toLocaleDateString("ar-EG", { weekday: 'long', day: 'numeric', month: 'short' });
-                          return (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const parts = nextAvailableSuggestion!.split("-");
-                                if (parts.length === 3) {
-                                  setManualDateText(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                                }
-                              }}
-                              className="mt-1 w-full sm:w-auto self-start p-2 px-3.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px] font-black hover:bg-emerald-100 transition-colors flex items-center gap-1.5 justify-center animate-pulse"
-                            >
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>أقرب موعد تالي متاح: {formattedNextLabel} (اضغط هنا لاختياره)</span>
-                            </button>
-                          );
-                        })()}
-                      </div>
-                    )}
+                        const dayName = d.toLocaleDateString("ar-EG", { weekday: "short" });
+                        const dayNum = d.getDate();
+                        const monthName = d.toLocaleDateString("ar-EG", { month: "short" });
+
+                        return (
+                          <button
+                            type="button"
+                            key={dateStr}
+                            disabled={!isAvailable || isLoadingAvailability}
+                            onClick={() => {
+                              setScheduledDate(dateStr);
+                              setManualDateText(dateStr);
+                            }}
+                            className={`flex flex-col items-center justify-center p-3 rounded-2xl border min-w-[76px] transition-all cursor-pointer shrink-0 ${
+                              !isAvailable 
+                                ? "opacity-35 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed" 
+                                : isSelected 
+                                  ? "border-[#0091FF] bg-[#0091FF] text-white shadow-md shadow-blue-500/25 scale-105" 
+                                  : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-[#0091FF]"
+                            }`}
+                          >
+                            <span className="text-[10px] font-bold">{dayName}</span>
+                            <span className="text-lg font-black my-0.5">{dayNum}</span>
+                            <span className="text-[10px] font-bold opacity-80">{monthName}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  {/* Time Slots */}
-                  <div className="space-y-3 pt-4 border-t border-slate-150">
-                    <label className="block text-sm font-bold text-slate-700">الفترات الزمنية المتاحة لوصول الفني</label>
-                    <div className="grid grid-cols-3 gap-2" key={scheduledDate}>
-                      {["09:00 ص", "10:00 ص", "11:00 ص", "12:00 م", "01:00 م", "02:00 م", "03:00 م", "04:00 م", "05:00 م"].map((time, index) => (
-                        <div
-                          key={time}
-                          onClick={() => setScheduledTime(time)}
-                          className={`p-3.5 rounded-xl border text-center cursor-pointer font-bold text-xs transition-all animate-fade-in-up ${
-                            scheduledTime === time 
-                              ? "bg-primary border-primary text-white shadow-md shadow-primary/10" 
-                              : "bg-white border-slate-200 hover:border-slate-300 text-slate-600"
-                          }`}
-                          style={{
-                            animationDelay: `${index * 80}ms`,
-                          }}
-                        >
-                          {time}
-                        </div>
-                      ))}
+                  {/* Time Slot Picker */}
+                  <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-blue-900/40">
+                    <label className="block text-xs font-black text-slate-800 dark:text-white">الفترة الزمنية المفضلة للبدء</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {[
+                        "09:00 ص",
+                        "12:00 م",
+                        "03:00 م",
+                        "06:00 م"
+                      ].map((slot) => {
+                        const isSelected = scheduledTime === slot;
+                        return (
+                          <button
+                            type="button"
+                            key={slot}
+                            onClick={() => setScheduledTime(slot)}
+                            className={`p-3 rounded-xl border text-xs font-black transition-all cursor-pointer ${
+                              isSelected 
+                                ? "border-[#0091FF] bg-[#0091FF] text-white shadow-md shadow-blue-500/25" 
+                                : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-[#0091FF]"
+                            }`}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -1230,152 +1287,129 @@ function BookingFlowContent() {
               {currentStep === 2 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-black text-slate-800">تفاصيل عنوان تسليم الخدمة</h2>
-                    <p className="text-slate-400 text-xs">يرجى كتابة تفاصيل العنوان بدقة لسهولة وصول الفني.</p>
+                    <h2 className="text-xl font-black text-slate-800 dark:text-white">عنوان تقديم الخدمة</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">يرجى كتابة تفاصيل العنوان بدقة لضمان وصول الفني في الموعد المحدد.</p>
                   </div>
 
-                  {/* Manual form input fields */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-600">المحافظة</label>
-                      <select 
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">المحافظة</label>
+                      <select
                         value={address.governorate}
                         onChange={(e) => handleGovernorateChange(e.target.value)}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:border-primary focus:outline-none"
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
                       >
-                        {Object.keys(REGIONS_MAP).map((gov) => (
-                          <option key={gov} value={gov}>{gov}</option>
-                        ))}
+                        <option value="القاهرة">القاهرة</option>
+                        <option value="الجيزة">الجيزة</option>
                       </select>
                     </div>
+
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-600">المنطقة / المدينة</label>
-                      <select 
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">المنطقة / الحي</label>
+                      <select
                         value={address.city}
-                        onChange={(e) => setAddress({...address, city: e.target.value})}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:border-primary focus:outline-none"
+                        onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
                       >
-                        {(REGIONS_MAP[address.governorate] || []).map((city) => (
-                          <option key={city} value={city}>{city}</option>
+                        {REGIONS_MAP[address.governorate]?.map((c) => (
+                          <option key={c} value={c}>{c}</option>
                         ))}
                       </select>
                     </div>
-                  </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-600">اسم الشارع</label>
-                    <input 
-                      type="text"
-                      placeholder="مثال: شارع 9، أمام مدرسة النصر"
-                      value={address.street}
-                      onChange={(e) => setAddress({...address, street: e.target.value})}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-600">رقم المبنى</label>
-                      <input 
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">اسم الشارع</label>
+                      <input
                         type="text"
+                        placeholder="مثال: شارع مصدق، بجوار مسجد الصفا"
+                        value={address.street}
+                        onChange={(e) => setAddress({ ...address, street: e.target.value })}
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">رقم العمارة / المبنى</label>
+                      <input
+                        type="text"
+                        placeholder="مثال: 14 ب"
                         value={address.building}
-                        onChange={(e) => setAddress({...address, building: e.target.value})}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none text-center bg-white"
+                        onChange={(e) => setAddress({ ...address, building: e.target.value })}
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
                       />
                     </div>
+
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-600">رقم الدور</label>
-                      <input 
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">الدور والشقة (اختياري)</label>
+                      <input
                         type="text"
+                        placeholder="مثال: الدور الرابع - شقة 8"
                         value={address.floor}
-                        onChange={(e) => setAddress({...address, floor: e.target.value})}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none text-center bg-white"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-600">رقم الشقة</label>
-                      <input 
-                        type="text"
-                        value={address.apartment}
-                        onChange={(e) => setAddress({...address, apartment: e.target.value})}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none text-center bg-white"
+                        onChange={(e) => setAddress({ ...address, floor: e.target.value })}
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
                       />
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* STEP 4: REVIEW & CONFIRM (Guest OTP Checkout) */}
+              {/* STEP 4: REVIEW & CONTACT */}
               {currentStep === 3 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-black text-slate-800">مراجعة البيانات وتأكيد الطلب</h2>
-                    <p className="text-slate-400 text-xs">يرجى كتابة الاسم ورقم الهاتف لتأكيد وإتمام حجزك.</p>
+                    <h2 className="text-xl font-black text-slate-800 dark:text-white">بيانات التواصل والتأكيد</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">خطوتك الأخيرة لإتمام وتأكيد الحجز الفوري مع فريق فريش هوم.</p>
                   </div>
 
-                  {/* Auth status card */}
-                  {!isClientUserLoggedIn ? (
-                    <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl text-[11px] text-primary font-bold flex justify-between items-center gap-4 text-right">
-                      <span>هل تمتلك حساباً مسجلاً؟ سجل دخولك الآن لتعبئة بياناتك تلقائياً وحفظ هذا الحجز تحت حسابك.</span>
-                      <Link 
-                        href={loginRedirectUrl} 
-                        className="bg-primary hover:bg-primary/95 text-white p-2 px-4 rounded-xl transition-all text-[10px] shrink-0 font-extrabold shadow-sm"
-                      >
-                        تسجيل الدخول
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-[11px] text-emerald-700 font-bold text-right">
-                      مرحباً بك! بما أنك مسجل الدخول، سيتم ربط هذا الحجز بحسابك الشخصي في فريش هوم تلقائياً لسهولة تتبعه وإدارته من لوحة التحكم.
-                    </div>
-                  )}
-
-                  {/* Name and Phone Inputs */}
-                  <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-600">الاسم بالكامل</label>
-                      <input 
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">الاسم بالكامل</label>
+                      <input
                         type="text"
-                        placeholder="اكتب اسمك بالكامل"
+                        placeholder="مثال: محمد أحمد"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white"
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-600">رقم الهاتف (الواتساب)</label>
-                      <input 
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">رقم الهاتف (الواتساب)</label>
+                      <input
                         type="tel"
                         placeholder="مثال: 01012345678"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white"
+                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
                       />
                     </div>
                   </div>
 
                   {/* Payment options */}
-                  <div className="space-y-3">
-                    <label className="block text-sm font-bold text-slate-700">طريقة الدفع المقترحة</label>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-blue-900/40">
+                    <label className="block text-xs font-black text-slate-800 dark:text-white">طريقة الدفع المقترحة</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div 
                         onClick={() => setPaymentMethod("cash")}
                         className={`p-3.5 rounded-xl border flex justify-between items-center cursor-pointer transition-all ${
-                          paymentMethod === "cash" ? "border-primary bg-primary/5 text-primary" : "border-slate-200 hover:border-slate-350"
+                          paymentMethod === "cash" 
+                            ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/60 text-[#0091FF]" 
+                            : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300"
                         }`}
                       >
                         <span className="text-xs font-bold">نقداً عند انتهاء الخدمة (كاش)</span>
-                        <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === "cash" ? "border-primary" : "border-slate-300"}`}></div>
+                        <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === "cash" ? "border-[#0091FF]" : "border-slate-300"}`}></div>
                       </div>
                       <div 
                         onClick={() => setPaymentMethod("instapay")}
                         className={`p-3.5 rounded-xl border flex justify-between items-center cursor-pointer transition-all ${
-                          paymentMethod === "instapay" ? "border-primary bg-primary/5 text-primary" : "border-slate-200 hover:border-slate-350"
+                          paymentMethod === "instapay" 
+                            ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/60 text-[#0091FF]" 
+                            : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300"
                         }`}
                       >
-                        <span className="text-xs font-bold">تحويل إنستا باي / فودافون كاش</span>
-                        <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === "instapay" ? "border-primary" : "border-slate-300"}`}></div>
+                        <span className="text-xs font-bold">تحويل إنستا باي / محفظة إلكترونية</span>
+                        <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === "instapay" ? "border-[#0091FF]" : "border-slate-300"}`}></div>
                       </div>
                     </div>
                   </div>
@@ -1383,29 +1417,31 @@ function BookingFlowContent() {
               )}
 
               {/* Navigation Actions */}
-              <div className="flex justify-between items-center pt-6 border-t border-slate-100 mt-8">
+              <div className="flex justify-between items-center pt-6 border-t border-slate-100 dark:border-blue-900/40 mt-8">
                 {currentStep > 0 ? (
                   <button 
                     onClick={handleBack}
-                    className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                   >
                     <ArrowRight className="w-4 h-4 rotate-180" />
                     <span>الرجوع للخلف</span>
                   </button>
                 ) : (
-                  <Link href="/" className="text-xs text-slate-400 hover:text-slate-500">
+                  <Link href="/" className="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                     إلغاء والعودة للرئيسية
                   </Link>
                 )}
 
                 {currentStep < STEPS.length - 1 ? (
                   currentStep === 0 ? (
-                    !hasCalculated ? (
+                    !selectedSubService ? (
+                      <span className="text-xs font-bold text-slate-400">يرجى اختيار الخدمة للمتابعة</span>
+                    ) : !hasCalculated ? (
                       <button 
                         type="button"
                         onClick={handleCalculate}
                         disabled={isCalculating}
-                        className="flex items-center gap-1.5 bg-primary text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md hover:bg-primary/95 transition-all active:scale-95"
+                        className="flex items-center gap-1.5 bg-[#0091FF] text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md shadow-blue-500/25 hover:bg-blue-600 transition-all active:scale-95 cursor-pointer"
                       >
                         <span>{isCalculating ? "جاري الحساب..." : "احسب السعر"}</span>
                         <ArrowLeft className="w-4 h-4 rotate-180" />
@@ -1414,9 +1450,9 @@ function BookingFlowContent() {
                       <button 
                         type="button"
                         onClick={handleNext}
-                        className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md transition-all active:scale-95"
+                        className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md shadow-emerald-600/25 transition-all active:scale-95 cursor-pointer"
                       >
-                        <span>الخطوة التالية</span>
+                        <span>الخطوة التالية (الموعد)</span>
                         <ArrowLeft className="w-4 h-4 rotate-180" />
                       </button>
                     )
@@ -1425,7 +1461,7 @@ function BookingFlowContent() {
                       type="button"
                       onClick={handleNext}
                       disabled={!isStepValid()}
-                      className="flex items-center gap-1.5 bg-primary disabled:bg-slate-200 text-white disabled:text-slate-400 font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md disabled:shadow-none transition-all active:scale-95"
+                      className="flex items-center gap-1.5 bg-[#0091FF] disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
                     >
                       <span>الخطوة التالية</span>
                       <ArrowLeft className="w-4 h-4 rotate-180" />
@@ -1435,7 +1471,7 @@ function BookingFlowContent() {
                   <button 
                     onClick={handleCompleteBooking}
                     disabled={!isStepValid() || isSubmittingBooking}
-                    className="flex items-center gap-2 bg-secondary disabled:bg-slate-200 text-slate-900 disabled:text-slate-400 font-black px-8 py-3 rounded-xl text-sm shadow-md disabled:shadow-none"
+                    className="flex items-center gap-2 bg-[#2ECC71] hover:bg-[#27ae60] disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white disabled:text-slate-400 font-black px-7 py-3 rounded-xl text-sm shadow-md shadow-emerald-500/25 transition-all cursor-pointer"
                   >
                     {isSubmittingBooking ? (
                       <span>جاري إتمام حجزك...</span>
@@ -1450,29 +1486,33 @@ function BookingFlowContent() {
               </div>
             </div>
 
-            {/* Price invoice details block */}
-            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-[200px] z-20">
-              <div className={`bg-white/95 backdrop-blur-md rounded-2xl p-5 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] space-y-4 transition-all duration-500 ${
-                animatePrice ? 'translate-y-0 opacity-100 scale-100' : 'lg:translate-y-4 lg:opacity-90'
+            {/* Price invoice details sidebar */}
+            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-[180px] z-20">
+              <div className={`bg-white dark:bg-[#071739] rounded-3xl p-5 border border-slate-200/80 dark:border-blue-900/50 shadow-sm space-y-4 transition-all duration-500 ${
+                animatePrice ? 'translate-y-0 opacity-100 scale-100' : 'lg:translate-y-2 lg:opacity-90'
               }`}>
-                <h3 className="font-extrabold text-slate-800 text-base border-b border-slate-100 pb-3">ملخص الفاتورة المعتمدة</h3>
+                <h3 className="font-black text-slate-900 dark:text-white text-sm sm:text-base border-b border-slate-100 dark:border-blue-900/40 pb-3">
+                  ملخص التكلفة والفاتورة
+                </h3>
                 
                 {currentStep === 0 && !hasCalculated ? (
                   <div className="py-8 px-4 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center mx-auto text-primary">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/70 flex items-center justify-center mx-auto text-[#0091FF]">
                       <Sparkles className="w-6 h-6 animate-pulse" />
                     </div>
-                    <p className="text-xs font-bold text-slate-500 leading-relaxed">
-                      يرجى تحديد تفاصيل الخدمة واستكمال الحقول المطلوبة ثم الضغط على زر <span className="text-primary font-extrabold">"احسب السعر"</span> لعرض التكلفة النهائية هنا.
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {selectedSubService 
+                        ? "أدخل مواصفات ومقاسات طلبك واضغط على 'احسب السعر' لعرض التكلفة المعتمدة." 
+                        : "يرجى تحديد الخدمة المطلوبة من القائمة لحساب تكلفة الحجز."}
                     </p>
                   </div>
                 ) : (
                   <>
-                    <div className="space-y-3.5 text-xs text-slate-600">
+                    <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
                       <div className="flex justify-between items-start gap-3">
                         <span className="font-bold">الخدمة:</span>
-                        <span className="text-left font-extrabold text-primary">
-                          {selectedSubService?.title?.ar || selectedSubService?.title || "حساب السعر للخدمة..."}
+                        <span className="text-left font-black text-[#0091FF] dark:text-[#22A5FC]">
+                          {selectedSubService?.title?.ar || selectedSubService?.title || "حساب السعر..."}
                         </span>
                       </div>
 
@@ -1489,9 +1529,9 @@ function BookingFlowContent() {
                           const optFalse = field.options && field.options.length > 1
                             ? field.options.find((o: any) => o.id === "false" || o.id === "no")
                             : null;
+                          
                           const trueLabel = optTrue?.label?.ar || optTrue?.label || "نعم";
                           const falseLabel = optFalse?.label?.ar || optFalse?.label || "لا";
-                          
                           displayValue = v === true ? trueLabel : falseLabel;
                         } else if (field.type === "dropdown") {
                           const option = field.options?.find((o: any) => o.id === String(v));
@@ -1503,24 +1543,24 @@ function BookingFlowContent() {
                         return (
                           <div key={k} className="flex justify-between">
                             <span className="font-bold">{field.label?.ar || field.label}:</span>
-                            <span className="font-black text-slate-800">
+                            <span className="font-black text-slate-800 dark:text-white">
                               {displayValue}
                             </span>
                           </div>
                         );
                       })}
                       
-                      {/* Selected Addons invoice display */}
+                      {/* Selected Addons */}
                       {selectedAddons.length > 0 && selectedSubService?.price_config?.options && (
-                        <div className="space-y-1.5 border-t border-slate-100 pt-3">
+                        <div className="space-y-1.5 border-t border-slate-100 dark:border-blue-900/30 pt-3">
                           <span className="font-bold block text-slate-400">الإضافات المحددة:</span>
                           {selectedAddons.map((addId) => {
                             const addon = selectedSubService.price_config.options.find((a: any) => a.key === addId);
                             if (!addon) return null;
                             return (
-                              <div key={addId} className="flex justify-between text-[11px] font-semibold text-slate-500">
+                              <div key={addId} className="flex justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                                 <span>- {addon.key}</span>
-                                <span className="font-bold">+{addon.value} ج.م</span>
+                                <span className="font-bold text-[#0091FF]">+{addon.value} ج.م</span>
                               </div>
                             );
                           })}
@@ -1529,134 +1569,65 @@ function BookingFlowContent() {
                       
                       {/* Date & Time if selected */}
                       {(scheduledDate || scheduledTime) && (
-                        <div className="space-y-2 border-t border-slate-100 pt-3">
+                        <div className="space-y-2 border-t border-slate-100 dark:border-blue-900/30 pt-3">
                           <span className="font-bold block text-slate-400">الموعد المحدد:</span>
                           {scheduledDate && (
-                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800">
-                              <Calendar className="w-3.5 h-3.5 text-secondary" />
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800 dark:text-slate-200">
+                              <Calendar className="w-3.5 h-3.5 text-[#0091FF]" />
                               <span>{scheduledDate}</span>
                             </div>
                           )}
                           {scheduledTime && (
-                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800">
-                              <Clock className="w-3.5 h-3.5 text-secondary" />
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800 dark:text-slate-200">
+                              <Clock className="w-3.5 h-3.5 text-[#0091FF]" />
                               <span>بين الساعة {scheduledTime}</span>
                             </div>
                           )}
                         </div>
                       )}
 
-                      {/* Governorate and city if step > 2 */}
-                      {currentStep >= 3 && address.street && (
-                        <div className="space-y-2 border-t border-slate-100 pt-3">
+                      {/* Location */}
+                      {currentStep >= 2 && address.street && (
+                        <div className="space-y-1 border-t border-slate-100 dark:border-blue-900/30 pt-3">
                           <span className="font-bold block text-slate-400">العنوان:</span>
-                          <div className="flex items-start gap-1.5 text-[11px] text-slate-800 font-semibold leading-relaxed">
-                            <MapPin className="w-3.5 h-3.5 text-secondary mt-0.5 shrink-0" />
-                            <span>{address.governorate}، {address.city}، {address.street}، عمارة {address.building}</span>
-                          </div>
+                          <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">
+                            {address.governorate}، {address.city} - {address.street}
+                          </p>
                         </div>
                       )}
                     </div>
 
-                    <div className="border-t border-slate-150 pt-4 space-y-2">
-                      <div className="flex justify-between text-xs text-slate-500 font-semibold">
-                        <span>قيمة الخدمة الأساسية والإضافات:</span>
-                        <span>{isCalculating ? "..." : `${priceDetails.basePrice + priceDetails.extraFees} ج.م`}</span>
-                      </div>
-                      {priceDetails.discount > 0 && (
-                        <div className="flex justify-between text-xs text-emerald-600 font-semibold">
-                          <span>خصومات مطبقة:</span>
-                          <span>-{priceDetails.discount} ج.م</span>
+                    {/* Total Price Card */}
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50/60 dark:from-[#050D24] dark:to-[#071739] p-4 rounded-2xl border border-blue-100 dark:border-blue-900/50 space-y-2.5">
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-xs font-black text-slate-700 dark:text-slate-200">المبلغ الإجمالي</span>
+                        <div className="text-left">
+                          <span className="text-2xl font-black text-[#0091FF] dark:text-[#22A5FC]">
+                            {priceDetails.total}
+                          </span>
+                          <span className="text-xs font-black text-slate-500 dark:text-slate-400 mr-1">ج.م</span>
                         </div>
-                      )}
-
-                      <div className="flex justify-between text-base font-black text-primary border-t border-dashed border-slate-200 pt-3.5">
-                        <span>إجمالي القيمة:</span>
-                        <span>{isCalculating ? "جاري الحساب..." : `${priceDetails.total} ج.م`}</span>
                       </div>
+                      <p className="text-[10px] text-slate-400 font-bold">شامل المعاينة والمعدات وضمان الخدمة</p>
                     </div>
                   </>
                 )}
-              </div>
-
-              {/* Security guarantee box */}
-              <div className="bg-emerald-500/5 border border-emerald-500/10 backdrop-blur-sm rounded-2xl p-4 flex gap-3 text-xs text-slate-600 shadow-[0_4px_16px_rgba(16,185,129,0.02)]">
-                <ShieldAlert className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <strong className="block text-slate-800">ضمان الأسعار المعتمد</strong>
-                  <p className="leading-relaxed font-light text-slate-500">
-                    الأسعار موضحة بشفافية وتخضع لقواعد التسعير الرسمية المعتمدة لشركة فريش هوم. لن يطلب منك الفني دفع أي مبالغ إضافية بخلاف الفاتورة الموضحة.
-                  </p>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </main>
-      
-      {/* Mobile Price Popup Modal */}
-      {showMobilePriceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm lg:hidden animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 space-y-5 animate-[scaleUp_0.3s_cubic-bezier(0.34,1.56,0.64,1)]">
-            <div className="text-center space-y-2">
-              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto text-emerald-600">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-              <h4 className="text-lg font-black text-slate-800">تم احتساب السعر بنجاح!</h4>
-              <p className="text-slate-400 text-xs">إليك القيمة التفصيلية المعتمدة لطلبك.</p>
-            </div>
 
-            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/50 space-y-3">
-              <div className="flex justify-between text-xs text-slate-500 font-bold">
-                <span>قيمة الخدمة الأساسية والإضافات:</span>
-                <span>{priceDetails.basePrice + priceDetails.extraFees} ج.م</span>
-              </div>
-              {priceDetails.discount > 0 && (
-                <div className="flex justify-between text-xs text-emerald-600 font-extrabold">
-                  <span>خصومات مطبقة:</span>
-                  <span>-{priceDetails.discount} ج.م</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm font-black text-primary border-t border-dashed border-slate-200 pt-3 mt-1">
-                <span>إجمالي القيمة:</span>
-                <span>{priceDetails.total} ج.م</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMobilePriceModal(false);
-                  handleNext();
-                }}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/10"
-              >
-                <span>موافق ومتابعة الحجز</span>
-                <ArrowLeft className="w-4 h-4 rotate-180" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowMobilePriceModal(false)}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-xs transition-all text-center"
-              >
-                تعديل التفاصيل
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
       <Footer />
     </>
   );
 }
 
-export default function BookingFlow() {
+export default function BookingPage() {
   return (
     <Suspense fallback={
-      <div className="flex-1 bg-slate-50 py-10 flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#040A1C]">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-[#0091FF]"></div>
       </div>
     }>
       <BookingFlowContent />
