@@ -977,12 +977,12 @@ function BookingFlowContent() {
         });
       });
 
-      // After the glide animation completes (420ms), finalize state
+      // After the glide animation completes (60s ultra slow-motion mode), finalize state
       setTimeout(() => {
         setSelectedPath(prev => [...prev, node]);
         setMorphState(null);
         setTransitioningNodeId(null);
-      }, 420);
+      }, 60000);
     } else {
       // Direct selection or leaf node
       setTransitioningNodeId(node.id);
@@ -994,7 +994,7 @@ function BookingFlowContent() {
           setSelectedPath(prev => [...prev, node]);
         }
         setTransitioningNodeId(null);
-      }, 280);
+      }, 60000);
     }
   };
 
@@ -1004,7 +1004,7 @@ function BookingFlowContent() {
     setTimeout(() => {
       setSelectedPath(prev => prev.slice(0, -1));
       setIsExitingHierarchy(false);
-    }, 260);
+    }, 60000);
   };
 
   const handleHierarchyBreadcrumbClick = (targetIdx: number) => {
@@ -1013,7 +1013,7 @@ function BookingFlowContent() {
     setTimeout(() => {
       setSelectedPath(prev => prev.slice(0, targetIdx + 1));
       setIsExitingHierarchy(false);
-    }, 260);
+    }, 60000);
   };
 
   const handleHierarchyReset = () => {
@@ -1022,7 +1022,7 @@ function BookingFlowContent() {
     setTimeout(() => {
       setSelectedPath([]);
       setIsExitingHierarchy(false);
-    }, 260);
+    }, 60000);
   };
 
   return (
@@ -1092,7 +1092,7 @@ function BookingFlowContent() {
                             height: morphState.isAnimating ? "auto" : `${morphState.initHeight}px`,
                             minHeight: morphState.isAnimating ? "84px" : `${morphState.initHeight}px`,
                             zIndex: 50,
-                            transition: "all 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+                            transition: "all 60000ms ease-in-out",
                           }}
                           className={`rounded-2xl border border-blue-300/90 dark:border-blue-700 bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] shadow-xl shadow-blue-500/25 overflow-hidden ${
                             morphState.isAnimating 
@@ -1101,7 +1101,7 @@ function BookingFlowContent() {
                           }`}
                         >
                           <div className={`flex ${morphState.isAnimating ? "items-center gap-3.5 min-w-0" : "flex-col items-center justify-center text-center"}`}>
-                            <div className={`rounded-2xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center shrink-0 shadow-2xs transition-all duration-300 w-12 h-12 sm:w-14 sm:h-14 p-2.5`}>
+                            <div className={`rounded-2xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center shrink-0 shadow-2xs transition-all duration-[60000ms] w-12 h-12 sm:w-14 sm:h-14 p-2.5`}>
                               {resolveIconUrl(morphState.node.image) ? (
                                 <img src={resolveIconUrl(morphState.node.image) || ""} alt="" className="w-full h-full object-contain" />
                               ) : (
@@ -1112,13 +1112,13 @@ function BookingFlowContent() {
                               )}
                             </div>
                             <div className={`min-w-0 space-y-0.5 ${morphState.isAnimating ? "text-right" : "text-center mt-2.5"}`}>
-                              <h3 className={`font-black text-slate-900 dark:text-white transition-all ${
+                              <h3 className={`font-black text-slate-900 dark:text-white transition-all duration-[60000ms] ${
                                 morphState.isAnimating ? "text-base sm:text-lg" : "text-xs sm:text-sm"
                               }`}>
                                 {morphState.node.title?.ar || morphState.node.title}
                               </h3>
                               {morphState.isAnimating && (morphState.node.description?.ar || morphState.node.description) && (
-                                <p className="text-xs text-slate-500 dark:text-slate-300 font-medium leading-relaxed line-clamp-2">
+                                <p className="text-xs text-slate-500 dark:text-slate-300 font-medium leading-relaxed line-clamp-2 transition-opacity duration-[60000ms]">
                                   {morphState.node.description?.ar || morphState.node.description}
                                 </p>
                               )}
@@ -1126,7 +1126,7 @@ function BookingFlowContent() {
                           </div>
 
                           {morphState.isAnimating && (
-                            <div className="transition-opacity duration-300 opacity-100">
+                            <div className="transition-opacity duration-[60000ms] opacity-100">
                               <button
                                 type="button"
                                 className="self-start sm:self-center text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/90 dark:border-blue-900/60 shadow-2xs pointer-events-none"
@@ -1179,7 +1179,7 @@ function BookingFlowContent() {
                       ) : null}
 
                       {/* Header Title based on Current Depth */}
-                      <div className={`transition-all duration-300 ${morphState ? "opacity-30" : "animate-spatial-parent"}`}>
+                      <div className={`transition-all duration-[60000ms] ${morphState ? "opacity-30" : "animate-spatial-parent"}`}>
                         {selectedPath.length === 0 ? (
                           <>
                             <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
@@ -1227,9 +1227,9 @@ function BookingFlowContent() {
                               disabled={isPaused || morphState !== null}
                               onClick={(e) => handleServiceNodeSelect(node, isBookableLeaf, e)}
                               style={{
-                                animationDelay: `${Math.min(idx * 70, 450)}ms`
+                                animationDelay: `${idx * 4}s`
                               }}
-                              className={`p-3.5 sm:p-5 rounded-2xl border text-center transition-all duration-300 flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative animate-spatial-child ${
+                              className={`p-3.5 sm:p-5 rounded-2xl border text-center transition-all duration-[60000ms] flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative animate-spatial-child ${
                                 isPaused
                                   ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
                                   : isThisMorphing
