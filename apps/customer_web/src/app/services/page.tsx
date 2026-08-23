@@ -7,6 +7,7 @@ import { ArrowRight, ChevronLeft, Sparkles, Star, Search, X, CheckCircle2, Home 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabase";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 function resolveServiceImage(imageStr?: string | null): string | null {
   if (!imageStr || typeof imageStr !== "string") return null;
@@ -339,7 +340,7 @@ function ServicesListContent() {
                   نحن نعمل على تجهيز أفضل الفنيين لتقديم هذه الخدمة لك بأعلى مستويات الجودة.
                 </p>
                 <a
-                  href={`https://wa.me/${whatsappNumber}`}
+                  href={buildWhatsAppUrl(whatsappNumber, "مرحباً، أود الاستفسار عن توفر هذه الخدمة في منطقتي.")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#25D366] text-white text-xs font-bold glow-whatsapp shadow-md"

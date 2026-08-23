@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import { useWhatsAppSettings } from "@/lib/whatsapp";
 
 export default function Footer() {
+  const { getUrl } = useWhatsAppSettings();
+
   return (
     <footer className="bg-slate-50 dark:bg-[#030919] text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-900 pt-16 pb-8 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,7 +19,7 @@ export default function Footer() {
               خدمات تنظيف، وصيانة، ومكافحة حشرات احترافية توصلك لحد باب بيتك بأعلى معايير الأمان والجودة.
             </p>
 
-            {/* Social Icons (TikTok, Instagram, Facebook) */}
+            {/* Social Icons */}
             <div className="flex items-center gap-3 pt-2">
               <a
                 href="#"
@@ -100,7 +103,14 @@ export default function Footer() {
                 <Link href="/#faq" className="text-slate-600 dark:text-slate-400 hover:text-[#0091FF] dark:hover:text-white transition-colors">الأسئلة الشائعة</Link>
               </li>
               <li>
-                <a href="https://wa.me/201000000000" target="_blank" rel="noopener noreferrer" className="text-slate-600 dark:text-slate-400 hover:text-[#25D366] transition-colors">تواصل معنا عبر واتساب</a>
+                <a
+                  href={getUrl("مرحباً فريش هوم، أود الاستفسار والتواصل بخصوص الخدمات.")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-600 dark:text-slate-400 hover:text-[#25D366] transition-colors"
+                >
+                  تواصل معنا عبر واتساب
+                </a>
               </li>
             </ul>
           </div>

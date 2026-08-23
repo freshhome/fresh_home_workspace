@@ -11,6 +11,7 @@ import {
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabase";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 function resolveServiceImage(imageStr?: string | null): string | null {
   if (!imageStr || typeof imageStr !== "string") return null;
@@ -663,7 +664,7 @@ function ServiceDetailsContent() {
                 {/* Primary CTA Book Button / Paused Notification Button */}
                 {isPaused ? (
                   <a
-                    href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`مرحباً، أود إشعاري فور توفر خدمة: ${arTitle}`)}`}
+                    href={buildWhatsAppUrl(whatsappNumber, `مرحباً، أود إشعاري فور توفر خدمة: ${arTitle}`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-black shadow-lg shadow-emerald-500/20 glow-whatsapp transition-all"
@@ -683,7 +684,7 @@ function ServiceDetailsContent() {
 
                     {/* WhatsApp Support CTA */}
                     <a
-                      href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن خدمة: ${arTitle}`)}`}
+                      href={buildWhatsAppUrl(whatsappNumber, `مرحباً، أود الاستفسار عن خدمة: ${arTitle}`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-blue-900/50 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold transition-all"
@@ -711,7 +712,7 @@ function ServiceDetailsContent() {
 
         {isPaused ? (
           <a
-            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`مرحباً، أود إشعاري فور توفر خدمة: ${arTitle}`)}`}
+            href={buildWhatsAppUrl(whatsappNumber, `مرحباً، أود إشعاري فور توفر خدمة: ${arTitle}`)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-[#25D366] text-white text-xs font-black shadow-md shadow-emerald-500/20"

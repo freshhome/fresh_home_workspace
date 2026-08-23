@@ -10,6 +10,7 @@ import {
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabase";
+import { formatWhatsAppNumber, buildWhatsAppUrl } from "@/lib/whatsapp";
 
 // Mock technician fallback data
 const DEFAULT_TECH = {
@@ -493,24 +494,10 @@ function OrderTrackingContent() {
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                 <a 
-                  href={`https://wa.me/${whatsappNumber.replace("+", "").replace(/\s/g, "").trim()}?text=${encodeURIComponent(
-                    `مرحباً،
-
-أرغب في تأكيد الحجز التالي:
-
-📋 رقم الطلب: ${booking?.readable_id || finalBookingId}
-🏠 الخدمة: ${booking?.service_snapshot?.title || "خدمة منزلية"}
-💰 السعر: ${booking?.price_snapshot?.total || ""} جنيه
-📅 التاريخ: ${displayDay.includes('T') ? displayDay.split('T')[0] : displayDay}
-⏰ الموعد: ${booking?.start_time_slot ? booking.start_time_slot.substring(0, 5) : "09:00"}
-👤 الاسم: ${booking?.contact_name || ""}
-📞 الهاتف: ${booking?.contact_phones?.[0] || ""}
-📍 المحافظة: ${addressSnap.governorate || ""}
-📍 المدينة: ${addressSnap.city || ""}
-
-بإرسال هذه الرسالة أؤكد صحة بيانات الحجز ورغبتي في تنفيذ الخدمة بالسعر الموضح أعلاه. 
-شكراً لكم.`
-                  )}`}
+                  href={buildWhatsAppUrl(
+                    whatsappNumber,
+                    `مرحباً،\n\nأرغب في تأكيد الحجز التالي:\n\n📋 رقم الطلب: ${booking?.readable_id || finalBookingId}\n🏠 الخدمة: ${booking?.service_snapshot?.title || "خدمة منزلية"}\n💰 السعر: ${booking?.price_snapshot?.total || ""} جنيه\n📅 التاريخ: ${displayDay.includes('T') ? displayDay.split('T')[0] : displayDay}\n⏰ الموعد: ${booking?.start_time_slot ? booking.start_time_slot.substring(0, 5) : "09:00"}\n👤 الاسم: ${booking?.contact_name || ""}\n📞 الهاتف: ${booking?.contact_phones?.[0] || ""}\n📍 المحافظة: ${addressSnap.governorate || ""}\n📍 المدينة: ${addressSnap.city || ""}\n\nبإرسال هذه الرسالة أؤكد صحة بيانات الحجز ورغبتي في تنفيذ الخدمة بالسعر الموضح أعلاه.\nشكراً لكم.`
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold px-8 py-3 rounded-2xl text-xs transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 duration-200"
@@ -542,7 +529,7 @@ function OrderTrackingContent() {
               </div>
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                 <a 
-                  href={`https://wa.me/${whatsappNumber.replace("+", "").trim()}?text=مرحباً، أود الاستفسار بخصوص حجزي برقم ${finalBookingId}`}
+                  href={buildWhatsAppUrl(whatsappNumber, `مرحباً، أود الاستفسار بخصوص حجزي برقم ${finalBookingId}`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba56] text-white font-bold px-6 py-2.5 rounded-xl text-xs transition-all shadow-md shadow-emerald-500/10"
@@ -654,7 +641,7 @@ function OrderTrackingContent() {
                     <span>اتصال تلفني</span>
                   </a>
                   <a 
-                    href={`https://wa.me/20${finalTech.phone}?text=مرحباً، أود الاستفسار بخصوص الحجز رقم ${finalBookingId}`}
+                    href={buildWhatsAppUrl(finalTech.phone, `مرحباً، أود الاستفسار بخصوص الحجز رقم ${finalBookingId}`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-1.5 border border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold py-2.5 rounded-xl text-[10px] sm:text-xs transition-colors"

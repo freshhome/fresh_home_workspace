@@ -6,6 +6,7 @@ import { ShieldCheck, CheckCircle2, XCircle, Loader2, ArrowLeft } from "lucide-r
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 function ConfirmBookingContent() {
   const searchParams = useSearchParams();
@@ -119,7 +120,7 @@ function ConfirmBookingContent() {
                   العودة للصفحة الرئيسية
                 </button>
                 <a
-                  href={`https://wa.me/${whatsappNumber.replace(/\+/g, "")}`}
+                  href={buildWhatsAppUrl(whatsappNumber, "مرحباً، أود المساعدة في تأكيد حجزي لدى Fresh Home.")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-3.5 px-6 rounded-xl text-xs transition-colors inline-block"
