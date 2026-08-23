@@ -21,7 +21,6 @@ import {
   Layers,
   Zap,
   Clock,
-  AlertTriangle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -248,7 +247,7 @@ function resolveIconUrl(imageStr?: string | null): string | null {
 }
 
 // =========================================================================
-// Category Slider with Clean Icon-First Card Design & Status Handling
+// Category Slider with Responsive Header and Clean Mobile Card Width
 // =========================================================================
 function CategorySlider({ category }: { category: MainCategoryGroup }) {
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -256,7 +255,7 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
 
   const scroll = (direction: "left" | "right") => {
     if (!sliderRef.current) return;
-    const scrollAmount = 320;
+    const scrollAmount = 300;
     sliderRef.current.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
       behavior: "smooth",
@@ -265,47 +264,49 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
 
   return (
     <div className="space-y-4">
-      {/* Category Section Header */}
-      <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-blue-900/40 pb-3">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/70 border border-blue-100 dark:border-blue-900/60 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 shadow-sm">
+      {/* Category Section Header: Responsive layout preventing overlap */}
+      <div className="flex items-center justify-between gap-2.5 border-b border-slate-200/70 dark:border-blue-900/40 pb-3">
+        {/* Right side: Icon + Title + Count Badge */}
+        <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/70 border border-blue-100 dark:border-blue-900/60 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 shadow-xs">
             {category.iconPath ? (
               <img
                 src={category.iconPath}
                 alt={category.title}
-                className="w-6 h-6 object-contain"
+                className="w-5 h-5 sm:w-6 sm:h-6 object-contain"
               />
             ) : (
               <CategoryIcon className="w-5 h-5" />
             )}
           </div>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+          
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-base sm:text-xl font-black text-slate-900 dark:text-white truncate">
                 {category.title}
               </h3>
-              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50">
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 shrink-0">
                 {category.badge}
               </span>
               {category.status === "paused" && (
-                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 shrink-0">
                   متوقف مؤقتاً
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5 max-w-xl line-clamp-1">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5 truncate">
               {category.desc}
             </p>
           </div>
         </div>
 
-        {/* Navigation Arrows */}
-        <div className="flex items-center gap-1.5">
+        {/* Left side: Navigation Arrows */}
+        <div className="flex items-center gap-1.5 shrink-0 self-center">
           <button
             type="button"
             onClick={() => scroll("right")}
             aria-label="السابق"
-            className="w-8 h-8 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/40 hover:text-[#0091FF] hover:border-blue-300 transition-all shadow-sm cursor-pointer"
+            className="w-8 h-8 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/40 hover:text-[#0091FF] hover:border-blue-300 transition-all shadow-xs cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -313,7 +314,7 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
             type="button"
             onClick={() => scroll("left")}
             aria-label="التالي"
-            className="w-8 h-8 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/40 hover:text-[#0091FF] hover:border-blue-300 transition-all shadow-sm cursor-pointer"
+            className="w-8 h-8 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/40 hover:text-[#0091FF] hover:border-blue-300 transition-all shadow-xs cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -323,7 +324,7 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
       {/* Horizontal Slider Track */}
       <div
         ref={sliderRef}
-        className="flex gap-4 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory no-scrollbar text-right"
+        className="flex gap-3.5 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory no-scrollbar text-right px-0.5"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {category.subServices.map((service) => {
@@ -333,20 +334,20 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
           return (
             <div
               key={service.id}
-              className={`w-[280px] sm:w-[310px] shrink-0 snap-start bg-white dark:bg-[#071739] rounded-3xl border ${
+              className={`w-[82vw] max-w-[285px] sm:w-[310px] shrink-0 snap-start bg-white dark:bg-[#071739] rounded-3xl border ${
                 isPaused 
                   ? "border-amber-200/80 dark:border-amber-900/40 shadow-[0_4px_15px_rgba(245,158,11,0.05)]" 
                   : "border-slate-200/80 dark:border-blue-900/50 shadow-[0_4px_20px_rgba(0,0,0,0.03)]"
-              } hover:shadow-xl hover:border-[#0091FF]/50 dark:hover:border-[#0091FF]/60 hover:-translate-y-1 transition-all duration-300 p-5 flex flex-col justify-between space-y-4 group`}
+              } hover:shadow-xl hover:border-[#0091FF]/50 dark:hover:border-[#0091FF]/60 hover:-translate-y-1 transition-all duration-300 p-4 sm:p-5 flex flex-col justify-between space-y-4 group`}
             >
               {/* Card Top Row: Icon Container & Tag */}
               <div className="flex items-start justify-between">
                 {/* Clean Professional Icon Badge */}
-                <div className={`w-14 h-14 rounded-2xl ${
+                <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-2xl ${
                   isPaused 
                     ? "bg-amber-50/80 dark:bg-amber-950/30 text-amber-500 border border-amber-200/60 dark:border-amber-900/40" 
                     : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
-                } flex items-center justify-center p-3 group-hover:scale-105 transition-all duration-300 shadow-sm shrink-0`}>
+                } flex items-center justify-center p-3 group-hover:scale-105 transition-all duration-300 shadow-xs shrink-0`}>
                   {service.iconPath ? (
                     <img
                       src={service.iconPath}
@@ -354,7 +355,7 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
                       className="w-full h-full object-contain"
                     />
                   ) : (
-                    <ServiceIcon className="w-7 h-7" />
+                    <ServiceIcon className="w-6 h-6 sm:w-7 sm:h-7" />
                   )}
                 </div>
 
@@ -389,7 +390,7 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
 
               {/* Card Body */}
               <div className="space-y-1.5 flex-1">
-                <h4 className="text-base font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors leading-snug">
+                <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors leading-snug">
                   {service.title}
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed line-clamp-2">
@@ -401,11 +402,11 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
               <div className="pt-3 border-t border-slate-100 dark:border-blue-900/40">
                 <Link
                   href={service.href}
-                  className={`w-full flex items-center justify-between py-2.5 px-4 rounded-xl ${
+                  className={`w-full flex items-center justify-between py-2.5 px-3.5 sm:px-4 rounded-xl ${
                     isPaused
                       ? "bg-amber-50/70 dark:bg-amber-950/30 hover:bg-amber-500 hover:text-white text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900/40"
                       : "bg-[#F8FAFC] dark:bg-[#050D24] hover:bg-[#0091FF] dark:hover:bg-[#0091FF] text-slate-700 dark:text-slate-200 hover:text-white dark:hover:text-white border border-slate-200/80 dark:border-blue-900/50 hover:border-[#0091FF]"
-                  } text-xs font-black transition-all group/btn shadow-sm`}
+                  } text-xs font-black transition-all group/btn shadow-xs`}
                 >
                   <span>
                     {isPaused 
@@ -535,7 +536,7 @@ export default function ServicesSection() {
   }, [categories, activeCategoryTab, searchQuery]);
 
   const categoryTabs = [
-    { id: "all", label: "🌟 جميع الخدمات" },
+    { id: "all", label: "الكل" },
     ...categories.map((cat) => ({
       id: cat.id,
       label: cat.title,
@@ -543,11 +544,11 @@ export default function ServicesSection() {
   ];
 
   return (
-    <section id="services" className="py-16 bg-[#F8FAFC] dark:bg-[#040A1C] relative transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+    <section id="services" className="py-12 sm:py-16 bg-[#F8FAFC] dark:bg-[#040A1C] relative transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-12">
         
         {/* Search Bar & Category Header */}
-        <div className="max-w-3xl mx-auto space-y-5 text-center">
+        <div className="max-w-3xl mx-auto space-y-4 sm:space-y-5 text-center">
           <div>
             <span className="text-[11px] font-black tracking-wider uppercase px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-2">
               شجرة الخدمات المتكاملة
@@ -561,56 +562,58 @@ export default function ServicesSection() {
           </div>
 
           {/* Clean Search Input */}
-          <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 shadow-[0_10px_35px_rgba(13,50,125,0.06)] p-2.5 sm:p-3 relative z-30 transition-all hover:border-[#0091FF]/40">
-            <div className="relative flex items-center bg-[#F8FAFC] dark:bg-[#050D24] rounded-2xl border border-slate-200/90 dark:border-blue-900/50 focus-within:border-[#0091FF] focus-within:bg-white dark:focus-within:bg-[#071739] focus-within:ring-4 focus-within:ring-[#0091FF]/10 transition-all">
-              <div className="pr-4 pl-2 text-[#0D327D] dark:text-[#22A5FC] flex items-center justify-center">
-                <Search className="w-5 h-5 text-[#0091FF]" />
+          <div className="bg-white dark:bg-[#071739] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-blue-900/50 shadow-[0_10px_35px_rgba(13,50,125,0.06)] p-2 sm:p-3 relative z-30 transition-all hover:border-[#0091FF]/40">
+            <div className="relative flex items-center bg-[#F8FAFC] dark:bg-[#050D24] rounded-xl sm:rounded-2xl border border-slate-200/90 dark:border-blue-900/50 focus-within:border-[#0091FF] focus-within:bg-white dark:focus-within:bg-[#071739] focus-within:ring-4 focus-within:ring-[#0091FF]/10 transition-all">
+              <div className="pr-3.5 pl-2 text-[#0D327D] dark:text-[#22A5FC] flex items-center justify-center">
+                <Search className="w-4 h-4 sm:w-5 sm:h-5 text-[#0091FF]" />
               </div>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ابحث عن أي خدمة (مثال: تنظيف بعد التشطيب، تكييف، سباكة، مكافحة حشرات...)"
-                className="w-full bg-transparent text-slate-900 dark:text-white placeholder-slate-400 text-xs sm:text-sm font-bold py-3.5 pl-12 pr-1 outline-none border-none text-right font-sans focus:ring-0"
+                placeholder="ابحث عن أي خدمة (مثال: تنظيف، تكييف، سباكة، حشرات...)"
+                className="w-full bg-transparent text-slate-900 dark:text-white placeholder-slate-400 text-xs sm:text-sm font-bold py-3 sm:py-3.5 pl-10 pr-1 outline-none border-none text-right font-sans focus:ring-0"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute left-3 p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-full transition-colors cursor-pointer"
+                  className="absolute left-2.5 p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-full transition-colors cursor-pointer"
                   aria-label="مسح البحث"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-1">
-            {categoryTabs.map((tab) => {
-              const isActive = activeCategoryTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveCategoryTab(tab.id)}
-                  className={`px-4 py-2 rounded-2xl text-xs font-black transition-all shrink-0 border cursor-pointer ${
-                    isActive
-                      ? "bg-[#0D327D] dark:bg-[#0091FF] text-white border-[#0D327D] dark:border-[#0091FF] shadow-md shadow-blue-900/20"
-                      : "bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 border-slate-200/80 dark:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-[#0091FF]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
+          {/* Category Filter Pills: Perfectly scrollable without clipping in RTL */}
+          <div className="w-full overflow-x-auto no-scrollbar py-1 px-1">
+            <div className="flex items-center gap-2 justify-start sm:justify-center min-w-max mx-auto">
+              {categoryTabs.map((tab) => {
+                const isActive = activeCategoryTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveCategoryTab(tab.id)}
+                    className={`px-4 py-2 rounded-xl sm:rounded-2xl text-xs font-black transition-all shrink-0 border cursor-pointer ${
+                      isActive
+                        ? "bg-[#0091FF] text-white border-[#0091FF] shadow-md shadow-blue-500/25"
+                        : "bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 border-slate-200/80 dark:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-[#0091FF]"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
         {/* Hierarchical Sliders by Main Service Category */}
         {displayedCategories.length > 0 ? (
-          <div className="space-y-12">
+          <div className="space-y-10 sm:space-y-12">
             {displayedCategories.map((category) => (
               <CategorySlider key={category.id} category={category} />
             ))}

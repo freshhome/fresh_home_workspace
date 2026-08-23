@@ -50,33 +50,21 @@ export default function Logo({
     };
   }, [animated]);
 
-  const containerPadding =
-    size === "sm" 
-      ? "h-10 px-3 rounded-xl" 
-      : size === "lg" 
-        ? "h-16 px-5 rounded-2xl" 
-        : size === "xl"
-          ? "h-24 px-7 rounded-3xl"
-          : "h-12 px-3.5 rounded-2xl";
-
   const lottieDimensions =
     size === "sm" 
-      ? "w-14 h-8" 
+      ? "w-12 h-7 sm:w-14 sm:h-8" 
       : size === "lg" 
         ? "w-24 h-13" 
         : size === "xl"
           ? "w-36 h-20"
-          : "w-16 h-9";
+          : "w-14 h-8 sm:w-16 sm:h-9";
 
   const imgHeight =
     size === "sm" ? "h-6" : size === "lg" ? "h-9" : size === "xl" ? "h-14" : "h-7 sm:h-8";
 
   return (
     <Link href={href} className={`inline-flex items-center group ${className}`}>
-      {/* Frame container in polished #F5F7FA with smooth hover effect */}
-      <div
-        className={`bg-[#F5F7FA] ${containerPadding} border border-slate-200/90 shadow-sm flex items-center justify-center transition-all duration-300 group-hover:shadow-md group-hover:border-[#0091FF]/50 group-hover:scale-[1.02] overflow-hidden relative`}
-      >
+      <div className="flex items-center justify-center transition-all duration-300 group-hover:scale-[1.03] relative">
         {animated && (
           <div
             ref={containerRef}
@@ -90,7 +78,7 @@ export default function Logo({
           <img
             src="/images/fresh_home_logo_brand.svg"
             alt="Fresh Home فريش هوم"
-            className={`${imgHeight} w-auto object-contain object-center block`}
+            className={`${imgHeight} w-auto object-contain object-center block dark:brightness-110`}
           />
         )}
       </div>
