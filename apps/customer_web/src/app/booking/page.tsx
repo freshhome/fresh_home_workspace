@@ -983,8 +983,8 @@ function BookingFlowContent() {
       <main className="flex-1 bg-[#F8FAFC] dark:bg-[#040A1C] py-8 sm:py-10 transition-colors duration-300">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Stepper progress */}
-          <div className="sticky top-[72px] z-30 mb-6">
-            <div className="max-w-2xl mx-auto bg-white/95 dark:bg-[#071739]/95 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-slate-200/80 dark:border-blue-900/50 shadow-sm">
+          <div className="sticky top-[72px] z-20 mb-6">
+            <div className="max-w-xl mx-auto bg-white/95 dark:bg-[#071739]/95 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-slate-200/80 dark:border-blue-900/50 shadow-xs">
               <div className="flex justify-between items-center relative">
                 {STEPS.map((stepText, idx) => {
                   const isCompleted = idx < currentStep;
@@ -992,13 +992,13 @@ function BookingFlowContent() {
                   return (
                     <div key={idx} className="flex flex-col items-center z-10 flex-1 relative">
                       <div 
-                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 ${
-                          isCompleted ? "bg-[#2ECC71] text-white shadow-sm" : isActive ? "bg-[#0091FF] text-white scale-110 shadow-md shadow-blue-500/25" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                        className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-bold text-[11px] sm:text-xs transition-all duration-300 ${
+                          isCompleted ? "bg-[#2ECC71] text-white shadow-xs" : isActive ? "bg-[#0091FF] text-white scale-110 shadow-sm shadow-blue-500/25" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
                         }`}
                       >
-                        {isCompleted ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" /> : idx + 1}
+                        {isCompleted ? <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" /> : idx + 1}
                       </div>
-                      <span className={`text-[10px] font-bold mt-1.5 hidden sm:block ${isActive ? "text-[#0091FF] dark:text-[#22A5FC] font-black" : "text-slate-400"}`}>
+                      <span className={`text-[10px] font-bold mt-1 hidden sm:block ${isActive ? "text-[#0091FF] dark:text-[#22A5FC] font-black" : "text-slate-400"}`}>
                         {stepText}
                       </span>
                     </div>
@@ -1006,7 +1006,7 @@ function BookingFlowContent() {
                 })}
                 
                 {/* Connector line */}
-                <div className="absolute left-6 right-6 top-[14px] sm:top-[16px] h-0.5 bg-slate-100 dark:bg-slate-800 -z-0">
+                <div className="absolute left-6 right-6 top-[12px] sm:top-[14px] h-0.5 bg-slate-100 dark:bg-slate-800 -z-0">
                   <div 
                     className="h-full bg-[#2ECC71] transition-all duration-500" 
                     style={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
@@ -1032,78 +1032,47 @@ function BookingFlowContent() {
                     /* 1. HIERARCHICAL TREE SELECTION MODE (SPATIAL CONTINUOUS MOTION) */
                     <div className="space-y-5">
                       
-                      {/* Dynamic Parent Origin Header (Phase 2: Parent Transforms into Origin Header) */}
+                      {/* Dynamic Parent Origin Transformation Banner */}
                       {selectedPath.length > 0 && currentParent ? (
-                        <div className="animate-spatial-parent bg-gradient-to-r from-blue-50/90 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] p-3.5 sm:p-4 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 shadow-xs space-y-3">
-                          <div className="flex items-center justify-between gap-3">
-                            {/* Parent Identity & Icon */}
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center p-2 shrink-0 shadow-2xs">
-                                {resolveIconUrl(currentParent.image) ? (
-                                  <img src={resolveIconUrl(currentParent.image) || ""} alt="" className="w-full h-full object-contain" />
-                                ) : (
-                                  (() => {
-                                    const IconComp = getServiceFallbackIcon(currentParent.title?.ar || currentParent.title || "");
-                                    return <IconComp className="w-5 h-5 sm:w-5.5 sm:h-5.5" />;
-                                  })()
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <span className="text-[10px] font-black text-[#0091FF] dark:text-[#22A5FC] block">
-                                  القسم الحالي (المستوى {selectedPath.length})
-                                </span>
-                                <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
-                                  {currentParent.title?.ar || currentParent.title}
-                                </h3>
-                              </div>
+                        <div className="animate-spatial-parent bg-gradient-to-r from-blue-50/90 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+                          {/* Parent Identity & Icon & Description */}
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center p-2.5 shrink-0 shadow-2xs">
+                              {resolveIconUrl(currentParent.image) ? (
+                                <img src={resolveIconUrl(currentParent.image) || ""} alt="" className="w-full h-full object-contain" />
+                              ) : (
+                                (() => {
+                                  const IconComp = getServiceFallbackIcon(currentParent.title?.ar || currentParent.title || "");
+                                  return <IconComp className="w-6 h-6 sm:w-7 sm:h-7" />;
+                                })()
+                              )}
                             </div>
-
-                            {/* Back Button */}
-                            <button
-                              type="button"
-                              onClick={handleHierarchyBack}
-                              className="text-xs font-black text-slate-700 dark:text-slate-200 hover:text-[#0091FF] dark:hover:text-[#22A5FC] flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/90 dark:border-blue-900/60 transition-all shrink-0 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
-                            >
-                              <ChevronRight className="w-4 h-4" />
-                              <span>رجوع خطوة</span>
-                            </button>
+                            <div className="min-w-0 space-y-0.5">
+                              <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+                                {currentParent.title?.ar || currentParent.title}
+                              </h3>
+                              {(currentParent.description?.ar || currentParent.description) && (
+                                <p className="text-xs text-slate-500 dark:text-slate-300 font-medium leading-relaxed line-clamp-2">
+                                  {currentParent.description?.ar || currentParent.description}
+                                </p>
+                              )}
+                            </div>
                           </div>
 
-                          {/* Breadcrumbs Trail */}
-                          <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-blue-100/80 dark:border-blue-900/40 text-[11px]">
-                            <button
-                              type="button"
-                              onClick={handleHierarchyReset}
-                              className="font-bold text-[#0091FF] dark:text-[#22A5FC] hover:underline cursor-pointer"
-                            >
-                              الرئيسية
-                            </button>
-                            {selectedPath.map((node, idx) => {
-                              const isLast = idx === selectedPath.length - 1;
-                              return (
-                                <div key={node.id} className="flex items-center gap-1.5">
-                                  <span className="text-slate-400 dark:text-slate-500">/</span>
-                                  <button
-                                    type="button"
-                                    disabled={isLast}
-                                    onClick={() => handleHierarchyBreadcrumbClick(idx)}
-                                    className={`${
-                                      isLast 
-                                        ? "font-black text-slate-900 dark:text-white" 
-                                        : "font-bold text-[#0091FF] dark:text-[#22A5FC] hover:underline cursor-pointer"
-                                    }`}
-                                  >
-                                    {node.title?.ar || node.title}
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
+                          {/* Back Button */}
+                          <button
+                            type="button"
+                            onClick={handleHierarchyBack}
+                            className="self-start sm:self-center text-xs font-black text-slate-700 dark:text-slate-200 hover:text-[#0091FF] dark:hover:text-[#22A5FC] flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/90 dark:border-blue-900/60 transition-all shrink-0 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                            <span>رجوع خطوة</span>
+                          </button>
                         </div>
                       ) : null}
 
                       {/* Header Title based on Current Depth */}
-                      <div>
+                      <div className="animate-spatial-parent">
                         {selectedPath.length === 0 ? (
                           <>
                             <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
@@ -1142,6 +1111,7 @@ function BookingFlowContent() {
                           const NodeIcon = getServiceFallbackIcon(node.title?.ar || node.title || "");
                           const iconUrl = resolveIconUrl(node.image);
                           const isSelectedActive = transitioningNodeId === node.id;
+                          const isAnotherSelected = transitioningNodeId !== null && !isSelectedActive;
 
                           return (
                             <button
@@ -1156,8 +1126,10 @@ function BookingFlowContent() {
                                 isPaused
                                   ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
                                   : isSelectedActive
-                                    ? "scale-[1.04] border-[#0091FF] dark:border-[#0091FF] bg-blue-50 dark:bg-blue-950/80 ring-2 ring-[#0091FF]/60 shadow-lg shadow-blue-500/20 -translate-y-1"
-                                    : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
+                                    ? "scale-[1.04] border-[#0091FF] dark:border-[#0091FF] bg-blue-50 dark:bg-blue-950/80 ring-2 ring-[#0091FF]/60 shadow-xl shadow-blue-500/25 -translate-y-1.5 z-10"
+                                    : isAnotherSelected
+                                      ? "opacity-30 scale-95 pointer-events-none"
+                                      : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
                               }`}
                             >
                               {/* Top mini-badge for sub-branches or direct booking */}
