@@ -9,6 +9,15 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Logo from "@/components/Logo";
 
+const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <path d="M3.98918 10.8777L3.36263 13.2167L1.07258 13.2652C0.388195 11.9958 0 10.5435 0 9.0001C0 7.50768 0.362953 6.10031 1.00631 4.86108H1.0068L3.04559 5.23486L3.9387 7.26141C3.75177 7.80637 3.64989 8.39137 3.64989 9.0001C3.64996 9.66076 3.76963 10.2937 3.98918 10.8777Z" fill="#FBBB00"/>
+    <path d="M17.8427 7.3186C17.9461 7.86303 18 8.42529 18 8.99992C18 9.64426 17.9322 10.2728 17.8032 10.8791C17.3651 12.9421 16.2203 14.7436 14.6344 16.0184L14.6339 16.0179L12.066 15.8869L11.7025 13.6181C12.7548 13.001 13.5772 12.0352 14.0104 10.8791H9.19785V7.3186H17.8427Z" fill="#518EF8"/>
+    <path d="M14.6339 16.0181L14.6344 16.0185C13.092 17.2583 11.1328 18 8.99999 18C5.57257 18 2.59269 16.0843 1.07257 13.2651L3.98917 10.8777C4.74921 12.9061 6.70597 14.3501 8.99999 14.3501C9.98602 14.3501 10.9098 14.0835 11.7024 13.6182L14.6339 16.0181Z" fill="#28B446"/>
+    <path d="M14.7447 2.07197L11.8291 4.45894C11.0087 3.94615 10.0389 3.64992 9 3.64992C6.65406 3.64992 4.6607 5.16013 3.93874 7.26131L1.00681 4.86098H1.00632C2.50418 1.97307 5.52165 0 9 0C11.1837 0 13.186 0.777867 14.7447 2.07197Z" fill="#F14336"/>
+  </svg>
+);
+
 function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,6 +44,26 @@ function RegisterContent() {
     }
     checkUser();
   }, [router, redirectPath]);
+
+  const handleGoogleLogin = async () => {
+    setErrorMsg("");
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: typeof window !== "undefined" ? `${window.location.origin}${redirectPath}` : undefined,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent"
+          }
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Google registration error:", err);
+      setErrorMsg(err.message || "حدث خطأ أثناء الاتصال بخدمة Google.");
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,6 +290,24 @@ function RegisterContent() {
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             <span>إنشاء الحساب</span>
           </button>
+
+          {/* Google OAuth Login */}
+          <div className="pt-2">
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-slate-200 dark:border-blue-900/40"></div>
+              <span className="flex-shrink mx-3 text-[11px] font-bold text-slate-400">أو من خلال</span>
+              <div className="flex-grow border-t border-slate-200 dark:border-blue-900/40"></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="w-full mt-1 py-3 rounded-xl border border-slate-200 dark:border-blue-900/60 hover:bg-slate-50 dark:hover:bg-[#050D24] text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-2.5 transition-colors shadow-xs cursor-pointer"
+            >
+              <GoogleIcon className="w-4 h-4" />
+              <span>المتابعة باستخدام Google</span>
+            </button>
+          </div>
 
           <div className="text-center pt-3 border-t border-slate-100 dark:border-blue-900/40 text-xs text-slate-500 dark:text-slate-400 font-medium">
             <span>لديك حساب بالفعل؟ </span>
