@@ -1278,7 +1278,6 @@ function BookingFlowContent() {
                                       <div className="flex justify-between items-center">
                                         <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
                                           {field.label?.ar || field.label} {field.unit ? `(${field.unit})` : ""}
-                                          {field.required && <span className="text-rose-500 mr-1">*</span>}
                                           {!field.required && <span className="text-[9px] text-slate-400 font-bold mr-1.5">(اختياري)</span>}
                                         </label>
                                         
@@ -1702,7 +1701,7 @@ function BookingFlowContent() {
                         {/* 1. Governorate */}
                         <div className="space-y-1">
                           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            المحافظة <span className="text-rose-500">*</span>
+                            المحافظة
                           </label>
                           <select
                             value={address.governorate}
@@ -1718,7 +1717,7 @@ function BookingFlowContent() {
                         {/* 2. City */}
                         <div className="space-y-1">
                           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            المدينة / المنطقة <span className="text-rose-500">*</span>
+                            المدينة / المنطقة
                           </label>
                           <select
                             value={address.city}
@@ -1734,7 +1733,7 @@ function BookingFlowContent() {
                         {/* 3. District */}
                         <div className="space-y-1">
                           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            الحي / المجاورة <span className="text-rose-500">*</span>
+                            الحي / المجاورة
                           </label>
                           <select
                             value={address.district}
@@ -1752,7 +1751,7 @@ function BookingFlowContent() {
                       {address.district === "أخرى" && (
                         <div className="space-y-1">
                           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            اسم الحي / المنطقة المخصصة <span className="text-rose-500">*</span>
+                            اسم الحي / المنطقة المخصصة
                           </label>
                           <input
                             type="text"
@@ -1767,7 +1766,7 @@ function BookingFlowContent() {
                       {/* 4. Street or Compound */}
                       <div className="space-y-1">
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                          اسم الشارع أو الكومباوند <span className="text-rose-500">*</span>
+                          اسم الشارع أو الكومباوند
                         </label>
                         <input
                           type="text"
@@ -1782,7 +1781,7 @@ function BookingFlowContent() {
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="space-y-1">
                           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            رقم / اسم المبنى أو الفيلا <span className="text-rose-500">*</span>
+                            رقم / اسم المبنى أو الفيلا
                           </label>
                           <input
                             type="text"

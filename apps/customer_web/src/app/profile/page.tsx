@@ -558,7 +558,7 @@ function ProfileContent() {
                     {/* 1. Governorate */}
                     <div className="space-y-1">
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        المحافظة <span className="text-rose-500">*</span>
+                        المحافظة
                       </label>
                       <select
                         value={newAddress.governorate}
@@ -585,7 +585,7 @@ function ProfileContent() {
                     {/* 2. City */}
                     <div className="space-y-1">
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        المدينة / المنطقة <span className="text-rose-500">*</span>
+                        المدينة / المنطقة
                       </label>
                       <select
                         value={newAddress.city}
@@ -610,7 +610,7 @@ function ProfileContent() {
                     {/* 3. District */}
                     <div className="space-y-1">
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        الحي / المجاورة <span className="text-rose-500">*</span>
+                        الحي / المجاورة
                       </label>
                       <select
                         value={newAddress.district}
@@ -627,7 +627,7 @@ function ProfileContent() {
                   {newAddress.district === "أخرى" && (
                     <div className="space-y-1">
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        اسم الحي / المنطقة المخصصة <span className="text-rose-500">*</span>
+                        اسم الحي / المنطقة المخصصة
                       </label>
                       <input 
                         type="text" 
@@ -641,7 +641,7 @@ function ProfileContent() {
 
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                      اسم الشارع أو الكومباوند <span className="text-rose-500">*</span>
+                      اسم الشارع أو الكومباوند
                     </label>
                     <input 
                       type="text" 
@@ -656,7 +656,7 @@ function ProfileContent() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="space-y-1">
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        رقم / اسم المبنى أو الفيلا <span className="text-rose-500">*</span>
+                        رقم / اسم المبنى أو الفيلا
                       </label>
                       <input 
                         type="text" 
