@@ -118,37 +118,37 @@ function RegisterContent() {
   };
 
   return (
-    <div className="max-w-md mx-auto my-10 px-4 font-sans">
-      <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl text-right">
+    <div className="max-w-md mx-auto my-10 px-4 font-sans w-full">
+      <div className="bg-white dark:bg-[#071739] rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-blue-900/50 shadow-xl dark:shadow-2xl text-right transition-colors">
         {/* Top Header Navigation */}
         <div className="flex items-center justify-between mb-4">
           <Link 
             href="/login" 
-            className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-[#0091FF] transition-colors"
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-[#0091FF] dark:hover:text-[#22A5FC] transition-colors"
           >
             <span>لديك حساب؟ تسجيل الدخول</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {/* Centered Lottie Logo Animation Header */}
+        {/* Centered Logo Animation Header */}
         <div className="flex flex-col items-center text-center mb-6">
           <Logo size="lg" animated={true} />
-          <h2 className="text-xl font-black text-slate-900 font-sans mt-4">إنشاء حساب جديد</h2>
-          <p className="text-slate-500 text-xs mt-1 font-medium max-w-xs">
+          <h2 className="text-xl font-black text-slate-900 dark:text-white font-sans mt-4">إنشاء حساب جديد</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 font-medium max-w-xs">
             سجل معنا في Fresh Home للاستفادة من حفظ عناوينك ومتابعة طلباتك بسهولة.
           </p>
         </div>
 
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600" />
             <span>{successMsg}</span>
           </div>
@@ -158,14 +158,14 @@ function RegisterContent() {
           {/* Name Row */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700">الاسم الأول</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">الاسم الأول</label>
               <div className="relative flex items-center">
                 <input 
                   type="text" 
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="محمد"
-                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-right font-sans"
+                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] dark:bg-[#050D24] text-slate-900 dark:text-white text-right font-sans"
                   required
                 />
                 <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5" />
@@ -173,14 +173,14 @@ function RegisterContent() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700">اسم العائلة</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">اسم العائلة</label>
               <div className="relative flex items-center">
                 <input 
                   type="text" 
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="أحمد"
-                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-right font-sans"
+                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] dark:bg-[#050D24] text-slate-900 dark:text-white text-right font-sans"
                   required
                 />
                 <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5" />
@@ -190,14 +190,14 @@ function RegisterContent() {
 
           {/* Email Field */}
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">البريد الإلكتروني</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">البريد الإلكتروني</label>
             <div className="relative flex items-center">
               <input 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full p-3 pl-9 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-left font-sans"
+                className="w-full p-3 pl-9 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] dark:bg-[#050D24] text-slate-900 dark:text-white text-left font-sans"
                 required
               />
               <Mail className="w-4 h-4 text-slate-400 absolute left-3" />
@@ -206,14 +206,14 @@ function RegisterContent() {
 
           {/* Phone Field */}
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">رقم الهاتف (محمول مصري)</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">رقم الهاتف (محمول مصري)</label>
             <div className="relative flex items-center">
               <input 
                 type="tel" 
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="01012345678"
-                className="w-full p-3 pl-9 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-left font-sans"
+                className="w-full p-3 pl-9 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] dark:bg-[#050D24] text-slate-900 dark:text-white text-left font-sans"
                 required
               />
               <Phone className="w-4 h-4 text-slate-400 absolute left-3" />
@@ -223,14 +223,14 @@ function RegisterContent() {
           {/* Password Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700">كلمة المرور</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">كلمة المرور</label>
               <div className="relative flex items-center">
                 <input 
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-left font-sans"
+                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] dark:bg-[#050D24] text-slate-900 dark:text-white text-left font-sans"
                   required
                 />
                 <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-2.5" />
@@ -238,14 +238,14 @@ function RegisterContent() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700">تأكيد كلمة المرور</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">تأكيد كلمة المرور</label>
               <div className="relative flex items-center">
                 <input 
                   type="password" 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] text-left font-sans"
+                  className="w-full p-3 pl-8 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold focus:border-[#0091FF] focus:outline-none bg-[#F8FAFC] dark:bg-[#050D24] text-slate-900 dark:text-white text-left font-sans"
                   required
                 />
                 <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-2.5" />
@@ -256,15 +256,15 @@ function RegisterContent() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-[#0091FF] to-[#0077E6] text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 glow-button cursor-pointer"
+            className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-[#0091FF] to-[#0077E6] text-white font-black text-xs shadow-md shadow-blue-500/25 transition-all flex items-center justify-center gap-2 glow-button cursor-pointer"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             <span>إنشاء الحساب</span>
           </button>
 
-          <div className="text-center pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium">
+          <div className="text-center pt-3 border-t border-slate-100 dark:border-blue-900/40 text-xs text-slate-500 dark:text-slate-400 font-medium">
             <span>لديك حساب بالفعل؟ </span>
-            <Link href={`/login?redirect=${encodeURIComponent(redirectPath)}`} className="text-[#0091FF] font-black hover:underline">
+            <Link href={`/login?redirect=${encodeURIComponent(redirectPath)}`} className="text-[#0091FF] dark:text-[#22A5FC] font-black hover:underline">
               تسجيل الدخول
             </Link>
           </div>
@@ -276,7 +276,7 @@ function RegisterContent() {
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#040A1C] flex flex-col font-sans transition-colors duration-300">
       <Header />
       <main className="flex-1 flex items-center justify-center pt-24 pb-16">
         <Suspense fallback={

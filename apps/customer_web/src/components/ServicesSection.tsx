@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -13,125 +13,215 @@ import {
   Wrench,
   ShieldAlert,
   Bug,
-  ArrowLeft,
-  Plus,
-  Home,
   ChevronLeft,
-  SlidersHorizontal,
+  ChevronRight,
+  ArrowLeft,
+  Home,
+  ShieldCheck,
+  Layers,
+  Zap,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-interface SubServiceUI {
+export interface ServiceNode {
   id: string;
-  parentId: string;
+  parentId: string | null;
   title: string;
   desc: string;
-  imageUrl?: string | null;
-  icon: any;
-  isFeatured?: boolean;
+  iconPath?: string | null;
+  fallbackIcon: any;
+  status: "active" | "paused" | "ready" | string;
+  isBookable: boolean;
+  hasChildren: boolean;
+  childrenCount: number;
   tag?: string;
   href: string;
 }
 
-// Fallback services in case database is loading or offline
-const fallbackServices: SubServiceUI[] = [
+export interface MainCategoryGroup {
+  id: string;
+  title: string;
+  desc: string;
+  iconPath?: string | null;
+  fallbackIcon: any;
+  status: string;
+  badge: string;
+  subServices: ServiceNode[];
+}
+
+// Fallback initial data matching the hierarchical schema
+const fallbackTree: MainCategoryGroup[] = [
   {
-    id: "post-construction",
-    parentId: "cleaning-main",
-    title: "تنظيف بعد التشطيب",
-    desc: "تنظيف شامل بعد أعمال التشطيب",
-    imageUrl: null,
-    icon: Sparkles,
-    isFeatured: true,
-    tag: "الأكثر طلباً",
-    href: "/booking",
+    id: "FH-S-100001",
+    title: "خدمات النظافة الشاملة",
+    desc: "حلول تنظيف متكاملة للمنازل والمفروشات والواجهات بمعدات احترافية.",
+    fallbackIcon: Sparkles,
+    status: "active",
+    badge: "5 خدمات فرعية",
+    subServices: [
+      {
+        id: "FH-S-100009",
+        parentId: "FH-S-100001",
+        title: "تنظيف بعد التشطيب",
+        desc: "إزالة آثار الدهانات والجبس وتنظيف الأرضيات والواجهات باحترافية كاملة.",
+        iconPath: null,
+        fallbackIcon: Sparkles,
+        status: "active",
+        isBookable: true,
+        hasChildren: false,
+        childrenCount: 0,
+        tag: "الأكثر طلباً",
+        href: "/services/details?serviceId=FH-S-100001&subServiceId=FH-S-100009",
+      },
+      {
+        id: "FH-S-100010",
+        parentId: "FH-S-100001",
+        title: "التنظيف العميق",
+        desc: "تنظيف شامل ودقيق لكل أركان المنزل والمطابخ والحمامات والأسطح.",
+        iconPath: null,
+        fallbackIcon: Sparkles,
+        status: "active",
+        isBookable: true,
+        hasChildren: false,
+        childrenCount: 0,
+        tag: "شامل",
+        href: "/services/details?serviceId=FH-S-100001&subServiceId=FH-S-100010",
+      },
+      {
+        id: "FH-S-100011",
+        parentId: "FH-S-100001",
+        title: "تنظيف الأثاث والمفروشات",
+        desc: "غسيل وتعقيم الكنب، السجاد، المراتب والستائر بالبخار ومواد خاصة.",
+        iconPath: null,
+        fallbackIcon: Armchair,
+        status: "active",
+        isBookable: true,
+        hasChildren: false,
+        childrenCount: 0,
+        tag: "تعقيم بالبخار",
+        href: "/services/details?serviceId=FH-S-100001&subServiceId=FH-S-100011",
+      },
+      {
+        id: "FH-S-100012",
+        parentId: "FH-S-100001",
+        title: "التنظيف الدوري",
+        desc: "زيارات تنظيف منتظمة بأفضل الأسعار للحفاظ على رونق ونظافة بيتك.",
+        iconPath: null,
+        fallbackIcon: Calendar,
+        status: "active",
+        isBookable: true,
+        hasChildren: false,
+        childrenCount: 0,
+        href: "/services/details?serviceId=FH-S-100001&subServiceId=FH-S-100012",
+      },
+      {
+        id: "FH-S-100013",
+        parentId: "FH-S-100001",
+        title: "تنظيف الواجهات والشبابيك",
+        desc: "تلميع وتنظيف الواجهات والشبابيك والزجاج الداخلي والخارجي بلمعان فائق.",
+        iconPath: null,
+        fallbackIcon: AppWindow,
+        status: "active",
+        isBookable: true,
+        hasChildren: false,
+        childrenCount: 0,
+        href: "/services/details?serviceId=FH-S-100001&subServiceId=FH-S-100013",
+      },
+    ],
   },
   {
-    id: "deep-cleaning",
-    parentId: "cleaning-main",
-    title: "التنظيف العميق",
-    desc: "تنظيف شامل لكل تفاصيل بيتك",
-    imageUrl: null,
-    icon: Sparkles,
-    href: "/booking",
+    id: "FH-S-100002",
+    title: "خدمات الصيانة والتشغيل",
+    desc: "فنيون متخصصون لصيانة التكييفات والسباكة والكهرباء مع ضمان الجودة.",
+    fallbackIcon: Wrench,
+    status: "active",
+    badge: "فنيون معتمدون",
+    subServices: [
+      {
+        id: "FH-S-100020",
+        parentId: "FH-S-100002",
+        title: "صيانة وتنظيف التكييف",
+        desc: "غسيل الفلاتر، شحن الفريون، صيانة الوحدات الداخلية والخارجية.",
+        iconPath: null,
+        fallbackIcon: Wind,
+        status: "active",
+        isBookable: false,
+        hasChildren: true,
+        childrenCount: 3,
+        tag: "خيارات متعددة",
+        href: "/services/details?serviceId=FH-S-100002&subServiceId=FH-S-100020",
+      },
+      {
+        id: "FH-S-100021",
+        parentId: "FH-S-100002",
+        title: "السباكة والأدوات الصحية",
+        desc: "كشف تسريبات المياه، صيانة وتأسيس شبكات الصرف الصحي والسباكة.",
+        iconPath: null,
+        fallbackIcon: Wrench,
+        status: "active",
+        isBookable: true,
+        hasChildren: false,
+        childrenCount: 0,
+        href: "/services/details?serviceId=FH-S-100002&subServiceId=FH-S-100021",
+      },
+      {
+        id: "FH-S-100022",
+        parentId: "FH-S-100002",
+        title: "الصيانة والكهرباء العامة",
+        desc: "إصلاح الأعطال الكهربائية المنزلية وتركيب الإضاءة والأجهزة بأمان تام.",
+        iconPath: null,
+        fallbackIcon: ShieldAlert,
+        status: "active",
+        isBookable: true,
+        hasChildren: false,
+        childrenCount: 0,
+        href: "/services/details?serviceId=FH-S-100002&subServiceId=FH-S-100022",
+      },
+    ],
   },
   {
-    id: "regular-cleaning",
-    parentId: "cleaning-main",
-    title: "التنظيف الدوري",
-    desc: "حافظ على نظافة بيتك بانتظام",
-    imageUrl: null,
-    icon: Calendar,
-    href: "/booking",
-  },
-  {
-    id: "furniture-cleaning",
-    parentId: "cleaning-main",
-    title: "تنظيف الأثاث والمفروشات",
-    desc: "غسيل كنب ومجالس وسجاد",
-    imageUrl: null,
-    icon: Armchair,
-    href: "/booking",
-  },
-  {
-    id: "glass-facade",
-    parentId: "cleaning-main",
-    title: "تنظيف الواجهات الزجاجية",
-    desc: "نظافة ولمعان يدوم لأطول وقت",
-    imageUrl: null,
-    icon: AppWindow,
-    href: "/booking",
-  },
-  {
-    id: "ac-maintenance",
-    parentId: "maintenance-main",
-    title: "صيانة التكييف",
-    desc: "صيانة وتنظيف الفلاتر وشحن الفريون",
-    imageUrl: null,
-    icon: Wind,
-    href: "/booking",
-  },
-  {
-    id: "plumbing",
-    parentId: "maintenance-main",
-    title: "السباكة والكهرباء",
-    desc: "إصلاح وصيانة الأعطال الفورية",
-    imageUrl: null,
-    icon: Wrench,
-    href: "/booking",
-  },
-  {
-    id: "general-maintenance",
-    parentId: "maintenance-main",
-    title: "الصيانة والكهرباء",
-    desc: "أمان وصيانة لكافة الأعطال",
-    imageUrl: null,
-    icon: ShieldAlert,
-    href: "/booking",
-  },
-  {
-    id: "pest-control",
-    parentId: "pest-main",
-    title: "مكافحة الحشرات",
-    desc: "طرق فعالة وآمنة لإبادة الحشرات",
-    imageUrl: null,
-    icon: Bug,
-    href: "/booking",
+    id: "FH-S-100003",
+    title: "مكافحة الحشرات والتعقيم",
+    desc: "إبادة فورية وآمنة 100% لكافة أنواع الحشرات والقوارض بضمان معتمد وبدون مغادرة المنزل.",
+    fallbackIcon: Bug,
+    status: "active",
+    badge: "مواد آمنة ومصرحة",
+    subServices: [
+      {
+        id: "FH-S-100030",
+        parentId: "FH-S-100003",
+        title: "إبادة ومكافحة الحشرات",
+        desc: "مكافحة النمل الأبيض، الصراصير، البق، والقوارض بأحدث الأمصال الألمانية.",
+        iconPath: null,
+        fallbackIcon: Bug,
+        status: "active",
+        isBookable: true,
+        hasChildren: false,
+        childrenCount: 0,
+        tag: "ضمان 6 شهور",
+        href: "/services/details?serviceId=FH-S-100003&subServiceId=FH-S-100030",
+      },
+      {
+        id: "FH-S-100031",
+        parentId: "FH-S-100003",
+        title: "التعقيم والتطهير الشامل",
+        desc: "تطهير المنازل والمكاتب من البكتيريا والفيروسات بمطهرات طبية آمنة.",
+        iconPath: null,
+        fallbackIcon: ShieldCheck,
+        status: "active",
+        isBookable: true,
+        hasChildren: false,
+        childrenCount: 0,
+        href: "/services/details?serviceId=FH-S-100003&subServiceId=FH-S-100031",
+      },
+    ],
   },
 ];
 
-const quickFilterTags = [
-  { label: "الكل", query: "" },
-  { label: "🔥 الأكثر طلباً", query: "تشطيب" },
-  { label: "✨ تنظيف عميق", query: "عميق" },
-  { label: "🛋️ كنب ومفروشات", query: "أثاث" },
-  { label: "❄️ صيانة تكييف", query: "تكييف" },
-  { label: "⚡ سباكة وكهرباء", query: "سباكة" },
-  { label: "🐜 مكافحة حشرات", query: "حشرات" },
-];
-
-// Helper to determine the best fallback icon based on service title
-function getServiceIcon(title: string) {
+// Helper to choose fallback icon
+function getServiceFallbackIcon(title: string) {
   const t = title.toLowerCase();
   if (t.includes("تشطيب") || t.includes("بعد التشطيب")) return Sparkles;
   if (t.includes("عميق") || t.includes("deep")) return Sparkles;
@@ -145,340 +235,409 @@ function getServiceIcon(title: string) {
   return Home;
 }
 
-// Helper to resolve service icon / image from Supabase storage or URLs
-function resolveServiceImage(imageStr?: string | null): string | null {
+// Helper to resolve service icon path from Supabase storage or URLs
+function resolveIconUrl(imageStr?: string | null): string | null {
   if (!imageStr || typeof imageStr !== "string") return null;
   const clean = imageStr.trim();
   if (!clean) return null;
-  if (clean.startsWith("http://") || clean.startsWith("https://")) {
+  if (clean.startsWith("http://") || clean.startsWith("https://") || clean.startsWith("/")) {
     return clean;
   }
-  if (clean.startsWith("/")) {
-    return clean;
-  }
-  // Otherwise resolve from Supabase storage bucket 'service_images'
   const { data } = supabase.storage.from("service_images").getPublicUrl(clean);
   return data?.publicUrl || null;
 }
 
+// =========================================================================
+// Category Slider with Clean Icon-First Card Design & Status Handling
+// =========================================================================
+function CategorySlider({ category }: { category: MainCategoryGroup }) {
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const CategoryIcon = category.fallbackIcon;
+
+  const scroll = (direction: "left" | "right") => {
+    if (!sliderRef.current) return;
+    const scrollAmount = 320;
+    sliderRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Category Section Header */}
+      <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-blue-900/40 pb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/70 border border-blue-100 dark:border-blue-900/60 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 shadow-sm">
+            {category.iconPath ? (
+              <img
+                src={category.iconPath}
+                alt={category.title}
+                className="w-6 h-6 object-contain"
+              />
+            ) : (
+              <CategoryIcon className="w-5 h-5" />
+            )}
+          </div>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                {category.title}
+              </h3>
+              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50">
+                {category.badge}
+              </span>
+              {category.status === "paused" && (
+                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                  متوقف مؤقتاً
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5 max-w-xl line-clamp-1">
+              {category.desc}
+            </p>
+          </div>
+        </div>
+
+        {/* Navigation Arrows */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => scroll("right")}
+            aria-label="السابق"
+            className="w-8 h-8 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/40 hover:text-[#0091FF] hover:border-blue-300 transition-all shadow-sm cursor-pointer"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scroll("left")}
+            aria-label="التالي"
+            className="w-8 h-8 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/40 hover:text-[#0091FF] hover:border-blue-300 transition-all shadow-sm cursor-pointer"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Horizontal Slider Track */}
+      <div
+        ref={sliderRef}
+        className="flex gap-4 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory no-scrollbar text-right"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {category.subServices.map((service) => {
+          const ServiceIcon = service.fallbackIcon;
+          const isPaused = service.status === "paused";
+
+          return (
+            <div
+              key={service.id}
+              className={`w-[280px] sm:w-[310px] shrink-0 snap-start bg-white dark:bg-[#071739] rounded-3xl border ${
+                isPaused 
+                  ? "border-amber-200/80 dark:border-amber-900/40 shadow-[0_4px_15px_rgba(245,158,11,0.05)]" 
+                  : "border-slate-200/80 dark:border-blue-900/50 shadow-[0_4px_20px_rgba(0,0,0,0.03)]"
+              } hover:shadow-xl hover:border-[#0091FF]/50 dark:hover:border-[#0091FF]/60 hover:-translate-y-1 transition-all duration-300 p-5 flex flex-col justify-between space-y-4 group`}
+            >
+              {/* Card Top Row: Icon Container & Tag */}
+              <div className="flex items-start justify-between">
+                {/* Clean Professional Icon Badge */}
+                <div className={`w-14 h-14 rounded-2xl ${
+                  isPaused 
+                    ? "bg-amber-50/80 dark:bg-amber-950/30 text-amber-500 border border-amber-200/60 dark:border-amber-900/40" 
+                    : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
+                } flex items-center justify-center p-3 group-hover:scale-105 transition-all duration-300 shadow-sm shrink-0`}>
+                  {service.iconPath ? (
+                    <img
+                      src={service.iconPath}
+                      alt={service.title}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <ServiceIcon className="w-7 h-7" />
+                  )}
+                </div>
+
+                {/* Status & Feature Badges */}
+                <div className="flex flex-col items-end gap-1">
+                  {isPaused ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 text-[10px] font-black">
+                      <Clock className="w-3 h-3" />
+                      <span>متوقفة مؤقتاً</span>
+                    </span>
+                  ) : service.tag ? (
+                    <span className="px-2.5 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 text-[10px] font-black">
+                      {service.tag}
+                    </span>
+                  ) : null}
+
+                  {!isPaused && (
+                    service.hasChildren ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[9px] font-extrabold">
+                        <Layers className="w-2.5 h-2.5 text-[#0091FF]" />
+                        <span>{service.childrenCount} خيارات فرعية</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40 text-[9px] font-extrabold">
+                        <Zap className="w-2.5 h-2.5" />
+                        <span>حجز مباشر</span>
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* Card Body */}
+              <div className="space-y-1.5 flex-1">
+                <h4 className="text-base font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors leading-snug">
+                  {service.title}
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed line-clamp-2">
+                  {service.desc}
+                </p>
+              </div>
+
+              {/* Card Footer Action */}
+              <div className="pt-3 border-t border-slate-100 dark:border-blue-900/40">
+                <Link
+                  href={service.href}
+                  className={`w-full flex items-center justify-between py-2.5 px-4 rounded-xl ${
+                    isPaused
+                      ? "bg-amber-50/70 dark:bg-amber-950/30 hover:bg-amber-500 hover:text-white text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900/40"
+                      : "bg-[#F8FAFC] dark:bg-[#050D24] hover:bg-[#0091FF] dark:hover:bg-[#0091FF] text-slate-700 dark:text-slate-200 hover:text-white dark:hover:text-white border border-slate-200/80 dark:border-blue-900/50 hover:border-[#0091FF]"
+                  } text-xs font-black transition-all group/btn shadow-sm`}
+                >
+                  <span>
+                    {isPaused 
+                      ? "تفاصيل الخدمة والإشعار" 
+                      : service.hasChildren 
+                        ? "استعراض الخيارات الفرعية" 
+                        : "تفاصيل الخدمة والحجز"}
+                  </span>
+                  <ArrowLeft className="w-3.5 h-3.5 group-hover/btn:-translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function ServicesSection() {
-  const [services, setServices] = useState<SubServiceUI[]>(fallbackServices);
+  const [categories, setCategories] = useState<MainCategoryGroup[]>(fallbackTree);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isFocused, setIsFocused] = useState(false);
-  const [activeFilter, setActiveFilter] = useState("");
+  const [activeCategoryTab, setActiveCategoryTab] = useState("all");
 
   useEffect(() => {
-    async function fetchSubServices() {
+    async function fetchFullServicesTree() {
       try {
-        // Query active bookable sub-services from Supabase active_services_tree view
         const { data, error } = await supabase
           .from("active_services_tree")
           .select("*")
           .order("sort_order", { ascending: true });
 
         if (!error && data && data.length > 0) {
-          // Filter sub-services (those that are bookable or have a parent_id)
-          const bookableItems = data.filter(
-            (item: any) => item.is_bookable === true || item.parent_id !== null
-          );
+          // 1. Root Services (parent_id is null)
+          const roots = data.filter((item: any) => item.parent_id === null && item.status !== "inactive" && item.status !== "archived");
 
-          if (bookableItems.length > 0) {
-            const mapped: SubServiceUI[] = bookableItems.map((item: any, index: number) => {
-              const title = item.title?.ar || item.title || "خدمة منزلية";
-              const desc = item.description?.ar || item.description || "خدمة احترافية بأعلى معايير الجودة";
-              const isPostConstruction = title.includes("تشطيب");
-              const isFirst = index === 0;
-              const imageUrl = resolveServiceImage(item.image);
+          if (roots.length > 0) {
+            const mappedGroups: MainCategoryGroup[] = roots.map((root: any) => {
+              const rootTitle = root.title?.ar || root.title || "خدمات فريش هوم";
+              const rootDesc = root.description?.ar || root.description || "خدمات منزلية احترافية معتمدة";
+              const rootIconUrl = resolveIconUrl(root.image);
+
+              // 2. Direct Children of Root
+              const firstLevelChildren = data.filter((item: any) => item.parent_id === root.id && item.status !== "inactive" && item.status !== "archived");
+
+              const subServices: ServiceNode[] = firstLevelChildren.map((sub: any) => {
+                const subTitle = sub.title?.ar || sub.title || "خدمة فرعية";
+                const subDesc = sub.description?.ar || sub.description || "خدمة بأعلى معايير الجودة";
+                const subIconUrl = resolveIconUrl(sub.image);
+                const isPostConstruction = subTitle.includes("تشطيب");
+
+                // Check if this sub-service has further descendants in the tree
+                const grandChildren = data.filter((item: any) => item.parent_id === sub.id && item.status !== "inactive" && item.status !== "archived");
+                const hasChildren = grandChildren.length > 0 || sub.is_bookable === false;
+
+                return {
+                  id: sub.id,
+                  parentId: root.id,
+                  title: subTitle,
+                  desc: subDesc,
+                  iconPath: subIconUrl,
+                  fallbackIcon: getServiceFallbackIcon(subTitle),
+                  status: sub.status || "active",
+                  isBookable: sub.is_bookable === true,
+                  hasChildren,
+                  childrenCount: grandChildren.length,
+                  tag: isPostConstruction ? "الأكثر طلباً" : hasChildren ? "تفريعات متعددة" : undefined,
+                  href: `/services/details?serviceId=${root.id}&subServiceId=${sub.id}`,
+                };
+              });
 
               return {
-                id: item.id,
-                parentId: item.parent_id || item.id,
-                title,
-                desc,
-                imageUrl,
-                icon: getServiceIcon(title),
-                isFeatured: isPostConstruction || (isFirst && !bookableItems.some((s: any) => (s.title?.ar || s.title || "").includes("تشطيب"))),
-                tag: isPostConstruction ? "الأكثر طلباً" : index === 0 ? "مميز" : undefined,
-                href: item.parent_id 
-                  ? `/services/details?serviceId=${item.parent_id}&subServiceId=${item.id}`
-                  : `/booking?subServiceId=${item.id}`,
+                id: root.id,
+                title: rootTitle,
+                desc: rootDesc,
+                iconPath: rootIconUrl,
+                fallbackIcon: getServiceFallbackIcon(rootTitle),
+                status: root.status || "active",
+                badge: `${subServices.length} خدمات فرعية`,
+                subServices: subServices.length > 0 ? subServices : [],
               };
             });
 
-            // Sort so the featured service is first (left/start of list in design)
-            mapped.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
-
-            setServices(mapped);
+            const validGroups = mappedGroups.filter((g) => g.subServices.length > 0);
+            if (validGroups.length > 0) {
+              setCategories(validGroups);
+            }
           }
         }
       } catch (err) {
-        console.warn("Using fallback services due to network:", err);
+        console.warn("Using fallback tree due to network:", err);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchSubServices();
+    fetchFullServicesTree();
   }, []);
 
-  // Filter services in real-time based on query
-  const filteredServices = useMemo(() => {
-    const clean = searchQuery.trim().toLowerCase();
-    if (!clean) return services;
-    return services.filter(
-      (s) =>
-        s.title.toLowerCase().includes(clean) ||
-        s.desc.toLowerCase().includes(clean)
-    );
-  }, [services, searchQuery]);
+  // Filtered categories based on selected tab and search query
+  const displayedCategories = useMemo(() => {
+    let result = categories;
 
-  const handleQuickFilter = (query: string) => {
-    setActiveFilter(query);
-    setSearchQuery(query);
-  };
+    // 1. Tab filter
+    if (activeCategoryTab !== "all") {
+      result = result.filter((cat) => cat.id === activeCategoryTab);
+    }
+
+    // 2. Search query filter
+    const cleanSearch = searchQuery.trim().toLowerCase();
+    if (cleanSearch) {
+      result = result
+        .map((cat) => ({
+          ...cat,
+          subServices: cat.subServices.filter(
+            (s) =>
+              s.title.toLowerCase().includes(cleanSearch) ||
+              s.desc.toLowerCase().includes(cleanSearch) ||
+              cat.title.toLowerCase().includes(cleanSearch)
+          ),
+        }))
+        .filter((cat) => cat.subServices.length > 0);
+    }
+
+    return result;
+  }, [categories, activeCategoryTab, searchQuery]);
+
+  const categoryTabs = [
+    { id: "all", label: "🌟 جميع الخدمات" },
+    ...categories.map((cat) => ({
+      id: cat.id,
+      label: cat.title,
+    })),
+  ];
 
   return (
-    <section id="services" className="py-16 bg-[#F8FAFC] relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="services" className="py-16 bg-[#F8FAFC] dark:bg-[#040A1C] relative transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         
-        {/* ========================================================================= */}
-        {/* Modern Professional Search Bar (Placed Above Services Section)           */}
-        {/* ========================================================================= */}
-        <div className="max-w-3xl mx-auto mb-12">
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-[0_10px_35px_rgba(13,50,125,0.06)] p-3 sm:p-4 backdrop-blur-md relative z-30 transition-all hover:border-[#0091FF]/40">
-            {/* Search Input Container */}
-            <div className="relative flex items-center bg-[#F8FAFC] rounded-2xl border border-slate-200/90 focus-within:border-[#0091FF] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#0091FF]/10 transition-all">
-              {/* Search Icon (Right in RTL) */}
-              <div className="pr-4.5 pl-2 text-[#0D327D] flex items-center justify-center">
+        {/* Search Bar & Category Header */}
+        <div className="max-w-3xl mx-auto space-y-5 text-center">
+          <div>
+            <span className="text-[11px] font-black tracking-wider uppercase px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-2">
+              شجرة الخدمات المتكاملة
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+              اختر الخدمة المناسبة لمنزلك
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
+              تنظيم شجري يوضح حالة كل خدمة وإمكانية الحجز المباشر أو استعراض الخيارات الفرعية
+            </p>
+          </div>
+
+          {/* Clean Search Input */}
+          <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 shadow-[0_10px_35px_rgba(13,50,125,0.06)] p-2.5 sm:p-3 relative z-30 transition-all hover:border-[#0091FF]/40">
+            <div className="relative flex items-center bg-[#F8FAFC] dark:bg-[#050D24] rounded-2xl border border-slate-200/90 dark:border-blue-900/50 focus-within:border-[#0091FF] focus-within:bg-white dark:focus-within:bg-[#071739] focus-within:ring-4 focus-within:ring-[#0091FF]/10 transition-all">
+              <div className="pr-4 pl-2 text-[#0D327D] dark:text-[#22A5FC] flex items-center justify-center">
                 <Search className="w-5 h-5 text-[#0091FF]" />
               </div>
-
-              {/* Text Input */}
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setActiveFilter("");
-                }}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setTimeout(() => setIsFocused(false), 250)}
-                placeholder="ابحث عن أي خدمة (مثال: تنظيف بعد التشطيب، غسيل سجاد، صيانة تكييف...)"
-                className="w-full bg-transparent text-slate-900 placeholder-slate-400 text-xs sm:text-sm font-bold py-3.5 sm:py-4 pl-12 pr-1 outline-none border-none text-right font-sans focus:ring-0"
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ابحث عن أي خدمة (مثال: تنظيف بعد التشطيب، تكييف، سباكة، مكافحة حشرات...)"
+                className="w-full bg-transparent text-slate-900 dark:text-white placeholder-slate-400 text-xs sm:text-sm font-bold py-3.5 pl-12 pr-1 outline-none border-none text-right font-sans focus:ring-0"
               />
-
-              {/* Clear Search Button */}
               {searchQuery && (
                 <button
-                  onClick={() => {
-                    setSearchQuery("");
-                  }}
-                  className="absolute left-3 p-1.5 hover:bg-slate-200 text-slate-400 hover:text-slate-700 rounded-full transition-colors"
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute left-3 p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-full transition-colors cursor-pointer"
                   aria-label="مسح البحث"
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
-
-            {/* Live Suggestion Overlay Dropdown (When focused & typing) */}
-            {isFocused && searchQuery.trim() && (
-              <div className="absolute top-full right-0 left-0 mt-2 bg-white rounded-2xl border border-slate-100 shadow-2xl overflow-hidden z-40 animate-fade-in-up text-right">
-                <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs font-black text-slate-500">
-                  <span>نتائج البحث المباشرة ({filteredServices.length})</span>
-                  {searchQuery && (
-                    <span className="text-[10px] text-[#0091FF] font-bold">
-                      بحث عن: &quot;{searchQuery}&quot;
-                    </span>
-                  )}
-                </div>
-
-                <div className="max-h-64 overflow-y-auto divide-y divide-slate-50">
-                  {filteredServices.length > 0 ? (
-                    filteredServices.map((item) => (
-                      <Link
-                        key={item.id}
-                        href={item.href}
-                        className="flex items-center justify-between p-3.5 hover:bg-blue-50/60 transition-colors group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0091FF] flex items-center justify-center p-1.5 shrink-0">
-                            {item.imageUrl ? (
-                              <img
-                                src={item.imageUrl}
-                                alt={item.title}
-                                className="w-full h-full object-contain"
-                              />
-                            ) : (
-                              <item.icon className="w-4 h-4" />
-                            )}
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-black text-slate-900 group-hover:text-[#0091FF] transition-colors">
-                              {item.title}
-                            </h4>
-                            <p className="text-[10px] text-slate-400 font-medium line-clamp-1">
-                              {item.desc}
-                            </p>
-                          </div>
-                        </div>
-                        <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-[#0091FF] group-hover:-translate-x-1 transition-all" />
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="p-6 text-center text-xs text-slate-400">
-                      لم نجد خدمة مطابقة لـ &quot;{searchQuery}&quot;. جرب البحث بكلمات أخرى.
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
-        </div>
 
-        {/* ========================================================================= */}
-        {/* Section Header                                                            */}
-        {/* ========================================================================= */}
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            كل اللي بيتك محتاجه في مكان واحد
-          </h2>
-          <div className="w-12 h-1 bg-[#0091FF] rounded-full mx-auto mt-2.5" />
-          {searchQuery && (
-            <p className="text-xs text-[#0091FF] font-bold mt-2">
-              نتائج مطابقة: {filteredServices.length} خدمة
-            </p>
-          )}
-        </div>
-
-        {/* Services Grid matching design */}
-        {filteredServices.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-9 gap-3.5">
-            {filteredServices.map((service) => {
-              const Icon = service.icon;
-
-              if (service.isFeatured) {
-                return (
-                  <Link
-                    key={service.id}
-                    href={service.href}
-                    className="group relative rounded-2xl p-3.5 flex flex-col justify-between text-right overflow-hidden shadow-lg border border-blue-900/30 col-span-2 sm:col-span-1 md:col-span-2 lg:col-span-1 min-h-[190px] transition-all hover:-translate-y-1 hover:shadow-xl"
-                  >
-                    {/* Background Image for Featured Service */}
-                    <img
-                      src="/images/hero_transformation.jpg"
-                      alt={service.title}
-                      className="absolute inset-0 w-full h-full object-cover object-left filter brightness-50 group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#06112c] via-[#06112c]/80 to-[#071739]/60" />
-
-                    {/* Top Badge & Icon */}
-                    <div className="relative z-10 flex items-center justify-between">
-                      <span className="inline-block text-[9px] font-black bg-white/20 text-[#22A5FC] px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10">
-                        {service.tag || "الأكثر طلباً"}
-                      </span>
-
-                      {/* Small Icon Badge if image exists */}
-                      {service.imageUrl && (
-                        <div className="w-6 h-6 rounded-lg bg-white/10 p-1 flex items-center justify-center backdrop-blur-md border border-white/10">
-                          <img
-                            src={service.imageUrl}
-                            alt={service.title}
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div className="relative z-10 mt-auto">
-                      <h3 className="text-xs font-black text-white leading-tight">
-                        {service.title}
-                      </h3>
-                      <p className="text-[10px] text-slate-300 font-medium line-clamp-2 mt-1">
-                        {service.desc}
-                      </p>
-
-                      {/* Bottom Action Icon */}
-                      <div className="mt-3 flex justify-start">
-                        <span className="w-6 h-6 rounded-full bg-[#0091FF] text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                          <ArrowLeft className="w-3.5 h-3.5 stroke-[2.5]" />
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              }
-
+          {/* Category Filter Pills */}
+          <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-1">
+            {categoryTabs.map((tab) => {
+              const isActive = activeCategoryTab === tab.id;
               return (
-                <Link
-                  key={service.id}
-                  href={service.href}
-                  className="group relative bg-white rounded-2xl p-3.5 flex flex-col justify-between items-center text-center border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all hover:-translate-y-1 min-h-[190px]"
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveCategoryTab(tab.id)}
+                  className={`px-4 py-2 rounded-2xl text-xs font-black transition-all shrink-0 border cursor-pointer ${
+                    isActive
+                      ? "bg-[#0D327D] dark:bg-[#0091FF] text-white border-[#0D327D] dark:border-[#0091FF] shadow-md shadow-blue-900/20"
+                      : "bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 border-slate-200/80 dark:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-[#0091FF]"
+                  }`}
                 >
-                  {/* Icon / Image Container */}
-                  <div className="w-11 h-11 rounded-2xl bg-blue-50 text-[#0091FF] group-hover:bg-[#0091FF] group-hover:text-white flex items-center justify-center transition-colors p-2 overflow-hidden shrink-0">
-                    {service.imageUrl ? (
-                      <img
-                        src={service.imageUrl}
-                        alt={service.title}
-                        className="w-full h-full object-contain transition-all group-hover:brightness-0 group-hover:invert"
-                      />
-                    ) : (
-                      <Icon className="w-5 h-5 stroke-[2]" />
-                    )}
-                  </div>
-
-                  {/* Title and Short description */}
-                  <div className="my-2">
-                    <h3 className="text-xs font-extrabold text-slate-900 group-hover:text-[#0091FF] transition-colors leading-tight">
-                      {service.title}
-                    </h3>
-                    <p className="text-[10px] text-slate-400 font-medium line-clamp-2 mt-1">
-                      {service.desc}
-                    </p>
-                  </div>
-
-                  {/* Add / Select Circle Button */}
-                  <div className="w-6 h-6 rounded-full border border-slate-200 text-slate-400 group-hover:border-[#0091FF] group-hover:bg-[#0091FF] group-hover:text-white flex items-center justify-center transition-all">
-                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  </div>
-                </Link>
+                  {tab.label}
+                </button>
               );
             })}
           </div>
+        </div>
+
+        {/* Hierarchical Sliders by Main Service Category */}
+        {displayedCategories.length > 0 ? (
+          <div className="space-y-12">
+            {displayedCategories.map((category) => (
+              <CategorySlider key={category.id} category={category} />
+            ))}
+          </div>
         ) : (
-          /* Empty Search Results State */
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-10 text-center max-w-lg mx-auto space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0091FF] flex items-center justify-center mx-auto">
-              <Search className="w-7 h-7" />
+          <div className="py-16 text-center bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/40 p-8 max-w-lg mx-auto space-y-4 shadow-sm">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/70 border border-blue-100 dark:border-blue-900/60 flex items-center justify-center mx-auto text-[#0091FF]">
+              <Search className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-black text-slate-800">
-              لم نجد نتائج مطابقة لـ &quot;{searchQuery}&quot;
-            </h3>
-            <p className="text-xs text-slate-500">
-              يمكنك مسح البحث لعرض كافة الخدمات أو التواصل معنا عبر الواتساب لتوفير الخدمة التي تحتاجها.
-            </p>
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setActiveFilter("");
-                }}
-                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
-              >
-                عرض كل الخدمات
-              </button>
-              <a
-                href="https://wa.me/201000000000"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-5 py-2.5 rounded-xl bg-[#25D366] text-white text-xs font-bold glow-whatsapp flex items-center gap-1.5"
-              >
-                <span>مساعدة عبر واتساب</span>
-              </a>
+            <div className="space-y-1">
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                لم يتم العثور على خدمات مطابقة
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                جرب البحث بكلمات أخرى مثل: &quot;تشطيب&quot;، &quot;تكييف&quot;، &quot;سباكة&quot;، أو &quot;حشرات&quot;.
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setActiveCategoryTab("all");
+              }}
+              className="px-5 py-2 rounded-xl bg-[#0091FF] text-white text-xs font-bold shadow-md shadow-blue-500/20 hover:bg-blue-600 transition-all cursor-pointer"
+            >
+              عرض جميع الخدمات
+            </button>
           </div>
         )}
       </div>

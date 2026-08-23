@@ -49,26 +49,31 @@ export default function FaqSection() {
   };
 
   return (
-    <section className="py-20 bg-[#07132F] text-white">
+    <section id="faq" className="py-20 bg-[#F8FAFC] dark:bg-[#07132F] text-slate-900 dark:text-white transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Left Side: 3D Glowing Question Mark & Chair Illustration */}
+          {/* Left Side: 3D Question Mark & Chair Illustration */}
           <div className="lg:col-span-5 flex justify-center order-2 lg:order-1">
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 max-w-sm group">
+            <div className="relative rounded-3xl overflow-hidden shadow-xl border border-slate-200/80 dark:border-white/10 max-w-sm group">
               <img
                 src="/images/faq_glow_chair.jpg"
                 alt="أسئلة شائعة Fresh Home"
                 className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#07132F] via-transparent to-transparent opacity-60" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#F8FAFC] dark:from-[#07132F] via-transparent to-transparent opacity-60" />
             </div>
           </div>
 
           {/* Right Side: FAQ Accordion */}
           <div className="lg:col-span-7 text-right order-1 lg:order-2 space-y-6">
-            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              أسئلة شائعة
-            </h2>
+            <div>
+              <span className="text-[11px] font-black tracking-wider uppercase px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-2">
+                إجابات لاستفساراتك
+              </span>
+              <h2 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                أسئلة شائعة
+              </h2>
+            </div>
 
             <div className="space-y-3">
               {faqs.map((faq, idx) => {
@@ -77,25 +82,25 @@ export default function FaqSection() {
                 return (
                   <div
                     key={idx}
-                    className="rounded-2xl bg-[#0C1E4A]/80 border border-blue-900/50 overflow-hidden transition-all"
+                    className="rounded-2xl bg-white dark:bg-[#0C1E4A]/80 border border-slate-200/80 dark:border-blue-900/50 overflow-hidden shadow-xs transition-all"
                   >
                     <button
                       onClick={() => toggleFaq(idx)}
-                      className="w-full p-4 sm:p-5 flex items-center justify-between text-right gap-4 hover:bg-white/5 transition-colors"
+                      className="w-full p-4 sm:p-5 flex items-center justify-between text-right gap-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
                       aria-expanded={isOpen}
                     >
-                      <span className="text-xs sm:text-sm font-extrabold text-slate-100">
+                      <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100">
                         {faq.question}
                       </span>
                       <ChevronDown
-                        className={`w-4 h-4 text-[#22A5FC] shrink-0 transition-transform duration-300 ${
+                        className={`w-4 h-4 text-[#0091FF] dark:text-[#22A5FC] shrink-0 transition-transform duration-300 ${
                           isOpen ? "rotate-180" : ""
                         }`}
                       />
                     </button>
 
                     {isOpen && (
-                      <div className="px-5 pb-5 text-xs text-slate-300 leading-relaxed font-normal border-t border-white/5 pt-3 animate-fade-in-up">
+                      <div className="px-5 pb-5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium border-t border-slate-100 dark:border-white/5 pt-3 animate-fade-in-up">
                         {faq.answer}
                       </div>
                     )}
