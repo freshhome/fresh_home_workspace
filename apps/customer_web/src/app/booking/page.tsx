@@ -275,9 +275,19 @@ function BookingFlowContent() {
   const [selectedSubService, setSelectedSubService] = useState<any>(null);
   const [loadingServices, setLoadingServices] = useState(false);
 
-  // Service Hierarchy Spatial Transition States
+  // Service Hierarchy Spatial Transition & Morph States
   const [transitioningNodeId, setTransitioningNodeId] = useState<string | null>(null);
   const [isExitingHierarchy, setIsExitingHierarchy] = useState(false);
+  const [morphState, setMorphState] = useState<{
+    node: any;
+    initTop: number;
+    initLeft: number;
+    initWidth: number;
+    initHeight: number;
+    isBookableLeaf: boolean;
+    isAnimating: boolean;
+  } | null>(null);
+  const treeContainerRef = useRef<HTMLDivElement>(null);
 
   // Dynamic Pricing Form Inputs
   const [pricingInputs, setPricingInputs] = useState<Record<string, any>>({});
@@ -934,23 +944,62 @@ function BookingFlowContent() {
     }
   };
 
-  // Spatial Transition Handlers
-  const handleServiceNodeSelect = (node: any, isBookableLeaf: boolean) => {
-    if (transitioningNodeId || isExitingHierarchy) return;
-    setTransitioningNodeId(node.id);
-    setTimeout(() => {
-      if (isBookableLeaf) {
-        setSelectedSubService(node);
-        setSubServiceId(node.id);
-      } else {
+  // Spatial Transition & Morph Handlers
+  const handleServiceNodeSelect = (node: any, isBookableLeaf: boolean, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (transitioningNodeId || isExitingHierarchy || morphState) return;
+
+    const cardEl = e.currentTarget;
+    const containerEl = treeContainerRef.current;
+    if (cardEl && containerEl && !isBookableLeaf) {
+      const cardRect = cardEl.getBoundingClientRect();
+      const containerRect = containerEl.getBoundingClientRect();
+
+      const initTop = cardRect.top - containerRect.top;
+      const initLeft = cardRect.left - containerRect.left;
+      const initWidth = cardRect.width;
+      const initHeight = cardRect.height;
+
+      setTransitioningNodeId(node.id);
+      setMorphState({
+        node,
+        initTop,
+        initLeft,
+        initWidth,
+        initHeight,
+        isBookableLeaf,
+        isAnimating: false,
+      });
+
+      // Trigger the upward slide & expand in next animation frames
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setMorphState(prev => prev ? { ...prev, isAnimating: true } : null);
+        });
+      });
+
+      // After the glide animation completes (420ms), finalize state
+      setTimeout(() => {
         setSelectedPath(prev => [...prev, node]);
-      }
-      setTransitioningNodeId(null);
-    }, 280);
+        setMorphState(null);
+        setTransitioningNodeId(null);
+      }, 420);
+    } else {
+      // Direct selection or leaf node
+      setTransitioningNodeId(node.id);
+      setTimeout(() => {
+        if (isBookableLeaf) {
+          setSelectedSubService(node);
+          setSubServiceId(node.id);
+        } else {
+          setSelectedPath(prev => [...prev, node]);
+        }
+        setTransitioningNodeId(null);
+      }, 280);
+    }
   };
 
   const handleHierarchyBack = () => {
-    if (isExitingHierarchy || transitioningNodeId || selectedPath.length === 0) return;
+    if (isExitingHierarchy || transitioningNodeId || selectedPath.length === 0 || morphState) return;
     setIsExitingHierarchy(true);
     setTimeout(() => {
       setSelectedPath(prev => prev.slice(0, -1));
@@ -959,7 +1008,7 @@ function BookingFlowContent() {
   };
 
   const handleHierarchyBreadcrumbClick = (targetIdx: number) => {
-    if (isExitingHierarchy || transitioningNodeId) return;
+    if (isExitingHierarchy || transitioningNodeId || morphState) return;
     setIsExitingHierarchy(true);
     setTimeout(() => {
       setSelectedPath(prev => prev.slice(0, targetIdx + 1));
@@ -968,7 +1017,7 @@ function BookingFlowContent() {
   };
 
   const handleHierarchyReset = () => {
-    if (isExitingHierarchy || transitioningNodeId || selectedPath.length === 0) return;
+    if (isExitingHierarchy || transitioningNodeId || selectedPath.length === 0 || morphState) return;
     setIsExitingHierarchy(true);
     setTimeout(() => {
       setSelectedPath([]);
@@ -1030,10 +1079,68 @@ function BookingFlowContent() {
                     </div>
                   ) : !selectedSubService ? (
                     /* 1. HIERARCHICAL TREE SELECTION MODE (SPATIAL CONTINUOUS MOTION) */
-                    <div className="space-y-5">
+                    <div ref={treeContainerRef} className="space-y-5 relative">
                       
-                      {/* Dynamic Parent Origin Transformation Banner */}
-                      {selectedPath.length > 0 && currentParent ? (
+                      {/* Morphing Floating Element (Card that glides up and morphs into Header) */}
+                      {morphState && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: morphState.isAnimating ? 0 : morphState.initTop,
+                            left: morphState.isAnimating ? 0 : morphState.initLeft,
+                            width: morphState.isAnimating ? "100%" : `${morphState.initWidth}px`,
+                            height: morphState.isAnimating ? "auto" : `${morphState.initHeight}px`,
+                            minHeight: morphState.isAnimating ? "84px" : `${morphState.initHeight}px`,
+                            zIndex: 50,
+                            transition: "all 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+                          }}
+                          className={`rounded-2xl border border-blue-300/90 dark:border-blue-700 bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] shadow-xl shadow-blue-500/25 overflow-hidden ${
+                            morphState.isAnimating 
+                              ? "p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5" 
+                              : "p-3.5 sm:p-5 flex flex-col items-center justify-center text-center"
+                          }`}
+                        >
+                          <div className={`flex ${morphState.isAnimating ? "items-center gap-3.5 min-w-0" : "flex-col items-center justify-center text-center"}`}>
+                            <div className={`rounded-2xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center shrink-0 shadow-2xs transition-all duration-300 w-12 h-12 sm:w-14 sm:h-14 p-2.5`}>
+                              {resolveIconUrl(morphState.node.image) ? (
+                                <img src={resolveIconUrl(morphState.node.image) || ""} alt="" className="w-full h-full object-contain" />
+                              ) : (
+                                (() => {
+                                  const IconComp = getServiceFallbackIcon(morphState.node.title?.ar || morphState.node.title || "");
+                                  return <IconComp className="w-6 h-6 sm:w-7 sm:h-7" />;
+                                })()
+                              )}
+                            </div>
+                            <div className={`min-w-0 space-y-0.5 ${morphState.isAnimating ? "text-right" : "text-center mt-2.5"}`}>
+                              <h3 className={`font-black text-slate-900 dark:text-white transition-all ${
+                                morphState.isAnimating ? "text-base sm:text-lg" : "text-xs sm:text-sm"
+                              }`}>
+                                {morphState.node.title?.ar || morphState.node.title}
+                              </h3>
+                              {morphState.isAnimating && (morphState.node.description?.ar || morphState.node.description) && (
+                                <p className="text-xs text-slate-500 dark:text-slate-300 font-medium leading-relaxed line-clamp-2">
+                                  {morphState.node.description?.ar || morphState.node.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {morphState.isAnimating && (
+                            <div className="transition-opacity duration-300 opacity-100">
+                              <button
+                                type="button"
+                                className="self-start sm:self-center text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/90 dark:border-blue-900/60 shadow-2xs pointer-events-none"
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                                <span>رجوع خطوة</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Dynamic Parent Origin Transformation Banner (Persisted State) */}
+                      {!morphState && selectedPath.length > 0 && currentParent ? (
                         <div className="animate-spatial-parent bg-gradient-to-r from-blue-50/90 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
                           {/* Parent Identity & Icon & Description */}
                           <div className="flex items-center gap-3.5 min-w-0">
@@ -1072,7 +1179,7 @@ function BookingFlowContent() {
                       ) : null}
 
                       {/* Header Title based on Current Depth */}
-                      <div className="animate-spatial-parent">
+                      <div className={`transition-all duration-300 ${morphState ? "opacity-30" : "animate-spatial-parent"}`}>
                         {selectedPath.length === 0 ? (
                           <>
                             <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
@@ -1110,25 +1217,25 @@ function BookingFlowContent() {
                           const isPaused = node.status === "paused";
                           const NodeIcon = getServiceFallbackIcon(node.title?.ar || node.title || "");
                           const iconUrl = resolveIconUrl(node.image);
-                          const isSelectedActive = transitioningNodeId === node.id;
-                          const isAnotherSelected = transitioningNodeId !== null && !isSelectedActive;
+                          const isThisMorphing = morphState?.node.id === node.id;
+                          const isAnotherMorphing = morphState !== null && !isThisMorphing;
 
                           return (
                             <button
                               type="button"
                               key={node.id}
-                              disabled={isPaused}
-                              onClick={() => handleServiceNodeSelect(node, isBookableLeaf)}
+                              disabled={isPaused || morphState !== null}
+                              onClick={(e) => handleServiceNodeSelect(node, isBookableLeaf, e)}
                               style={{
                                 animationDelay: `${Math.min(idx * 70, 450)}ms`
                               }}
                               className={`p-3.5 sm:p-5 rounded-2xl border text-center transition-all duration-300 flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative animate-spatial-child ${
                                 isPaused
                                   ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
-                                  : isSelectedActive
-                                    ? "scale-[1.04] border-[#0091FF] dark:border-[#0091FF] bg-blue-50 dark:bg-blue-950/80 ring-2 ring-[#0091FF]/60 shadow-xl shadow-blue-500/25 -translate-y-1.5 z-10"
-                                    : isAnotherSelected
-                                      ? "opacity-30 scale-95 pointer-events-none"
+                                  : isThisMorphing
+                                    ? "opacity-0 pointer-events-none"
+                                    : isAnotherMorphing
+                                      ? "opacity-0 scale-90 pointer-events-none"
                                       : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
                               }`}
                             >
@@ -1147,9 +1254,7 @@ function BookingFlowContent() {
                               <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${
                                 isPaused 
                                   ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-900/40" 
-                                  : isSelectedActive
-                                    ? "bg-[#0091FF] text-white scale-110"
-                                    : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
+                                  : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
                               } flex items-center justify-center p-2.5 group-hover:scale-105 transition-all shrink-0 shadow-2xs`}>
                                 {iconUrl ? (
                                   <img src={iconUrl} alt="" className="w-full h-full object-contain" />
