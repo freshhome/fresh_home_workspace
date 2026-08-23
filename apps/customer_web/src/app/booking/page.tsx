@@ -946,7 +946,7 @@ function BookingFlowContent() {
         setSelectedPath(prev => [...prev, node]);
       }
       setTransitioningNodeId(null);
-    }, 160);
+    }, 280);
   };
 
   const handleHierarchyBack = () => {
@@ -955,7 +955,7 @@ function BookingFlowContent() {
     setTimeout(() => {
       setSelectedPath(prev => prev.slice(0, -1));
       setIsExitingHierarchy(false);
-    }, 180);
+    }, 260);
   };
 
   const handleHierarchyBreadcrumbClick = (targetIdx: number) => {
@@ -964,7 +964,7 @@ function BookingFlowContent() {
     setTimeout(() => {
       setSelectedPath(prev => prev.slice(0, targetIdx + 1));
       setIsExitingHierarchy(false);
-    }, 180);
+    }, 260);
   };
 
   const handleHierarchyReset = () => {
@@ -973,7 +973,7 @@ function BookingFlowContent() {
     setTimeout(() => {
       setSelectedPath([]);
       setIsExitingHierarchy(false);
-    }, 180);
+    }, 260);
   };
 
   return (
@@ -1150,13 +1150,13 @@ function BookingFlowContent() {
                               disabled={isPaused}
                               onClick={() => handleServiceNodeSelect(node, isBookableLeaf)}
                               style={{
-                                animationDelay: `${Math.min(idx * 50, 300)}ms`
+                                animationDelay: `${Math.min(idx * 70, 450)}ms`
                               }}
-                              className={`p-3.5 sm:p-5 rounded-2xl border text-center transition-all duration-200 flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative animate-spatial-child ${
+                              className={`p-3.5 sm:p-5 rounded-2xl border text-center transition-all duration-300 flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative animate-spatial-child ${
                                 isPaused
                                   ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
                                   : isSelectedActive
-                                    ? "scale-[1.03] border-[#0091FF] dark:border-[#0091FF] bg-blue-50/80 dark:bg-blue-950/60 ring-2 ring-[#0091FF]/50 shadow-md"
+                                    ? "scale-[1.04] border-[#0091FF] dark:border-[#0091FF] bg-blue-50 dark:bg-blue-950/80 ring-2 ring-[#0091FF]/60 shadow-lg shadow-blue-500/20 -translate-y-1"
                                     : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
                               }`}
                             >

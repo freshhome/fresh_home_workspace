@@ -222,8 +222,8 @@ body {
    ========================================================================= */
 @keyframes spatialParentTransform {
   0% {
-    opacity: 0.7;
-    transform: translateY(8px) scale(0.98);
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
   }
   100% {
     opacity: 1;
@@ -234,7 +234,10 @@ body {
 @keyframes spatialChildReveal {
   0% {
     opacity: 0;
-    transform: translateY(16px) scale(0.96);
+    transform: translateY(22px) scale(0.95);
+  }
+  60% {
+    opacity: 0.9;
   }
   100% {
     opacity: 1;
@@ -249,22 +252,23 @@ body {
   }
   100% {
     opacity: 0;
-    transform: translateY(-10px) scale(0.96);
+    transform: translateY(-14px) scale(0.96);
   }
 }
 
 .animate-spatial-parent {
-  animation: spatialParentTransform 320ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: spatialParentTransform 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity;
 }
 
 .animate-spatial-child {
-  animation: spatialChildReveal 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: spatialChildReveal 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
   will-change: transform, opacity;
 }
 
 .animate-spatial-collapse {
-  animation: spatialChildCollapse 200ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: spatialChildCollapse 260ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
   will-change: transform, opacity;
 }
+
 
