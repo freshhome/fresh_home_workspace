@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   ShieldCheck, ArrowLeft, ArrowRight, CheckCircle2, 
   MapPin, Calendar, CreditCard, Clock, Check, ShieldAlert, Sparkles,
@@ -274,20 +275,6 @@ function BookingFlowContent() {
   const [selectedPath, setSelectedPath] = useState<any[]>([]);
   const [selectedSubService, setSelectedSubService] = useState<any>(null);
   const [loadingServices, setLoadingServices] = useState(false);
-
-  // Service Hierarchy Spatial Transition & Morph States
-  const [transitioningNodeId, setTransitioningNodeId] = useState<string | null>(null);
-  const [isExitingHierarchy, setIsExitingHierarchy] = useState(false);
-  const [morphState, setMorphState] = useState<{
-    node: any;
-    initTop: number;
-    initLeft: number;
-    initWidth: number;
-    initHeight: number;
-    isBookableLeaf: boolean;
-    isAnimating: boolean;
-  } | null>(null);
-  const treeContainerRef = useRef<HTMLDivElement>(null);
 
   // Dynamic Pricing Form Inputs
   const [pricingInputs, setPricingInputs] = useState<Record<string, any>>({});
@@ -944,85 +931,33 @@ function BookingFlowContent() {
     }
   };
 
-  // Spatial Transition & Morph Handlers
-  const handleServiceNodeSelect = (node: any, isBookableLeaf: boolean, e: React.MouseEvent<HTMLButtonElement>) => {
-    if (transitioningNodeId || isExitingHierarchy || morphState) return;
-
-    const cardEl = e.currentTarget;
-    const containerEl = treeContainerRef.current;
-    if (cardEl && containerEl && !isBookableLeaf) {
-      const cardRect = cardEl.getBoundingClientRect();
-      const containerRect = containerEl.getBoundingClientRect();
-
-      const initTop = cardRect.top - containerRect.top;
-      const initLeft = cardRect.left - containerRect.left;
-      const initWidth = cardRect.width;
-      const initHeight = cardRect.height;
-
-      setTransitioningNodeId(node.id);
-      setMorphState({
-        node,
-        initTop,
-        initLeft,
-        initWidth,
-        initHeight,
-        isBookableLeaf,
-        isAnimating: false,
-      });
-
-      // Trigger the upward slide & expand in next animation frames
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setMorphState(prev => prev ? { ...prev, isAnimating: true } : null);
-        });
-      });
-
-      // After the glide animation completes (60s ultra slow-motion mode), finalize state
-      setTimeout(() => {
-        setSelectedPath(prev => [...prev, node]);
-        setMorphState(null);
-        setTransitioningNodeId(null);
-      }, 60000);
+  // Service Hierarchy Navigation (Framer Motion Shared Element)
+  const handleServiceNodeSelect = (node: any, isBookableLeaf: boolean) => {
+    if (isBookableLeaf) {
+      setSelectedSubService(node);
+      setSubServiceId(node.id);
     } else {
-      // Direct selection or leaf node
-      setTransitioningNodeId(node.id);
-      setTimeout(() => {
-        if (isBookableLeaf) {
-          setSelectedSubService(node);
-          setSubServiceId(node.id);
-        } else {
-          setSelectedPath(prev => [...prev, node]);
-        }
-        setTransitioningNodeId(null);
-      }, 60000);
+      setSelectedPath(prev => [...prev, node]);
     }
   };
 
   const handleHierarchyBack = () => {
-    if (isExitingHierarchy || transitioningNodeId || selectedPath.length === 0 || morphState) return;
-    setIsExitingHierarchy(true);
-    setTimeout(() => {
-      setSelectedPath(prev => prev.slice(0, -1));
-      setIsExitingHierarchy(false);
-    }, 60000);
+    if (selectedPath.length === 0) return;
+    setSelectedPath(prev => prev.slice(0, -1));
   };
 
   const handleHierarchyBreadcrumbClick = (targetIdx: number) => {
-    if (isExitingHierarchy || transitioningNodeId || morphState) return;
-    setIsExitingHierarchy(true);
-    setTimeout(() => {
-      setSelectedPath(prev => prev.slice(0, targetIdx + 1));
-      setIsExitingHierarchy(false);
-    }, 60000);
+    setSelectedPath(prev => prev.slice(0, targetIdx + 1));
   };
 
   const handleHierarchyReset = () => {
-    if (isExitingHierarchy || transitioningNodeId || selectedPath.length === 0 || morphState) return;
-    setIsExitingHierarchy(true);
-    setTimeout(() => {
-      setSelectedPath([]);
-      setIsExitingHierarchy(false);
-    }, 60000);
+    setSelectedPath([]);
+  };
+
+  const springTransition = {
+    type: "spring" as const,
+    stiffness: 300,
+    damping: 30,
   };
 
   return (
@@ -1078,72 +1013,24 @@ function BookingFlowContent() {
                       <span className="text-xs font-bold text-slate-400">جاري تحميل الخدمات وقواعد التسعير...</span>
                     </div>
                   ) : !selectedSubService ? (
-                    /* 1. HIERARCHICAL TREE SELECTION MODE (SPATIAL CONTINUOUS MOTION) */
-                    <div ref={treeContainerRef} className="space-y-5 relative">
+                    /* 1. HIERARCHICAL TREE SELECTION MODE (SHARED ELEMENT FRAMER-MOTION) */
+                    <div className="space-y-5">
                       
-                      {/* Morphing Floating Element (Card that glides up and morphs into Header) */}
-                      {morphState && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: morphState.isAnimating ? 0 : morphState.initTop,
-                            left: morphState.isAnimating ? 0 : morphState.initLeft,
-                            width: morphState.isAnimating ? "100%" : `${morphState.initWidth}px`,
-                            height: morphState.isAnimating ? "auto" : `${morphState.initHeight}px`,
-                            minHeight: morphState.isAnimating ? "84px" : `${morphState.initHeight}px`,
-                            zIndex: 50,
-                            transition: "all 60000ms ease-in-out",
-                          }}
-                          className={`rounded-2xl border border-blue-300/90 dark:border-blue-700 bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] shadow-xl shadow-blue-500/25 overflow-hidden ${
-                            morphState.isAnimating 
-                              ? "p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5" 
-                              : "p-3.5 sm:p-5 flex flex-col items-center justify-center text-center"
-                          }`}
+                      {/* Dynamic Parent Origin Transformation Banner */}
+                      {selectedPath.length > 0 && currentParent ? (
+                        <motion.div
+                          layout
+                          layoutId={`service-node-${currentParent.id}`}
+                          transition={springTransition}
+                          className="bg-gradient-to-r from-blue-50/90 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5"
                         >
-                          <div className={`flex ${morphState.isAnimating ? "items-center gap-3.5 min-w-0" : "flex-col items-center justify-center text-center"}`}>
-                            <div className={`rounded-2xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center shrink-0 shadow-2xs transition-all duration-[60000ms] w-12 h-12 sm:w-14 sm:h-14 p-2.5`}>
-                              {resolveIconUrl(morphState.node.image) ? (
-                                <img src={resolveIconUrl(morphState.node.image) || ""} alt="" className="w-full h-full object-contain" />
-                              ) : (
-                                (() => {
-                                  const IconComp = getServiceFallbackIcon(morphState.node.title?.ar || morphState.node.title || "");
-                                  return <IconComp className="w-6 h-6 sm:w-7 sm:h-7" />;
-                                })()
-                              )}
-                            </div>
-                            <div className={`min-w-0 space-y-0.5 ${morphState.isAnimating ? "text-right" : "text-center mt-2.5"}`}>
-                              <h3 className={`font-black text-slate-900 dark:text-white transition-all duration-[60000ms] ${
-                                morphState.isAnimating ? "text-base sm:text-lg" : "text-xs sm:text-sm"
-                              }`}>
-                                {morphState.node.title?.ar || morphState.node.title}
-                              </h3>
-                              {morphState.isAnimating && (morphState.node.description?.ar || morphState.node.description) && (
-                                <p className="text-xs text-slate-500 dark:text-slate-300 font-medium leading-relaxed line-clamp-2 transition-opacity duration-[60000ms]">
-                                  {morphState.node.description?.ar || morphState.node.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          {morphState.isAnimating && (
-                            <div className="transition-opacity duration-[60000ms] opacity-100">
-                              <button
-                                type="button"
-                                className="self-start sm:self-center text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/90 dark:border-blue-900/60 shadow-2xs pointer-events-none"
-                              >
-                                <ChevronRight className="w-4 h-4" />
-                                <span>رجوع خطوة</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Dynamic Parent Origin Transformation Banner (Persisted State) */}
-                      {!morphState && selectedPath.length > 0 && currentParent ? (
-                        <div className="animate-spatial-parent bg-gradient-to-r from-blue-50/90 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
                           {/* Parent Identity & Icon & Description */}
-                          <div className="flex items-center gap-3.5 min-w-0">
+                          <motion.div 
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1, duration: 0.25 }}
+                            className="flex items-center gap-3.5 min-w-0"
+                          >
                             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center p-2.5 shrink-0 shadow-2xs">
                               {resolveIconUrl(currentParent.image) ? (
                                 <img src={resolveIconUrl(currentParent.image) || ""} alt="" className="w-full h-full object-contain" />
@@ -1164,113 +1051,130 @@ function BookingFlowContent() {
                                 </p>
                               )}
                             </div>
-                          </div>
+                          </motion.div>
 
                           {/* Back Button */}
-                          <button
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.1, duration: 0.25 }}
                             type="button"
                             onClick={handleHierarchyBack}
                             className="self-start sm:self-center text-xs font-black text-slate-700 dark:text-slate-200 hover:text-[#0091FF] dark:hover:text-[#22A5FC] flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/90 dark:border-blue-900/60 transition-all shrink-0 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
                           >
                             <ChevronRight className="w-4 h-4" />
                             <span>رجوع خطوة</span>
-                          </button>
-                        </div>
+                          </motion.button>
+                        </motion.div>
                       ) : null}
 
                       {/* Header Title based on Current Depth */}
-                      <div className={`transition-all duration-[60000ms] ${morphState ? "opacity-30" : "animate-spatial-parent"}`}>
-                        {selectedPath.length === 0 ? (
-                          <>
-                            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
-                              الخطوة 1: اختيار الخدمة
-                            </span>
-                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                              برجاء تحديد نوع الخدمة المطلوبة
-                            </h2>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-                              اختر القسم الرئيسي المناسب للبدء في تخصيص طلبك وتحديد السعر النهائي
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
-                              يرجى اختيار الخدمة المناسبة
-                            </h2>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-                              اختر من الخدمات والخيارات التابعة لـ ({currentParent?.title?.ar || currentParent?.title}) أدناه
-                            </p>
-                          </>
-                        )}
-                      </div>
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={selectedPath.length === 0 ? "root-title" : `child-title-${currentParent?.id}`}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {selectedPath.length === 0 ? (
+                            <>
+                              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
+                                الخطوة 1: اختيار الخدمة
+                              </span>
+                              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                                برجاء تحديد نوع الخدمة المطلوبة
+                              </h2>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                                اختر القسم الرئيسي المناسب للبدء في تخصيص طلبك وتحديد السعر النهائي
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                                يرجى اختيار الخدمة المناسبة
+                              </h2>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                                اختر من الخدمات والخيارات التابعة لـ ({currentParent?.title?.ar || currentParent?.title}) أدناه
+                              </p>
+                            </>
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
 
-                      {/* Grid of Minimal Interactive Service Cards (Phase 3: Children Emerge with Staggered Entrance) */}
-                      <div 
-                        key={selectedPath.map((n) => n.id).join("-") || "root-level"}
-                        className={`grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-1 ${
-                          isExitingHierarchy ? "animate-spatial-collapse" : ""
-                        }`}
-                      >
-                        {currentLevelNodes.map((node, idx) => {
-                          const nodeChildren = getChildren(node.id);
-                          const isBookableLeaf = node.is_bookable === true && nodeChildren.length === 0;
-                          const isPaused = node.status === "paused";
-                          const NodeIcon = getServiceFallbackIcon(node.title?.ar || node.title || "");
-                          const iconUrl = resolveIconUrl(node.image);
-                          const isThisMorphing = morphState?.node.id === node.id;
-                          const isAnotherMorphing = morphState !== null && !isThisMorphing;
+                      {/* Grid of Minimal Interactive Service Cards (Staggered Animation with Shared Element layoutId) */}
+                      <AnimatePresence mode="wait">
+                        <motion.div 
+                          key={selectedPath.map((n) => n.id).join("-") || "root-level"}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-1"
+                        >
+                          {currentLevelNodes.map((node, idx) => {
+                            const nodeChildren = getChildren(node.id);
+                            const isBookableLeaf = node.is_bookable === true && nodeChildren.length === 0;
+                            const isPaused = node.status === "paused";
+                            const NodeIcon = getServiceFallbackIcon(node.title?.ar || node.title || "");
+                            const iconUrl = resolveIconUrl(node.image);
 
-                          return (
-                            <button
-                              type="button"
-                              key={node.id}
-                              disabled={isPaused || morphState !== null}
-                              onClick={(e) => handleServiceNodeSelect(node, isBookableLeaf, e)}
-                              style={{
-                                animationDelay: `${idx * 4}s`
-                              }}
-                              className={`p-3.5 sm:p-5 rounded-2xl border text-center transition-all duration-[60000ms] flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative animate-spatial-child ${
-                                isPaused
-                                  ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
-                                  : isThisMorphing
-                                    ? "opacity-0 pointer-events-none"
-                                    : isAnotherMorphing
-                                      ? "opacity-0 scale-90 pointer-events-none"
-                                      : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
-                              }`}
-                            >
-                              {/* Top mini-badge for sub-branches or direct booking */}
-                              {isPaused ? (
-                                <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
-                                  متوقفة
-                                </span>
-                              ) : nodeChildren.length > 0 ? (
-                                <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/40">
-                                  {nodeChildren.length}
-                                </span>
-                              ) : null}
+                            return (
+                              <motion.button
+                                layout
+                                layoutId={`service-node-${node.id}`}
+                                initial={{ opacity: 0, y: 14, scale: 0.96 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                                transition={{
+                                  layout: springTransition,
+                                  opacity: { duration: 0.25, delay: idx * 0.035 },
+                                  y: { duration: 0.25, delay: idx * 0.035 },
+                                  scale: { duration: 0.25, delay: idx * 0.035 }
+                                }}
+                                type="button"
+                                key={node.id}
+                                disabled={isPaused}
+                                onClick={() => handleServiceNodeSelect(node, isBookableLeaf)}
+                                className={`p-3.5 sm:p-5 rounded-2xl border text-center flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative ${
+                                  isPaused
+                                    ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
+                                    : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
+                                }`}
+                              >
+                                {/* Top mini-badge for sub-branches or direct booking */}
+                                {isPaused ? (
+                                  <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                                    متوقفة
+                                  </span>
+                                ) : nodeChildren.length > 0 ? (
+                                  <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/40">
+                                    {nodeChildren.length}
+                                  </span>
+                                ) : null}
 
-                              {/* Icon Badge */}
-                              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${
-                                isPaused 
-                                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-900/40" 
-                                  : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
-                              } flex items-center justify-center p-2.5 group-hover:scale-105 transition-all shrink-0 shadow-2xs`}>
-                                {iconUrl ? (
-                                  <img src={iconUrl} alt="" className="w-full h-full object-contain" />
-                                ) : (
-                                  <NodeIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-                                )}
-                              </div>
+                                {/* Icon Badge */}
+                                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${
+                                  isPaused 
+                                    ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-900/40" 
+                                    : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
+                                } flex items-center justify-center p-2.5 group-hover:scale-105 transition-all shrink-0 shadow-2xs`}>
+                                  {iconUrl ? (
+                                    <img src={iconUrl} alt="" className="w-full h-full object-contain" />
+                                  ) : (
+                                    <NodeIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+                                  )}
+                                </div>
 
-                              {/* Service Title */}
-                              <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors mt-2.5 leading-snug line-clamp-2">
-                                {node.title?.ar || node.title}
-                              </h3>
-                            </button>
-                          );
-                        })}
-                      </div>
+                                {/* Service Title */}
+                                <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors mt-2.5 leading-snug line-clamp-2">
+                                  {node.title?.ar || node.title}
+                                </h3>
+                              </motion.button>
+                            );
+                          })}
+                        </motion.div>
+                      </AnimatePresence>
                     </div>
                   ) : (
                     /* 2. DYNAMIC PRICING FORM MODE (Leaf Bookable Service Selected) */
