@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -247,20 +247,78 @@ function resolveIconUrl(imageStr?: string | null): string | null {
 }
 
 // =========================================================================
-// Category Slider with Smooth Touch Swiping & Fully Clickable Cards
+// Category Slider with Automatic Auto-Scroll & Smart User Interaction Pause
 // =========================================================================
 function CategorySlider({ category }: { category: MainCategoryGroup }) {
   const sliderRef = useRef<HTMLDivElement>(null);
+  const [isUserInteracting, setIsUserInteracting] = useState(false);
+  const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const CategoryIcon = category.fallbackIcon;
 
+  // Pause auto-scroll immediately on user interaction
+  const pauseAutoScroll = useCallback(() => {
+    setIsUserInteracting(true);
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+    }
+  }, []);
+
+  // Resume auto-scroll after idle delay
+  const resumeAutoScrollAfterDelay = useCallback((delayMs = 4000) => {
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+    }
+    resumeTimeoutRef.current = setTimeout(() => {
+      setIsUserInteracting(false);
+    }, delayMs);
+  }, []);
+
+  // Manual scroll with buttons
   const scroll = (direction: "left" | "right") => {
+    pauseAutoScroll();
     if (!sliderRef.current) return;
-    const scrollAmount = 310;
+    const scrollAmount = 300;
     sliderRef.current.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
       behavior: "smooth",
     });
+    resumeAutoScrollAfterDelay(4500);
   };
+
+  // Automatic gentle auto-scroll interval
+  useEffect(() => {
+    if (isUserInteracting || category.subServices.length <= 1) return;
+
+    const interval = setInterval(() => {
+      const el = sliderRef.current;
+      if (!el) return;
+
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (maxScroll <= 15) return; // No need to scroll if all cards fit
+
+      // In RTL, scroll is negative or offsets from start
+      const currentScroll = Math.abs(el.scrollLeft);
+
+      if (currentScroll >= maxScroll - 35) {
+        // Reached end, loop back smoothly to start
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        // Step to next card smoothly
+        el.scrollBy({ left: -295, behavior: "smooth" });
+      }
+    }, 3600);
+
+    return () => clearInterval(interval);
+  }, [isUserInteracting, category.subServices.length]);
+
+  // Clean up timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (resumeTimeoutRef.current) {
+        clearTimeout(resumeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -321,9 +379,14 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
         </div>
       </div>
 
-      {/* Horizontal Slider Track with Touch Swiping and Snapping */}
+      {/* Horizontal Slider Track with Automatic Smooth Animation & Touch Gestures */}
       <div
         ref={sliderRef}
+        onMouseEnter={pauseAutoScroll}
+        onMouseLeave={() => resumeAutoScrollAfterDelay(2000)}
+        onTouchStart={pauseAutoScroll}
+        onTouchEnd={() => resumeAutoScrollAfterDelay(3500)}
+        onPointerDown={pauseAutoScroll}
         className="flex gap-3.5 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory no-scrollbar text-right px-0.5 touch-pan-x select-none"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
