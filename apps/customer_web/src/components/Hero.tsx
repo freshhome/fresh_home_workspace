@@ -11,10 +11,10 @@ export default function Hero() {
         <img
           src="/images/hero_transformation.jpg"
           alt="من آثار التشطيب لبيت جاهز للحياة - Fresh Home"
-          className="w-full h-full object-cover object-center scale-105 filter brightness-95 contrast-105 dark:brightness-75 dark:contrast-110 opacity-30 dark:opacity-100 transition-opacity duration-300"
+          className="w-full h-full object-cover object-center scale-105 filter brightness-100 contrast-105 dark:brightness-75 dark:contrast-110 opacity-80 sm:opacity-85 dark:opacity-90 transition-opacity duration-300"
         />
-        {/* Light Mode Overlay (Soft Gradient) vs Dark Mode Overlay (Deep Navy Vignette) */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#F4F7FB] via-[#F4F7FB]/90 to-[#F4F7FB]/60 dark:from-[#06112c] dark:via-[#06112c]/85 dark:to-[#06112c]/65 transition-colors duration-300" />
+        {/* Light Mode Overlay (Gentle Translucent Gradient) vs Dark Mode Overlay (Deep Navy Vignette) */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#F4F7FB] via-[#F4F7FB]/55 to-[#F4F7FB]/20 dark:from-[#06112c] dark:via-[#06112c]/85 dark:to-[#06112c]/65 transition-colors duration-300" />
       </div>
 
       {/* Hero Content Container */}
