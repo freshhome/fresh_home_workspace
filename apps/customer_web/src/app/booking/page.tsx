@@ -1002,183 +1002,206 @@ function BookingFlowContent() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Step Content */}
-            <div className="lg:col-span-8 bg-white dark:bg-[#071739] rounded-3xl p-5 sm:p-7 border border-slate-200/80 dark:border-blue-900/50 shadow-sm min-h-[420px] flex flex-col justify-between transition-colors">
-              
-              {/* STEP 1: HIERARCHICAL SELECTION & PRICING */}
-              {currentStep === 0 && (
-                <div className="space-y-6">
-                  {loadingServices ? (
-                    <div className="py-20 flex flex-col items-center justify-center space-y-3">
-                      <div className="animate-spin rounded-full h-9 w-9 border-t-2 border-[#0091FF]"></div>
-                      <span className="text-xs font-bold text-slate-400">جاري تحميل الخدمات وقواعد التسعير...</span>
-                    </div>
-                  ) : !selectedSubService ? (
-                    /* 1. HIERARCHICAL TREE SELECTION MODE (SHARED ELEMENT FRAMER-MOTION) */
-                    <div className="space-y-5">
-                      
-                      {/* Dynamic Parent Origin Transformation Banner */}
-                      {selectedPath.length > 0 && currentParent ? (
-                        <motion.div
-                          layout
-                          layoutId={`service-node-${currentParent.id}`}
-                          transition={springTransition}
-                          className="bg-gradient-to-r from-blue-50/90 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5"
-                        >
-                          {/* Parent Identity & Icon & Description */}
-                          <motion.div 
-                            initial={{ opacity: 0, x: 10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.1, duration: 0.25 }}
-                            className="flex items-center gap-3.5 min-w-0"
+            <motion.div 
+              layout 
+              transition={{ duration: 0.3 }} 
+              className="lg:col-span-8 bg-white dark:bg-[#071739] rounded-3xl p-5 sm:p-7 border border-slate-200/80 dark:border-blue-900/50 shadow-sm min-h-[420px] flex flex-col justify-between transition-colors"
+            >
+              <AnimatePresence mode="wait">
+                {/* STEP 1: HIERARCHICAL SELECTION & PRICING */}
+                {currentStep === 0 && (
+                  <motion.div
+                    key="step-0"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="space-y-6"
+                  >
+                    {loadingServices ? (
+                      <div className="py-20 flex flex-col items-center justify-center space-y-3">
+                        <div className="animate-spin rounded-full h-9 w-9 border-t-2 border-[#0091FF]"></div>
+                        <span className="text-xs font-bold text-slate-400">جاري تحميل الخدمات وقواعد التسعير...</span>
+                      </div>
+                    ) : !selectedSubService ? (
+                      /* 1. HIERARCHICAL TREE SELECTION MODE (SHARED ELEMENT FRAMER-MOTION) */
+                      <div className="space-y-5">
+                        
+                        {/* Dynamic Parent Origin Transformation Banner */}
+                        {selectedPath.length > 0 && currentParent ? (
+                          <motion.div
+                            layout
+                            layoutId={`service-node-${currentParent.id}`}
+                            transition={springTransition}
+                            className="bg-gradient-to-r from-blue-50/90 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5"
                           >
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center p-2.5 shrink-0 shadow-2xs">
-                              {resolveIconUrl(currentParent.image) ? (
-                                <img src={resolveIconUrl(currentParent.image) || ""} alt="" className="w-full h-full object-contain" />
-                              ) : (
-                                (() => {
-                                  const IconComp = getServiceFallbackIcon(currentParent.title?.ar || currentParent.title || "");
-                                  return <IconComp className="w-6 h-6 sm:w-7 sm:h-7" />;
-                                })()
-                              )}
-                            </div>
-                            <div className="min-w-0 space-y-0.5">
-                              <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
-                                {currentParent.title?.ar || currentParent.title}
-                              </h3>
-                              {(currentParent.description?.ar || currentParent.description) && (
-                                <p className="text-xs text-slate-500 dark:text-slate-300 font-medium leading-relaxed line-clamp-2">
-                                  {currentParent.description?.ar || currentParent.description}
-                                </p>
-                              )}
-                            </div>
-                          </motion.div>
-
-                          {/* Back Button */}
-                          <motion.button
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.1, duration: 0.25 }}
-                            type="button"
-                            onClick={handleHierarchyBack}
-                            className="self-start sm:self-center text-xs font-black text-slate-700 dark:text-slate-200 hover:text-[#0091FF] dark:hover:text-[#22A5FC] flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/90 dark:border-blue-900/60 transition-all shrink-0 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
-                          >
-                            <ChevronRight className="w-4 h-4" />
-                            <span>رجوع خطوة</span>
-                          </motion.button>
-                        </motion.div>
-                      ) : null}
-
-                      {/* Header Title based on Current Depth */}
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={selectedPath.length === 0 ? "root-title" : `child-title-${currentParent?.id}`}
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -6 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          {selectedPath.length === 0 ? (
-                            <>
-                              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
-                                الخطوة 1: اختيار الخدمة
-                              </span>
-                              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                                برجاء تحديد نوع الخدمة المطلوبة
-                              </h2>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-                                اختر القسم الرئيسي المناسب للبدء في تخصيص طلبك وتحديد السعر النهائي
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
-                                يرجى اختيار الخدمة المناسبة
-                              </h2>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-                                اختر من الخدمات والخيارات التابعة لـ ({currentParent?.title?.ar || currentParent?.title}) أدناه
-                              </p>
-                            </>
-                          )}
-                        </motion.div>
-                      </AnimatePresence>
-
-                      {/* Grid of Minimal Interactive Service Cards (Staggered Animation with Shared Element layoutId) */}
-                      <AnimatePresence mode="wait">
-                        <motion.div 
-                          key={selectedPath.map((n) => n.id).join("-") || "root-level"}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-1"
-                        >
-                          {currentLevelNodes.map((node, idx) => {
-                            const nodeChildren = getChildren(node.id);
-                            const isBookableLeaf = node.is_bookable === true && nodeChildren.length === 0;
-                            const isPaused = node.status === "paused";
-                            const NodeIcon = getServiceFallbackIcon(node.title?.ar || node.title || "");
-                            const iconUrl = resolveIconUrl(node.image);
-
-                            return (
-                              <motion.button
-                                layout
-                                layoutId={`service-node-${node.id}`}
-                                initial={{ opacity: 0, y: 14, scale: 0.96 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: -10, scale: 0.96 }}
-                                transition={{
-                                  layout: springTransition,
-                                  opacity: { duration: 0.25, delay: idx * 0.035 },
-                                  y: { duration: 0.25, delay: idx * 0.035 },
-                                  scale: { duration: 0.25, delay: idx * 0.035 }
-                                }}
-                                type="button"
-                                key={node.id}
-                                disabled={isPaused}
-                                onClick={() => handleServiceNodeSelect(node, isBookableLeaf)}
-                                className={`p-3.5 sm:p-5 rounded-2xl border text-center flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative ${
-                                  isPaused
-                                    ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
-                                    : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
-                                }`}
-                              >
-                                {/* Top mini-badge for sub-branches or direct booking */}
-                                {isPaused ? (
-                                  <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
-                                    متوقفة
-                                  </span>
-                                ) : nodeChildren.length > 0 ? (
-                                  <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/40">
-                                    {nodeChildren.length}
-                                  </span>
-                                ) : null}
-
-                                {/* Icon Badge */}
-                                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${
-                                  isPaused 
-                                    ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-900/40" 
-                                    : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
-                                } flex items-center justify-center p-2.5 group-hover:scale-105 transition-all shrink-0 shadow-2xs`}>
-                                  {iconUrl ? (
-                                    <img src={iconUrl} alt="" className="w-full h-full object-contain" />
-                                  ) : (
-                                    <NodeIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-                                  )}
-                                </div>
-
-                                {/* Service Title */}
-                                <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors mt-2.5 leading-snug line-clamp-2">
-                                  {node.title?.ar || node.title}
+                            {/* Parent Identity & Icon & Description */}
+                            <motion.div 
+                              layout="position"
+                              initial={{ opacity: 0, x: 10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.1, duration: 0.25 }}
+                              className="flex items-center gap-3.5 min-w-0"
+                            >
+                              <motion.div layout="position" className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center p-2.5 shrink-0 shadow-2xs">
+                                {resolveIconUrl(currentParent.image) ? (
+                                  <img src={resolveIconUrl(currentParent.image) || ""} alt="" className="w-full h-full object-contain" />
+                                ) : (
+                                  (() => {
+                                    const IconComp = getServiceFallbackIcon(currentParent.title?.ar || currentParent.title || "");
+                                    return <IconComp className="w-6 h-6 sm:w-7 sm:h-7" />;
+                                  })()
+                                )}
+                              </motion.div>
+                              <motion.div layout="position" className="min-w-0 space-y-0.5">
+                                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+                                  {currentParent.title?.ar || currentParent.title}
                                 </h3>
-                              </motion.button>
-                            );
-                          })}
-                        </motion.div>
-                      </AnimatePresence>
-                    </div>
-                  ) : (
-                    /* 2. DYNAMIC PRICING FORM MODE (Leaf Bookable Service Selected) */
-                    <div className="space-y-6 animate-fade-in">
+                                {(currentParent.description?.ar || currentParent.description) && (
+                                  <p className="text-xs text-slate-500 dark:text-slate-300 font-medium leading-relaxed line-clamp-2">
+                                    {currentParent.description?.ar || currentParent.description}
+                                  </p>
+                                )}
+                              </motion.div>
+                            </motion.div>
+
+                            {/* Back Button */}
+                            <motion.button
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 0.1, duration: 0.25 }}
+                              type="button"
+                              onClick={handleHierarchyBack}
+                              className="self-start sm:self-center text-xs font-black text-slate-700 dark:text-slate-200 hover:text-[#0091FF] dark:hover:text-[#22A5FC] flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/90 dark:border-blue-900/60 transition-all shrink-0 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                              <span>رجوع خطوة</span>
+                            </motion.button>
+                          </motion.div>
+                        ) : null}
+
+                        {/* Header Title based on Current Depth */}
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={selectedPath.length === 0 ? "root-title" : `child-title-${currentParent?.id}`}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            {selectedPath.length === 0 ? (
+                              <>
+                                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
+                                  الخطوة 1: اختيار الخدمة
+                                </span>
+                                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                                  برجاء تحديد نوع الخدمة المطلوبة
+                                </h2>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                                  اختر القسم الرئيسي المناسب للبدء في تخصيص طلبك وتحديد السعر النهائي
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                                  يرجى اختيار الخدمة المناسبة
+                                </h2>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                                  اختر من الخدمات والخيارات التابعة لـ ({currentParent?.title?.ar || currentParent?.title}) أدناه
+                                </p>
+                              </>
+                            )}
+                          </motion.div>
+                        </AnimatePresence>
+
+                        {/* Grid of Minimal Interactive Service Cards (Staggered Animation with Shared Element layoutId) */}
+                        <AnimatePresence mode="wait">
+                          <motion.div 
+                            key={selectedPath.map((n) => n.id).join("-") || "root-level"}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-1"
+                          >
+                            {currentLevelNodes.map((node, idx) => {
+                              const nodeChildren = getChildren(node.id);
+                              const isBookableLeaf = node.is_bookable === true && nodeChildren.length === 0;
+                              const isPaused = node.status === "paused";
+                              const NodeIcon = getServiceFallbackIcon(node.title?.ar || node.title || "");
+                              const iconUrl = resolveIconUrl(node.image);
+
+                              return (
+                                <motion.button
+                                  layout
+                                  layoutId={`service-node-${node.id}`}
+                                  initial={{ opacity: 0, y: 14, scale: 0.96 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                                  transition={{
+                                    layout: springTransition,
+                                    opacity: { duration: 0.25, delay: idx * 0.035 },
+                                    y: { duration: 0.25, delay: idx * 0.035 },
+                                    scale: { duration: 0.25, delay: idx * 0.035 }
+                                  }}
+                                  type="button"
+                                  key={node.id}
+                                  disabled={isPaused}
+                                  onClick={() => handleServiceNodeSelect(node, isBookableLeaf)}
+                                  className={`p-3.5 sm:p-5 rounded-2xl border text-center flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative ${
+                                    isPaused
+                                      ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
+                                      : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
+                                  }`}
+                                >
+                                  {/* Top mini-badge for sub-branches or direct booking */}
+                                  {isPaused ? (
+                                    <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                                      متوقفة
+                                    </span>
+                                  ) : nodeChildren.length > 0 ? (
+                                    <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/40">
+                                      {nodeChildren.length}
+                                    </span>
+                                  ) : null}
+
+                                  {/* Icon Badge */}
+                                  <motion.div 
+                                    layout="position"
+                                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${
+                                      isPaused 
+                                        ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-900/40" 
+                                        : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
+                                    } flex items-center justify-center p-2.5 group-hover:scale-105 transition-all shrink-0 shadow-2xs`}
+                                  >
+                                    {iconUrl ? (
+                                      <img src={iconUrl} alt="" className="w-full h-full object-contain" />
+                                    ) : (
+                                      <NodeIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+                                    )}
+                                  </motion.div>
+
+                                  {/* Service Title */}
+                                  <motion.h3 
+                                    layout="position"
+                                    className="text-xs sm:text-sm font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors mt-2.5 leading-snug line-clamp-2"
+                                  >
+                                    {node.title?.ar || node.title}
+                                  </motion.h3>
+                                </motion.button>
+                              );
+                            })}
+                          </motion.div>
+                        </AnimatePresence>
+                      </div>
+                    ) : (
+                      /* 2. DYNAMIC PRICING FORM MODE (Leaf Bookable Service Selected) */
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={springTransition}
+                        className="space-y-6"
+                      >
                       {/* Selected Service Banner with Full Path and Change Button */}
                       <div className="bg-gradient-to-r from-blue-50/90 to-indigo-50/60 dark:from-[#050D24] dark:to-[#071739] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 flex items-center justify-between gap-3 shadow-xs">
                         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -1489,397 +1512,419 @@ function BookingFlowContent() {
                           </div>
                         </div>
                       )}
-                    </div>
+                    </motion.div>
                   )}
-                </div>
+                </motion.div>
               )}
 
-              {/* STEP 2: SCHEDULE APPOINTMENT */}
-              {currentStep === 1 && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-black text-slate-800 dark:text-white">اختيار موعد ويوم الزيارة</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 font-medium">حدد التاريخ والوقت المناسب لحضور فريق العمل المعتمد لمنزلك.</p>
-                  </div>
-
-                  {/* Date picker */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-xs font-black text-slate-800 dark:text-white">اليوم المفضل (خلال 30 يوماً)</label>
-                      <div className="flex gap-1">
-                        <button type="button" onClick={() => scrollDates('right')} className="p-1 rounded-lg border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 hover:bg-slate-100 transition-colors cursor-pointer">
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                        <button type="button" onClick={() => scrollDates('left')} className="p-1 rounded-lg border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 hover:bg-slate-100 transition-colors cursor-pointer">
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                      </div>
+                {/* STEP 2: SCHEDULE APPOINTMENT */}
+                {currentStep === 1 && (
+                  <motion.div
+                    key="step-1"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="space-y-6"
+                  >
+                    <div>
+                      <h2 className="text-xl font-black text-slate-800 dark:text-white">اختيار موعد ويوم الزيارة</h2>
+                      <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 font-medium">حدد التاريخ والوقت المناسب لحضور فريق العمل المعتمد لمنزلك.</p>
                     </div>
 
-                    <div 
-                      ref={dateScrollRef}
-                      className="flex gap-2 overflow-x-auto pb-2 scroll-smooth no-scrollbar"
-                      style={{ scrollbarWidth: 'none' }}
-                    >
-                      {Array.from({ length: 30 }).map((_, idx) => {
-                        const d = new Date();
-                        d.setDate(d.getDate() + idx);
-                        const dateStr = formatDateLocal(d);
-                        const isSelected = scheduledDate === dateStr;
-                        const isAvailable = availabilityMap[dateStr] !== false;
-                        
-                        const dayName = d.toLocaleDateString("ar-EG", { weekday: "short" });
-                        const dayNum = d.getDate();
-                        const monthName = d.toLocaleDateString("ar-EG", { month: "short" });
-
-                        return (
-                          <button
-                            type="button"
-                            key={dateStr}
-                            disabled={!isAvailable || isLoadingAvailability}
-                            onClick={() => {
-                              setScheduledDate(dateStr);
-                              setManualDateText(dateStr);
-                            }}
-                            className={`flex flex-col items-center justify-center p-3 rounded-2xl border min-w-[76px] transition-all cursor-pointer shrink-0 ${
-                              !isAvailable 
-                                ? "opacity-35 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed" 
-                                : isSelected 
-                                  ? "border-[#0091FF] bg-[#0091FF] text-white shadow-md shadow-blue-500/25 scale-105" 
-                                  : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-[#0091FF]"
-                            }`}
-                          >
-                            <span className="text-[10px] font-bold">{dayName}</span>
-                            <span className="text-lg font-black my-0.5">{dayNum}</span>
-                            <span className="text-[10px] font-bold opacity-80">{monthName}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Time Slot Picker */}
-                  <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-blue-900/40">
-                    <label className="block text-xs font-black text-slate-800 dark:text-white">الفترة الزمنية المفضلة للبدء</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      {[
-                        "09:00 ص",
-                        "12:00 م",
-                        "03:00 م",
-                        "06:00 م"
-                      ].map((slot) => {
-                        const isSelected = scheduledTime === slot;
-                        return (
-                          <button
-                            type="button"
-                            key={slot}
-                            onClick={() => setScheduledTime(slot)}
-                            className={`p-3 rounded-xl border text-xs font-black transition-all cursor-pointer ${
-                              isSelected 
-                                ? "border-[#0091FF] bg-[#0091FF] text-white shadow-md shadow-blue-500/25" 
-                                : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-[#0091FF]"
-                            }`}
-                          >
-                            {slot}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 3: ADDRESS SYSTEM V2 */}
-              {currentStep === 2 && (
-                <div className="space-y-6">
-                  <div>
-                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
-                      العنوان الجغرافي المعتمد
-                    </span>
-                    <h2 className="text-xl font-black text-slate-900 dark:text-white">عنوان تقديم الخدمة</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">
-                      يرجى تحديد المحافظة والحي ورقم المبنى بدقة لضمان وصول الفني المعتمد في الموعد المحدد.
-                    </p>
-                  </div>
-
-                  {/* If user has saved addresses: Select from saved or enter new */}
-                  {savedAddresses.length > 0 && (
+                    {/* Date picker */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-black text-slate-800 dark:text-slate-200">عناوينك المحفوظة</label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (selectedAddressMode === "saved") {
-                              setSelectedAddressMode("new");
-                              setSelectedSavedAddressId(null);
-                            } else {
-                              setSelectedAddressMode("saved");
-                              if (savedAddresses[0]) {
-                                handleSelectSavedAddress(savedAddresses[0]);
+                        <label className="block text-xs font-black text-slate-800 dark:text-white">اليوم المفضل (خلال 30 يوماً)</label>
+                        <div className="flex gap-1">
+                          <button type="button" onClick={() => scrollDates('right')} className="p-1 rounded-lg border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 hover:bg-slate-100 transition-colors cursor-pointer">
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                          <button type="button" onClick={() => scrollDates('left')} className="p-1 rounded-lg border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 hover:bg-slate-100 transition-colors cursor-pointer">
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div 
+                        ref={dateScrollRef}
+                        className="flex gap-2 overflow-x-auto pb-2 scroll-smooth no-scrollbar"
+                        style={{ scrollbarWidth: 'none' }}
+                      >
+                        {Array.from({ length: 30 }).map((_, idx) => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + idx);
+                          const dateStr = formatDateLocal(d);
+                          const isSelected = scheduledDate === dateStr;
+                          const isAvailable = availabilityMap[dateStr] !== false;
+                          
+                          const dayName = d.toLocaleDateString("ar-EG", { weekday: "short" });
+                          const dayNum = d.getDate();
+                          const monthName = d.toLocaleDateString("ar-EG", { month: "short" });
+
+                          return (
+                            <button
+                              type="button"
+                              key={dateStr}
+                              disabled={!isAvailable || isLoadingAvailability}
+                              onClick={() => {
+                                setScheduledDate(dateStr);
+                                setManualDateText(dateStr);
+                              }}
+                              className={`flex flex-col items-center justify-center p-3 rounded-2xl border min-w-[76px] transition-all cursor-pointer shrink-0 ${
+                                !isAvailable 
+                                  ? "opacity-35 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed" 
+                                  : isSelected 
+                                    ? "border-[#0091FF] bg-[#0091FF] text-white shadow-md shadow-blue-500/25 scale-105" 
+                                    : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-[#0091FF]"
+                              }`}
+                            >
+                              <span className="text-[10px] font-bold">{dayName}</span>
+                              <span className="text-lg font-black my-0.5">{dayNum}</span>
+                              <span className="text-[10px] font-bold opacity-80">{monthName}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Time Slot Picker */}
+                    <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-blue-900/40">
+                      <label className="block text-xs font-black text-slate-800 dark:text-white">الفترة الزمنية المفضلة للبدء</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        {[
+                          "09:00 ص",
+                          "12:00 م",
+                          "03:00 م",
+                          "06:00 م"
+                        ].map((slot) => {
+                          const isSelected = scheduledTime === slot;
+                          return (
+                            <button
+                              type="button"
+                              key={slot}
+                              onClick={() => setScheduledTime(slot)}
+                              className={`p-3 rounded-xl border text-xs font-black transition-all cursor-pointer ${
+                                isSelected 
+                                  ? "border-[#0091FF] bg-[#0091FF] text-white shadow-md shadow-blue-500/25" 
+                                  : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-[#0091FF]"
+                              }`}
+                            >
+                              {slot}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* STEP 3: ADDRESS SYSTEM V2 */}
+                {currentStep === 2 && (
+                  <motion.div
+                    key="step-2"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="space-y-6"
+                  >
+                    <div>
+                      <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
+                        العنوان الجغرافي المعتمد
+                      </span>
+                      <h2 className="text-xl font-black text-slate-900 dark:text-white">عنوان تقديم الخدمة</h2>
+                      <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">
+                        يرجى تحديد المحافظة والحي ورقم المبنى بدقة لضمان وصول الفني المعتمد في الموعد المحدد.
+                      </p>
+                    </div>
+
+                    {/* If user has saved addresses: Select from saved or enter new */}
+                    {savedAddresses.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-black text-slate-800 dark:text-slate-200">عناوينك المحفوظة</label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (selectedAddressMode === "saved") {
+                                setSelectedAddressMode("new");
+                                setSelectedSavedAddressId(null);
+                              } else {
+                                setSelectedAddressMode("saved");
+                                if (savedAddresses[0]) {
+                                  handleSelectSavedAddress(savedAddresses[0]);
+                                }
                               }
-                            }
-                          }}
-                          className="text-[11px] font-extrabold text-[#0091FF] dark:text-[#22A5FC] hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          {selectedAddressMode === "saved" ? (
-                            <>
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>إدخال عنوان آخر</span>
-                            </>
-                          ) : (
-                            <>
-                              <Navigation className="w-3.5 h-3.5" />
-                              <span>اختيار من عناويني المحفوظة</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
+                            }}
+                            className="text-[11px] font-extrabold text-[#0091FF] dark:text-[#22A5FC] hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            {selectedAddressMode === "saved" ? (
+                              <>
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>إدخال عنوان آخر</span>
+                              </>
+                            ) : (
+                              <>
+                                <Navigation className="w-3.5 h-3.5" />
+                                <span>اختيار من عناويني المحفوظة</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
 
-                      {selectedAddressMode === "saved" && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {savedAddresses.map((addr) => {
-                            const isSelected = selectedSavedAddressId === addr.id;
-                            const fullText = `${addr.governorate || ""}، ${addr.city || ""} - ${addr.district || ""} - ${addr.street_or_compound || addr.street || ""}، مبنى ${addr.building_identifier || addr.building_number || ""}`;
-                            return (
-                              <div
-                                key={addr.id}
-                                onClick={() => handleSelectSavedAddress(addr)}
-                                className={`p-4 rounded-2xl border text-right transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
-                                  isSelected 
-                                    ? "border-[#0091FF] bg-blue-50/70 dark:bg-blue-950/50 shadow-sm" 
-                                    : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-slate-300"
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <MapPin className={`w-4 h-4 ${isSelected ? "text-[#0091FF]" : "text-slate-400"}`} />
-                                    <span className="text-xs font-black text-slate-900 dark:text-white">
-                                      {addr.city} - {addr.district || addr.governorate}
-                                    </span>
+                        {selectedAddressMode === "saved" && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {savedAddresses.map((addr) => {
+                              const isSelected = selectedSavedAddressId === addr.id;
+                              const fullText = `${addr.governorate || ""}، ${addr.city || ""} - ${addr.district || ""} - ${addr.street_or_compound || addr.street || ""}، مبنى ${addr.building_identifier || addr.building_number || ""}`;
+                              return (
+                                <div
+                                  key={addr.id}
+                                  onClick={() => handleSelectSavedAddress(addr)}
+                                  className={`p-4 rounded-2xl border text-right transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                                    isSelected 
+                                      ? "border-[#0091FF] bg-blue-50/70 dark:bg-blue-950/50 shadow-sm" 
+                                      : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-slate-300"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <MapPin className={`w-4 h-4 ${isSelected ? "text-[#0091FF]" : "text-slate-400"}`} />
+                                      <span className="text-xs font-black text-slate-900 dark:text-white">
+                                        {addr.city} - {addr.district || addr.governorate}
+                                      </span>
+                                    </div>
+                                    {addr.is_primary && (
+                                      <span className="text-[9px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 px-2 py-0.5 rounded-md">
+                                        الافتراضي
+                                      </span>
+                                    )}
                                   </div>
-                                  {addr.is_primary && (
-                                    <span className="text-[9px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 px-2 py-0.5 rounded-md">
-                                      الافتراضي
-                                    </span>
-                                  )}
+                                  <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+                                    {fullText}
+                                  </p>
                                 </div>
-                                <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-                                  {fullText}
-                                </p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Address V2 Input Form (when in new mode or fallback) */}
-                  {(selectedAddressMode === "new" || savedAddresses.length === 0) && (
-                    <div className="space-y-4 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-blue-900/50 bg-slate-50/50 dark:bg-[#050D24]/60">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {/* 1. Governorate */}
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            المحافظة
-                          </label>
-                          <select
-                            value={address.governorate}
-                            onChange={(e) => handleGovernorateChange(e.target.value)}
-                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                          >
-                            {Object.keys(GEOGRAPHIC_HIERARCHY).map((gov) => (
-                              <option key={gov} value={gov}>{gov}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* 2. City */}
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            المدينة / المنطقة
-                          </label>
-                          <select
-                            value={address.city}
-                            onChange={(e) => handleCityChange(e.target.value)}
-                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                          >
-                            {Object.keys(GEOGRAPHIC_HIERARCHY[address.governorate] || {}).map((c) => (
-                              <option key={c} value={c}>{c}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* 3. District */}
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            الحي / المجاورة
-                          </label>
-                          <select
-                            value={address.district}
-                            onChange={(e) => setAddress({ ...address, district: e.target.value })}
-                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                          >
-                            {(GEOGRAPHIC_HIERARCHY[address.governorate]?.[address.city] || ["أخرى"]).map((d) => (
-                              <option key={d} value={d}>{d}</option>
-                            ))}
-                          </select>
-                        </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
+                    )}
 
-                      {/* Custom District if "أخرى" */}
-                      {address.district === "أخرى" && (
+                    {/* Address V2 Input Form (when in new mode or fallback) */}
+                    {(selectedAddressMode === "new" || savedAddresses.length === 0) && (
+                      <div className="space-y-4 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-blue-900/50 bg-slate-50/50 dark:bg-[#050D24]/60">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {/* 1. Governorate */}
+                          <div className="space-y-1">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                              المحافظة
+                            </label>
+                            <select
+                              value={address.governorate}
+                              onChange={(e) => handleGovernorateChange(e.target.value)}
+                              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                            >
+                              {Object.keys(GEOGRAPHIC_HIERARCHY).map((gov) => (
+                                <option key={gov} value={gov}>{gov}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* 2. City */}
+                          <div className="space-y-1">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                              المدينة / المنطقة
+                            </label>
+                            <select
+                              value={address.city}
+                              onChange={(e) => handleCityChange(e.target.value)}
+                              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                            >
+                              {Object.keys(GEOGRAPHIC_HIERARCHY[address.governorate] || {}).map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* 3. District */}
+                          <div className="space-y-1">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                              الحي / المجاورة
+                            </label>
+                            <select
+                              value={address.district}
+                              onChange={(e) => setAddress({ ...address, district: e.target.value })}
+                              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                            >
+                              {(GEOGRAPHIC_HIERARCHY[address.governorate]?.[address.city] || ["أخرى"]).map((d) => (
+                                <option key={d} value={d}>{d}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Custom District if "أخرى" */}
+                        {address.district === "أخرى" && (
+                          <div className="space-y-1">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                              اسم الحي / المنطقة المخصصة
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="اكتب اسم الحي أو المنطقة هنا..."
+                              value={customDistrict}
+                              onChange={(e) => setCustomDistrict(e.target.value)}
+                              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                            />
+                          </div>
+                        )}
+
+                        {/* 4. Street or Compound */}
                         <div className="space-y-1">
                           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            اسم الحي / المنطقة المخصصة
+                            اسم الشارع أو الكومباوند
                           </label>
                           <input
                             type="text"
-                            placeholder="اكتب اسم الحي أو المنطقة هنا..."
-                            value={customDistrict}
-                            onChange={(e) => setCustomDistrict(e.target.value)}
+                            placeholder="مثال: شارع التسعين الشمالي / كمبوند ميفيدا"
+                            value={address.street_or_compound}
+                            onChange={(e) => setAddress({ ...address, street_or_compound: e.target.value })}
                             className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
                           />
                         </div>
-                      )}
 
-                      {/* 4. Street or Compound */}
-                      <div className="space-y-1">
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                          اسم الشارع أو الكومباوند
-                        </label>
+                        {/* 5. Building, Floor, Apartment */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="space-y-1">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                              رقم / اسم المبنى أو الفيلا
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="مثال: عمارة 42 أو فيلا 18"
+                              value={address.building_identifier}
+                              onChange={(e) => setAddress({ ...address, building_identifier: e.target.value })}
+                              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                              الدور / الطابق <span className="text-slate-400 font-normal">(اختياري)</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="مثال: الثالث"
+                              value={address.floor}
+                              onChange={(e) => setAddress({ ...address, floor: e.target.value })}
+                              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                              رقم الشقة / الوحدة <span className="text-slate-400 font-normal">(اختياري)</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="مثال: شقة 12"
+                              value={address.apartment_or_unit}
+                              onChange={(e) => setAddress({ ...address, apartment_or_unit: e.target.value })}
+                              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* 6. Landmark */}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            علامة مميزة بالقرب من العقار <span className="text-slate-400 font-normal">(اختياري)</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="مثال: بجوار مستشفى الجوي التخصصي / أمام النادي الأهلي"
+                            value={address.landmark}
+                            onChange={(e) => setAddress({ ...address, landmark: e.target.value })}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* STEP 4: REVIEW & CONTACT */}
+                {currentStep === 3 && (
+                  <motion.div
+                    key="step-3"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="space-y-6"
+                  >
+                    <div>
+                      <h2 className="text-xl font-black text-slate-800 dark:text-white">بيانات التواصل والتأكيد</h2>
+                      <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">خطوتك الأخيرة لإتمام وتأكيد الحجز الفوري مع فريق فريش هوم.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">الاسم بالكامل</label>
                         <input
                           type="text"
-                          placeholder="مثال: شارع التسعين الشمالي / كمبوند ميفيدا"
-                          value={address.street_or_compound}
-                          onChange={(e) => setAddress({ ...address, street_or_compound: e.target.value })}
-                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                          placeholder="مثال: محمد أحمد"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
                         />
                       </div>
 
-                      {/* 5. Building, Floor, Apartment */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            رقم / اسم المبنى أو الفيلا
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="مثال: عمارة 42 أو فيلا 18"
-                            value={address.building_identifier}
-                            onChange={(e) => setAddress({ ...address, building_identifier: e.target.value })}
-                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            الدور / الطابق <span className="text-slate-400 font-normal">(اختياري)</span>
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="مثال: الدور 3"
-                            value={address.floor}
-                            onChange={(e) => setAddress({ ...address, floor: e.target.value })}
-                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            رقم الشقة / الوحدة <span className="text-slate-400 font-normal">(اختياري)</span>
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="مثال: شقة 5"
-                            value={address.apartment_or_unit}
-                            onChange={(e) => setAddress({ ...address, apartment_or_unit: e.target.value })}
-                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      {/* 6. Landmark */}
-                      <div className="space-y-1">
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                          علامة مميزة بالقرب من العقار <span className="text-slate-400 font-normal">(اختياري)</span>
-                        </label>
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">رقم الهاتف (الواتساب)</label>
                         <input
-                          type="text"
-                          placeholder="مثال: بجوار مستشفى الجوي التخصصي / أمام النادي الأهلي"
-                          value={address.landmark}
-                          onChange={(e) => setAddress({ ...address, landmark: e.target.value })}
-                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
+                          type="tel"
+                          placeholder="مثال: 01012345678"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
                         />
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
 
-              {/* STEP 4: REVIEW & CONTACT */}
-              {currentStep === 3 && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-black text-slate-800 dark:text-white">بيانات التواصل والتأكيد</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">خطوتك الأخيرة لإتمام وتأكيد الحجز الفوري مع فريق فريش هوم.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">الاسم بالكامل</label>
-                      <input
-                        type="text"
-                        placeholder="مثال: محمد أحمد"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">رقم الهاتف (الواتساب)</label>
-                      <input
-                        type="tel"
-                        placeholder="مثال: 01012345678"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full p-3 rounded-xl border border-slate-200 dark:border-blue-900/60 bg-white dark:bg-[#071739] text-slate-900 dark:text-white text-xs font-bold focus:border-[#0091FF] focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Payment options */}
-                  <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-blue-900/40">
-                    <label className="block text-xs font-black text-slate-800 dark:text-white">طريقة الدفع المقترحة</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div 
-                        onClick={() => setPaymentMethod("cash")}
-                        className={`p-3.5 rounded-xl border flex justify-between items-center cursor-pointer transition-all ${
-                          paymentMethod === "cash" 
-                            ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/60 text-[#0091FF]" 
-                            : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300"
-                        }`}
-                      >
-                        <span className="text-xs font-bold">نقداً عند انتهاء الخدمة (كاش)</span>
-                        <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === "cash" ? "border-[#0091FF]" : "border-slate-300"}`}></div>
-                      </div>
-                      <div 
-                        onClick={() => setPaymentMethod("instapay")}
-                        className={`p-3.5 rounded-xl border flex justify-between items-center cursor-pointer transition-all ${
-                          paymentMethod === "instapay" 
-                            ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/60 text-[#0091FF]" 
-                            : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300"
-                        }`}
-                      >
-                        <span className="text-xs font-bold">تحويل إنستا باي / محفظة إلكترونية</span>
-                        <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === "instapay" ? "border-[#0091FF]" : "border-slate-300"}`}></div>
+                    {/* Payment options */}
+                    <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-blue-900/40">
+                      <label className="block text-xs font-black text-slate-800 dark:text-white">طريقة الدفع المقترحة</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div 
+                          onClick={() => setPaymentMethod("cash")}
+                          className={`p-3.5 rounded-xl border flex justify-between items-center cursor-pointer transition-all ${
+                            paymentMethod === "cash" 
+                              ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/60 text-[#0091FF]" 
+                              : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          <span className="text-xs font-bold">نقداً عند انتهاء الخدمة (كاش)</span>
+                          <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === "cash" ? "border-[#0091FF]" : "border-slate-300"}`}></div>
+                        </div>
+                        <div 
+                          onClick={() => setPaymentMethod("instapay")}
+                          className={`p-3.5 rounded-xl border flex justify-between items-center cursor-pointer transition-all ${
+                            paymentMethod === "instapay" 
+                              ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/60 text-[#0091FF]" 
+                              : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          <span className="text-xs font-bold">تحويل إنستا باي / محفظة إلكترونية</span>
+                          <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === "instapay" ? "border-[#0091FF]" : "border-slate-300"}`}></div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Navigation Actions */}
               <div className="flex justify-between items-center pt-6 border-t border-slate-100 dark:border-blue-900/40 mt-8">
@@ -1949,7 +1994,7 @@ function BookingFlowContent() {
                   </button>
                 )}
               </div>
-            </div>
+            </motion.div>
 
             {/* Price invoice details sidebar */}
             <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-[180px] z-20">
