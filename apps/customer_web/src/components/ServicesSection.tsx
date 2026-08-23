@@ -247,7 +247,7 @@ function resolveIconUrl(imageStr?: string | null): string | null {
 }
 
 // =========================================================================
-// Category Slider with Responsive Header and Clean Mobile Card Width
+// Category Slider with Smooth Touch Swiping & Fully Clickable Cards
 // =========================================================================
 function CategorySlider({ category }: { category: MainCategoryGroup }) {
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -255,7 +255,7 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
 
   const scroll = (direction: "left" | "right") => {
     if (!sliderRef.current) return;
-    const scrollAmount = 300;
+    const scrollAmount = 310;
     sliderRef.current.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
       behavior: "smooth",
@@ -264,11 +264,11 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
 
   return (
     <div className="space-y-4">
-      {/* Category Section Header: Responsive layout preventing overlap */}
+      {/* Category Section Header: Clean Responsive Layout */}
       <div className="flex items-center justify-between gap-2.5 border-b border-slate-200/70 dark:border-blue-900/40 pb-3">
         {/* Right side: Icon + Title + Count Badge */}
-        <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/70 border border-blue-100 dark:border-blue-900/60 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 shadow-xs">
+        <div className="flex items-center gap-2.5 sm:gap-3.5 flex-1 min-w-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/70 border border-blue-100 dark:border-blue-900/60 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 shadow-xs">
             {category.iconPath ? (
               <img
                 src={category.iconPath}
@@ -276,7 +276,7 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
                 className="w-5 h-5 sm:w-6 sm:h-6 object-contain"
               />
             ) : (
-              <CategoryIcon className="w-5 h-5" />
+              <CategoryIcon className="w-5 h-5 sm:w-6 sm:h-6" />
             )}
           </div>
           
@@ -285,11 +285,11 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
               <h3 className="text-base sm:text-xl font-black text-slate-900 dark:text-white truncate">
                 {category.title}
               </h3>
-              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 shrink-0">
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 shrink-0">
                 {category.badge}
               </span>
               {category.status === "paused" && (
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 shrink-0">
+                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 shrink-0">
                   متوقف مؤقتاً
                 </span>
               )}
@@ -321,10 +321,10 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
         </div>
       </div>
 
-      {/* Horizontal Slider Track */}
+      {/* Horizontal Slider Track with Touch Swiping and Snapping */}
       <div
         ref={sliderRef}
-        className="flex gap-3.5 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory no-scrollbar text-right px-0.5"
+        className="flex gap-3.5 sm:gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth snap-x snap-mandatory no-scrollbar text-right px-0.5 touch-pan-x select-none"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {category.subServices.map((service) => {
@@ -332,13 +332,14 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
           const isPaused = service.status === "paused";
 
           return (
-            <div
+            <Link
               key={service.id}
+              href={service.href}
               className={`w-[82vw] max-w-[285px] sm:w-[310px] shrink-0 snap-start bg-white dark:bg-[#071739] rounded-3xl border ${
                 isPaused 
-                  ? "border-amber-200/80 dark:border-amber-900/40 shadow-[0_4px_15px_rgba(245,158,11,0.05)]" 
-                  : "border-slate-200/80 dark:border-blue-900/50 shadow-[0_4px_20px_rgba(0,0,0,0.03)]"
-              } hover:shadow-xl hover:border-[#0091FF]/50 dark:hover:border-[#0091FF]/60 hover:-translate-y-1 transition-all duration-300 p-4 sm:p-5 flex flex-col justify-between space-y-4 group`}
+                  ? "border-amber-200/80 dark:border-amber-900/40 shadow-[0_4px_15px_rgba(245,158,11,0.05)] hover:border-amber-400" 
+                  : "border-slate-200/80 dark:border-blue-900/50 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-[#0091FF]/60"
+              } hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 p-4 sm:p-5 flex flex-col justify-between space-y-4 group cursor-pointer block text-right`}
             >
               {/* Card Top Row: Icon Container & Tag */}
               <div className="flex items-start justify-between">
@@ -398,15 +399,14 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
                 </p>
               </div>
 
-              {/* Card Footer Action */}
+              {/* Card Footer Action Button Display */}
               <div className="pt-3 border-t border-slate-100 dark:border-blue-900/40">
-                <Link
-                  href={service.href}
+                <div
                   className={`w-full flex items-center justify-between py-2.5 px-3.5 sm:px-4 rounded-xl ${
                     isPaused
-                      ? "bg-amber-50/70 dark:bg-amber-950/30 hover:bg-amber-500 hover:text-white text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900/40"
-                      : "bg-[#F8FAFC] dark:bg-[#050D24] hover:bg-[#0091FF] dark:hover:bg-[#0091FF] text-slate-700 dark:text-slate-200 hover:text-white dark:hover:text-white border border-slate-200/80 dark:border-blue-900/50 hover:border-[#0091FF]"
-                  } text-xs font-black transition-all group/btn shadow-xs`}
+                      ? "bg-amber-50/70 dark:bg-amber-950/30 group-hover:bg-amber-500 group-hover:text-white text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900/40"
+                      : "bg-[#F8FAFC] dark:bg-[#050D24] group-hover:bg-[#0091FF] dark:group-hover:bg-[#0091FF] text-slate-700 dark:text-slate-200 group-hover:text-white dark:group-hover:text-white border border-slate-200/80 dark:border-blue-900/50 group-hover:border-[#0091FF]"
+                  } text-xs font-black transition-all shadow-xs`}
                 >
                   <span>
                     {isPaused 
@@ -415,10 +415,10 @@ function CategorySlider({ category }: { category: MainCategoryGroup }) {
                         ? "استعراض الخيارات الفرعية" 
                         : "تفاصيل الخدمة والحجز"}
                   </span>
-                  <ArrowLeft className="w-3.5 h-3.5 group-hover/btn:-translate-x-1 transition-transform" />
-                </Link>
+                  <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1.5 transition-transform" />
+                </div>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -547,17 +547,14 @@ export default function ServicesSection() {
     <section id="services" className="py-12 sm:py-16 bg-[#F8FAFC] dark:bg-[#040A1C] relative transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-12">
         
-        {/* Search Bar & Category Header */}
+        {/* Search Bar & Professional Category Header */}
         <div className="max-w-3xl mx-auto space-y-4 sm:space-y-5 text-center">
-          <div>
-            <span className="text-[11px] font-black tracking-wider uppercase px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-2">
-              شجرة الخدمات المتكاملة
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              اختر الخدمة المناسبة لمنزلك
+          <div className="space-y-2">
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white font-sans tracking-tight">
+              فريش هوم <span className="text-[#0091FF] dark:text-[#22A5FC]">•</span> نظافة وراحة تدوم
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
-              تنظيم شجري يوضح حالة كل خدمة وإمكانية الحجز المباشر أو استعراض الخيارات الفرعية
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium max-w-xl mx-auto">
+              اختر الخدمة التي يحتاجها منزلك واحجز بسهولة بأعلى معايير الجودة والضمان
             </p>
           </div>
 
