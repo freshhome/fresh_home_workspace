@@ -216,3 +216,55 @@ body {
 .glow-whatsapp:hover {
   box-shadow: 0 6px 28px rgba(37, 211, 102, 0.55);
 }
+
+/* =========================================================================
+   Service Hierarchy Spatial Transition Animations (Apple/Fintech Grade)
+   ========================================================================= */
+@keyframes spatialParentTransform {
+  0% {
+    opacity: 0.7;
+    transform: translateY(8px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spatialChildReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spatialChildCollapse {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+}
+
+.animate-spatial-parent {
+  animation: spatialParentTransform 320ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-spatial-child {
+  animation: spatialChildReveal 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+.animate-spatial-collapse {
+  animation: spatialChildCollapse 200ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+

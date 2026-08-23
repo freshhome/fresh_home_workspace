@@ -275,6 +275,10 @@ function BookingFlowContent() {
   const [selectedSubService, setSelectedSubService] = useState<any>(null);
   const [loadingServices, setLoadingServices] = useState(false);
 
+  // Service Hierarchy Spatial Transition States
+  const [transitioningNodeId, setTransitioningNodeId] = useState<string | null>(null);
+  const [isExitingHierarchy, setIsExitingHierarchy] = useState(false);
+
   // Dynamic Pricing Form Inputs
   const [pricingInputs, setPricingInputs] = useState<Record<string, any>>({});
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
@@ -930,6 +934,48 @@ function BookingFlowContent() {
     }
   };
 
+  // Spatial Transition Handlers
+  const handleServiceNodeSelect = (node: any, isBookableLeaf: boolean) => {
+    if (transitioningNodeId || isExitingHierarchy) return;
+    setTransitioningNodeId(node.id);
+    setTimeout(() => {
+      if (isBookableLeaf) {
+        setSelectedSubService(node);
+        setSubServiceId(node.id);
+      } else {
+        setSelectedPath(prev => [...prev, node]);
+      }
+      setTransitioningNodeId(null);
+    }, 160);
+  };
+
+  const handleHierarchyBack = () => {
+    if (isExitingHierarchy || transitioningNodeId || selectedPath.length === 0) return;
+    setIsExitingHierarchy(true);
+    setTimeout(() => {
+      setSelectedPath(prev => prev.slice(0, -1));
+      setIsExitingHierarchy(false);
+    }, 180);
+  };
+
+  const handleHierarchyBreadcrumbClick = (targetIdx: number) => {
+    if (isExitingHierarchy || transitioningNodeId) return;
+    setIsExitingHierarchy(true);
+    setTimeout(() => {
+      setSelectedPath(prev => prev.slice(0, targetIdx + 1));
+      setIsExitingHierarchy(false);
+    }, 180);
+  };
+
+  const handleHierarchyReset = () => {
+    if (isExitingHierarchy || transitioningNodeId || selectedPath.length === 0) return;
+    setIsExitingHierarchy(true);
+    setTimeout(() => {
+      setSelectedPath([]);
+      setIsExitingHierarchy(false);
+    }, 180);
+  };
+
   return (
     <>
       <Header />
@@ -983,15 +1029,51 @@ function BookingFlowContent() {
                       <span className="text-xs font-bold text-slate-400">جاري تحميل الخدمات وقواعد التسعير...</span>
                     </div>
                   ) : !selectedSubService ? (
-                    /* 1. HIERARCHICAL TREE SELECTION MODE */
-                    <div className="space-y-5 animate-fade-in">
-                      {/* Breadcrumbs Navigation Bar (when inside a branch) */}
-                      {selectedPath.length > 0 && (
-                        <div className="flex items-center justify-between bg-blue-50/80 dark:bg-blue-950/40 p-2.5 sm:p-3 rounded-2xl border border-blue-100 dark:border-blue-900/40 text-xs">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                    /* 1. HIERARCHICAL TREE SELECTION MODE (SPATIAL CONTINUOUS MOTION) */
+                    <div className="space-y-5">
+                      
+                      {/* Dynamic Parent Origin Header (Phase 2: Parent Transforms into Origin Header) */}
+                      {selectedPath.length > 0 && currentParent ? (
+                        <div className="animate-spatial-parent bg-gradient-to-r from-blue-50/90 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] p-3.5 sm:p-4 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 shadow-xs space-y-3">
+                          <div className="flex items-center justify-between gap-3">
+                            {/* Parent Identity & Icon */}
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center p-2 shrink-0 shadow-2xs">
+                                {resolveIconUrl(currentParent.image) ? (
+                                  <img src={resolveIconUrl(currentParent.image) || ""} alt="" className="w-full h-full object-contain" />
+                                ) : (
+                                  (() => {
+                                    const IconComp = getServiceFallbackIcon(currentParent.title?.ar || currentParent.title || "");
+                                    return <IconComp className="w-5 h-5 sm:w-5.5 sm:h-5.5" />;
+                                  })()
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <span className="text-[10px] font-black text-[#0091FF] dark:text-[#22A5FC] block">
+                                  القسم الحالي (المستوى {selectedPath.length})
+                                </span>
+                                <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+                                  {currentParent.title?.ar || currentParent.title}
+                                </h3>
+                              </div>
+                            </div>
+
+                            {/* Back Button */}
                             <button
                               type="button"
-                              onClick={() => setSelectedPath([])}
+                              onClick={handleHierarchyBack}
+                              className="text-xs font-black text-slate-700 dark:text-slate-200 hover:text-[#0091FF] dark:hover:text-[#22A5FC] flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/90 dark:border-blue-900/60 transition-all shrink-0 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                              <span>رجوع خطوة</span>
+                            </button>
+                          </div>
+
+                          {/* Breadcrumbs Trail */}
+                          <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-blue-100/80 dark:border-blue-900/40 text-[11px]">
+                            <button
+                              type="button"
+                              onClick={handleHierarchyReset}
                               className="font-bold text-[#0091FF] dark:text-[#22A5FC] hover:underline cursor-pointer"
                             >
                               الرئيسية
@@ -1000,11 +1082,11 @@ function BookingFlowContent() {
                               const isLast = idx === selectedPath.length - 1;
                               return (
                                 <div key={node.id} className="flex items-center gap-1.5">
-                                  <span className="text-slate-400">/</span>
+                                  <span className="text-slate-400 dark:text-slate-500">/</span>
                                   <button
                                     type="button"
                                     disabled={isLast}
-                                    onClick={() => setSelectedPath(selectedPath.slice(0, idx + 1))}
+                                    onClick={() => handleHierarchyBreadcrumbClick(idx)}
                                     className={`${
                                       isLast 
                                         ? "font-black text-slate-900 dark:text-white" 
@@ -1017,17 +1099,8 @@ function BookingFlowContent() {
                               );
                             })}
                           </div>
-                          
-                          <button
-                            type="button"
-                            onClick={() => setSelectedPath(selectedPath.slice(0, -1))}
-                            className="text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:text-[#0091FF] flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 transition-all shrink-0 cursor-pointer shadow-2xs"
-                          >
-                            <ChevronRight className="w-3.5 h-3.5" />
-                            <span>رجوع خطوة</span>
-                          </button>
                         </div>
-                      )}
+                      ) : null}
 
                       {/* Header Title based on Current Depth */}
                       <div>
@@ -1045,45 +1118,46 @@ function BookingFlowContent() {
                           </>
                         ) : (
                           <>
-                            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
-                              {currentParent?.title?.ar || currentParent?.title}
-                            </span>
-                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                            <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
                               يرجى اختيار الخدمة المناسبة
                             </h2>
                             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-                              اختر من الخدمات والخيارات المتاحة أدناه للمتابعة إلى التخصيص وحساب التكلفة
+                              اختر من الخدمات والخيارات التابعة لـ ({currentParent?.title?.ar || currentParent?.title}) أدناه
                             </p>
                           </>
                         )}
                       </div>
 
-                      {/* Grid of Minimal Interactive Service Cards (Icon + Title Only) */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-1">
-                        {currentLevelNodes.map((node) => {
+                      {/* Grid of Minimal Interactive Service Cards (Phase 3: Children Emerge with Staggered Entrance) */}
+                      <div 
+                        key={selectedPath.map((n) => n.id).join("-") || "root-level"}
+                        className={`grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-1 ${
+                          isExitingHierarchy ? "animate-spatial-collapse" : ""
+                        }`}
+                      >
+                        {currentLevelNodes.map((node, idx) => {
                           const nodeChildren = getChildren(node.id);
                           const isBookableLeaf = node.is_bookable === true && nodeChildren.length === 0;
                           const isPaused = node.status === "paused";
                           const NodeIcon = getServiceFallbackIcon(node.title?.ar || node.title || "");
                           const iconUrl = resolveIconUrl(node.image);
+                          const isSelectedActive = transitioningNodeId === node.id;
 
                           return (
                             <button
                               type="button"
                               key={node.id}
                               disabled={isPaused}
-                              onClick={() => {
-                                if (isBookableLeaf) {
-                                  setSelectedSubService(node);
-                                  setSubServiceId(node.id);
-                                } else {
-                                  setSelectedPath([...selectedPath, node]);
-                                }
+                              onClick={() => handleServiceNodeSelect(node, isBookableLeaf)}
+                              style={{
+                                animationDelay: `${Math.min(idx * 50, 300)}ms`
                               }}
-                              className={`p-3.5 sm:p-5 rounded-2xl border text-center transition-all duration-200 flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative ${
+                              className={`p-3.5 sm:p-5 rounded-2xl border text-center transition-all duration-200 flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative animate-spatial-child ${
                                 isPaused
                                   ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
-                                  : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
+                                  : isSelectedActive
+                                    ? "scale-[1.03] border-[#0091FF] dark:border-[#0091FF] bg-blue-50/80 dark:bg-blue-950/60 ring-2 ring-[#0091FF]/50 shadow-md"
+                                    : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
                               }`}
                             >
                               {/* Top mini-badge for sub-branches or direct booking */}
@@ -1101,7 +1175,9 @@ function BookingFlowContent() {
                               <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${
                                 isPaused 
                                   ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-900/40" 
-                                  : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
+                                  : isSelectedActive
+                                    ? "bg-[#0091FF] text-white scale-110"
+                                    : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
                               } flex items-center justify-center p-2.5 group-hover:scale-105 transition-all shrink-0 shadow-2xs`}>
                                 {iconUrl ? (
                                   <img src={iconUrl} alt="" className="w-full h-full object-contain" />
