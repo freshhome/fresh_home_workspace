@@ -708,11 +708,11 @@ function BookingFlowContent() {
     <>
       <Header />
       
-      <main className="flex-1 bg-slate-50 py-10">
+      <main className="flex-1 bg-[#F8FAFC] dark:bg-[#040A1C] py-8 sm:py-10 transition-colors duration-300">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Stepper progress */}
           <div className="sticky top-[72px] z-30 mb-6">
-            <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur-md rounded-2xl p-4 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)]">
+            <div className="max-w-2xl mx-auto bg-white/95 dark:bg-[#071739]/95 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-slate-200/80 dark:border-blue-900/50 shadow-sm">
               <div className="flex justify-between items-center relative">
                 {STEPS.map((stepText, idx) => {
                   const isCompleted = idx < currentStep;
@@ -720,13 +720,13 @@ function BookingFlowContent() {
                   return (
                     <div key={idx} className="flex flex-col items-center z-10 flex-1 relative">
                       <div 
-                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 ${
-                          isCompleted ? "bg-secondary text-white" : isActive ? "bg-primary text-white scale-110" : "bg-slate-100 text-slate-400"
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 ${
+                          isCompleted ? "bg-[#2ECC71] text-white shadow-sm" : isActive ? "bg-[#0091FF] text-white scale-110 shadow-md shadow-blue-500/25" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
                         }`}
                       >
-                        {isCompleted ? <Check className="w-4 h-4 stroke-[2.5]" /> : idx + 1}
+                        {isCompleted ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" /> : idx + 1}
                       </div>
-                      <span className={`text-[10px] font-bold mt-2 hidden sm:block ${isActive ? "text-primary font-black" : "text-slate-400"}`}>
+                      <span className={`text-[10px] font-bold mt-1.5 hidden sm:block ${isActive ? "text-[#0091FF] dark:text-[#22A5FC] font-black" : "text-slate-400"}`}>
                         {stepText}
                       </span>
                     </div>
@@ -734,9 +734,9 @@ function BookingFlowContent() {
                 })}
                 
                 {/* Connector line */}
-                <div className="absolute left-6 right-6 top-[16px] h-0.5 bg-slate-100 -z-0">
+                <div className="absolute left-6 right-6 top-[14px] sm:top-[16px] h-0.5 bg-slate-100 dark:bg-slate-800 -z-0">
                   <div 
-                    className="h-full bg-secondary transition-all duration-500" 
+                    className="h-full bg-[#2ECC71] transition-all duration-500" 
                     style={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
                   ></div>
                 </div>
@@ -746,7 +746,7 @@ function BookingFlowContent() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Step Content */}
-            <div className="lg:col-span-8 bg-white/90 backdrop-blur-md rounded-2xl p-6 border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.02)] min-h-[420px] flex flex-col justify-between">
+            <div className="lg:col-span-8 bg-white dark:bg-[#071739] rounded-3xl p-5 sm:p-7 border border-slate-200/80 dark:border-blue-900/50 shadow-sm min-h-[420px] flex flex-col justify-between transition-colors">
               
               {/* STEP 1: PRICING */}
               {currentStep === 0 && (
