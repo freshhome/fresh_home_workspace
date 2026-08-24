@@ -996,10 +996,10 @@ function BookingFlowContent() {
     <>
       <Header />
       
-      <main className="flex-1 bg-[#F8FAFC] dark:bg-[#040A1C] py-4 sm:py-10 transition-colors duration-300">
+      <main className="flex-1 bg-[#F8FAFC] dark:bg-[#040A1C] pt-20 sm:pt-28 pb-10 transition-colors duration-300">
         <div className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8">
-          {/* Stepper progress */}
-          <div className="sticky top-[60px] sm:top-[72px] z-20 mb-4 sm:mb-6">
+          {/* Stepper progress (non-overlapping natural flow) */}
+          <div className="relative sm:sticky sm:top-[84px] z-10 mb-4 sm:mb-6">
             <div className="max-w-xl mx-auto bg-white/95 dark:bg-[#071739]/95 backdrop-blur-md rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 border border-slate-200/80 dark:border-blue-900/50 shadow-xs">
               <div className="flex justify-between items-center relative">
                 {STEPS.map((stepText, idx) => {
@@ -1859,11 +1859,11 @@ function BookingFlowContent() {
                         )}
 
                         {/* 3. Property Type Segmented Toggle */}
-                        <div className="flex items-center justify-between gap-3 pt-1">
-                          <label className="block text-xs font-black text-slate-900 dark:text-white shrink-0">
+                        <div className="space-y-1.5 pt-0.5">
+                          <label className="block text-xs font-black text-slate-900 dark:text-white">
                             نوع العقار
                           </label>
-                          <div className="inline-flex p-1 rounded-full border border-slate-200 dark:border-blue-900/60 bg-slate-50/80 dark:bg-[#050D24] gap-1">
+                          <div className="grid grid-cols-3 w-full p-1 rounded-xl bg-slate-50/80 dark:bg-[#050D24] border border-slate-200 dark:border-blue-900/60 gap-1">
                             {[
                               { id: "apartment", label: "شقة" },
                               { id: "villa", label: "فيلا" },
@@ -1875,7 +1875,7 @@ function BookingFlowContent() {
                                   type="button"
                                   key={tab.id}
                                   onClick={() => setPropertyType(tab.id as any)}
-                                  className={`px-5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+                                  className={`w-full py-2 rounded-lg text-xs font-black text-center transition-all cursor-pointer ${
                                     isActive 
                                       ? "bg-[#21A5FB] text-white shadow-xs" 
                                       : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
