@@ -1036,14 +1036,12 @@ function BookingFlowContent() {
                             className="bg-gradient-to-r from-blue-50/90 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5"
                           >
                             {/* Parent Identity & Icon & Description */}
-                            <motion.div 
-                              layout="position"
-                              initial={{ opacity: 0, x: 10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.1, duration: 0.25 }}
-                              className="flex items-center gap-3.5 min-w-0"
-                            >
-                              <motion.div layout="position" className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center p-2.5 shrink-0 shadow-2xs">
+                            <div className="flex items-center gap-3.5 min-w-0">
+                              <motion.div 
+                                layout="position" 
+                                layoutId={`service-icon-${currentParent.id}`}
+                                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-[#071739] border border-blue-200/80 dark:border-blue-800/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center p-2.5 shrink-0 shadow-2xs"
+                              >
                                 {resolveIconUrl(currentParent.image) ? (
                                   <img src={resolveIconUrl(currentParent.image) || ""} alt="" className="w-full h-full object-contain" />
                                 ) : (
@@ -1053,23 +1051,32 @@ function BookingFlowContent() {
                                   })()
                                 )}
                               </motion.div>
-                              <motion.div layout="position" className="min-w-0 space-y-0.5">
-                                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+                              <div className="min-w-0 space-y-0.5">
+                                <motion.h3 
+                                  layout="position"
+                                  layoutId={`service-title-${currentParent.id}`}
+                                  className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight"
+                                >
                                   {currentParent.title?.ar || currentParent.title}
-                                </h3>
+                                </motion.h3>
                                 {(currentParent.description?.ar || currentParent.description) && (
-                                  <p className="text-xs text-slate-500 dark:text-slate-300 font-medium leading-relaxed line-clamp-2">
+                                  <motion.p 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.15, duration: 0.25 }}
+                                    className="text-xs text-slate-500 dark:text-slate-300 font-medium leading-relaxed line-clamp-2"
+                                  >
                                     {currentParent.description?.ar || currentParent.description}
-                                  </p>
+                                  </motion.p>
                                 )}
-                              </motion.div>
-                            </motion.div>
+                              </div>
+                            </div>
 
                             {/* Back Button */}
                             <motion.button
                               initial={{ opacity: 0, scale: 0.9 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: 0.1, duration: 0.25 }}
+                              transition={{ delay: 0.15, duration: 0.25 }}
                               type="button"
                               onClick={handleHierarchyBack}
                               className="self-start sm:self-center text-xs font-black text-slate-700 dark:text-slate-200 hover:text-[#0091FF] dark:hover:text-[#22A5FC] flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/90 dark:border-blue-900/60 transition-all shrink-0 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
@@ -1081,118 +1088,110 @@ function BookingFlowContent() {
                         ) : null}
 
                         {/* Header Title based on Current Depth */}
-                        <AnimatePresence mode="wait">
-                          <motion.div
-                            key={selectedPath.length === 0 ? "root-title" : `child-title-${currentParent?.id}`}
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            {selectedPath.length === 0 ? (
-                              <>
-                                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
-                                  الخطوة 1: اختيار الخدمة
-                                </span>
-                                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                                  برجاء تحديد نوع الخدمة المطلوبة
-                                </h2>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-                                  اختر القسم الرئيسي المناسب للبدء في تخصيص طلبك وتحديد السعر النهائي
-                                </p>
-                              </>
-                            ) : (
-                              <>
-                                <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
-                                  يرجى اختيار الخدمة المناسبة
-                                </h2>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-                                  اختر من الخدمات والخيارات التابعة لـ ({currentParent?.title?.ar || currentParent?.title}) أدناه
-                                </p>
-                              </>
-                            )}
-                          </motion.div>
-                        </AnimatePresence>
+                        <motion.div
+                          key={selectedPath.length === 0 ? "root-title" : `child-title-${currentParent?.id}`}
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {selectedPath.length === 0 ? (
+                            <>
+                              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/60 inline-block mb-1.5">
+                                الخطوة 1: اختيار الخدمة
+                              </span>
+                              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                                برجاء تحديد نوع الخدمة المطلوبة
+                              </h2>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                                اختر القسم الرئيسي المناسب للبدء في تخصيص طلبك وتحديد السعر النهائي
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                                يرجى اختيار الخدمة المناسبة
+                              </h2>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                                اختر من الخدمات والخيارات التابعة لـ ({currentParent?.title?.ar || currentParent?.title}) أدناه
+                              </p>
+                            </>
+                          )}
+                        </motion.div>
 
                         {/* Grid of Minimal Interactive Service Cards (Staggered Animation with Shared Element layoutId) */}
-                        <AnimatePresence mode="wait">
-                          <motion.div 
-                            key={selectedPath.map((n) => n.id).join("-") || "root-level"}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-1"
-                          >
-                            {currentLevelNodes.map((node, idx) => {
-                              const nodeChildren = getChildren(node.id);
-                              const isBookableLeaf = node.is_bookable === true && nodeChildren.length === 0;
-                              const isPaused = node.status === "paused";
-                              const NodeIcon = getServiceFallbackIcon(node.title?.ar || node.title || "");
-                              const iconUrl = resolveIconUrl(node.image);
+                        <motion.div 
+                          key={selectedPath.map((n) => n.id).join("-") || "root-level"}
+                          className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-1"
+                        >
+                          {currentLevelNodes.map((node, idx) => {
+                            const nodeChildren = getChildren(node.id);
+                            const isBookableLeaf = node.is_bookable === true && nodeChildren.length === 0;
+                            const isPaused = node.status === "paused";
+                            const NodeIcon = getServiceFallbackIcon(node.title?.ar || node.title || "");
+                            const iconUrl = resolveIconUrl(node.image);
 
-                              return (
-                                <motion.button
-                                  layout
-                                  layoutId={`service-node-${node.id}`}
-                                  initial={{ opacity: 0, y: 14, scale: 0.96 }}
-                                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
-                                  transition={{
-                                    layout: springTransition,
-                                    opacity: { duration: 0.25, delay: idx * 0.035 },
-                                    y: { duration: 0.25, delay: idx * 0.035 },
-                                    scale: { duration: 0.25, delay: idx * 0.035 }
-                                  }}
-                                  type="button"
-                                  key={node.id}
-                                  disabled={isPaused}
-                                  onClick={() => handleServiceNodeSelect(node, isBookableLeaf)}
-                                  className={`p-3.5 sm:p-5 rounded-2xl border text-center flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative ${
-                                    isPaused
-                                      ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
-                                      : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
-                                  }`}
+                            return (
+                              <motion.button
+                                layout
+                                layoutId={`service-node-${node.id}`}
+                                initial={{ opacity: 0, scale: 0.94 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.94 }}
+                                transition={{
+                                  layout: springTransition,
+                                  opacity: { duration: 0.22, delay: 0.1 + idx * 0.035 },
+                                  scale: { duration: 0.22, delay: 0.1 + idx * 0.035 }
+                                }}
+                                type="button"
+                                key={node.id}
+                                disabled={isPaused}
+                                onClick={() => handleServiceNodeSelect(node, isBookableLeaf)}
+                                className={`p-3.5 sm:p-5 rounded-2xl border text-center flex flex-col items-center justify-center group cursor-pointer active:scale-95 shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative ${
+                                  isPaused
+                                    ? "opacity-50 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/20 cursor-not-allowed"
+                                    : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] hover:border-[#0091FF] dark:hover:border-[#0091FF]"
+                                }`}
+                              >
+                                {/* Top mini-badge for sub-branches or direct booking */}
+                                {isPaused ? (
+                                  <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                                    متوقفة
+                                  </span>
+                                ) : nodeChildren.length > 0 ? (
+                                  <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/40">
+                                    {nodeChildren.length}
+                                  </span>
+                                ) : null}
+
+                                {/* Icon Badge */}
+                                <motion.div 
+                                  layout="position"
+                                  layoutId={`service-icon-${node.id}`}
+                                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${
+                                    isPaused 
+                                      ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-900/40" 
+                                      : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
+                                  } flex items-center justify-center p-2.5 group-hover:scale-105 transition-all shrink-0 shadow-2xs`}
                                 >
-                                  {/* Top mini-badge for sub-branches or direct booking */}
-                                  {isPaused ? (
-                                    <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
-                                      متوقفة
-                                    </span>
-                                  ) : nodeChildren.length > 0 ? (
-                                    <span className="absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/40">
-                                      {nodeChildren.length}
-                                    </span>
-                                  ) : null}
+                                  {iconUrl ? (
+                                    <img src={iconUrl} alt="" className="w-full h-full object-contain" />
+                                  ) : (
+                                    <NodeIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+                                  )}
+                                </motion.div>
 
-                                  {/* Icon Badge */}
-                                  <motion.div 
-                                    layout="position"
-                                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${
-                                      isPaused 
-                                        ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-900/40" 
-                                        : "bg-blue-50/80 dark:bg-[#050D24] text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 group-hover:bg-[#0091FF] group-hover:text-white"
-                                    } flex items-center justify-center p-2.5 group-hover:scale-105 transition-all shrink-0 shadow-2xs`}
-                                  >
-                                    {iconUrl ? (
-                                      <img src={iconUrl} alt="" className="w-full h-full object-contain" />
-                                    ) : (
-                                      <NodeIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-                                    )}
-                                  </motion.div>
-
-                                  {/* Service Title */}
-                                  <motion.h3 
-                                    layout="position"
-                                    className="text-xs sm:text-sm font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors mt-2.5 leading-snug line-clamp-2"
-                                  >
-                                    {node.title?.ar || node.title}
-                                  </motion.h3>
-                                </motion.button>
-                              );
-                            })}
-                          </motion.div>
-                        </AnimatePresence>
+                                {/* Service Title */}
+                                <motion.h3 
+                                  layout="position"
+                                  layoutId={`service-title-${node.id}`}
+                                  className="text-xs sm:text-sm font-black text-slate-900 dark:text-white group-hover:text-[#0091FF] dark:group-hover:text-[#22A5FC] transition-colors mt-2.5 leading-snug line-clamp-2"
+                                >
+                                  {node.title?.ar || node.title}
+                                </motion.h3>
+                              </motion.button>
+                            );
+                          })}
+                        </motion.div>
                       </div>
                     ) : (
                       /* 2. DYNAMIC PRICING FORM MODE (Leaf Bookable Service Selected) */
@@ -1203,28 +1202,44 @@ function BookingFlowContent() {
                         className="space-y-6"
                       >
                       {/* Selected Service Banner with Full Path and Change Button */}
-                      <div className="bg-gradient-to-r from-blue-50/90 to-indigo-50/60 dark:from-[#050D24] dark:to-[#071739] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 flex items-center justify-between gap-3 shadow-xs">
+                      <motion.div 
+                        layout
+                        layoutId={`service-node-${selectedSubService.id}`}
+                        transition={springTransition}
+                        className="bg-gradient-to-r from-blue-50/90 to-indigo-50/60 dark:from-[#050D24] dark:to-[#071739] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 flex items-center justify-between gap-3 shadow-xs"
+                      >
                         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                          <div className="w-12 h-12 rounded-2xl bg-white dark:bg-[#071739] border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] shrink-0 shadow-2xs">
+                          <motion.div 
+                            layout="position"
+                            layoutId={`service-icon-${selectedSubService.id}`}
+                            className="w-12 h-12 rounded-2xl bg-white dark:bg-[#071739] border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] shrink-0 shadow-2xs"
+                          >
                             {selectedSubService.image ? (
                               <img src={resolveIconUrl(selectedSubService.image) || ""} alt="" className="w-7 h-7 object-contain" />
                             ) : (
                               <Sparkles className="w-6 h-6" />
                             )}
-                          </div>
+                          </motion.div>
                           <div className="min-w-0">
                             <div className="text-[10px] font-extrabold text-[#0091FF] dark:text-[#22A5FC] flex items-center gap-1 truncate">
                               {buildPathForNode(selectedSubService.id, allTreeServices).map((p, i, arr) => (
                                 <span key={p.id}>{p.title?.ar || p.title}{i < arr.length - 1 ? " / " : ""}</span>
                               ))}
                             </div>
-                            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white truncate mt-0.5">
+                            <motion.h3 
+                              layout="position"
+                              layoutId={`service-title-${selectedSubService.id}`}
+                              className="text-base sm:text-lg font-black text-slate-900 dark:text-white truncate mt-0.5"
+                            >
                               {selectedSubService.title?.ar || selectedSubService.title}
-                            </h3>
+                            </motion.h3>
                           </div>
                         </div>
                         
-                        <button
+                        <motion.button
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.15, duration: 0.25 }}
                           type="button"
                           onClick={() => {
                             setSelectedSubService(null);
@@ -1236,8 +1251,8 @@ function BookingFlowContent() {
                         >
                           <RefreshCw className="w-3 h-3" />
                           <span>تغيير الخدمة</span>
-                        </button>
-                      </div>
+                        </motion.button>
+                      </motion.div>
 
                       {/* Header */}
                       <div>
