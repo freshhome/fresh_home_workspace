@@ -293,7 +293,8 @@ function BookingFlowContent() {
     building_identifier: "",
     floor: "",
     apartment_or_unit: "",
-    landmark: ""
+    landmark: "",
+    location_url: ""
   });
   const [customDistrict, setCustomDistrict] = useState("");
   const [propertyType, setPropertyType] = useState<"apartment" | "villa" | "office">("apartment");
@@ -401,7 +402,8 @@ function BookingFlowContent() {
                 building_identifier: primary.building_identifier || primary.building_number || "",
                 floor: primary.floor || "",
                 apartment_or_unit: primary.apartment_or_unit || primary.apartment || "",
-                landmark: primary.landmark || ""
+                landmark: primary.landmark || "",
+                location_url: primary.location_url || ""
               });
             }
           } catch {
@@ -832,7 +834,8 @@ function BookingFlowContent() {
       building_identifier: addr.building_identifier || addr.building_number || "",
       floor: addr.floor || "",
       apartment_or_unit: addr.apartment_or_unit || addr.apartment || "",
-      landmark: addr.landmark || ""
+      landmark: addr.landmark || "",
+      location_url: addr.location_url || ""
     });
   };
 
@@ -902,6 +905,7 @@ function BookingFlowContent() {
         floor: address.floor.trim(),
         apartment_or_unit: address.apartment_or_unit.trim(),
         landmark: address.landmark.trim(),
+        location_url: (address.location_url || "").trim(),
         // Legacy field aliases for backwards compatibility
         street: address.street_or_compound.trim(),
         building: address.building_identifier.trim(),
@@ -921,6 +925,7 @@ function BookingFlowContent() {
             floor: address.floor.trim() || null,
             apartment_or_unit: address.apartment_or_unit.trim() || null,
             landmark: address.landmark.trim() || null,
+            location_url: (address.location_url || "").trim() || null,
             is_primary: savedAddresses.length === 0
           });
         } catch (addrErr) {
@@ -1807,17 +1812,6 @@ function BookingFlowContent() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="space-y-4"
                   >
-                    {/* 1. Detect Current Location Top Button */}
-                    <button
-                      type="button"
-                      onClick={handleDetectLocation}
-                      disabled={isDetectingLocation}
-                      className="w-full py-3 px-4 rounded-xl bg-[#21A5FB] hover:bg-[#0091FF] active:scale-[0.99] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-75"
-                    >
-                      <MapPin className={`w-4 h-4 ${isDetectingLocation ? "animate-bounce" : ""}`} />
-                      <span>{isDetectingLocation ? "جاري تحديد موقعك..." : "استخدام موقعي الحالي"}</span>
-                    </button>
-
                     {/* Saved Addresses Toggle if applicable */}
                     {savedAddresses.length > 0 && (
                       <div className="space-y-3 pt-1">
@@ -2109,6 +2103,29 @@ function BookingFlowContent() {
                                 : "border-slate-200 dark:border-blue-900/60 hover:border-slate-300"
                             } focus:border-[#21A5FB] focus:ring-4 focus:ring-[#21A5FB]/20 focus:outline-none`}
                           />
+                        </div>
+
+                        {/* 7. Location URL on Map (Optional) */}
+                        <div className="space-y-1 sm:space-y-1.5">
+                          <label className="block text-xs font-black text-slate-900 dark:text-white">
+                            رابط الموقع على الخريطة (Google Maps) - اختياري
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="url"
+                              placeholder="مثال: https://maps.google.com/?q=..."
+                              value={address.location_url || ""}
+                              onChange={(e) => setAddress({ ...address, location_url: e.target.value })}
+                              className={`w-full p-2.5 sm:p-3 pl-10 rounded-xl border text-xs font-bold transition-all bg-white dark:bg-[#071739] text-slate-900 dark:text-white caret-[#21A5FB] placeholder:text-slate-400 dark:placeholder:text-slate-500 ${
+                                (address.location_url || "").trim() !== ""
+                                  ? "border-[#21A5FB] ring-2 ring-[#21A5FB]/15 shadow-2xs"
+                                  : "border-slate-200 dark:border-blue-900/60 hover:border-slate-300"
+                              } focus:border-[#21A5FB] focus:ring-4 focus:ring-[#21A5FB]/20 focus:outline-none text-left [direction:ltr]`}
+                            />
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                              <MapPin className="w-4 h-4 text-[#21A5FB] opacity-80" />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
