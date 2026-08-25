@@ -8,7 +8,7 @@ import {
   ShieldCheck, ArrowLeft, ArrowRight, CheckCircle2, 
   MapPin, Calendar, CreditCard, Clock, Check, ShieldAlert, Sparkles,
   Layers, Zap, ChevronLeft, ChevronRight, Home, Wrench, Wind, Armchair, 
-  AppWindow, Bug, RefreshCw, Plus, Building, Navigation
+  AppWindow, Bug, RefreshCw, Plus, Building, Navigation, Eye, X, Info
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -327,6 +327,7 @@ function BookingFlowContent() {
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   const [showMobilePriceModal, setShowMobilePriceModal] = useState(false);
+  const [showServiceDetailsModal, setShowServiceDetailsModal] = useState(false);
   const dateScrollRef = useRef<HTMLDivElement>(null);
 
   // Load user profile details and saved addresses if logged in
@@ -632,11 +633,11 @@ function BookingFlowContent() {
         setHasCalculated(true);
         setTimeout(() => {
           setAnimatePrice(true);
-        }, 50);
-
-        if (typeof window !== "undefined" && window.innerWidth < 1024) {
-          setShowMobilePriceModal(true);
-        }
+          const target = document.getElementById("calculated-price-banner") || document.getElementById("next-step-btn");
+          if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 120);
       }
     } catch (e: any) {
       console.error("Pricing calculation error:", e);
@@ -1228,27 +1229,28 @@ function BookingFlowContent() {
                     ) : (
                       /* 2. DYNAMIC PRICING FORM MODE (Leaf Bookable Service Selected) */
                       <div className="space-y-6">
-                        {/* Selected Service Banner with Full Path and Change Button */}
+                        {/* Selected Service Banner with Full Path, Details and Change Button */}
                         <motion.div 
                           layout
                           layoutId={`service-node-${selectedSubService.id}`}
                           transition={springTransition}
-                          className="bg-gradient-to-r from-blue-50/90 to-indigo-50/60 dark:from-[#050D24] dark:to-[#071739] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 flex items-center justify-between gap-3 shadow-xs"
+                          className="bg-gradient-to-r from-blue-50/95 via-sky-50/60 to-indigo-50/70 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 shadow-xs flex flex-col gap-3.5"
                         >
-                          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                          {/* Top Row: Service Icon & Full Path & Service Title */}
+                          <div className="flex items-start gap-3 sm:gap-4 min-w-0">
                             <motion.div 
                               layout="position"
                               layoutId={`service-icon-${selectedSubService.id}`}
-                              className="w-12 h-12 rounded-2xl bg-white dark:bg-[#071739] border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] shrink-0 shadow-2xs"
+                              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-[#071739] border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#21A5FB] shrink-0 shadow-2xs p-2.5 mt-0.5"
                             >
                               {selectedSubService.image ? (
-                                <img src={resolveIconUrl(selectedSubService.image) || ""} alt="" className="w-7 h-7 object-contain" />
+                                <img src={resolveIconUrl(selectedSubService.image) || ""} alt="" className="w-full h-full object-contain" />
                               ) : (
-                                <Sparkles className="w-6 h-6" />
+                                <Sparkles className="w-6 h-6 sm:w-7 sm:h-7" />
                               )}
                             </motion.div>
-                            <div className="min-w-0">
-                              <div className="text-[10px] font-extrabold text-[#0091FF] dark:text-[#22A5FC] flex items-center gap-1 truncate">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-[10px] sm:text-xs font-black text-[#21A5FB] dark:text-[#21A5FB] flex items-center gap-1 flex-wrap leading-snug">
                                 {buildPathForNode(selectedSubService.id, allTreeServices).map((p, i, arr) => (
                                   <span key={p.id}>{p.title?.ar || p.title}{i < arr.length - 1 ? " / " : ""}</span>
                                 ))}
@@ -1256,29 +1258,43 @@ function BookingFlowContent() {
                               <motion.h3 
                                 layout="position"
                                 layoutId={`service-title-${selectedSubService.id}`}
-                                className="text-base sm:text-lg font-black text-slate-900 dark:text-white truncate mt-0.5"
+                                className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-1 leading-snug break-words"
                               >
                                 {selectedSubService.title?.ar || selectedSubService.title}
                               </motion.h3>
+                              {(selectedSubService.description?.ar || selectedSubService.description) && (
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 line-clamp-2 leading-relaxed">
+                                  {selectedSubService.description?.ar || selectedSubService.description}
+                                </p>
+                              )}
                             </div>
                           </div>
-                          
-                          <motion.button
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.15, duration: 0.25 }}
-                            type="button"
-                            onClick={() => {
-                              setSelectedSubService(null);
-                              setSubServiceId("");
-                              setHasCalculated(false);
-                              setAnimatePrice(false);
-                            }}
-                            className="px-3.5 py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 text-slate-700 dark:text-slate-200 hover:text-[#0091FF] hover:border-[#0091FF] text-xs font-black transition-all shrink-0 cursor-pointer shadow-2xs flex items-center gap-1.5"
-                          >
-                            <RefreshCw className="w-3 h-3" />
-                            <span>تغيير الخدمة</span>
-                          </motion.button>
+
+                          {/* Actions Bar: View Details & Change Service */}
+                          <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-blue-100/80 dark:border-blue-900/40">
+                            <button
+                              type="button"
+                              onClick={() => setShowServiceDetailsModal(true)}
+                              className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white dark:bg-[#071739] border border-blue-200 dark:border-blue-900/60 text-[#21A5FB] hover:bg-blue-50 dark:hover:bg-blue-950/50 text-xs font-black transition-all shrink-0 cursor-pointer shadow-2xs flex items-center gap-1.5 active:scale-95"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>تفاصيل الخدمة</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedSubService(null);
+                                setSubServiceId("");
+                                setHasCalculated(false);
+                                setAnimatePrice(false);
+                              }}
+                              className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 text-slate-700 dark:text-slate-200 hover:text-red-500 hover:border-red-300 text-xs font-black transition-all shrink-0 cursor-pointer shadow-2xs flex items-center gap-1.5 active:scale-95"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                              <span>تغيير الخدمة</span>
+                            </button>
+                          </div>
                         </motion.div>
 
                         {/* Pricing Specifications & Form Fields Animated Entrance */}
@@ -1561,6 +1577,38 @@ function BookingFlowContent() {
                           </div>
                         </div>
                       )}
+
+                      {/* Live Calculated Price Summary Banner */}
+                      {hasCalculated && priceDetails.total > 0 && (
+                        <motion.div
+                          id="calculated-price-banner"
+                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          transition={{ duration: 0.35, ease: "easeOut" }}
+                          className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-50/95 via-sky-50/70 to-emerald-50/80 dark:from-[#050D24] dark:via-[#071739] dark:to-[#06202A] border-2 border-[#21A5FB] shadow-md shadow-blue-500/15 flex items-center justify-between gap-3 mt-4"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-11 h-11 rounded-xl bg-[#21A5FB] text-white flex items-center justify-center shrink-0 shadow-xs animate-pulse">
+                              <Sparkles className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-[11px] font-extrabold text-[#21A5FB] leading-tight">تم حساب السعر بنجاح</div>
+                              <div className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200 mt-0.5 truncate">
+                                التكلفة الإجمالية المعتمدة لطلبك
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-left shrink-0">
+                            <motion.div 
+                              animate={{ scale: [1, 1.07, 1] }} 
+                              transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                              className="text-2xl sm:text-3xl font-black text-[#21A5FB] inline-block tracking-tight"
+                            >
+                              {priceDetails.total} <span className="text-xs sm:text-sm font-black text-slate-700 dark:text-slate-300">ج.م</span>
+                            </motion.div>
+                          </div>
+                        </motion.div>
+                      )}
                     </motion.div>
                   </div>
                 )}
@@ -1598,7 +1646,7 @@ function BookingFlowContent() {
 
                       <div 
                         ref={dateScrollRef}
-                        className="flex gap-2 overflow-x-auto pb-2 scroll-smooth no-scrollbar"
+                        className="flex gap-2.5 sm:gap-3 overflow-x-auto pb-3 pt-1 scroll-smooth no-scrollbar"
                         style={{ scrollbarWidth: 'none' }}
                       >
                         {Array.from({ length: 30 }).map((_, idx) => {
@@ -1608,9 +1656,13 @@ function BookingFlowContent() {
                           const isSelected = scheduledDate === dateStr;
                           const isAvailable = availabilityMap[dateStr] !== false;
                           
-                          const dayName = d.toLocaleDateString("ar-EG", { weekday: "short" });
-                          const dayNum = d.getDate();
-                          const monthName = d.toLocaleDateString("ar-EG", { month: "short" });
+                          // Row 1: DD/MM
+                          const dayNum = String(d.getDate()).padStart(2, '0');
+                          const monthNum = String(d.getMonth() + 1).padStart(2, '0');
+                          const dateFormatted = `${dayNum}/${monthNum}`;
+                          
+                          // Row 2: Day Name (الأربعاء، الخميس...)
+                          const dayName = d.toLocaleDateString("ar-EG", { weekday: "long" });
 
                           return (
                             <button
@@ -1621,17 +1673,34 @@ function BookingFlowContent() {
                                 setScheduledDate(dateStr);
                                 setManualDateText(dateStr);
                               }}
-                              className={`flex flex-col items-center justify-center p-3 rounded-2xl border min-w-[76px] transition-all cursor-pointer shrink-0 ${
+                              className={`flex flex-col items-center justify-between py-3.5 px-3 rounded-2xl border min-w-[92px] sm:min-w-[105px] h-[115px] transition-all cursor-pointer shrink-0 ${
                                 !isAvailable 
-                                  ? "opacity-35 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed" 
+                                  ? "opacity-40 bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed" 
                                   : isSelected 
-                                    ? "border-[#0091FF] bg-[#0091FF] text-white shadow-md shadow-blue-500/25 scale-105" 
-                                    : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-[#0091FF]"
+                                    ? "border-[#21A5FB] bg-blue-50/80 dark:bg-blue-950/70 shadow-md shadow-blue-500/15 ring-2 ring-[#21A5FB] scale-[1.03]" 
+                                    : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-slate-300"
                               }`}
                             >
-                              <span className="text-[10px] font-bold">{dayName}</span>
-                              <span className="text-lg font-black my-0.5">{dayNum}</span>
-                              <span className="text-[10px] font-bold opacity-80">{monthName}</span>
+                              {/* Row 1: Date DD/MM */}
+                              <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">
+                                {dateFormatted}
+                              </span>
+
+                              {/* Row 2: Arabic Day Name */}
+                              <span className="text-xs font-black text-slate-700 dark:text-slate-200">
+                                {dayName}
+                              </span>
+
+                              {/* Row 3: Availability Badge */}
+                              {isAvailable ? (
+                                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50">
+                                  متاح
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-500 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50">
+                                  غير متاح
+                                </span>
+                              )}
                             </button>
                           );
                         })}
@@ -1641,11 +1710,17 @@ function BookingFlowContent() {
                     {/* Time Slot Picker */}
                     <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-blue-900/40">
                       <label className="block text-xs font-black text-slate-800 dark:text-white">الفترة الزمنية المفضلة للبدء</label>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
                         {[
                           "09:00 ص",
+                          "10:00 ص",
+                          "11:00 ص",
                           "12:00 م",
+                          "01:00 م",
+                          "02:00 م",
                           "03:00 م",
+                          "04:00 م",
+                          "05:00 م",
                           "06:00 م"
                         ].map((slot) => {
                           const isSelected = scheduledTime === slot;
@@ -1656,8 +1731,8 @@ function BookingFlowContent() {
                               onClick={() => setScheduledTime(slot)}
                               className={`p-3 rounded-xl border text-xs font-black transition-all cursor-pointer ${
                                 isSelected 
-                                  ? "border-[#0091FF] bg-[#0091FF] text-white shadow-md shadow-blue-500/25" 
-                                  : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-[#0091FF]"
+                                  ? "border-[#21A5FB] bg-[#21A5FB] text-white shadow-md shadow-blue-500/25 scale-[1.02]" 
+                                  : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-[#21A5FB]"
                               }`}
                             >
                               {slot}
@@ -2089,14 +2164,24 @@ function BookingFlowContent() {
                         <ArrowLeft className="w-4 h-4 rotate-180" />
                       </button>
                     ) : (
-                      <button 
+                      <motion.button 
+                        id="next-step-btn"
                         type="button"
                         onClick={handleNext}
-                        className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-5 sm:px-6 py-2.5 rounded-xl text-xs shadow-md shadow-emerald-600/25 transition-all active:scale-95 cursor-pointer"
+                        animate={{ 
+                          scale: [1, 1.03, 1],
+                          boxShadow: [
+                            "0 4px 14px 0 rgba(16, 185, 129, 0.35)",
+                            "0 6px 24px 0 rgba(16, 185, 129, 0.65)",
+                            "0 4px 14px 0 rgba(16, 185, 129, 0.35)"
+                          ]
+                        }}
+                        transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm transition-all active:scale-95 cursor-pointer ring-2 ring-emerald-400/50"
                       >
                         <span>الخطوة التالية (الموعد)</span>
-                        <ArrowLeft className="w-4 h-4 rotate-180" />
-                      </button>
+                        <ArrowLeft className="w-4 h-4 rotate-180 animate-pulse" />
+                      </motion.button>
                     )
                   ) : currentStep === 2 ? (
                     <button 
@@ -2255,13 +2340,17 @@ function BookingFlowContent() {
                     </div>
 
                     {/* Total Price Card */}
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50/60 dark:from-[#050D24] dark:to-[#071739] p-4 rounded-2xl border border-blue-100 dark:border-blue-900/50 space-y-2.5">
+                    <div className="bg-gradient-to-br from-blue-50 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:to-[#071739] p-4 sm:p-5 rounded-2xl border border-blue-100 dark:border-blue-900/50 space-y-2.5">
                       <div className="flex justify-between items-baseline">
                         <span className="text-xs font-black text-slate-700 dark:text-slate-200">المبلغ الإجمالي</span>
                         <div className="text-left">
-                          <span className="text-2xl font-black text-[#0091FF] dark:text-[#22A5FC]">
+                          <motion.span 
+                            animate={{ scale: [1, 1.05, 1] }} 
+                            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                            className="text-2xl sm:text-3xl font-black text-[#21A5FB] dark:text-[#21A5FB] inline-block tracking-tight"
+                          >
                             {priceDetails.total}
-                          </span>
+                          </motion.span>
                           <span className="text-xs font-black text-slate-500 dark:text-slate-400 mr-1">ج.م</span>
                         </div>
                       </div>
@@ -2274,6 +2363,83 @@ function BookingFlowContent() {
           </div>
         </div>
       </main>
+
+      {/* Service Details Modal */}
+      <AnimatePresence>
+        {showServiceDetailsModal && selectedSubService && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white dark:bg-[#071739] rounded-3xl p-5 sm:p-7 max-w-lg w-full border border-slate-200 dark:border-blue-900/60 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-blue-900/40 pb-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-[#050D24] text-[#21A5FB] flex items-center justify-center p-2.5 shrink-0 border border-blue-100 dark:border-blue-900/50">
+                    {selectedSubService.image ? (
+                      <img src={resolveIconUrl(selectedSubService.image) || ""} alt="" className="w-full h-full object-contain" />
+                    ) : (
+                      <Sparkles className="w-6 h-6" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-black text-[#21A5FB] flex items-center gap-1">
+                      {buildPathForNode(selectedSubService.id, allTreeServices).map((p, i, arr) => (
+                        <span key={p.id}>{p.title?.ar || p.title}{i < arr.length - 1 ? " / " : ""}</span>
+                      ))}
+                    </div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-0.5">
+                      {selectedSubService.title?.ar || selectedSubService.title}
+                    </h3>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowServiceDetailsModal(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer shrink-0"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Service Description */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-black text-slate-900 dark:text-white">وصف الخدمة</h4>
+                <p className="text-xs text-slate-600 dark:text-slate-300 font-medium leading-relaxed bg-slate-50 dark:bg-[#050D24]/70 p-3.5 rounded-2xl border border-slate-100 dark:border-blue-900/30">
+                  {selectedSubService.description?.ar || selectedSubService.description || "خدمة معتمدة واحترافية بأحدث المعدات ومواد التنظيف الآمنة وفق معايير الجودة الشاملة لشركة فريش هوم."}
+                </p>
+              </div>
+
+              {/* Service Quality Highlights */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-[#050D24] border border-blue-100 dark:border-blue-900/40 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">ضمان جودة معتمد</span>
+                </div>
+                <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-[#050D24] border border-blue-100 dark:border-blue-900/40 flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">أحدث الأجهزة الألمانية</span>
+                </div>
+              </div>
+
+              {/* Action Close Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowServiceDetailsModal(false)}
+                  className="w-full py-3 rounded-xl bg-[#21A5FB] hover:bg-[#0091FF] text-white font-black text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-95"
+                >
+                  حسناً، متابعة الحجز
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </>
