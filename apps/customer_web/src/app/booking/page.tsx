@@ -327,7 +327,6 @@ function BookingFlowContent() {
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   const [showMobilePriceModal, setShowMobilePriceModal] = useState(false);
-  const [showServiceDetailsModal, setShowServiceDetailsModal] = useState(false);
   const dateScrollRef = useRef<HTMLDivElement>(null);
 
   // Load user profile details and saved addresses if logged in
@@ -616,10 +615,13 @@ function BookingFlowContent() {
     }
 
     try {
-      const { data, error } = await supabase.rpc("calculate_booking_price", {
-        p_sub_service_id: subServiceId,
-        p_pricing_inputs: inputs
-      });
+      const [{ data, error }] = await Promise.all([
+        supabase.rpc("calculate_booking_price", {
+          p_sub_service_id: subServiceId,
+          p_pricing_inputs: inputs
+        }),
+        new Promise((resolve) => setTimeout(resolve, 750)) // Smooth, satisfying calculation animation
+      ]);
 
       if (error) throw error;
       if (data) {
@@ -1272,14 +1274,13 @@ function BookingFlowContent() {
 
                           {/* Actions Bar: View Details & Change Service */}
                           <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-blue-100/80 dark:border-blue-900/40">
-                            <button
-                              type="button"
-                              onClick={() => setShowServiceDetailsModal(true)}
+                            <Link
+                              href={`/services/details?subServiceId=${selectedSubService.id}`}
                               className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white dark:bg-[#071739] border border-blue-200 dark:border-blue-900/60 text-[#21A5FB] hover:bg-blue-50 dark:hover:bg-blue-950/50 text-xs font-black transition-all shrink-0 cursor-pointer shadow-2xs flex items-center gap-1.5 active:scale-95"
                             >
                               <Eye className="w-3.5 h-3.5" />
                               <span>تفاصيل الخدمة</span>
-                            </button>
+                            </Link>
 
                             <button
                               type="button"
@@ -1307,10 +1308,10 @@ function BookingFlowContent() {
                           {/* Header */}
                           <div>
                             <h2 className="text-xl font-black text-slate-900 dark:text-white">
-                              تعديل مواصفات وحساب تسعير الخدمة
+                              تحديد مواصفات وتفاصيل الخدمة
                             </h2>
                             <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">
-                              أدخل المقاسات الحقيقية والتفاصيل للحصول على سعر نهائي دقيق وموثوق.
+                              يرجى إدخال المقاسات والخيارات المناسبة لمكانك لحساب التكلفة الدقيقة فوراً.
                             </p>
                           </div>
 
@@ -1578,8 +1579,47 @@ function BookingFlowContent() {
                         </div>
                       )}
 
+                      {/* Professional Calculation Loading State */}
+                      <AnimatePresence>
+                        {isCalculating && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.96, y: -8 }}
+                            transition={{ duration: 0.25 }}
+                            className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-sky-50/70 to-indigo-50/80 dark:from-[#050D24] dark:via-[#071739] dark:to-[#081B44] border-2 border-dashed border-[#21A5FB] shadow-md shadow-blue-500/10 flex items-center justify-between gap-3 mt-4 overflow-hidden relative"
+                          >
+                            <div className="flex items-center gap-3.5 min-w-0 z-10">
+                              <div className="relative w-11 h-11 flex items-center justify-center shrink-0">
+                                <div className="absolute inset-0 rounded-xl bg-[#21A5FB]/30 animate-ping"></div>
+                                <div className="w-11 h-11 rounded-xl bg-[#21A5FB] text-white flex items-center justify-center shadow-md animate-spin">
+                                  <Sparkles className="w-5 h-5" />
+                                </div>
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-xs sm:text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                                  <span>جاري تحليل المواصفات وحساب السعر</span>
+                                  <span className="flex gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#21A5FB] animate-bounce"></span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#21A5FB] animate-bounce [animation-delay:0.2s]"></span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#21A5FB] animate-bounce [animation-delay:0.4s]"></span>
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold mt-0.5 truncate">
+                                  يتم تطبيق خوارزمية التسعير المعتمدة لشركة فريش هوم...
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="hidden sm:flex items-center gap-2 z-10">
+                              <span className="text-xs font-black text-[#21A5FB] animate-pulse">جاري المعالجة...</span>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
                       {/* Live Calculated Price Summary Banner */}
-                      {hasCalculated && priceDetails.total > 0 && (
+                      {hasCalculated && !isCalculating && priceDetails.total > 0 && (
                         <motion.div
                           id="calculated-price-banner"
                           initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -2363,83 +2403,6 @@ function BookingFlowContent() {
           </div>
         </div>
       </main>
-
-      {/* Service Details Modal */}
-      <AnimatePresence>
-        {showServiceDetailsModal && selectedSubService && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              transition={{ duration: 0.2 }}
-              className="bg-white dark:bg-[#071739] rounded-3xl p-5 sm:p-7 max-w-lg w-full border border-slate-200 dark:border-blue-900/60 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-blue-900/40 pb-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-[#050D24] text-[#21A5FB] flex items-center justify-center p-2.5 shrink-0 border border-blue-100 dark:border-blue-900/50">
-                    {selectedSubService.image ? (
-                      <img src={resolveIconUrl(selectedSubService.image) || ""} alt="" className="w-full h-full object-contain" />
-                    ) : (
-                      <Sparkles className="w-6 h-6" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-black text-[#21A5FB] flex items-center gap-1">
-                      {buildPathForNode(selectedSubService.id, allTreeServices).map((p, i, arr) => (
-                        <span key={p.id}>{p.title?.ar || p.title}{i < arr.length - 1 ? " / " : ""}</span>
-                      ))}
-                    </div>
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-0.5">
-                      {selectedSubService.title?.ar || selectedSubService.title}
-                    </h3>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowServiceDetailsModal(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer shrink-0"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Service Description */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-black text-slate-900 dark:text-white">وصف الخدمة</h4>
-                <p className="text-xs text-slate-600 dark:text-slate-300 font-medium leading-relaxed bg-slate-50 dark:bg-[#050D24]/70 p-3.5 rounded-2xl border border-slate-100 dark:border-blue-900/30">
-                  {selectedSubService.description?.ar || selectedSubService.description || "خدمة معتمدة واحترافية بأحدث المعدات ومواد التنظيف الآمنة وفق معايير الجودة الشاملة لشركة فريش هوم."}
-                </p>
-              </div>
-
-              {/* Service Quality Highlights */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-[#050D24] border border-blue-100 dark:border-blue-900/40 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">ضمان جودة معتمد</span>
-                </div>
-                <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-[#050D24] border border-blue-100 dark:border-blue-900/40 flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">أحدث الأجهزة الألمانية</span>
-                </div>
-              </div>
-
-              {/* Action Close Button */}
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowServiceDetailsModal(false)}
-                  className="w-full py-3 rounded-xl bg-[#21A5FB] hover:bg-[#0091FF] text-white font-black text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-95"
-                >
-                  حسناً، متابعة الحجز
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       <Footer />
     </>
