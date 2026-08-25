@@ -692,10 +692,16 @@ function BookingFlowContent() {
     }
     const parsedDate = parseManualDate(manualDateText);
     if (parsedDate) {
-      const todayDate = new Date();
-      todayDate.setHours(0, 0, 0, 0);
-      if (parsedDate >= todayDate) {
-        const diffTime = parsedDate.getTime() - todayDate.getTime();
+      const now = new Date();
+      const isPast9PM = now.getHours() >= 21;
+      const minDaysOffset = isPast9PM ? 2 : 1;
+
+      const minAllowedDate = new Date();
+      minAllowedDate.setHours(0, 0, 0, 0);
+      minAllowedDate.setDate(minAllowedDate.getDate() + minDaysOffset);
+
+      if (parsedDate >= minAllowedDate) {
+        const diffTime = parsedDate.getTime() - minAllowedDate.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays <= 30) {
           const formatted = formatDateLocal(parsedDate);
@@ -1689,47 +1695,53 @@ function BookingFlowContent() {
                         className="flex gap-2.5 sm:gap-3 overflow-x-auto pb-3 pt-1 scroll-smooth no-scrollbar"
                         style={{ scrollbarWidth: 'none' }}
                       >
-                        {Array.from({ length: 30 }).map((_, idx) => {
-                          const d = new Date();
-                          d.setDate(d.getDate() + idx);
-                          const dateStr = formatDateLocal(d);
-                          const isSelected = scheduledDate === dateStr;
-                          const isAvailable = availabilityMap[dateStr] !== false;
-                          
-                          // Row 1: DD/MM
-                          const dayNum = String(d.getDate()).padStart(2, '0');
-                          const monthNum = String(d.getMonth() + 1).padStart(2, '0');
-                          const dateFormatted = `${dayNum}/${monthNum}`;
-                          
-                          // Row 2: Day Name (الأربعاء، الخميس...)
-                          const dayName = d.toLocaleDateString("ar-EG", { weekday: "long" });
+                        {(() => {
+                          const now = new Date();
+                          const isPast9PM = now.getHours() >= 21;
+                          const baseOffset = isPast9PM ? 2 : 1;
 
-                          return (
-                            <button
-                              type="button"
-                              key={dateStr}
-                              disabled={!isAvailable || isLoadingAvailability}
-                              onClick={() => {
-                                setScheduledDate(dateStr);
-                                setManualDateText(dateStr);
-                              }}
-                              className={`flex flex-col items-center justify-between py-3.5 px-3 rounded-2xl border min-w-[92px] sm:min-w-[105px] h-[115px] transition-all cursor-pointer shrink-0 ${
-                                !isAvailable 
-                                  ? "opacity-40 bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed" 
-                                  : isSelected 
-                                    ? "border-[#21A5FB] bg-blue-50/80 dark:bg-blue-950/70 shadow-md shadow-blue-500/15 ring-2 ring-[#21A5FB] scale-[1.03]" 
-                                    : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-slate-300"
-                              }`}
-                            >
-                              {/* Row 1: Date DD/MM */}
-                              <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">
-                                {dateFormatted}
-                              </span>
+                          return Array.from({ length: 30 }).map((_, idx) => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + baseOffset + idx);
+                            const dateStr = formatDateLocal(d);
+                            const isSelected = scheduledDate === dateStr;
+                            const isAvailable = availabilityMap[dateStr] !== false;
+                            
+                            // Row 1: DD/MM
+                            const dayNum = String(d.getDate()).padStart(2, '0');
+                            const monthNum = String(d.getMonth() + 1).padStart(2, '0');
+                            const dateFormatted = `${dayNum}/${monthNum}`;
+                            
+                            // Row 2: Day Name (Middle row: "غداً" for tomorrow)
+                            const isTomorrow = idx === 0 && !isPast9PM;
+                            const dayName = isTomorrow ? "غداً" : d.toLocaleDateString("ar-EG", { weekday: "long" });
 
-                              {/* Row 2: Arabic Day Name */}
-                              <span className="text-xs font-black text-slate-700 dark:text-slate-200">
-                                {dayName}
-                              </span>
+                            return (
+                              <button
+                                type="button"
+                                key={dateStr}
+                                disabled={!isAvailable || isLoadingAvailability}
+                                onClick={() => {
+                                  setScheduledDate(dateStr);
+                                  setManualDateText(dateStr);
+                                }}
+                                className={`flex flex-col items-center justify-between py-3.5 px-3 rounded-2xl border min-w-[92px] sm:min-w-[105px] h-[115px] transition-all cursor-pointer shrink-0 ${
+                                  !isAvailable 
+                                    ? "opacity-40 bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed" 
+                                    : isSelected 
+                                      ? "border-[#21A5FB] bg-blue-50/80 dark:bg-blue-950/70 shadow-md shadow-blue-500/15 ring-2 ring-[#21A5FB] scale-[1.03]" 
+                                      : "border-slate-200/90 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-200 hover:border-slate-300"
+                                }`}
+                              >
+                                {/* Row 1: Date DD/MM */}
+                                <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">
+                                  {dateFormatted}
+                                </span>
+
+                                {/* Row 2: Arabic Day Name or 'غداً' */}
+                                <span className={`text-xs font-black ${isTomorrow ? "text-[#21A5FB] dark:text-[#21A5FB] font-black text-sm" : "text-slate-700 dark:text-slate-200"}`}>
+                                  {dayName}
+                                </span>
 
                               {/* Row 3: Availability Badge */}
                               {isAvailable ? (
@@ -1743,7 +1755,8 @@ function BookingFlowContent() {
                               )}
                             </button>
                           );
-                        })}
+                        });
+                      })()}
                       </div>
                     </div>
 
