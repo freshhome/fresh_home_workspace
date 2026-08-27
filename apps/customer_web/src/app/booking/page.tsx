@@ -538,7 +538,11 @@ function BookingFlowContent() {
         if (field.type === "number") {
           defaults[field.id] = "";
         } else if (field.type === "toggle") {
-          defaults[field.id] = false;
+          defaults[field.id] = null;
+        } else if (field.type === "dropdown" || field.type === "select") {
+          defaults[field.id] = "";
+        } else {
+          defaults[field.id] = "";
         }
       });
       setPricingInputs(defaults);
@@ -560,29 +564,43 @@ function BookingFlowContent() {
     if (selectedSubService?.price_config?.fields) {
       selectedSubService.price_config.fields.forEach((field: any) => {
         const val = pricingInputs[field.id];
-        const isRequired = field.required === true;
-        
-        if (isRequired) {
-          if (val === undefined || val === null || val === "" || val === 0 || val === "0") {
-            errors[field.id] = "هذا الحقل مطلوب ولا يمكن تركه فارغاً أو بقيمة صفر";
-          } else if (field.type === "number") {
-            const num = Number(val);
-            if (field.min !== undefined && num < field.min) {
-              adjustedInputs[field.id] = field.min;
-              hasAdjustments = true;
-            } else if (field.max !== undefined && num > field.max) {
-              errors[field.id] = `الحد الأقصى المسموح به هو ${field.max}`;
+        const isRequired = field.required !== false; // All interactive pricing fields are validated by default unless explicitly optional
+
+        if (field.type === "toggle") {
+          if (isRequired && val !== true && val !== false) {
+            errors[field.id] = "يرجى تحديد أحد الخيارين للمتابعة";
+          }
+        } else if (field.type === "dropdown" || field.type === "select") {
+          if (isRequired && (val === undefined || val === null || val === "")) {
+            errors[field.id] = "يرجى اختيار قيمة من القائمة المتاحة للمتابعة";
+          }
+        } else if (field.type === "number") {
+          if (field.required === true || isRequired) {
+            if (val === undefined || val === null || val === "" || val === 0 || val === "0") {
+              errors[field.id] = "هذا الحقل مطلوب ولا يمكن تركه فارغاً أو بقيمة صفر";
+            } else {
+              const num = Number(val);
+              if (field.min !== undefined && num < field.min) {
+                adjustedInputs[field.id] = field.min;
+                hasAdjustments = true;
+              } else if (field.max !== undefined && num > field.max) {
+                errors[field.id] = `الحد الأقصى المسموح به هو ${field.max}`;
+              }
+            }
+          } else {
+            if (val !== undefined && val !== null && val !== "" && val !== 0 && val !== "0") {
+              const num = Number(val);
+              if (field.min !== undefined && num < field.min && num > 0) {
+                adjustedInputs[field.id] = field.min;
+                hasAdjustments = true;
+              } else if (field.max !== undefined && num > field.max) {
+                errors[field.id] = `الحد الأقصى المسموح به هو ${field.max}`;
+              }
             }
           }
-        } else {
-          if (val !== undefined && val !== null && val !== "" && field.type === "number" && val !== 0 && val !== "0") {
-            const num = Number(val);
-            if (field.min !== undefined && num < field.min && num > 0) {
-              adjustedInputs[field.id] = field.min;
-              hasAdjustments = true;
-            } else if (field.max !== undefined && num > field.max) {
-              errors[field.id] = `الحد الأقصى المسموح به هو ${field.max}`;
-            }
+        } else if (isRequired) {
+          if (val === undefined || val === null || val === "") {
+            errors[field.id] = "هذا الحقل مطلوب ولا يمكن تركه فارغاً";
           }
         }
       });
@@ -1514,7 +1532,7 @@ function BookingFlowContent() {
                                       })()}
 
                                       {field.type === "dropdown" && field.options && (
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                        <div className={`grid grid-cols-2 sm:grid-cols-3 gap-2 ${hasError && !val ? "p-1.5 rounded-2xl border border-dashed border-red-300 dark:border-red-900/60 bg-red-50/20" : ""}`}>
                                           {field.options.map((opt: any) => {
                                             const isSelected = val === opt.id;
                                             return (
@@ -1525,7 +1543,7 @@ function BookingFlowContent() {
                                                 className={`p-2.5 rounded-xl border text-xs font-bold transition-all ${
                                                   isSelected
                                                     ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] shadow-xs"
-                                                    : "border-slate-200 dark:border-blue-900/50 text-slate-700 dark:text-slate-300 bg-white dark:bg-[#071739] hover:bg-slate-50"
+                                                    : `text-slate-700 dark:text-slate-300 bg-white dark:bg-[#071739] hover:bg-slate-50 ${hasError ? "border-red-200 dark:border-red-900/40" : "border-slate-200 dark:border-blue-900/50"}`
                                                 }`}
                                               >
                                                 {opt.label?.ar || opt.label}
