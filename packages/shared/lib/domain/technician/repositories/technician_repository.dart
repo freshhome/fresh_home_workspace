@@ -4,7 +4,12 @@ import '../entities/smart_schedule_entry.dart';
 import '../entities/technician_pool_status.dart';
 
 abstract class TechnicianRepository {
-  Future<Either<Failure, WorkloadForecast>> getSmartSchedule(String technicianId, int days);
+  Future<Either<Failure, WorkloadForecast>> getSmartSchedule(
+    String technicianId, {
+    int? days,
+    DateTime? startDate,
+    DateTime? endDate,
+  });
   Future<Either<Failure, void>> updateDailyCapacity({
     required String technicianId,
     required DateTime date,

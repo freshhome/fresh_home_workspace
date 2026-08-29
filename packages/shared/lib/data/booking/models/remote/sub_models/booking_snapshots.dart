@@ -1,8 +1,5 @@
-import 'package:json_annotation/json_annotation.dart';
+import 'dart:convert';
 
-part 'booking_snapshots.g.dart';
-
-@JsonSerializable()
 class ServiceSnapshotModel {
   final String id;
   final String subServiceId;
@@ -16,10 +13,27 @@ class ServiceSnapshotModel {
     required this.image,
   });
 
-  factory ServiceSnapshotModel.fromJson(Map<String, dynamic> json) {
+  factory ServiceSnapshotModel.fromJson(dynamic rawJson) {
+    if (rawJson == null) {
+      return const ServiceSnapshotModel(id: '', subServiceId: '', name: {}, image: '');
+    }
+
+    Map<String, dynamic> json;
+    if (rawJson is String) {
+      try {
+        json = jsonDecode(rawJson) as Map<String, dynamic>;
+      } catch (_) {
+        return const ServiceSnapshotModel(id: '', subServiceId: '', name: {}, image: '');
+      }
+    } else if (rawJson is Map) {
+      json = Map<String, dynamic>.from(rawJson);
+    } else {
+      return const ServiceSnapshotModel(id: '', subServiceId: '', name: {}, image: '');
+    }
+
     final title = json['title'] as String?;
     final nameMap = json['name'] != null 
-        ? Map<String, String>.from(json['name'] as Map) 
+        ? (json['name'] is Map ? Map<String, String>.from(json['name'] as Map) : {'ar': json['name'].toString(), 'en': json['name'].toString()})
         : {'ar': title ?? 'خدمة', 'en': title ?? 'Service'};
     
     final resolvedId = (json['id'] ?? '') as String;
@@ -37,10 +51,15 @@ class ServiceSnapshotModel {
     );
   }
 
-  Map<String, dynamic> toJson() => _$ServiceSnapshotModelToJson(this);
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'subServiceId': subServiceId,
+    'sub_service_id': subServiceId,
+    'name': name,
+    'image': image,
+  };
 }
 
-@JsonSerializable()
 class AddressSnapshotModel {
   final String governorate;
   final String city;
@@ -86,12 +105,40 @@ class AddressSnapshotModel {
     this.longitude,
   });
 
-  factory AddressSnapshotModel.fromJson(Map<String, dynamic> json) {
+  factory AddressSnapshotModel.fromJson(dynamic rawJson) {
+    if (rawJson == null) {
+      return const AddressSnapshotModel(governorate: '', city: '', district: '', street: '', buildingNumber: '');
+    }
+
     Map<String, dynamic> data;
-    if (json.containsKey('address') && json['address'] is Map) {
-      data = Map<String, dynamic>.from(json['address'] as Map);
+    if (rawJson is String) {
+      try {
+        data = jsonDecode(rawJson) as Map<String, dynamic>;
+      } catch (_) {
+        return const AddressSnapshotModel(governorate: '', city: '', district: '', street: '', buildingNumber: '');
+      }
+    } else if (rawJson is Map) {
+      data = Map<String, dynamic>.from(rawJson);
     } else {
-      data = json;
+      return const AddressSnapshotModel(governorate: '', city: '', district: '', street: '', buildingNumber: '');
+    }
+
+    if (data.containsKey('address') && data['address'] is Map) {
+      data = Map<String, dynamic>.from(data['address'] as Map);
+    }
+
+    int? parseInt(dynamic val) {
+      if (val == null) return null;
+      if (val is num) return val.toInt();
+      if (val is String) return int.tryParse(val);
+      return null;
+    }
+
+    double? parseDouble(dynamic val) {
+      if (val == null) return null;
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val);
+      return null;
     }
 
     final govAr = data['governorate_ar'] as String?;
@@ -105,9 +152,9 @@ class AddressSnapshotModel {
       governorate: (data['governorate'] ?? govAr ?? govEn ?? '') as String,
       city: (data['city'] ?? cAr ?? cEn ?? '') as String,
       district: (data['district'] ?? dAr ?? dEn ?? '') as String,
-      governorateId: (data['governorate_id'] as num?)?.toInt(),
-      cityId: (data['city_id'] as num?)?.toInt(),
-      districtId: (data['district_id'] as num?)?.toInt(),
+      governorateId: parseInt(data['governorate_id'] ?? data['governorateId']),
+      cityId: parseInt(data['city_id'] ?? data['cityId']),
+      districtId: parseInt(data['district_id'] ?? data['districtId']),
       governorateAr: govAr,
       governorateEn: govEn,
       cityAr: cAr,
@@ -120,8 +167,8 @@ class AddressSnapshotModel {
       floorNumber: (data['floorNumber'] ?? data['floor'] ?? data['floor_number']) as String?,
       landmark: data['landmark'] as String?,
       propertyType: (data['propertyType'] ?? data['property_type']) as String?,
-      latitude: (data['latitude'] as num?)?.toDouble(),
-      longitude: (data['longitude'] as num?)?.toDouble(),
+      latitude: parseDouble(data['latitude']),
+      longitude: parseDouble(data['longitude']),
     );
   }
 
@@ -154,8 +201,6 @@ class AddressSnapshotModel {
   }
 }
 
-
-@JsonSerializable()
 class PriceSnapshotModel {
   final double basePrice;
   final double extraFees;
@@ -171,15 +216,80 @@ class PriceSnapshotModel {
     this.metadata,
   });
 
-  factory PriceSnapshotModel.fromJson(Map<String, dynamic> json) {
+  factory PriceSnapshotModel.fromJson(dynamic rawJson) {
+    if (rawJson == null) {
+      return const PriceSnapshotModel(
+        basePrice: 0.0,
+        extraFees: 0.0,
+        discount: 0.0,
+        total: 0.0,
+      );
+    }
+
+    Map<String, dynamic> json;
+    if (rawJson is String) {
+      try {
+        json = jsonDecode(rawJson) as Map<String, dynamic>;
+      } catch (_) {
+        return const PriceSnapshotModel(
+          basePrice: 0.0,
+          extraFees: 0.0,
+          discount: 0.0,
+          total: 0.0,
+        );
+      }
+    } else if (rawJson is Map) {
+      json = Map<String, dynamic>.from(rawJson);
+    } else {
+      return const PriceSnapshotModel(
+        basePrice: 0.0,
+        extraFees: 0.0,
+        discount: 0.0,
+        total: 0.0,
+      );
+    }
+
+    double parseDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      if (val is String) {
+        return double.tryParse(val) ?? 0.0;
+      }
+      return 0.0;
+    }
+
+    final basePrice = parseDouble(json['basePrice'] ?? json['base_price']);
+    final extraFees = parseDouble(json['extraFees'] ?? json['extra_fees']);
+    final discount = parseDouble(json['discount']);
+    final total = parseDouble(json['total'] ?? json['total_amount'] ?? json['totalPrice']);
+
+    Map<String, dynamic>? metadata;
+    if (json['metadata'] is Map) {
+      metadata = Map<String, dynamic>.from(json['metadata'] as Map);
+    } else if (json['metadata'] is String) {
+      try {
+        metadata = jsonDecode(json['metadata'] as String) as Map<String, dynamic>;
+      } catch (_) {}
+    }
+
     return PriceSnapshotModel(
-      basePrice: (json['basePrice'] as num? ?? 0.0).toDouble(),
-      extraFees: (json['extraFees'] as num? ?? 0.0).toDouble(),
-      discount: (json['discount'] as num? ?? 0.0).toDouble(),
-      total: (json['total'] as num? ?? 0.0).toDouble(),
-      metadata: json['metadata'] as Map<String, dynamic>?,
+      basePrice: basePrice,
+      extraFees: extraFees,
+      discount: discount,
+      total: total,
+      metadata: metadata,
     );
   }
 
-  Map<String, dynamic> toJson() => _$PriceSnapshotModelToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'basePrice': basePrice,
+      'extraFees': extraFees,
+      'discount': discount,
+      'total': total,
+      'base_price': basePrice,
+      'extra_fees': extraFees,
+      if (metadata != null) 'metadata': metadata,
+    };
+  }
 }

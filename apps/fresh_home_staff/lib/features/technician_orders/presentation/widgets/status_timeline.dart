@@ -21,19 +21,20 @@ class StatusTimeline extends StatelessWidget {
     final List<_StepData> steps = [
       _StepData(OrderStatus.assigned, l10n.tech_status_timeline_assigned, Icons.assignment_turned_in_rounded),
       _StepData(OrderStatus.accepted, l10n.tech_status_timeline_accepted, Icons.check_circle_rounded),
-      _StepData(OrderStatus.onTheWay, l10n.tech_status_timeline_on_the_way, Icons.directions_car_rounded),
-      _StepData(OrderStatus.arrived, l10n.tech_status_timeline_arrived, Icons.location_on_rounded),
+      _StepData(OrderStatus.ready, "تأكيد الحضور", Icons.how_to_reg_rounded),
       _StepData(OrderStatus.inProgress, l10n.tech_status_timeline_in_progress, Icons.engineering_rounded),
       _StepData(OrderStatus.completed, l10n.tech_status_timeline_completed, Icons.task_alt_rounded),
     ];
 
     int currentIndex = steps.indexWhere((s) => s.status == currentStatus);
     if (currentIndex == -1) {
-        if (currentStatus == OrderStatus.completed) {
-          currentIndex = steps.length - 1;
-        } else {
-          currentIndex = 0; 
-        }
+      if (currentStatus == OrderStatus.completed) {
+        currentIndex = steps.length - 1;
+      } else if (currentStatus == OrderStatus.onTheWay || currentStatus == OrderStatus.arrived) {
+        currentIndex = 2; // Backwards compatibility for legacy on_the_way / arrived
+      } else {
+        currentIndex = 0; 
+      }
     }
 
     return Container(

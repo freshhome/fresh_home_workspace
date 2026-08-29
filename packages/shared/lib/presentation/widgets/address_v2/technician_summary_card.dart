@@ -130,7 +130,7 @@ class TechnicianSummaryCard extends StatelessWidget {
                   ),
                 ),
 
-                // Appointment Time Badge (Formatted 12:00 م)
+                // Appointment Time Badge (Formatted 12:00 م without extra label)
                 if (formattedTime.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -157,109 +157,100 @@ class TechnicianSummaryCard extends StatelessWidget {
                             fontFamily: 'Cairo',
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'موعد المهمة',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF94A3B8),
-                            fontFamily: 'Cairo',
-                          ),
-                        ),
                       ],
                     ),
                   ),
               ],
             ),
 
-            const SizedBox(height: 12),
-
-            // ── CUSTOMER NAME & PHONE SUB-ROW (UNTRUNCATED PHONE!) ────────────
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEFF6FF),
-                    shape: BoxShape.circle,
+            if (customerName != null && customerName!.trim().isNotEmpty) ...[
+              const SizedBox(height: 12),
+              // ── CUSTOMER NAME & PHONE SUB-ROW ─────────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEFF6FF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.person_rounded,
+                      color: Color(0xFF1E3A8A),
+                      size: 24,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.person_rounded,
-                    color: Color(0xFF1E3A8A),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        customerName ?? 'عميل',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                          fontFamily: 'Cairo',
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          customerName!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                            fontFamily: 'Cairo',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (customerPhone != null && customerPhone!.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        InkWell(
-                          onTap: () {
-                            Clipboard.setData(ClipboardData(text: customerPhone!));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'تم نسخ رقم الهاتف بنجاح',
-                                  style: TextStyle(fontFamily: 'Cairo'),
+                        if (customerPhone != null && customerPhone!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          InkWell(
+                            onTap: () {
+                              Clipboard.setData(ClipboardData(text: customerPhone!));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'تم نسخ رقم الهاتف بنجاح',
+                                    style: TextStyle(fontFamily: 'Cairo'),
+                                  ),
+                                  behavior: SnackBarBehavior.floating,
                                 ),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.phone_iphone_rounded,
-                                size: 14,
-                                color: Color(0xFF64748B),
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Directionality(
-                                  textDirection: TextDirection.ltr,
-                                  child: Text(
-                                    customerPhone!,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF334155),
-                                      fontFamily: 'Cairo',
+                              );
+                            },
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.phone_iphone_rounded,
+                                  size: 14,
+                                  color: Color(0xFF64748B),
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Directionality(
+                                    textDirection: TextDirection.ltr,
+                                    child: Text(
+                                      customerPhone!,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF334155),
+                                        fontFamily: 'Cairo',
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            ],
 
-            const SizedBox(height: 14),
-            const Divider(height: 1, color: Color(0xFFE2E8F0)),
             const SizedBox(height: 14),
 
             // ── 2. ADDRESS SECTION (LOCATION -> STREET) ─────────────────────

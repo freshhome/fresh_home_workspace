@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:shared_features/shared_features.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 import '../cubit/technician_orders_cubit.dart';
 import '../cubit/technician_orders_state.dart';
 import '../widgets/status_badge.dart';
@@ -270,6 +271,7 @@ class _TechnicianOrderDetailsScreenState
               ...state.todayOrders,
               ...state.upcomingGroups.expand((g) => g.orders),
               ...state.historyGroups.expand((g) => g.orders),
+              ...state.cancelledGroups.expand((g) => g.orders),
             ];
             final orderForError = allOrders.where(
               (o) => o.id == (widget.order?.id ?? widget.bookingId),
@@ -297,6 +299,7 @@ class _TechnicianOrderDetailsScreenState
               ...state.todayOrders,
               ...state.upcomingGroups.expand((g) => g.orders),
               ...state.historyGroups.expand((g) => g.orders),
+              ...state.cancelledGroups.expand((g) => g.orders),
             ];
             final matched = allOrders.where((o) => o.id == (widget.order?.id ?? widget.bookingId)).firstOrNull;
             if (matched != null) {
@@ -323,10 +326,16 @@ class _TechnicianOrderDetailsScreenState
               ...state.todayOrders,
               ...state.upcomingGroups.expand((g) => g.orders),
               ...state.historyGroups.expand((g) => g.orders),
+              ...state.cancelledGroups.expand((g) => g.orders),
             ];
             currentOrder = allOrders.where(
               (o) => o.id == (widget.order?.id ?? widget.bookingId),
             ).firstOrNull ?? widget.order;
+          }
+
+          // Protect against 0 price regression if initial order had valid price
+          if (currentOrder != null && currentOrder.price.total <= 0 && widget.order != null && widget.order!.price.total > 0) {
+            currentOrder = currentOrder.copyWith(price: widget.order!.price);
           }
 
           if (currentOrder == null) {
@@ -391,15 +400,13 @@ class _TechnicianOrderDetailsScreenState
                           // _buildFinancialSection(context, currentOrder),
                           // const SizedBox(height: 16),
 
-                          // 3. Customer Details Card
-                          if (canShowSensitive) ...[
-                            _buildCustomerInfoCard(
-                              context,
-                              currentOrder,
-                              canShowSensitive,
-                            ),
-                            const SizedBox(height: 16),
-                          ],
+                          // 3. Customer & Address Details Card (Always visible in all states!)
+                          _buildCustomerInfoCard(
+                            context,
+                            currentOrder,
+                            canShowSensitive,
+                          ),
+                          const SizedBox(height: 16),
                         ],
                       ),
                     ),
@@ -690,43 +697,15 @@ class _TechnicianOrderDetailsScreenState
         ? order.contact.phone.first
         : '';
 
-    if (!canShowSensitive) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFFBEB),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFFDE68A)),
-        ),
-        child: const Row(
-          children: [
-            Icon(Icons.lock_rounded, color: Color(0xFFD97706), size: 20),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'سيتم إظهار تفاصيل العميل والعنوان فور تأكيد موعد الطلب اليوم',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFB45309),
-                  fontFamily: 'Cairo',
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return TechnicianSummaryCard(
       address: order.address,
-      customerName: order.contact.name,
-      customerPhone: phone,
+      customerName: canShowSensitive ? order.contact.name : null,
+      customerPhone: canShowSensitive ? phone : null,
       scheduledTime: order.startTimeSlot,
       statusText: _getStatusArabicName(order.status),
-      onOpenMaps: () => _openGoogleMaps(order.address),
-      onCallPhone: () => _launchPhone(phone),
-      onWhatsAppPhone: () => _launchWhatsApp(phone),
+      onOpenMaps: canShowSensitive ? () => _openGoogleMaps(order.address) : null,
+      onCallPhone: canShowSensitive ? () => _launchPhone(phone) : null,
+      onWhatsAppPhone: canShowSensitive ? () => _launchWhatsApp(phone) : null,
     );
   }
 
@@ -737,11 +716,10 @@ class _TechnicianOrderDetailsScreenState
       case OrderStatus.accepted:
         return 'في انتظار التأكيد اليومي';
       case OrderStatus.ready:
-        return 'في انتظار التنفيذ';
+        return 'جاهز لبدء الخدمة';
       case OrderStatus.onTheWay:
-        return 'في الطريق للموقع';
       case OrderStatus.arrived:
-        return 'تم الوصول للموقع';
+        return 'جاهز لبدء الخدمة';
       case OrderStatus.inProgress:
         return 'جاري التنفيذ';
       case OrderStatus.completed:
@@ -753,11 +731,17 @@ class _TechnicianOrderDetailsScreenState
     }
   }
 
-  void _openGoogleMaps(Address address) async {
+  Future<void> _openGoogleMaps(Address address) async {
     final query = AddressFormatter.toGoogleMapsQuery(address);
     final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(url);
+      }
+    } catch (e) {
+      debugPrint('Error launching Google Maps: $e');
     }
   }
 
@@ -835,6 +819,14 @@ class _TechnicianOrderDetailsScreenState
     IconData actionIcon = Icons.help_outline;
     Color actionColor = themeColor.primary;
 
+    final bool isToday = DateUtils.isSameDay(
+      currentOrder.scheduledAt,
+      DateTime.now(),
+    );
+    final confirmOpenTime = currentOrder.scheduledAt.subtract(const Duration(hours: 2));
+    final bool canConfirmNow = isToday &&
+        (DateTime.now().isAfter(confirmOpenTime) || DateTime.now().isAtSameMomentAs(confirmOpenTime));
+
     switch (currentOrder.status) {
       case OrderStatus.assigned:
         actionLabel = l10n.tech_action_accept;
@@ -843,11 +835,7 @@ class _TechnicianOrderDetailsScreenState
         actionColor = const Color(0xFF10B981);
         break;
       case OrderStatus.accepted:
-        final bool isToday = DateUtils.isSameDay(
-          currentOrder.scheduledAt,
-          DateTime.now(),
-        );
-        if (isToday) {
+        if (isToday && canConfirmNow) {
           actionLabel = "تأكيد حضور اليوم ✅";
           nextStatus = OrderStatus.ready;
           actionIcon = Icons.how_to_reg_rounded;
@@ -857,19 +845,15 @@ class _TechnicianOrderDetailsScreenState
         }
         break;
       case OrderStatus.ready:
-        actionLabel = l10n.tech_action_on_the_way;
-        nextStatus = OrderStatus.onTheWay;
-        actionIcon = Icons.directions_car_rounded;
-        actionColor = const Color(0xFFF59E0B);
+        actionLabel = "بدء الخدمة";
+        nextStatus = OrderStatus.inProgress;
+        actionIcon = Icons.play_circle_outline_rounded;
+        actionColor = const Color(0xFF10B981);
         break;
       case OrderStatus.onTheWay:
-        actionLabel = "لقد وصلت للموقع";
-        nextStatus = OrderStatus.arrived;
-        actionIcon = Icons.location_on_rounded;
-        actionColor = const Color(0xFF06B6D4);
-        break;
       case OrderStatus.arrived:
-        actionLabel = "تأكيد التفاصيل وبدء الخدمة";
+        // Direct transition to inProgress for streamlined flow
+        actionLabel = "بدء الخدمة";
         nextStatus = OrderStatus.inProgress;
         actionIcon = Icons.play_circle_outline_rounded;
         actionColor = const Color(0xFF10B981);
@@ -885,6 +869,90 @@ class _TechnicianOrderDetailsScreenState
     }
 
     final targetStatus = nextStatus;
+
+    if (targetStatus == null && currentOrder.status == OrderStatus.accepted && isToday && !canConfirmNow) {
+      final timeFormat = DateFormat('hh:mm a');
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        decoration: BoxDecoration(
+          color: themeColor.background,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -8),
+            ),
+          ],
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            children: [
+              if (currentStatusCanDecline(currentOrder))
+                Expanded(
+                  flex: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: OutlinedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () => _showCancelDialog(context, currentOrder),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: themeColor.error,
+                        side: BorderSide(
+                          color: themeColor.error.withValues(alpha: 0.3),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        l10n.tech_action_decline,
+                        style: const TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              Expanded(
+                flex: 2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.lock_clock_rounded, size: 18, color: Color(0xFFD97706)),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          "يتاح التأكيد ${timeFormat.format(confirmOpenTime)} (قبل الموعد بساعتين)",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFD97706),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     if (targetStatus == null && !currentStatusCanDecline(currentOrder)) {
       return const SizedBox.shrink();
@@ -980,7 +1048,7 @@ class _TechnicianOrderDetailsScreenState
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
                                 fontFamily: 'Cairo',
-                                letterSpacing: 0.5,
+                                letterSpacing: 0.2,
                               ),
                             ),
                           ],
@@ -1026,11 +1094,6 @@ class _TechnicianOrderDetailsScreenState
             "هل تؤكد حضورك لتنفيذ هذا الطلب اليوم؟ سيتم الآن فتح بيانات العميل والعنوان الكامل لك.";
         break;
       case OrderStatus.onTheWay:
-        desc = "هل أنت متوجه إلى موقع العميل الآن؟ سيصل إشعار للعميل بذلك.";
-        break;
-      case OrderStatus.arrived:
-        desc = "هل وصلت بالفعل لموقع العميل؟";
-        break;
       case OrderStatus.inProgress:
         desc = "هل تود بدء العمل الفعلي على هذا الطلب الآن؟";
         break;
@@ -1393,7 +1456,11 @@ class _TechnicianOrderDetailsScreenState
     Booking currentOrder,
   ) {
     final themeColor = context.themeColor;
-    final totalAmount = currentOrder.price.total;
+    Booking orderToComplete = currentOrder;
+    if (orderToComplete.price.total <= 0 && widget.order != null && widget.order!.price.total > 0) {
+      orderToComplete = orderToComplete.copyWith(price: widget.order!.price);
+    }
+    final totalAmount = orderToComplete.price.total;
     final requiredAmount = totalAmount.toInt();
 
     final controller = TextEditingController();
@@ -1726,10 +1793,10 @@ class _TechnicianOrderDetailsScreenState
                                           context
                                               .read<TechnicianOrdersCubit>()
                                               .completeOrderWithCash(
-                                                booking: currentOrder,
+                                                booking: orderToComplete,
                                                 technicianId:
                                                     authCubit.userId ??
-                                                    currentOrder.technicianId ??
+                                                    orderToComplete.technicianId ??
                                                     '',
                                                 collectedAmount: requiredAmount
                                                     .toDouble(),

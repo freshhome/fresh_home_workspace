@@ -3,7 +3,12 @@ import '../models/smart_schedule_model.dart';
 import '../models/technician_pool_status_model.dart';
 
 abstract class TechnicianRemoteDataSource {
-  Future<List<SmartScheduleModel>> getSmartSchedule(String technicianId, int days);
+  Future<List<SmartScheduleModel>> getSmartSchedule(
+    String technicianId, {
+    int? days,
+    DateTime? startDate,
+    DateTime? endDate,
+  });
   Future<void> updateDailyCapacity({
     required String technicianId,
     required DateTime date,
@@ -104,7 +109,6 @@ class TechnicianRemoteDataSourceImpl implements TechnicianRemoteDataSource {
     required DateTime date,
   }) async {
     // Delete overrides for ALL pools of this technician on this date
-    // This ensures the total daily capacity reverts to the sum of all default pool capacities.
     await _supabase
         .from('capacity_overrides')
         .delete()
@@ -171,22 +175,33 @@ class TechnicianRemoteDataSourceImpl implements TechnicianRemoteDataSource {
         },
       );
       
-      // Assume RPC returns a boolean success flag
       return response as bool;
     } catch (e) {
-      // If RPC fails, we return false to trigger the "Contact management" UI flow
       return false;
     }
   }
 
   @override
-  Future<List<SmartScheduleModel>> getSmartSchedule(String technicianId, int days) async {
+  Future<List<SmartScheduleModel>> getSmartSchedule(
+    String technicianId, {
+    int? days,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final Map<String, dynamic> params = {
+      'p_technician_id': technicianId,
+    };
+
+    if (startDate != null && endDate != null) {
+      params['p_start_date'] = startDate.toIso8601String().split('T')[0];
+      params['p_end_date'] = endDate.toIso8601String().split('T')[0];
+    } else {
+      params['p_days_ahead'] = days ?? 30;
+    }
+
     final response = await _supabase.rpc(
       'get_technician_smart_schedule',
-      params: {
-        'p_technician_id': technicianId,
-        'p_days_ahead': days,
-      },
+      params: params,
     );
 
     if (response is List) {

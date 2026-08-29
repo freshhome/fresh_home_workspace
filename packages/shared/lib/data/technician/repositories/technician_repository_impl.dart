@@ -35,9 +35,19 @@ class TechnicianRepositoryImpl implements TechnicianRepository {
   }
 
   @override
-  Future<Either<Failure, WorkloadForecast>> getSmartSchedule(String technicianId, int days) async {
+  Future<Either<Failure, WorkloadForecast>> getSmartSchedule(
+    String technicianId, {
+    int? days,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
-      final models = await remoteDataSource.getSmartSchedule(technicianId, days);
+      final models = await remoteDataSource.getSmartSchedule(
+        technicianId,
+        days: days,
+        startDate: startDate,
+        endDate: endDate,
+      );
       
       final avgRisk = models.isEmpty 
           ? 0.0 
@@ -133,4 +143,3 @@ class TechnicianRepositoryImpl implements TechnicianRepository {
     }
   }
 }
-

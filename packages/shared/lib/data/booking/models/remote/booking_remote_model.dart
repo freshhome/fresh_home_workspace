@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:shared/core/converters/timestamp_converter.dart';
 import 'package:shared/data/booking/models/remote/sub_models/booking_snapshots.dart';
 import 'package:shared/data/booking/models/remote/sub_models/booking_components_remote_model.dart';
@@ -72,19 +73,44 @@ class BookingRemoteModel {
   });
 
   factory BookingRemoteModel.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic>? parseMap(dynamic val) {
+      if (val == null) return null;
+      if (val is Map) return Map<String, dynamic>.from(val);
+      if (val is String) {
+        try {
+          final decoded = jsonDecode(val);
+          if (decoded is Map) return Map<String, dynamic>.from(decoded);
+        } catch (_) {
+          return null;
+        }
+      }
+      return null;
+    }
+
+    List<String> parseStringList(dynamic val) {
+      if (val == null) return [];
+      if (val is List) return val.map((e) => e.toString()).toList();
+      if (val is String) {
+        if (val.startsWith('[') && val.endsWith(']')) {
+          try {
+            final decoded = jsonDecode(val);
+            if (decoded is List) return decoded.map((e) => e.toString()).toList();
+          } catch (_) {}
+        }
+        return [val];
+      }
+      return [];
+    }
+
+    final pricingInputsMap = parseMap(json['pricing_inputs']);
+
     return BookingRemoteModel(
       id: json['id'] as String? ?? '',
       userId: json['user_id'] as String?,
       technicianId: json['technician_id'] as String?,
-      service: json['service_snapshot'] != null
-          ? ServiceSnapshotModel.fromJson(json['service_snapshot'] as Map<String, dynamic>)
-          : const ServiceSnapshotModel(id: '', subServiceId: '', name: {}, image: ''),
-      address: json['address_snapshot'] != null
-          ? AddressSnapshotModel.fromJson(json['address_snapshot'] as Map<String, dynamic>)
-          : const AddressSnapshotModel(governorate: '', city: '', district: '', street: '', buildingNumber: ''),
-      price: json['price_snapshot'] != null
-          ? PriceSnapshotModel.fromJson(json['price_snapshot'] as Map<String, dynamic>)
-          : const PriceSnapshotModel(basePrice: 0.0, extraFees: 0.0, discount: 0.0, total: 0.0),
+      service: ServiceSnapshotModel.fromJson(json['service_snapshot']),
+      address: AddressSnapshotModel.fromJson(json['address_snapshot']),
+      price: PriceSnapshotModel.fromJson(json['price_snapshot']),
       status: json['status'] as String? ?? 'pending',
       scheduledAt: json['scheduled_day'] != null
           ? DateTime.parse(json['scheduled_day'] as String)
@@ -92,7 +118,7 @@ class BookingRemoteModel {
       startTimeSlot: json['start_time_slot'] as String? ?? '09:00',
       contact: ContactModel(
         name: json['contact_name'] as String? ?? 'Client',
-        phone: List<String>.from(json['contact_phones'] as List? ?? []),
+        phone: parseStringList(json['contact_phones']),
       ),
       addressId: json['address_id'] as String?,
       serviceId: json['service_id'] as String?,
@@ -113,10 +139,10 @@ class BookingRemoteModel {
       cancelledByRole: json['cancelled_by_role'] as String?,
       isCritical: json['is_critical'] as bool? ?? false,
       criticalReason: json['critical_reason'] as String?,
-      pricingInputs: json['pricing_inputs'] as Map<String, dynamic>?,
-      fieldSnapshot: json['pricing_inputs']?['__field_snapshot'] != null
+      pricingInputs: pricingInputsMap,
+      fieldSnapshot: pricingInputsMap?['__field_snapshot'] != null
           ? DynamicFieldSnapshot.fromJson(
-              Map<String, dynamic>.from(json['pricing_inputs']['__field_snapshot'] as Map),
+              Map<String, dynamic>.from(pricingInputsMap!['__field_snapshot'] as Map),
             )
           : null,
     );
