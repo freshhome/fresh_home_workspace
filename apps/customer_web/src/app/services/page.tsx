@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabase";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { trackViewServiceList, trackContactWhatsApp } from "@/lib/gtm";
 
 function resolveServiceImage(imageStr?: string | null): string | null {
   if (!imageStr || typeof imageStr !== "string") return null;
@@ -110,6 +111,14 @@ function ServicesListContent() {
           reviewsCount: ratingsMap[s.id]?.count ?? 0,
         }));
         setSubServices(updatedSubServices);
+
+        if (parentData) {
+          trackViewServiceList({
+            item_list_id: parentData.id || activeId,
+            item_list_name: parentData.title?.ar || parentData.title || "دليل الخدمات",
+            items_count: updatedSubServices.length,
+          });
+        }
 
         // 3. Fetch whatsapp number
         const { data: wsData } = await supabase
@@ -343,6 +352,12 @@ function ServicesListContent() {
                   href={buildWhatsAppUrl(whatsappNumber, "مرحباً، أود الاستفسار عن توفر هذه الخدمة في منطقتي.")}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() =>
+                    trackContactWhatsApp({
+                      placement: "service_details_paused",
+                      service_context: parentTitle,
+                    })
+                  }
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#25D366] text-white text-xs font-bold glow-whatsapp shadow-md"
                 >
                   <span>طلب اهتمام عبر واتساب</span>

@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Logo from "@/components/Logo";
+import { trackSignUp } from "@/lib/gtm";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -110,6 +111,9 @@ function RegisterContent() {
       if (error) throw error;
 
       if (data?.user) {
+        // Zero-PII: Track successful registration (CompleteRegistration)
+        trackSignUp({ method: "email_password" });
+
         // 2. Check if session exists
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {

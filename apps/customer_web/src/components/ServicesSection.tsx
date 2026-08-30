@@ -23,6 +23,7 @@ import {
   Clock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { trackViewServiceList } from "@/lib/gtm";
 
 export interface ServiceNode {
   id: string;
@@ -655,7 +656,13 @@ export default function ServicesSection() {
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => setActiveCategoryTab(tab.id)}
+                    onClick={() => {
+                      setActiveCategoryTab(tab.id);
+                      trackViewServiceList({
+                        item_list_id: tab.id,
+                        item_list_name: tab.label,
+                      });
+                    }}
                     className={`px-4 py-2 rounded-xl sm:rounded-2xl text-xs font-black transition-all shrink-0 border cursor-pointer ${
                       isActive
                         ? "bg-[#0091FF] text-white border-[#0091FF] shadow-md shadow-blue-500/25"

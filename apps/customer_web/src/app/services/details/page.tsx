@@ -12,6 +12,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabase";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { trackViewItem, trackContactWhatsApp } from "@/lib/gtm";
 
 function resolveServiceImage(imageStr?: string | null): string | null {
   if (!imageStr || typeof imageStr !== "string") return null;
@@ -216,6 +217,21 @@ function ServiceDetailsContent() {
     }
     localStorage.setItem("favorites", JSON.stringify(newFavorites));
   };
+
+  useEffect(() => {
+    if (currentService && childServices.length === 0 && currentService.is_bookable) {
+      const priceVal = currentService.price_config?.value || currentService.price_config?.min_price || currentService.min_price || 250;
+      trackViewItem({
+        service_id: currentService.id,
+        service_name: currentService.title?.ar || currentService.title || "خدمة",
+        category_id: rootAncestorId,
+        category_name: breadcrumbs[0]?.title || "خدمات فريش هوم",
+        price: Number(priceVal) || 250,
+        currency: "EGP",
+        price_type: currentService.price_config?.type || "fixed",
+      });
+    }
+  }, [currentService?.id, childServices.length, rootAncestorId, breadcrumbs]);
 
   if (loading) {
     return (
@@ -667,6 +683,12 @@ function ServiceDetailsContent() {
                     href={buildWhatsAppUrl(whatsappNumber, `مرحباً، أود إشعاري فور توفر خدمة: ${arTitle}`)}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() =>
+                      trackContactWhatsApp({
+                        placement: "service_details_paused",
+                        service_context: arTitle,
+                      })
+                    }
                     className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-black shadow-lg shadow-emerald-500/20 glow-whatsapp transition-all"
                   >
                     <MessageCircle className="w-4 h-4" />
@@ -687,6 +709,12 @@ function ServiceDetailsContent() {
                       href={buildWhatsAppUrl(whatsappNumber, `مرحباً، أود الاستفسار عن خدمة: ${arTitle}`)}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() =>
+                        trackContactWhatsApp({
+                          placement: "service_details_inquiry",
+                          service_context: arTitle,
+                        })
+                      }
                       className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-blue-900/50 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold transition-all"
                     >
                       <MessageCircle className="w-4 h-4 text-[#25D366]" />
@@ -715,6 +743,12 @@ function ServiceDetailsContent() {
             href={buildWhatsAppUrl(whatsappNumber, `مرحباً، أود إشعاري فور توفر خدمة: ${arTitle}`)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() =>
+              trackContactWhatsApp({
+                placement: "service_details_paused",
+                service_context: arTitle,
+              })
+            }
             className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-[#25D366] text-white text-xs font-black shadow-md shadow-emerald-500/20"
           >
             <MessageCircle className="w-4 h-4" />

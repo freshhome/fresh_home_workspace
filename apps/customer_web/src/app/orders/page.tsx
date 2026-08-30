@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabase";
 import { formatWhatsAppNumber, buildWhatsAppUrl } from "@/lib/whatsapp";
+import { trackPurchase, trackContactWhatsApp } from "@/lib/gtm";
 
 // Mock technician fallback data
 const DEFAULT_TECH = {
@@ -145,9 +146,34 @@ function OrderTrackingContent() {
           });
 
         if (bookingError) throw bookingError;
-        if (!bookingData) throw new Error("لم يتم العثور على الحجز");
-        
         setBooking(bookingData);
+
+        // Primary Booking Conversion: Authoritative single-fire purchase tracking
+        if (isSuccess && bookingData) {
+          const serviceSnap = bookingData.service_snapshot || {};
+          const addrSnap = bookingData.address_snapshot || {};
+          const priceSnap = bookingData.price_snapshot || {};
+
+          trackPurchase({
+            booking_id: bookingData.id,
+            readable_id: bookingData.readable_id || bookingData.id,
+            value: Number(priceSnap.total) || 0,
+            currency: "EGP",
+            service_id: bookingData.service_id || "FH-S-SERVICE",
+            service_name: typeof serviceSnap.title === "string" ? serviceSnap.title : serviceSnap.title?.ar || "خدمة فريش هوم",
+            category_id: null,
+            category_name: null,
+            user_type: user ? "registered" : "guest",
+            is_whatsapp_confirmed: Boolean(bookingData.is_whatsapp_confirmed),
+            scheduled_date: bookingData.scheduled_day,
+            scheduled_slot: bookingData.start_time_slot,
+            governorate: addrSnap.governorate,
+            city: addrSnap.city,
+            district: addrSnap.district,
+            payment_type: bookingData.payment_method || "cash",
+          });
+        }
+
         if (isSuccess && bookingData.is_whatsapp_confirmed === false) {
           setShowConfirmModal(true);
         }
@@ -500,6 +526,12 @@ function OrderTrackingContent() {
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() =>
+                    trackContactWhatsApp({
+                      placement: "orders_pending_verification",
+                      service_context: String(booking?.readable_id || finalBookingId),
+                    })
+                  }
                   className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba56] text-white font-black px-8 py-3 rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 duration-200 cursor-pointer"
                 >
                   <Send className="w-4 h-4 fill-white" />
@@ -930,7 +962,13 @@ function OrderTrackingContent() {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => setShowConfirmModal(false)}
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  trackContactWhatsApp({
+                    placement: "orders_pending_verification",
+                    service_context: String(booking?.readable_id || finalBookingId),
+                  });
+                }}
                 className="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba56] text-white font-black py-3.5 px-6 rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99] text-center cursor-pointer"
               >
                 <Send className="w-4 h-4 fill-white" />

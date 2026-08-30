@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { trackWhatsAppConfirmed } from "@/lib/gtm";
 
 function ConfirmBookingContent() {
   const searchParams = useSearchParams();
@@ -54,6 +55,13 @@ function ConfirmBookingContent() {
 
         if (data === true) {
           setStatus("success");
+          
+          // Quality Gate Analytics Event
+          trackWhatsAppConfirmed({
+            booking_id: id,
+            status: "confirmed",
+          });
+
           // Redirect to tracking page after 3 seconds
           setTimeout(() => {
             router.push(`/orders?bookingId=${id}&success=true`);

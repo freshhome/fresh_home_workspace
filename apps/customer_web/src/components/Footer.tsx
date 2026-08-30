@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { useWhatsAppSettings } from "@/lib/whatsapp";
+import { trackContactWhatsApp } from "@/lib/gtm";
 
 export default function Footer() {
   const { getUrl } = useWhatsAppSettings();
@@ -72,6 +73,11 @@ export default function Footer() {
                   href={getUrl("مرحباً فريش هوم، أود الاستفسار والتواصل بخصوص الخدمات.")}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() =>
+                    trackContactWhatsApp({
+                      placement: "footer",
+                    })
+                  }
                   className="w-9 h-9 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-slate-800 hover:bg-[#25D366] hover:border-[#25D366] hover:text-white text-slate-600 dark:text-slate-300 flex items-center justify-center transition-all duration-200 shadow-2xs hover:scale-105 group"
                   aria-label="Fresh Home WhatsApp"
                   title="محادثة واتساب الرسمية"

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useWhatsAppSettings } from "@/lib/whatsapp";
+import { trackContactWhatsApp } from "@/lib/gtm";
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -46,6 +47,11 @@ export default function BottomCtaBanner() {
               href={getUrl("مرحباً فريش هوم، أود الاستفسار وحجز خدمة منزلية.")}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() =>
+                trackContactWhatsApp({
+                  placement: "bottom_banner",
+                })
+              }
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-black glow-whatsapp flex items-center justify-center gap-2 shadow-lg transition-all"
             >
               <WhatsAppIcon className="w-4 h-4" />

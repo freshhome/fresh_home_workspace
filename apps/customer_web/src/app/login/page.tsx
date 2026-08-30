@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Logo from "@/components/Logo";
+import { trackLogin } from "@/lib/gtm";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -60,6 +61,8 @@ function LoginContent() {
 
       if (error) throw error;
 
+      trackLogin({ method: "password" });
+
       router.push(redirectPath);
       router.refresh();
     } catch (err: any) {
@@ -73,6 +76,8 @@ function LoginContent() {
   const handleGoogleLogin = async () => {
     setErrorMsg("");
     try {
+      trackLogin({ method: "google" });
+
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const redirectTo = `${origin}${redirectPath}`;
 

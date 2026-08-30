@@ -14,6 +14,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabase";
 import { GEOGRAPHIC_HIERARCHY } from "@/lib/geo";
+import { trackCalculatePrice, trackBeginCheckout, trackCheckoutProgress } from "@/lib/gtm";
 
 // Step titles
 const STEPS = ["حساب السعر", "اختيار الموعد", "العنوان", "المراجعة والتأكيد"];
@@ -645,14 +646,38 @@ function BookingFlowContent() {
 
       if (error) throw error;
       if (data) {
+        const calculatedTotal = Number(data.total) || 0;
+        const calculatedBase = Number(data.basePrice) || 0;
+        const calculatedExtra = Number(data.extraFees) || 0;
+        const calculatedDiscount = Number(data.discount) || 0;
+
         setPriceDetails({
-          basePrice: Number(data.basePrice) || 0,
-          extraFees: Number(data.extraFees) || 0,
-          discount: Number(data.discount) || 0,
-          total: Number(data.total) || 0,
+          basePrice: calculatedBase,
+          extraFees: calculatedExtra,
+          discount: calculatedDiscount,
+          total: calculatedTotal,
           metadata: data.metadata || {}
         });
         setHasCalculated(true);
+
+        // Strict Allowlist: Calculate Price Analytics Event
+        trackCalculatePrice({
+          service_id: subServiceId,
+          service_name: selectedSubService?.title?.ar || selectedSubService?.title || "خدمة فريش هوم",
+          calculated_total: calculatedTotal,
+          base_price: calculatedBase,
+          extra_fees: calculatedExtra,
+          discount: calculatedDiscount,
+          currency: "EGP",
+          inputs_summary: {
+            area_sqm: inputs.area ? Number(inputs.area) : undefined,
+            rooms_count: inputs.rooms_count ? Number(inputs.rooms_count) : undefined,
+            bathrooms_count: inputs.bathrooms_count ? Number(inputs.bathrooms_count) : undefined,
+            ac_units_count: inputs.ac_units_count || inputs.units_count ? Number(inputs.ac_units_count || inputs.units_count) : undefined,
+            addons_count: selectedAddons.length,
+          },
+        });
+
         setTimeout(() => {
           setAnimatePrice(true);
           const target = document.getElementById("calculated-price-banner") || document.getElementById("next-step-btn");
@@ -859,6 +884,37 @@ function BookingFlowContent() {
 
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
+      if (currentStep === 0) {
+        trackBeginCheckout({
+          service_id: subServiceId,
+          service_name: selectedSubService?.title?.ar || selectedSubService?.title || "خدمة فريش هوم",
+          category_id: selectedPath[0]?.id || null,
+          value: priceDetails.total,
+          currency: "EGP",
+        });
+        trackCheckoutProgress({
+          step_name: "schedule_selection",
+          service_id: subServiceId,
+        });
+      } else if (currentStep === 1) {
+        trackCheckoutProgress({
+          step_name: "address_entry",
+          service_id: subServiceId,
+          step_data: {
+            scheduled_date: scheduledDate,
+          },
+        });
+      } else if (currentStep === 2) {
+        trackCheckoutProgress({
+          step_name: "order_review",
+          service_id: subServiceId,
+          step_data: {
+            governorate: address.governorate,
+            city: address.city,
+          },
+        });
+      }
+
       setCurrentStep(currentStep + 1);
       if (typeof window !== "undefined") {
         setTimeout(() => {
