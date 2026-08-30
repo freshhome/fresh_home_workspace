@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { GoogleTagManager } from "@next/third-parties/google";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -114,6 +115,7 @@ export default function RootLayout({
 
   return (
     <html lang="ar" dir="rtl" className="h-full antialiased" suppressHydrationWarning>
+      <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID || "GTM-NZN39DFK"} />
       <head>
         <script
           dangerouslySetInnerHTML={{
