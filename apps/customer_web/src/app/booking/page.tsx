@@ -8,7 +8,7 @@ import {
   ShieldCheck, ArrowLeft, ArrowRight, CheckCircle2, 
   MapPin, Calendar, CreditCard, Clock, Check, ShieldAlert, Sparkles,
   Layers, Zap, ChevronLeft, ChevronRight, Home, Wrench, Wind, Armchair, 
-  AppWindow, Bug, RefreshCw, Plus, Building, Navigation, Eye, X, Info, AlertCircle
+  AppWindow, Bug, RefreshCw, Plus, Building, Navigation, Eye, X, Info, AlertCircle, Trash2
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -19,6 +19,15 @@ import { trackCalculatePrice, trackBeginCheckout, trackCheckoutProgress } from "
 
 // Step titles
 const STEPS = ["حساب السعر", "اختيار الموعد", "العنوان", "المراجعة والتأكيد"];
+
+// Multi-sector window definition for linear meter services
+export interface WindowSector {
+  id: string;
+  width: string;
+  height: string;
+  quantity: number;
+  is_both_sides: boolean;
+}
 
 const formatDateLocal = (date: Date): string => {
   const yyyy = date.getFullYear();
@@ -333,6 +342,63 @@ function BookingFlowContent() {
   const [showExpansionModal, setShowExpansionModal] = useState(false);
   const dateScrollRef = useRef<HTMLDivElement>(null);
 
+  // Multi-sector window calculator states for linear meter services
+  const isLinearService = useMemo(() => {
+    return (
+      selectedSubService?.price_config?.type === "per_linear_meter" ||
+      selectedSubService?.price_config?.calculator === "windows"
+    );
+  }, [selectedSubService]);
+
+  const [windowSectors, setWindowSectors] = useState<WindowSector[]>([
+    { id: "sector_1", width: "1.0", height: "1.0", quantity: 1, is_both_sides: false }
+  ]);
+
+  const handleAddSector = () => {
+    setWindowSectors(prev => [
+      ...prev,
+      {
+        id: `sector_${Date.now()}_${prev.length + 1}`,
+        width: "1.0",
+        height: "1.0",
+        quantity: 1,
+        is_both_sides: false,
+      }
+    ]);
+    setHasCalculated(false);
+  };
+
+  const handleRemoveSector = (indexToRemove: number) => {
+    if (windowSectors.length <= 1) return;
+    setWindowSectors(prev => prev.filter((_, idx) => idx !== indexToRemove));
+    setHasCalculated(false);
+  };
+
+  const handleUpdateSector = (index: number, updates: Partial<WindowSector>) => {
+    setWindowSectors(prev => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], ...updates };
+      return copy;
+    });
+    setHasCalculated(false);
+  };
+
+  const getSectorPerimeter = (sector: WindowSector): number => {
+    const w = parseFloat(sector.width) || 0;
+    const h = parseFloat(sector.height) || 0;
+    const mult = sector.is_both_sides ? 2 : 1;
+    const qty = sector.quantity || 1;
+    return 2 * (w + h) * mult * qty;
+  };
+
+  const totalLinearMetersCalculated = useMemo(() => {
+    return windowSectors.reduce((acc, s) => acc + getSectorPerimeter(s), 0);
+  }, [windowSectors]);
+
+  const totalWindowsCount = useMemo(() => {
+    return windowSectors.reduce((acc, s) => acc + (s.quantity || 1), 0);
+  }, [windowSectors]);
+
   // Load user profile details and saved addresses if logged in
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -613,6 +679,32 @@ function BookingFlowContent() {
       setPricingInputs(adjustedInputs);
     }
 
+    if (isLinearService) {
+      const sectorErrors: Record<string, string> = {};
+      let hasSectorError = false;
+      windowSectors.forEach((sector, idx) => {
+        const w = parseFloat(sector.width);
+        const h = parseFloat(sector.height);
+        if (isNaN(w) || w <= 0) {
+          sectorErrors[`sector_${idx}_width`] = "يرجى إدخال عرض صحيح بالمتر (أكبر من صفر)";
+          hasSectorError = true;
+        }
+        if (isNaN(h) || h <= 0) {
+          sectorErrors[`sector_${idx}_height`] = "يرجى إدخال ارتفاع صحيح بالمتر (أكبر من صفر)";
+          hasSectorError = true;
+        }
+        if (!sector.quantity || sector.quantity < 1) {
+          sectorErrors[`sector_${idx}_quantity`] = "العدد يجب أن يكون 1 على الأقل";
+          hasSectorError = true;
+        }
+      });
+
+      if (hasSectorError) {
+        setValidationErrors(sectorErrors);
+        return;
+      }
+    }
+
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       const firstErrorKey = Object.keys(errors)[0];
@@ -632,6 +724,24 @@ function BookingFlowContent() {
         delete inputs[key];
       }
     });
+
+    if (isLinearService) {
+      const windowsPayload = windowSectors.map((s) => ({
+        width: parseFloat(s.width) || 0,
+        height: parseFloat(s.height) || 0,
+        quantity: Number(s.quantity) || 1,
+        is_both_sides: Boolean(s.is_both_sides),
+      }));
+
+      const totalLinear = windowsPayload.reduce((acc, s) => {
+        const perimeter = 2 * (s.width + s.height);
+        const mult = s.is_both_sides ? 2 : 1;
+        return acc + (perimeter * mult * s.quantity);
+      }, 0);
+
+      inputs.windows = windowsPayload;
+      inputs.total_linear_meters = Number(totalLinear.toFixed(2));
+    }
 
     if (selectedAddons.length > 0) {
       inputs.selected_options = selectedAddons;
@@ -677,6 +787,8 @@ function BookingFlowContent() {
             bathrooms_count: inputs.bathrooms_count ? Number(inputs.bathrooms_count) : undefined,
             ac_units_count: inputs.ac_units_count || inputs.units_count ? Number(inputs.ac_units_count || inputs.units_count) : undefined,
             addons_count: selectedAddons.length,
+            windows_count: isLinearService ? totalWindowsCount : undefined,
+            total_linear_meters: isLinearService ? Number(totalLinearMetersCalculated.toFixed(2)) : undefined,
           },
         });
 
@@ -1020,13 +1132,29 @@ function BookingFlowContent() {
         title: selectedSubService?.title?.ar || selectedSubService?.title || "حجز خدمة فريش هوم"
       };
 
-      const pricingPayload = {
+      const pricingPayload: Record<string, any> = {
         ...pricingInputs,
         payment_method: paymentMethod,
         selected_options: selectedAddons,
         phone: phone.trim(),
         name: name.trim()
       };
+
+      if (isLinearService) {
+        const windowsPayload = windowSectors.map((s) => ({
+          width: parseFloat(s.width) || 0,
+          height: parseFloat(s.height) || 0,
+          quantity: Number(s.quantity) || 1,
+          is_both_sides: Boolean(s.is_both_sides),
+        }));
+        const totalLinear = windowsPayload.reduce((acc, s) => {
+          const perimeter = 2 * (s.width + s.height);
+          const mult = s.is_both_sides ? 2 : 1;
+          return acc + (perimeter * mult * s.quantity);
+        }, 0);
+        pricingPayload.windows = windowsPayload;
+        pricingPayload.total_linear_meters = Number(totalLinear.toFixed(2));
+      }
 
       const { data: bookingId, error: bookingError } = await supabase.rpc("create_atomic_booking", {
         p_user_id: userId,
@@ -1410,7 +1538,215 @@ function BookingFlowContent() {
                           </div>
 
                       {/* Dynamic price input fields based on active catalog schema */}
-                      {selectedSubService?.price_config?.fields && selectedSubService.price_config.fields.length > 0 ? (
+                      {isLinearService ? (
+                        <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-blue-900/40">
+                          <div className="flex items-center justify-between pb-1">
+                            <div>
+                              <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                                <AppWindow className="w-4 h-4 text-[#0091FF]" />
+                                <span>حاسبة أبعاد وقطاعات الألوميتال</span>
+                              </h3>
+                              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                                يمكنك إضافة مقاسات وقطاعات متعددة بكميات مختلفة. اكتب المقاس مباشرة بالأرقام العشرية.
+                              </p>
+                            </div>
+                            <span className="text-xs font-black text-[#0091FF] bg-blue-50 dark:bg-blue-950/80 px-2.5 py-1 rounded-xl border border-blue-100 dark:border-blue-900/50">
+                              {windowSectors.length} {windowSectors.length === 1 ? "قطاع" : "قطاعات"}
+                            </span>
+                          </div>
+
+                          <div className="space-y-3.5">
+                            {windowSectors.map((sector, idx) => {
+                              const sectorPerimeter = getSectorPerimeter(sector);
+                              const widthError = validationErrors[`sector_${idx}_width`];
+                              const heightError = validationErrors[`sector_${idx}_height`];
+                              const qtyError = validationErrors[`sector_${idx}_quantity`];
+
+                              return (
+                                <div 
+                                  key={sector.id}
+                                  id={`field-container-sector-${idx}`}
+                                  className="p-4 rounded-2xl border transition-all duration-200 bg-slate-50/50 dark:bg-[#050D24]/60 hover:bg-slate-50 dark:hover:bg-[#050D24] border-slate-200/80 dark:border-blue-900/40 space-y-3.5"
+                                >
+                                  {/* Sector Header */}
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-6 h-6 rounded-lg bg-[#0091FF]/10 text-[#0091FF] text-xs font-black flex items-center justify-center">
+                                        {idx + 1}
+                                      </span>
+                                      <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                                        القطاع رقم {idx + 1}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-[#071739] px-2.5 py-0.5 rounded-lg border border-slate-200/60 dark:border-blue-900/40">
+                                        المحيط: <strong className="text-[#0091FF]">{sectorPerimeter.toFixed(2)}</strong> م.ط
+                                      </span>
+                                      {windowSectors.length > 1 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveSector(idx)}
+                                          className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                                          title="حذف هذا القطاع"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Dimensions & Quantity Grid */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    {/* Width */}
+                                    <div className="space-y-1">
+                                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                        عرض الشباك (بالمتر)
+                                      </label>
+                                      <div className="relative flex items-center">
+                                        <input
+                                          type="number"
+                                          step="0.01"
+                                          min="0.1"
+                                          value={sector.width}
+                                          onChange={(e) => handleUpdateSector(idx, { width: e.target.value })}
+                                          placeholder="مثال: 1.40"
+                                          className={`w-full p-2.5 pl-9 rounded-xl border text-center text-xs font-black focus:outline-none bg-white dark:bg-[#071739] text-slate-900 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                                            widthError ? "border-red-500 bg-red-50/10" : "border-slate-200 dark:border-blue-900/60 focus:border-[#0091FF]"
+                                          }`}
+                                        />
+                                        <span className="absolute left-2.5 text-[10px] font-extrabold text-slate-400 pointer-events-none">
+                                          متر
+                                        </span>
+                                      </div>
+                                      {widthError && <p className="text-[10px] font-bold text-red-500">{widthError}</p>}
+                                    </div>
+
+                                    {/* Height */}
+                                    <div className="space-y-1">
+                                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                        طول / ارتفاع الشباك (بالمتر)
+                                      </label>
+                                      <div className="relative flex items-center">
+                                        <input
+                                          type="number"
+                                          step="0.01"
+                                          min="0.1"
+                                          value={sector.height}
+                                          onChange={(e) => handleUpdateSector(idx, { height: e.target.value })}
+                                          placeholder="مثال: 1.29"
+                                          className={`w-full p-2.5 pl-9 rounded-xl border text-center text-xs font-black focus:outline-none bg-white dark:bg-[#071739] text-slate-900 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                                            heightError ? "border-red-500 bg-red-50/10" : "border-slate-200 dark:border-blue-900/60 focus:border-[#0091FF]"
+                                          }`}
+                                        />
+                                        <span className="absolute left-2.5 text-[10px] font-extrabold text-slate-400 pointer-events-none">
+                                          متر
+                                        </span>
+                                      </div>
+                                      {heightError && <p className="text-[10px] font-bold text-red-500">{heightError}</p>}
+                                    </div>
+
+                                    {/* Quantity */}
+                                    <div className="space-y-1">
+                                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                        عدد الشبابيك من هذا المقاس
+                                      </label>
+                                      <div className="flex items-center gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleUpdateSector(idx, { quantity: Math.max(1, (sector.quantity || 1) - 1) })}
+                                          className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-blue-900/50 font-black text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 transition-colors shrink-0 cursor-pointer"
+                                        >
+                                          -
+                                        </button>
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          max="100"
+                                          value={sector.quantity}
+                                          onChange={(e) => {
+                                            const parsed = parseInt(e.target.value);
+                                            handleUpdateSector(idx, { quantity: isNaN(parsed) ? 1 : Math.max(1, parsed) });
+                                          }}
+                                          className="w-full p-2 rounded-xl border text-center text-xs font-black focus:outline-none bg-white dark:bg-[#071739] text-slate-900 dark:text-white border-slate-200 dark:border-blue-900/60 focus:border-[#0091FF] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => handleUpdateSector(idx, { quantity: (sector.quantity || 1) + 1 })}
+                                          className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-blue-900/50 font-black text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 transition-colors shrink-0 cursor-pointer"
+                                        >
+                                          +
+                                        </button>
+                                      </div>
+                                      {qtyError && <p className="text-[10px] font-bold text-red-500">{qtyError}</p>}
+                                    </div>
+                                  </div>
+
+                                  {/* Both Sides Toggle */}
+                                  <div className="space-y-1.5 pt-1">
+                                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                      نطاق إزالة الاستيكر لهذا القطاع:
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateSector(idx, { is_both_sides: false })}
+                                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                                          !sector.is_both_sides
+                                            ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] shadow-xs"
+                                            : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                                        }`}
+                                      >
+                                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${!sector.is_both_sides ? "border-[#0091FF] bg-[#0091FF]" : "border-slate-300"}`}>
+                                          {!sector.is_both_sides && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                        </div>
+                                        <span>وجه واحد فقط (داخلي)</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateSector(idx, { is_both_sides: true })}
+                                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                                          sector.is_both_sides
+                                            ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] shadow-xs"
+                                            : "border-slate-200 dark:border-blue-900/50 bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                                        }`}
+                                      >
+                                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${sector.is_both_sides ? "border-[#0091FF] bg-[#0091FF]" : "border-slate-300"}`}>
+                                          {sector.is_both_sides && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                        </div>
+                                        <span>الوجهين (داخلي وخارجي)</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Add Sector Button */}
+                          <button
+                            type="button"
+                            onClick={handleAddSector}
+                            className="w-full py-3 px-4 rounded-xl border-2 border-dashed border-[#0091FF]/40 hover:border-[#0091FF] bg-blue-50/40 dark:bg-blue-950/20 text-[#0091FF] text-xs font-black flex items-center justify-center gap-2 transition-all hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>إضافة مقاس / قطاع ألوميتال آخر</span>
+                          </button>
+
+                          {/* Live Summary Footer */}
+                          <div className="p-3.5 rounded-xl bg-slate-100/80 dark:bg-[#071739] border border-slate-200/80 dark:border-blue-900/40 flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300">
+                              <span>إجمالي القطاعات: <strong className="text-slate-900 dark:text-white">{windowSectors.length}</strong></span>
+                              <span>إجمالي الشبابيك: <strong className="text-slate-900 dark:text-white">{totalWindowsCount}</strong></span>
+                            </div>
+                            <div className="text-left font-black text-slate-800 dark:text-white">
+                              <span>إجمالي الأمتار الطولية: </span>
+                              <span className="text-[#0091FF] text-sm">{totalLinearMetersCalculated.toFixed(2)}</span>
+                              <span className="text-[10px] text-slate-400 mr-1">م.ط</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : selectedSubService?.price_config?.fields && selectedSubService.price_config.fields.length > 0 ? (
                         <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-blue-900/40">
                           {selectedSubService.price_config.fields.map((field: any) => {
                             const val = pricingInputs[field.id];
@@ -2461,6 +2797,29 @@ function BookingFlowContent() {
                           </div>
                         );
                       })}
+
+                      {/* Linear Meter Window Sectors breakdown */}
+                      {isLinearService && windowSectors.length > 0 && (
+                        <div className="space-y-1.5 border-t border-slate-100 dark:border-blue-900/30 pt-3">
+                          <span className="font-bold block text-slate-400">تفاصيل القطاعات:</span>
+                          {windowSectors.map((s, idx) => {
+                            const w = parseFloat(s.width) || 0;
+                            const h = parseFloat(s.height) || 0;
+                            const sideText = s.is_both_sides ? "وجهين" : "وجه واحد";
+                            const p = getSectorPerimeter(s);
+                            return (
+                              <div key={s.id} className="flex justify-between text-[11px] text-slate-600 dark:text-slate-300 font-semibold">
+                                <span>- قطاع {idx + 1}: {s.quantity} شباك ({w}×{h}م - {sideText})</span>
+                                <span className="font-bold text-[#0091FF]">{p.toFixed(2)} م.ط</span>
+                              </div>
+                            );
+                          })}
+                          <div className="flex justify-between text-[11px] font-black text-slate-800 dark:text-white pt-1">
+                            <span>إجمالي الأمتار:</span>
+                            <span className="text-[#0091FF]">{totalLinearMetersCalculated.toFixed(2)} م.ط</span>
+                          </div>
+                        </div>
+                      )}
                       
                       {/* Selected Addons */}
                       {selectedAddons.length > 0 && selectedSubService?.price_config?.options && (

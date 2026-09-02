@@ -105,6 +105,8 @@ export interface CalculatePriceInputsSummary {
   bathrooms_count?: number;
   ac_units_count?: number;
   addons_count?: number;
+  windows_count?: number;
+  total_linear_meters?: number;
 }
 
 export interface CalculatePriceParams {
