@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart';
+import 'package:shared_features/shared_features.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -37,6 +39,50 @@ class HomePage extends StatelessWidget {
         backgroundColor: themeColor.primary,
         foregroundColor: Colors.white,
         elevation: 0,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'home_new_booking_fab',
+        onPressed: () {
+          final adminId =
+              Supabase.instance.client.auth.currentUser?.id ?? '';
+          GoRouter.of(context).pushNamed(
+            AppRoutes.bookingFlow,
+            extra: BookingFlowConfig(
+              mode: BookingFlowMode.admin,
+              actorId: adminId,
+            ),
+          );
+        },
+        backgroundColor: themeColor.primary,
+        elevation: 4,
+        focusElevation: 6,
+        hoverElevation: 6,
+        highlightElevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+        icon: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.2),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
+        ),
+        label: const Text(
+          'حجز جديد',
+          style: TextStyle(
+            fontFamily: 'Cairo',
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: Colors.white,
+            letterSpacing: 0.3,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -234,6 +280,7 @@ class HomePage extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),

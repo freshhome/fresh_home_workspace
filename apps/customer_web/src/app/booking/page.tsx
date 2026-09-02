@@ -8,12 +8,13 @@ import {
   ShieldCheck, ArrowLeft, ArrowRight, CheckCircle2, 
   MapPin, Calendar, CreditCard, Clock, Check, ShieldAlert, Sparkles,
   Layers, Zap, ChevronLeft, ChevronRight, Home, Wrench, Wind, Armchair, 
-  AppWindow, Bug, RefreshCw, Plus, Building, Navigation, Eye, X, Info
+  AppWindow, Bug, RefreshCw, Plus, Building, Navigation, Eye, X, Info, AlertCircle
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabase";
-import { GEOGRAPHIC_HIERARCHY } from "@/lib/geo";
+import { GEOGRAPHIC_HIERARCHY, isCoverageSupported, ALLOWED_GOVERNORATES } from "@/lib/geo";
+import ExpansionModal from "@/components/ExpansionModal";
 import { trackCalculatePrice, trackBeginCheckout, trackCheckoutProgress } from "@/lib/gtm";
 
 // Step titles
@@ -329,6 +330,7 @@ function BookingFlowContent() {
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   const [showMobilePriceModal, setShowMobilePriceModal] = useState(false);
+  const [showExpansionModal, setShowExpansionModal] = useState(false);
   const dateScrollRef = useRef<HTMLDivElement>(null);
 
   // Load user profile details and saved addresses if logged in
@@ -792,9 +794,10 @@ function BookingFlowContent() {
       case 1:
         return scheduledDate !== "" && scheduledTime !== "" && availabilityMap[scheduledDate] !== false;
       case 2: {
+        const isGovSupported = isCoverageSupported(address.governorate);
         const effDistrict = address.district === "أخرى" ? customDistrict.trim() : address.district.trim();
         return (
-          address.governorate.trim() !== "" &&
+          isGovSupported &&
           address.city.trim() !== "" &&
           effDistrict !== "" &&
           address.street_or_compound.trim() !== "" &&
@@ -836,32 +839,32 @@ function BookingFlowContent() {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setIsDetectingLocation(false);
+          const { latitude, longitude } = pos.coords;
+
+          // Cairo & Giza approximate geographic bounding box
+          const isWithinCairoGiza =
+            latitude >= 29.70 && latitude <= 30.40 &&
+            longitude >= 30.60 && longitude <= 31.90;
+
+          if (!isWithinCairoGiza) {
+            alert("يبدو أن موقعك الجغرافي الحالي يقع خارج نطاق محافظتي القاهرة والجيزة. يرجى اختيار عنوان داخل نطاق التغطية أو تسجيل رغبتك في التوسع.");
+            setShowExpansionModal(true);
+            return;
+          }
+
           setAddress((prev) => ({
             ...prev,
-            governorate: "القاهرة",
-            city: "القاهرة الجديدة",
-            district: "حي اللوتس"
+            location_url: `https://maps.google.com/?q=${latitude},${longitude}`
           }));
         },
         (err) => {
           setIsDetectingLocation(false);
-          setAddress((prev) => ({
-            ...prev,
-            governorate: "القاهرة",
-            city: "القاهرة الجديدة",
-            district: "حي اللوتس"
-          }));
+          console.warn("Geolocation detection failed or was denied:", err);
         },
-        { timeout: 4000 }
+        { timeout: 8000, enableHighAccuracy: true }
       );
     } else {
       setIsDetectingLocation(false);
-      setAddress((prev) => ({
-        ...prev,
-        governorate: "القاهرة",
-        city: "القاهرة الجديدة",
-        district: "حي اللوتس"
-      }));
     }
   };
 
@@ -937,6 +940,12 @@ function BookingFlowContent() {
 
   // Complete Booking flow calling create_atomic_booking
   const handleCompleteBooking = async () => {
+    if (!isCoverageSupported(address.governorate)) {
+      alert("عذراً، خدمات فريش هوم متاحة حالياً فقط داخل نطاق محافظتي القاهرة والجيزة.");
+      setShowExpansionModal(true);
+      return;
+    }
+
     setIsSubmittingBooking(true);
     try {
       let userId: string | null = null;
@@ -2034,6 +2043,24 @@ function BookingFlowContent() {
                           </div>
                         </div>
 
+                        {/* Coverage Area Notice & Expansion Trigger */}
+                        <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-[#21A5FB] shrink-0" />
+                            <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                              خدمات فريش هوم متاحة حالياً في <span className="text-[#21A5FB] font-black">القاهرة والجيزة</span> فقط.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowExpansionModal(true)}
+                            className="text-[11px] font-black text-[#21A5FB] hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <span>عنوانك خارج النطاق؟ سجل رغبتك بالتوسع</span>
+                            <span>←</span>
+                          </button>
+                        </div>
+
                         {/* Custom District if "أخرى" */}
                         {address.district === "أخرى" && (
                           <div className="space-y-1.5">
@@ -2051,6 +2078,10 @@ function BookingFlowContent() {
                                   : "border-slate-200 dark:border-blue-900/60 hover:border-slate-300"
                               } focus:border-[#21A5FB] focus:ring-4 focus:ring-[#21A5FB]/20 focus:outline-none`}
                             />
+                            <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-900/40 text-amber-800 dark:text-amber-300 text-[11px] font-bold">
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                              <span>المناطق النائية أو على أطراف المحافظتين قد تخضع لمراجعة خدمة العملاء أولاً لتأكيد توفر أسطول الفنيين.</span>
+                            </div>
                           </div>
                         )}
 
@@ -2509,6 +2540,12 @@ function BookingFlowContent() {
       </main>
 
       <Footer />
+
+      {/* Out of Coverage Expansion Modal */}
+      <ExpansionModal
+        isOpen={showExpansionModal}
+        onClose={() => setShowExpansionModal(false)}
+      />
     </>
   );
 }

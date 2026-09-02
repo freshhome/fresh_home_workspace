@@ -27,12 +27,16 @@ class _ManualClientPageState extends State<ManualClientPage> {
   final _floorController = TextEditingController();
   final _apartmentController = TextEditingController();
   final _landmarkController = TextEditingController();
+  final _locationUrlController = TextEditingController();
+  final _customDistrictController = TextEditingController();
 
   final _nameFocus = FocusNode();
   final _phoneFocus = FocusNode();
   final _governorateFocus = FocusNode();
   final _cityFocus = FocusNode();
   final _districtFocus = FocusNode();
+  final _customDistrictFocus = FocusNode();
+  final _locationUrlFocus = FocusNode();
   final _streetFocus = FocusNode();
   final _buildingFocus = FocusNode();
   final _floorFocus = FocusNode();
@@ -43,6 +47,8 @@ class _ManualClientPageState extends State<ManualClientPage> {
 
   String? _selectedGovernorate;
   String? _selectedCity;
+  String? _selectedDistrictString;
+  bool _isCustomDistrict = false;
   String _selectedPropertyType = 'residential';
 
   @override
@@ -61,6 +67,8 @@ class _ManualClientPageState extends State<ManualClientPage> {
     _floorController.text = state.manualClientFloor ?? '';
     _apartmentController.text = state.manualClientApartment ?? '';
     _landmarkController.text = state.manualClientLandmark ?? '';
+    _locationUrlController.text = state.manualClientLocationUrl ?? state.address?.locationUrl ?? '';
+    _selectedDistrictString = state.manualClientDistrict;
     _selectedPropertyType = state.manualClientPropertyType ?? 'residential';
 
     _geoCubit.loadGovernorates().then((_) {
@@ -117,12 +125,16 @@ class _ManualClientPageState extends State<ManualClientPage> {
     _floorController.dispose();
     _apartmentController.dispose();
     _landmarkController.dispose();
+    _locationUrlController.dispose();
+    _customDistrictController.dispose();
 
     _nameFocus.dispose();
     _phoneFocus.dispose();
     _governorateFocus.dispose();
     _cityFocus.dispose();
     _districtFocus.dispose();
+    _customDistrictFocus.dispose();
+    _locationUrlFocus.dispose();
     _streetFocus.dispose();
     _buildingFocus.dispose();
     _floorFocus.dispose();
@@ -147,8 +159,25 @@ class _ManualClientPageState extends State<ManualClientPage> {
 
     final govName = selectedGov?.getName(locale) ?? selectedGov?.nameAr ?? _selectedGovernorate ?? '';
     final cityName = selectedCity?.getName(locale) ?? selectedCity?.nameAr ?? _selectedCity ?? '';
-    final districtName = selectedDistrict?.getName(locale) ??
-        (_districtController.text.trim().isNotEmpty ? _districtController.text.trim() : cityName);
+
+    final String districtName;
+    if (_isCustomDistrict) {
+      districtName = _customDistrictController.text.trim().isNotEmpty
+          ? _customDistrictController.text.trim()
+          : cityName;
+    } else if (_selectedDistrictString != null && _selectedDistrictString!.isNotEmpty) {
+      districtName = _selectedDistrictString!;
+    } else if (selectedDistrict != null) {
+      districtName = selectedDistrict.getName(locale);
+    } else if (_districtController.text.trim().isNotEmpty) {
+      districtName = _districtController.text.trim();
+    } else {
+      districtName = cityName;
+    }
+
+    final locationUrl = _locationUrlController.text.trim().isNotEmpty
+        ? _locationUrlController.text.trim()
+        : null;
 
     final address = Address(
       id: '',
@@ -165,6 +194,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
       apartmentOrUnit: _apartmentController.text,
       propertyType: _selectedPropertyType,
       landmark: _landmarkController.text,
+      locationUrl: locationUrl,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -181,6 +211,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
       apartment: _apartmentController.text,
       landmark: _landmarkController.text,
       propertyType: _selectedPropertyType,
+      locationUrl: locationUrl,
     );
     context.read<BookingFlowCubit>().updateAddress(address);
   }
@@ -202,6 +233,13 @@ class _ManualClientPageState extends State<ManualClientPage> {
         firstErrorFocus = _governorateFocus;
       } else if (_selectedCity == null) {
         firstErrorFocus = _cityFocus;
+      } else if (_isCustomDistrict &&
+          InputValidator.validateEmpty(_customDistrictController.text) != null) {
+        firstErrorFocus = _customDistrictFocus;
+      } else if (!_isCustomDistrict &&
+          _selectedDistrictString == null &&
+          InputValidator.validateEmpty(_districtController.text) != null) {
+        firstErrorFocus = _districtFocus;
       } else if (InputValidator.validateEmpty(_streetController.text) != null) {
         firstErrorFocus = _streetFocus;
       } else if (InputValidator.validateEmpty(_buildingController.text) !=
@@ -315,6 +353,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                   child: _buildLabeledField(
                                     label: l10n.address_governorate_label,
                                     child: DropdownButtonFormField<int>(
+                                      isExpanded: true,
                                       dropdownColor: themeColor.cardBackground,
                                       value: state.selectedGovernorateId,
                                       focusNode: _governorateFocus,
@@ -340,6 +379,8 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                                 value: g.id,
                                                 child: Text(
                                                   g.getName(locale),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  maxLines: 1,
                                                   style: TextStyle(color: themeColor.textPrimary, fontSize: 13),
                                                 ),
                                               ))
@@ -351,6 +392,10 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                               setState(() {
                                                 _selectedGovernorate = state.selectedGovernorate?.getName(locale);
                                                 _selectedCity = null;
+                                                _selectedDistrictString = null;
+                                                _isCustomDistrict = false;
+                                                _customDistrictController.clear();
+                                                _districtController.clear();
                                               });
                                               _syncToState();
                                             },
@@ -360,6 +405,8 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                         state.isLoadingGovernorates
                                             ? 'تحميل...'
                                             : l10n.address_governorate_label,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
                                         style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
                                       ),
                                     ),
@@ -372,6 +419,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                   child: _buildLabeledField(
                                     label: l10n.address_region_label,
                                     child: DropdownButtonFormField<int>(
+                                      isExpanded: true,
                                       dropdownColor: themeColor.cardBackground,
                                       value: state.selectedCityId,
                                       focusNode: _cityFocus,
@@ -397,6 +445,8 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                                 value: c.id,
                                                 child: Text(
                                                   c.getName(locale),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  maxLines: 1,
                                                   style: TextStyle(color: themeColor.textPrimary, fontSize: 13),
                                                 ),
                                               ))
@@ -407,6 +457,10 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                               _geoCubit.selectCity(val);
                                               setState(() {
                                                 _selectedCity = state.selectedCity?.getName(locale);
+                                                _selectedDistrictString = null;
+                                                _isCustomDistrict = false;
+                                                _customDistrictController.clear();
+                                                _districtController.clear();
                                               });
                                               _syncToState();
                                             },
@@ -418,6 +472,8 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                             : (state.selectedGovernorateId == null
                                                 ? l10n.address_select_governorate_first
                                                 : l10n.address_select_city),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
                                         style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
                                       ),
                                     ),
@@ -428,73 +484,110 @@ class _ManualClientPageState extends State<ManualClientPage> {
 
                             const SizedBox(height: 16),
 
-                            // 3. District Dropdown / Field
-                            if (state.districts.isNotEmpty) ...[
-                              _buildLabeledField(
-                                label: 'المنطقة / الحي',
-                                child: DropdownButtonFormField<int>(
-                                  dropdownColor: themeColor.cardBackground,
-                                  value: state.selectedDistrictId,
-                                  focusNode: _districtFocus,
-                                  decoration: InputDecoration(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                    filled: true,
-                                    fillColor: themeColor.background.withValues(alpha: 0.5),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: themeColor.primary),
-                                    ),
-                                  ),
-                                  items: state.districts
-                                      .map((d) => DropdownMenuItem<int>(
-                                            value: d.id,
-                                            child: Text(
-                                              d.getName(locale),
-                                              style: TextStyle(color: themeColor.textPrimary, fontSize: 13),
+                            // 3. District Dropdown / Custom Field
+                            Builder(
+                              builder: (context) {
+                                final dbDistricts = state.districts.map((d) => d.getName(locale)).toList();
+                                final staticDistricts = EgyptGeographicHierarchy.getDistricts(
+                                  _selectedGovernorate ?? state.selectedGovernorate?.getName(locale),
+                                  _selectedCity ?? state.selectedCity?.getName(locale),
+                                );
+                                final availableDistricts = dbDistricts.isNotEmpty ? dbDistricts : staticDistricts;
+
+                                if (availableDistricts.isNotEmpty) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildLabeledField(
+                                        label: 'المنطقة / الحي',
+                                        child: DropdownButtonFormField<String>(
+                                          isExpanded: true,
+                                          dropdownColor: themeColor.cardBackground,
+                                          value: availableDistricts.contains(_selectedDistrictString)
+                                              ? _selectedDistrictString
+                                              : null,
+                                          focusNode: _districtFocus,
+                                          decoration: InputDecoration(
+                                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                            filled: true,
+                                            fillColor: themeColor.background.withValues(alpha: 0.5),
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(16),
+                                              borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
                                             ),
-                                          ))
-                                      .toList(),
-                                  onChanged: state.isLoadingDistricts
-                                      ? null
-                                      : (val) {
-                                          _geoCubit.selectDistrict(val);
-                                          if (val != null) {
-                                            final dist = state.districts.firstWhere((d) => d.id == val);
-                                            _districtController.text = dist.getName(locale);
-                                          }
-                                          _syncToState();
-                                        },
-                                  validator: (val) =>
-                                      InputValidator.validateDropdownSelection(val?.toString(), l10n: l10n),
-                                  hint: Text(
-                                    state.isLoadingDistricts ? 'تحميل...' : 'اختر الحي / المنطقة',
-                                    style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(16),
+                                              borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(16),
+                                              borderSide: BorderSide(color: themeColor.primary),
+                                            ),
+                                          ),
+                                          items: availableDistricts
+                                              .map((d) => DropdownMenuItem<String>(
+                                                    value: d,
+                                                    child: Text(
+                                                      d,
+                                                      style: TextStyle(color: themeColor.textPrimary, fontSize: 13),
+                                                      overflow: TextOverflow.ellipsis,
+                                                      maxLines: 1,
+                                                    ),
+                                                  ))
+                                              .toList(),
+                                          onChanged: (val) {
+                                            setState(() {
+                                              _selectedDistrictString = val;
+                                              _isCustomDistrict = (val == 'أخرى');
+                                              if (!_isCustomDistrict) {
+                                                _districtController.text = val ?? '';
+                                              }
+                                            });
+                                            _syncToState();
+                                          },
+                                          validator: (val) =>
+                                              InputValidator.validateDropdownSelection(val, l10n: l10n),
+                                          hint: Text(
+                                            state.isLoadingDistricts ? 'تحميل...' : 'اختر الحي / المنطقة',
+                                            style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                      ),
+                                      if (_isCustomDistrict) ...[
+                                        const SizedBox(height: 12),
+                                        _buildLabeledField(
+                                          label: 'اسم الحي / المنطقة يدوياً',
+                                          child: _buildTextFormField(
+                                            controller: _customDistrictController,
+                                            focusNode: _customDistrictFocus,
+                                            icon: Icons.edit_location_alt_rounded,
+                                            themeColor: themeColor,
+                                            hint: 'أدخل اسم الحي أو المنطقة بدقة',
+                                            validator: (val) => InputValidator.validateEmpty(val, l10n: l10n),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                }
+
+                                return _buildLabeledField(
+                                  label: 'المنطقة / الحي',
+                                  child: _buildTextFormField(
+                                    controller: _districtController,
+                                    focusNode: _districtFocus,
+                                    icon: Icons.location_city_rounded,
+                                    themeColor: themeColor,
+                                    hint: state.selectedCityId == null
+                                        ? 'اختر المدينة أولاً'
+                                        : 'أدخل اسم المنطقة أو الحي (مثال: الحي الأول)',
+                                    validator: (val) => InputValidator.validateEmpty(val, l10n: l10n),
                                   ),
-                                ),
-                              ),
-                            ] else ...[
-                              _buildLabeledField(
-                                label: 'المنطقة / الحي',
-                                child: _buildTextFormField(
-                                  controller: _districtController,
-                                  focusNode: _districtFocus,
-                                  icon: Icons.location_city_rounded,
-                                  themeColor: themeColor,
-                                  hint: state.selectedCityId == null
-                                      ? 'اختر المدينة أولاً'
-                                      : 'أدخل اسم المنطقة أو الحي (مثال: الحي الأول)',
-                                  validator: (val) => InputValidator.validateEmpty(val, l10n: l10n),
-                                ),
-                              ),
-                            ],
+                                );
+                              },
+                            ),
                           ],
                         );
                       },
@@ -572,6 +665,20 @@ class _ManualClientPageState extends State<ManualClientPage> {
                       focusNode: _landmarkFocus,
                       icon: Icons.turned_in_not_rounded,
                       themeColor: themeColor,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildLabeledField(
+                    label: 'رابط الموقع على الخريطة (Google Maps) - اختياري',
+                    child: _buildTextFormField(
+                      controller: _locationUrlController,
+                      focusNode: _locationUrlFocus,
+                      icon: Icons.map_rounded,
+                      themeColor: themeColor,
+                      hint: 'مثال: https://maps.google.com/?q=...',
+                      keyboardType: TextInputType.url,
                     ),
                   ),
                 ],
@@ -775,19 +882,33 @@ class _ManualClientPageState extends State<ManualClientPage> {
     final govs = _geoCubit.state.governorates;
     if (govs.isNotEmpty) {
       final firstGov = govs.first;
+      _selectedGovernorate = firstGov.getName('ar');
       _geoCubit.selectGovernorate(firstGov.id).then((_) {
         final cities = _geoCubit.state.cities;
         if (cities.isNotEmpty) {
           final firstCity = cities.first;
+          _selectedCity = firstCity.getName('ar');
           _geoCubit.selectCity(firstCity.id).then((_) {
             final districts = _geoCubit.state.districts;
             if (districts.isNotEmpty) {
               _geoCubit.selectDistrict(districts.first.id);
               _districtController.text = districts.first.getName('ar');
+              _selectedDistrictString = districts.first.getName('ar');
+            } else {
+              final staticDistricts = EgyptGeographicHierarchy.getDistricts(
+                _selectedGovernorate,
+                _selectedCity,
+              );
+              if (staticDistricts.isNotEmpty) {
+                _selectedDistrictString = staticDistricts.first;
+                _districtController.text = staticDistricts.first;
+              }
             }
+            setState(() {});
             _syncToState();
           });
         } else {
+          setState(() {});
           _syncToState();
         }
       });

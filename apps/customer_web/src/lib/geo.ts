@@ -7,6 +7,18 @@ export interface GovernorateHierarchy {
   [governorate: string]: CityDistricts;
 }
 
+// Single Source of Truth for Supported Service Coverage Area
+export const ALLOWED_GOVERNORATES = ["القاهرة", "الجيزة"] as const;
+export type AllowedGovernorate = typeof ALLOWED_GOVERNORATES[number];
+
+/**
+ * Checks if a governorate is within the currently supported coverage area (Cairo & Giza only).
+ */
+export function isCoverageSupported(governorate?: string | null): boolean {
+  if (!governorate) return false;
+  return ALLOWED_GOVERNORATES.includes(governorate.trim() as AllowedGovernorate);
+}
+
 export const GEOGRAPHIC_HIERARCHY: GovernorateHierarchy = {
   "القاهرة": {
     "التجمع الخامس": [

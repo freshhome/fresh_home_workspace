@@ -204,17 +204,6 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
                 fontSize: 15,
               ),
             ),
-            if (widget.field.required) ...[
-              const SizedBox(width: 4),
-              Text(
-                '*',
-                style: TextStyle(
-                  color: widget.themeColor.error,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ],
           ],
         ),
         const SizedBox(height: 10),
@@ -333,7 +322,6 @@ class DynamicToggleField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
-    final l10n = AppLocalizations.of(context)!;
     
     // Retrieve custom options labels
     final optTrue = field.options != null && field.options!.isNotEmpty
@@ -351,7 +339,7 @@ class DynamicToggleField extends StatelessWidget {
 
     final isTrueSelected = value == true;
     final isFalseSelected = value == false;
-    final hasError = errorText != null || (field.required && value == null);
+    final hasError = errorText != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,17 +354,6 @@ class DynamicToggleField extends StatelessWidget {
                 fontSize: 15,
               ),
             ),
-            if (field.required) ...[
-              const SizedBox(width: 4),
-              Text(
-                '*',
-                style: TextStyle(
-                  color: themeColor.error,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ],
           ],
         ),
         const SizedBox(height: 10),
@@ -499,7 +476,7 @@ class DynamicToggleField extends StatelessWidget {
             ),
           ],
         ),
-        if (hasError)
+        if (hasError && errorText != null)
           Padding(
             padding: const EdgeInsets.only(top: 8, right: 4, left: 4),
             child: Row(
@@ -511,7 +488,7 @@ class DynamicToggleField extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  errorText ?? l10n.validation_selection_required,
+                  errorText!,
                   style: TextStyle(
                     fontSize: 11,
                     color: themeColor.error,
@@ -570,17 +547,6 @@ class DynamicDropdownField extends StatelessWidget {
                 fontSize: 15,
               ),
             ),
-            if (field.required) ...[
-              const SizedBox(width: 4),
-              Text(
-                '*',
-                style: TextStyle(
-                  color: themeColor.error,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ],
           ],
         ),
         const SizedBox(height: 10),
@@ -927,17 +893,6 @@ class DynamicCardStepper extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (field.required) ...[
-                            const SizedBox(width: 4),
-                            Text(
-                              '*',
-                              style: TextStyle(
-                                color: themeColor.error,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                       if (description != null && description.isNotEmpty) ...[
@@ -1162,17 +1117,6 @@ class DynamicCardToggle extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (field.required) ...[
-                              const SizedBox(width: 4),
-                              Text(
-                                '*',
-                                style: TextStyle(
-                                  color: themeColor.error,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                         if (description != null && description.isNotEmpty) ...[

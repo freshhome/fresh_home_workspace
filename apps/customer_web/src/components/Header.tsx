@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import { supabase } from "@/lib/supabase";
+import CoverageBanner from "@/components/CoverageBanner";
 
 export default function Header() {
   const pathname = usePathname();
@@ -163,13 +164,15 @@ export default function Header() {
 
   return (
     <>
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white/95 dark:bg-[#06112c]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-lg py-3"
-            : "bg-white/85 dark:bg-[#071330]/85 backdrop-blur-sm border-b border-slate-200/60 dark:border-white/5 py-4"
-        }`}
-      >
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <CoverageBanner />
+        <header
+          className={`transition-all duration-300 ${
+            scrolled
+              ? "bg-white/95 dark:bg-[#06112c]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-lg py-3"
+              : "bg-white/85 dark:bg-[#071330]/85 backdrop-blur-sm border-b border-slate-200/60 dark:border-white/5 py-4"
+          }`}
+        >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             {/* Official Fresh Home Logo */}
@@ -473,7 +476,8 @@ export default function Header() {
             </div>
           </div>
         )}
-      </header>
+        </header>
+      </div>
 
       {/* ========================================================================= */}
       {/* Auth Required Dialog Modal for "الطلبات" when guest is not logged in      */}

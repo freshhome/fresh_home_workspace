@@ -69,19 +69,19 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
 
   // ── Service Selection (Admin) ───────────────────────────────────────────────
 
-  void selectService(SubServiceEntity subService) {
+  void selectService(ServiceEntity service) {
     final bookedService = BookedService(
-      id: Uuid().v4(),
-      subServiceId: subService.id,
-      name: subService.title,
-      image: subService.image ?? '',
+      id: const Uuid().v4(),
+      subServiceId: service.id,
+      name: service.title,
+      image: service.image ?? '',
     );
     emit(
       state.copyWith(
         service: bookedService,
-        servicePrice: subService.price,
-        computedFields: subService.computedFields,
-        dynamicInputs: _getInitialDynamicInputs(subService.price),
+        servicePrice: service.price,
+        computedFields: service.computedFields,
+        dynamicInputs: _getInitialDynamicInputs(service.price),
         isPriceCalculated: false,
         clearPrice: true,
         hasActiveCoupons: false, // temporarily reset while fetching
@@ -495,6 +495,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     String? apartment,
     String? landmark,
     String? propertyType,
+    String? locationUrl,
     double? latitude,
     double? longitude,
   }) {
@@ -511,6 +512,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         manualClientApartment: apartment ?? state.manualClientApartment,
         manualClientLandmark: landmark ?? state.manualClientLandmark,
         manualClientPropertyType: propertyType ?? state.manualClientPropertyType,
+        manualClientLocationUrl: locationUrl ?? state.manualClientLocationUrl,
         manualClientLatitude: latitude ?? state.manualClientLatitude,
         manualClientLongitude: longitude ?? state.manualClientLongitude,
       ),
@@ -759,6 +761,8 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         floor: floor,
         apartmentOrUnit: apartment,
         landmark: landmark,
+        propertyType: state.manualClientPropertyType,
+        locationUrl: state.manualClientLocationUrl,
         latitude: state.manualClientLatitude,
         longitude: state.manualClientLongitude,
         createdAt: DateTime.now(),
@@ -915,14 +919,6 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
   static Map<String, dynamic> _getInitialDynamicInputs(
     PriceEntity? priceConfig,
   ) {
-    final inputs = <String, dynamic>{};
-    if (priceConfig != null) {
-      for (final field in priceConfig.fields) {
-        if (field.type == DynamicFieldType.toggle && !field.required) {
-          inputs[field.id] = false;
-        }
-      }
-    }
-    return inputs;
+    return <String, dynamic>{};
   }
 }

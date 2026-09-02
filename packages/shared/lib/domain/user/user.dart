@@ -13,6 +13,7 @@ export 'repositories/user_repository.dart';
 export 'repositories/address_repository.dart';
 export 'repositories/geographic_reference_repository.dart';
 export 'repositories/admin_geographic_reference_repository.dart';
+export 'constants/egypt_geographic_hierarchy.dart';
 
 export 'use_cases/user/create_user_use_case.dart';
 export 'use_cases/user/get_user_by_id_use_case.dart';

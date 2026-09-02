@@ -25,6 +25,7 @@ abstract class ServiceRepository {
   Future<Either<Failure, List<ServiceEntity>>> getRootServices({bool forceRefresh = false});
   Future<Either<Failure, List<ServiceEntity>>> getChildren(String parentId, {bool forceRefresh = false});
   Future<Either<Failure, List<ServiceEntity>>> getBookableServices({bool forceRefresh = false});
+  Future<Either<Failure, List<ServiceEntity>>> getAllServices({bool forceRefresh = false});
   Future<Either<Failure, ServiceEntity>> getServiceById(String id, {bool forceRefresh = false});
 
   // Mutator / Write Operations (Insert / Update)

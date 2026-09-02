@@ -79,6 +79,7 @@ class AddressSnapshotModel {
   final String? floorNumber;
   final String? landmark;
   final String? propertyType;
+  final String? locationUrl;
   final double? latitude;
   final double? longitude;
 
@@ -101,6 +102,7 @@ class AddressSnapshotModel {
     this.floorNumber,
     this.landmark,
     this.propertyType,
+    this.locationUrl,
     this.latitude,
     this.longitude,
   });
@@ -167,6 +169,7 @@ class AddressSnapshotModel {
       floorNumber: (data['floorNumber'] ?? data['floor'] ?? data['floor_number']) as String?,
       landmark: data['landmark'] as String?,
       propertyType: (data['propertyType'] ?? data['property_type']) as String?,
+      locationUrl: (data['location_url'] ?? data['locationUrl']) as String?,
       latitude: parseDouble(data['latitude']),
       longitude: parseDouble(data['longitude']),
     );
@@ -194,6 +197,7 @@ class AddressSnapshotModel {
         if (floorNumber != null) 'floor': floorNumber,
         if (landmark != null) 'landmark': landmark,
         if (propertyType != null) 'property_type': propertyType,
+        if (locationUrl != null && locationUrl!.isNotEmpty) 'location_url': locationUrl,
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
       },

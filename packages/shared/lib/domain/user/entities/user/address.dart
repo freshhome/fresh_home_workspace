@@ -25,6 +25,7 @@ class Address extends Equatable {
   final String? apartmentOrUnit;
   final String? landmark;
   final String? propertyType;
+  final String? locationUrl;
   final double? latitude;
   final double? longitude;
   final bool isPrimary;
@@ -53,6 +54,7 @@ class Address extends Equatable {
     this.apartmentOrUnit,
     this.landmark,
     this.propertyType,
+    this.locationUrl,
     this.latitude,
     this.longitude,
     this.isPrimary = false,
@@ -117,6 +119,7 @@ class Address extends Equatable {
     String? apartmentOrUnit,
     String? landmark,
     String? propertyType,
+    String? locationUrl,
     double? latitude,
     double? longitude,
     bool? isPrimary,
@@ -145,6 +148,7 @@ class Address extends Equatable {
       apartmentOrUnit: apartmentOrUnit ?? this.apartmentOrUnit,
       landmark: landmark ?? this.landmark,
       propertyType: propertyType ?? this.propertyType,
+      locationUrl: locationUrl ?? this.locationUrl,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       isPrimary: isPrimary ?? this.isPrimary,
@@ -176,6 +180,7 @@ class Address extends Equatable {
         apartmentOrUnit,
         landmark,
         propertyType,
+        locationUrl,
         latitude,
         longitude,
         isPrimary,

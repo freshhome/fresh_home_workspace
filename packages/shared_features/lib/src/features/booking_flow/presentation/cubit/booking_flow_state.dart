@@ -62,6 +62,7 @@ class BookingFlowState {
   final String? manualClientApartment;
   final String? manualClientLandmark;
   final String? manualClientPropertyType;
+  final String? manualClientLocationUrl;
   final double? manualClientLatitude;
   final double? manualClientLongitude;
   final int validateManualClientTrigger;
@@ -108,6 +109,7 @@ class BookingFlowState {
     this.manualClientApartment,
     this.manualClientLandmark,
     this.manualClientPropertyType,
+    this.manualClientLocationUrl,
     this.manualClientLatitude,
     this.manualClientLongitude,
     this.validateManualClientTrigger = 0,
@@ -155,6 +157,7 @@ class BookingFlowState {
     String? manualClientApartment,
     String? manualClientLandmark,
     String? manualClientPropertyType,
+    String? manualClientLocationUrl,
     double? manualClientLatitude,
     double? manualClientLongitude,
     int? validateManualClientTrigger,
@@ -204,6 +207,8 @@ class BookingFlowState {
       manualClientLandmark: manualClientLandmark ?? this.manualClientLandmark,
       manualClientPropertyType:
           manualClientPropertyType ?? this.manualClientPropertyType,
+      manualClientLocationUrl:
+          manualClientLocationUrl ?? this.manualClientLocationUrl,
       manualClientLatitude: manualClientLatitude ?? this.manualClientLatitude,
       manualClientLongitude:
           manualClientLongitude ?? this.manualClientLongitude,

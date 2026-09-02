@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/domain/service/enums/pricing_method.dart';
-import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/booking_components.dart';
-import 'package:shared/domain/service/entities/sub_entities/service_price.dart';
 import 'package:shared/presentation/presentation.dart';
 import '../cubit/booking_flow_cubit.dart';
 import '../cubit/booking_flow_state.dart';
@@ -49,8 +47,11 @@ class _PricingPageState extends State<PricingPage> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final pricingType = cubit.state.servicePrice?.type;
-      if (pricingType == PricingMethod.fixed ||
-          pricingType == PricingMethod.perIssue) {
+      final hasRequiredFields =
+          cubit.state.servicePrice?.fields.any((f) => f.required) ?? false;
+      if (!hasRequiredFields &&
+          (pricingType == PricingMethod.fixed ||
+              pricingType == PricingMethod.perIssue)) {
         cubit.calculatePrice();
       }
     });

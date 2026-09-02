@@ -11,7 +11,7 @@ import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-import { GEOGRAPHIC_HIERARCHY } from "@/lib/geo";
+import { GEOGRAPHIC_HIERARCHY, isCoverageSupported } from "@/lib/geo";
 
 function ProfileContent() {
   const router = useRouter();
@@ -212,6 +212,11 @@ function ProfileContent() {
     setAddressError("");
 
     const effDistrict = newAddress.district === "أخرى" ? profileCustomDistrict.trim() : newAddress.district.trim();
+
+    if (!isCoverageSupported(newAddress.governorate)) {
+      setAddressError("عذراً، خدمات فريش هوم متاحة حالياً فقط داخل نطاق القاهرة والجيزة.");
+      return;
+    }
 
     if (!newAddress.street_or_compound.trim() || !newAddress.building_identifier.trim() || !effDistrict) {
       setAddressError("يرجى ملء كافة الحقول الإجبارية (المحافظة، المدينة، الحي، الشارع، المبنى).");

@@ -317,6 +317,26 @@ class ServiceRepositoryImpl implements ServiceRepository {
   }
 
   @override
+  Future<Either<Failure, List<ServiceEntity>>> getAllServices({
+    bool forceRefresh = false,
+  }) async {
+    try {
+      if (forceRefresh) {
+        await syncAllServices(forceFull: true);
+      } else {
+        await _loadCacheIfNeeded();
+        final hasConnection = await networkInfo.isConnected;
+        if (_allServices.isEmpty && hasConnection) {
+          await syncAllServices();
+        }
+      }
+      return Right(_allServices);
+    } catch (e) {
+      return Left(CacheFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, ServiceEntity>> getServiceById(
     String id, {
     bool forceRefresh = false,

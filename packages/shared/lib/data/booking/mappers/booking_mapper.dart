@@ -52,6 +52,7 @@ class BookingMapper {
       floor: model.floorNumber,
       landmark: model.landmark,
       propertyType: model.propertyType,
+      locationUrl: model.locationUrl,
       latitude: model.latitude,
       longitude: model.longitude,
       createdAt: DateTime.now(),
@@ -79,6 +80,7 @@ class BookingMapper {
       floorNumber: entity.floor,
       landmark: entity.landmark,
       propertyType: entity.propertyType,
+      locationUrl: entity.locationUrl,
       latitude: entity.latitude,
       longitude: entity.longitude,
     );

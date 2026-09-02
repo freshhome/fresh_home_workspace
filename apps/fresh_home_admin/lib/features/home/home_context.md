@@ -13,6 +13,7 @@ UI (HomePage) → Navigation Shell → Sub-routing to features (Dashboard, Users
 ## Rules
 - **No Business Logic**: Keep the Home feature purely structural.
 - **Routing Integrity**: Ensure the shell correctly maintains state during feature transitions.
+- **Quick Action FAB**: Provides an extended Floating Action Button for rapid dispatch to the New Booking flow (`bookingFlow`).
 
 ## Existing Files
 - `apps/fresh_home_admin/lib/features/home/presentation/pages/home_page.dart`
