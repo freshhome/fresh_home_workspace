@@ -176,8 +176,17 @@ class AddressSnapshotModel {
   }
 
   Map<String, dynamic> toJson() {
+    final govAr = governorateAr ??
+        (governorate.toLowerCase().contains('giza')
+            ? 'الجيزة'
+            : (governorate.toLowerCase().contains('cairo')
+                ? 'القاهرة'
+                : governorate));
     return {
       'snapshot_version': 2,
+      'governorate': govAr,
+      'city': cityAr ?? city,
+      'district': districtAr ?? district,
       'address': {
         'governorate': governorate,
         'city': city,

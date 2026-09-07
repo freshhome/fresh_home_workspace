@@ -195,6 +195,27 @@ class FakeAdminGeographicReferenceRepository implements AdminGeographicReference
     }
     return Right(unit);
   }
+
+  @override
+  Future<Either<Failure, Unit>> deleteGovernorate(int id) async {
+    governorates.removeWhere((g) => g.id == id);
+    cacheCleared = true;
+    return Right(unit);
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteCity(int id) async {
+    cities.removeWhere((c) => c.id == id);
+    cacheCleared = true;
+    return Right(unit);
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteDistrict(int id) async {
+    districts.removeWhere((d) => d.id == id);
+    cacheCleared = true;
+    return Right(unit);
+  }
 }
 
 void main() {

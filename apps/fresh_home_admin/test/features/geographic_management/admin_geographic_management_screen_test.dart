@@ -111,6 +111,24 @@ class MockAdminGeographicReferenceRepository implements AdminGeographicReference
   }) async {
     return Right(unit);
   }
+
+  @override
+  Future<Either<Failure, Unit>> deleteGovernorate(int id) async {
+    governorates.removeWhere((g) => g.id == id);
+    return Right(unit);
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteCity(int id) async {
+    cities.removeWhere((c) => c.id == id);
+    return Right(unit);
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteDistrict(int id) async {
+    districts.removeWhere((d) => d.id == id);
+    return Right(unit);
+  }
 }
 
 void main() {
@@ -143,10 +161,10 @@ void main() {
       await tester.pumpWidget(buildWidget(cubit));
       await tester.pumpAndSettle();
 
-      expect(find.text('القاهرة (Cairo)'), findsOneWidget);
-      expect(find.text('الجيزة (Giza)'), findsOneWidget);
-      expect(find.text('مفعل (Active)'), findsOneWidget);
-      expect(find.text('معطل (Inactive)'), findsOneWidget);
+      expect(find.text('القاهرة'), findsOneWidget);
+      expect(find.text('الجيزة'), findsOneWidget);
+      expect(find.text('مفعل'), findsOneWidget);
+      expect(find.text('معطل'), findsOneWidget);
     });
 
     testWidgets('2. Tab navigation switches between Governorates, Cities, and Districts views', (tester) async {
@@ -155,12 +173,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Cities Tab
-      await tester.tap(find.text('المدن'));
+      await tester.tap(find.widgetWithText(Tab, 'المدن'));
       await tester.pumpAndSettle();
-      expect(find.text('اختر المحافظة: '), findsOneWidget);
+      expect(find.text('المحافظة: '), findsOneWidget);
 
       // Tap Districts Tab
-      await tester.tap(find.text('الأحياء'));
+      await tester.tap(find.widgetWithText(Tab, 'الأحياء'));
       await tester.pumpAndSettle();
       expect(find.text('المحافظة: '), findsOneWidget);
       expect(find.text('المدينة: '), findsOneWidget);
@@ -185,14 +203,40 @@ void main() {
       await tester.pumpWidget(buildWidget(cubit));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('المدن'));
+      await tester.tap(find.widgetWithText(Tab, 'المدن'));
       await tester.pumpAndSettle();
 
       expect(find.text('الرجاء اختيار محافظة من القائمة لعرض وإدارة مدنها'), findsOneWidget);
     });
 
+    testWidgets('5. Tapping on a governorate card navigates to Cities tab and loads its cities', (tester) async {
+      await cubit.loadGovernorates();
+      await tester.pumpWidget(buildWidget(cubit));
+      await tester.pumpAndSettle();
 
+      // Tap on the Cairo governorate card directly
+      await tester.tap(find.text('القاهرة'));
+      await tester.pumpAndSettle();
 
+      // Cities tab should now be active and display cities of Cairo
+      expect(find.text('مدينة نصر'), findsOneWidget);
+    });
 
+    testWidgets('6. Tapping on a city card navigates to Districts tab and loads its districts', (tester) async {
+      await cubit.loadGovernorates();
+      await tester.pumpWidget(buildWidget(cubit));
+      await tester.pumpAndSettle();
+
+      // Navigate to Cairo cities
+      await tester.tap(find.text('القاهرة'));
+      await tester.pumpAndSettle();
+
+      // Tap on the Nasr City card directly
+      await tester.tap(find.text('مدينة نصر'));
+      await tester.pumpAndSettle();
+
+      // Districts tab should now be active and display districts of Nasr City
+      expect(find.text('الحي الأول'), findsOneWidget);
+    });
   });
 }

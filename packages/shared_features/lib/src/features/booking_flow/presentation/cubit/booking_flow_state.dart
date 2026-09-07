@@ -78,6 +78,10 @@ class BookingFlowState {
   final bool hasActiveCoupons;
   final Map<String, String> validationErrors;
 
+  // ── Draft Support ──────────────────────────────────────────────────────────
+  final String? activeDraftId;
+  final bool isDraftSaved;
+
   const BookingFlowState({
     this.service,
     this.servicePrice,
@@ -120,6 +124,8 @@ class BookingFlowState {
     this.generatedBookingId,
     this.hasActiveCoupons = false,
     this.validationErrors = const {},
+    this.activeDraftId,
+    this.isDraftSaved = false,
   });
 
   BookingFlowState copyWith({
@@ -168,6 +174,8 @@ class BookingFlowState {
     String? generatedBookingId,
     bool? hasActiveCoupons,
     Map<String, String>? validationErrors,
+    String? activeDraftId,
+    bool? isDraftSaved,
   }) {
     return BookingFlowState(
       service: service ?? this.service,
@@ -221,6 +229,8 @@ class BookingFlowState {
       generatedBookingId: generatedBookingId ?? this.generatedBookingId,
       hasActiveCoupons: hasActiveCoupons ?? this.hasActiveCoupons,
       validationErrors: validationErrors ?? this.validationErrors,
+      activeDraftId: activeDraftId ?? this.activeDraftId,
+      isDraftSaved: isDraftSaved ?? this.isDraftSaved,
     );
   }
 }

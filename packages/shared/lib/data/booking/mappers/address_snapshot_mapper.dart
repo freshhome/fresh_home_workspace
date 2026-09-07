@@ -23,8 +23,15 @@ class AddressSnapshotMapper {
     final dAr = districtAr ?? address.districtAr ?? address.district;
     final dEn = districtEn ?? address.districtEn ?? address.district;
 
+    final resolvedGovAr = (govAr.toLowerCase().contains('giza')
+        ? 'الجيزة'
+        : (govAr.toLowerCase().contains('cairo') ? 'القاهرة' : govAr));
+
     return {
       'snapshot_version': currentSnapshotVersion,
+      'governorate': resolvedGovAr,
+      'city': cAr,
+      'district': dAr,
       'address': {
         'address_id': address.id,
         'user_id': address.userId,

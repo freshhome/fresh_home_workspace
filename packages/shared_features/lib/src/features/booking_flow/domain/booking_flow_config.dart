@@ -1,3 +1,4 @@
+import 'package:shared/domain/booking/entities/booking/booking_draft.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/booking_components.dart';
 import 'package:shared/domain/service/entities/sub_entities/service_price.dart';
 
@@ -19,12 +20,22 @@ class BookingFlowConfig {
   /// Optional initial price entity (e.g. from the service detail screen).
   final PriceEntity? initialServicePrice;
 
+  /// Optional initial draft to resume an in-progress booking.
+  final BookingDraft? initialDraft;
+
+  /// Optional draft ID if continuing a saved draft.
+  final String? draftId;
+
   const BookingFlowConfig({
     required this.mode,
     required this.actorId,
     this.preSelectedService,
     this.initialServicePrice,
+    this.initialDraft,
+    this.draftId,
   });
+
+  String? get activeDraftId => draftId ?? initialDraft?.id;
 
   /// Does the flow need an internal service-selection step?
   bool get requiresServiceSelection => preSelectedService == null;

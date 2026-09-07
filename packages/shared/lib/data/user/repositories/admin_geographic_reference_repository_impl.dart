@@ -360,4 +360,55 @@ class AdminGeographicReferenceRepositoryImpl implements AdminGeographicReference
       return Left(UnknownFailure(message: e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, Unit>> deleteGovernorate(int id) async {
+    try {
+      await supabaseClient
+          .from('governorates')
+          .delete()
+          .eq('id', id);
+
+      clientRepository?.clearMemoryCache();
+      return Right(unit);
+    } on PostgrestException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteCity(int id) async {
+    try {
+      await supabaseClient
+          .from('cities')
+          .delete()
+          .eq('id', id);
+
+      clientRepository?.clearMemoryCache();
+      return Right(unit);
+    } on PostgrestException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteDistrict(int id) async {
+    try {
+      await supabaseClient
+          .from('districts')
+          .delete()
+          .eq('id', id);
+
+      clientRepository?.clearMemoryCache();
+      return Right(unit);
+    } on PostgrestException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
 }

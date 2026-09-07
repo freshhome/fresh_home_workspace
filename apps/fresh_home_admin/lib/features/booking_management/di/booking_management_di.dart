@@ -5,6 +5,7 @@ import '../domain/usecases/admin_reassign_booking.dart';
 import '../domain/usecases/admin_reschedule_booking.dart';
 import '../presentation/cubit/admin_bookings_cubit.dart';
 import '../presentation/cubit/admin_booking_details_cubit.dart';
+import '../presentation/cubit/admin_booking_drafts_cubit.dart';
 
 Future<void> initBookingManagementDI(GetIt getIt) async {
   // Data Sources and Repositories are now provided by the shared package via initSharedDI()
@@ -19,7 +20,7 @@ Future<void> initBookingManagementDI(GetIt getIt) async {
     () => AdminBookingsCubit(getIt()),
   );
 
-  getIt.registerFactory(
+    getIt.registerFactory(
     () => AdminBookingDetailsCubit(
       watchBookings: getIt(),
       reassignBooking: getIt(),
@@ -27,5 +28,9 @@ Future<void> initBookingManagementDI(GetIt getIt) async {
       userRepository: getIt(),
       bookingRepository: getIt(),
     ),
+  );
+
+  getIt.registerFactory(
+    () => AdminBookingDraftsCubit(repository: getIt()),
   );
 }

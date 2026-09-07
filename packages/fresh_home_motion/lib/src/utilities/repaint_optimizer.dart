@@ -9,10 +9,10 @@ class FHRepaintOptimizer extends StatelessWidget {
   final bool enable;
 
   const FHRepaintOptimizer({
-    Key? key,
+    super.key,
     required this.child,
     this.enable = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

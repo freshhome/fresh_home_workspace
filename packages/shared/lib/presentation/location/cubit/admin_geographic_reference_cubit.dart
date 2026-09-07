@@ -28,6 +28,8 @@ class AdminGeographicReferenceCubit extends Cubit<AdminGeographicReferenceState>
     emit(state.copyWith(
       isLoading: true,
       selectedGovernorateId: governorateId,
+      cities: const [],
+      districts: const [],
       clearFailure: true,
       clearSuccess: true,
     ));
@@ -43,6 +45,7 @@ class AdminGeographicReferenceCubit extends Cubit<AdminGeographicReferenceState>
     emit(state.copyWith(
       isLoading: true,
       selectedCityId: cityId,
+      districts: const [],
       clearFailure: true,
       clearSuccess: true,
     ));
@@ -244,6 +247,58 @@ class AdminGeographicReferenceCubit extends Cubit<AdminGeographicReferenceState>
         emit(state.copyWith(
           isSubmitting: false,
           successMessage: 'Status toggled successfully.',
+        ));
+      },
+    );
+  }
+
+  /// Admin: Deletes a governorate and reloads list.
+  Future<void> deleteGovernorate(int id) async {
+    emit(state.copyWith(isSubmitting: true, clearFailure: true, clearSuccess: true));
+    final result = await repository.deleteGovernorate(id);
+    result.fold(
+      (failure) => emit(state.copyWith(isSubmitting: false, failure: failure)),
+      (_) async {
+        await loadGovernorates();
+        emit(state.copyWith(
+          isSubmitting: false,
+          successMessage: 'تم حذف المحافظة بنجاح.',
+        ));
+      },
+    );
+  }
+
+  /// Admin: Deletes a city and reloads cities list.
+  Future<void> deleteCity(int id) async {
+    emit(state.copyWith(isSubmitting: true, clearFailure: true, clearSuccess: true));
+    final result = await repository.deleteCity(id);
+    result.fold(
+      (failure) => emit(state.copyWith(isSubmitting: false, failure: failure)),
+      (_) async {
+        if (state.selectedGovernorateId != null) {
+          await loadCities(state.selectedGovernorateId!);
+        }
+        emit(state.copyWith(
+          isSubmitting: false,
+          successMessage: 'تم حذف المدينة بنجاح.',
+        ));
+      },
+    );
+  }
+
+  /// Admin: Deletes a district and reloads districts list.
+  Future<void> deleteDistrict(int id) async {
+    emit(state.copyWith(isSubmitting: true, clearFailure: true, clearSuccess: true));
+    final result = await repository.deleteDistrict(id);
+    result.fold(
+      (failure) => emit(state.copyWith(isSubmitting: false, failure: failure)),
+      (_) async {
+        if (state.selectedCityId != null) {
+          await loadDistricts(state.selectedCityId!);
+        }
+        emit(state.copyWith(
+          isSubmitting: false,
+          successMessage: 'تم حذف الحي بنجاح.',
         ));
       },
     );

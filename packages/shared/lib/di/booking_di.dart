@@ -21,6 +21,9 @@ import 'package:shared/domain/booking/repositories/admin_booking_repository.dart
 import 'package:shared/domain/booking/usecases/admin_cancel_booking_use_case.dart';
 import 'package:shared/domain/booking/usecases/admin_reassign_booking_use_case.dart';
 import 'package:shared/domain/booking/usecases/admin_reschedule_booking_use_case.dart';
+import 'package:shared/domain/booking/repositories/booking_draft_repository.dart';
+import 'package:shared/data/booking/datasources/booking_draft_local_datasource.dart';
+import 'package:shared/data/booking/repositories/booking_draft_repository_impl.dart';
 
 void setupBookingDI(GetIt getIt) {
   // Data sources
@@ -32,11 +35,21 @@ void setupBookingDI(GetIt getIt) {
     () => BookingLocalDataSourceImpl(),
   );
 
+  getIt.registerLazySingleton<BookingDraftLocalDataSource>(
+    () => BookingDraftLocalDataSourceImpl(),
+  );
+
   // Repository
   getIt.registerLazySingleton<BookingRepository>(
     () => BookingRepositoryImpl(
       remoteDataSource: getIt<BookingRemoteDataSource>(),
       localDataSource: getIt<BookingLocalDataSource>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<BookingDraftRepository>(
+    () => BookingDraftRepositoryImpl(
+      localDataSource: getIt<BookingDraftLocalDataSource>(),
     ),
   );
 

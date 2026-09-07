@@ -28,8 +28,9 @@ class PremiumSnackBar {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: (isError ? Colors.red : themeColor.primary)
-                    .withValues(alpha: 0.3),
+                color: (isError ? Colors.red : themeColor.primary).withValues(
+                  alpha: 0.3,
+                ),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -114,13 +115,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   void _initializeControllers(UserProfile profile) {
-    if (_firstNameController.text.isEmpty)
+    if (_firstNameController.text.isEmpty) {
       _firstNameController.text = profile.firstName;
-    if (_lastNameController.text.isEmpty)
+    }
+    if (_lastNameController.text.isEmpty) {
       _lastNameController.text = profile.lastName;
+    }
 
-    if (_emailController.text.isEmpty)
+    if (_emailController.text.isEmpty) {
       _emailController.text = profile.email;
+    }
     _selectedGender = profile.gender;
 
     final currentPhones = profile.phoneNumbers;
@@ -202,7 +206,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     final l10n = AppLocalizations.of(context)!;
     final themeColor = context.themeColor;
     final additionalPhones = profile.phoneNumbers;
-    final addresses = profile is CustomerProfile ? profile.addresses : const <Address>[];
+    final addresses = profile is CustomerProfile
+        ? profile.addresses
+        : const <Address>[];
 
     return RefreshIndicator(
       color: themeColor.primary,
@@ -214,240 +220,255 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Avatar Section
-          Center(
-            child: ProfileHeaderWidget(
-              fullName: profile.fullName,
-              email: profile.email,
-              avatarUrl: profile.avatarUrl,
+          children: [
+            // Avatar Section
+            Center(
+              child: ProfileHeaderWidget(
+                fullName: profile.fullName,
+                email: profile.email,
+                avatarUrl: profile.avatarUrl,
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-          // General Info Section
-          _buildSectionHeader(l10n.profile_title),
-          const SizedBox(height: 16),
-          Form(
-            key: _formKey,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: themeColor.cardBackground,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.fromBorderSide(themeColor.cardBorder),
-              ),
-              child: Column(
-                children: [
-                  _buildTextField(
-                    controller: _firstNameController,
-                    label: l10n.profile_first_name,
-                    icon: Icons.person_outline_rounded,
-                    validator: (value) =>
-                        value!.isEmpty ? l10n.validation_required : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _lastNameController,
-                    label: l10n.profile_last_name,
-                    icon: Icons.person_outline_rounded,
-                    validator: (value) =>
-                        value!.isEmpty ? l10n.validation_required : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _emailController,
-                    label: l10n.login_email_label,
-                    icon: Icons.email_outlined,
-                    readOnly: true,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _mainPhoneController,
-                    label: l10n.address_phone_label,
-                    icon: Icons.phone_android_rounded,
-                    keyboardType: TextInputType.phone,
-                    validator: (value) =>
-                        InputValidator.validateEgyptianPhone(value, l10n: l10n),
-                  ),
-                  const SizedBox(height: 16),
-                  // Gender Selection
-                  StatefulBuilder(
-                    builder: (context, setInnerState) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.fromBorderSide(themeColor.cardBorder),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.wc_rounded,
-                              color: themeColor.primary.withValues(
-                                alpha: 0.7,
-                              ),
-                              size: 20,
+            // General Info Section
+            _buildSectionHeader(l10n.profile_title),
+            const SizedBox(height: 16),
+            Form(
+              key: _formKey,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: themeColor.cardBackground,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.fromBorderSide(themeColor.cardBorder),
+                ),
+                child: Column(
+                  children: [
+                    _buildTextField(
+                      controller: _firstNameController,
+                      label: l10n.profile_first_name,
+                      icon: Icons.person_outline_rounded,
+                      validator: (value) =>
+                          value!.isEmpty ? l10n.validation_required : null,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _lastNameController,
+                      label: l10n.profile_last_name,
+                      icon: Icons.person_outline_rounded,
+                      validator: (value) =>
+                          value!.isEmpty ? l10n.validation_required : null,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _emailController,
+                      label: l10n.login_email_label,
+                      icon: Icons.email_outlined,
+                      readOnly: true,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _mainPhoneController,
+                      label: l10n.address_phone_label,
+                      icon: Icons.phone_android_rounded,
+                      keyboardType: TextInputType.phone,
+                      validator: (value) =>
+                          InputValidator.validateEgyptianPhone(
+                            value,
+                            l10n: l10n,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Gender Selection
+                    StatefulBuilder(
+                      builder: (context, setInnerState) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.fromBorderSide(
+                              themeColor.cardBorder,
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              l10n.profile_gender_label,
-                              style: TextStyle(
-                                color: themeColor.secondaryText,
-                                fontSize: 13,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.wc_rounded,
+                                color: themeColor.primary.withValues(
+                                  alpha: 0.7,
+                                ),
+                                size: 20,
                               ),
-                            ),
-                            const Spacer(),
-                            DropdownButton<String>(
-                              value: _selectedGender,
-                              underline: const SizedBox(),
-                              dropdownColor: themeColor.cardBackground,
-                              icon: Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                color: themeColor.textPrimary,
+                              const SizedBox(width: 12),
+                              Text(
+                                l10n.profile_gender_label,
+                                style: TextStyle(
+                                  color: themeColor.secondaryText,
+                                  fontSize: 13,
+                                ),
                               ),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setInnerState(() => _selectedGender = val);
-                                  setState(() {});
-                                }
-                              },
-                              items: [
-                                DropdownMenuItem(
-                                  value: 'unspecified',
-                                  child: Text(
-                                    l10n.gender_unspecified,
-                                    style: TextStyle(color: themeColor.textPrimary),
-                                  ),
+                              const Spacer(),
+                              DropdownButton<String>(
+                                value: _selectedGender,
+                                underline: const SizedBox(),
+                                dropdownColor: themeColor.cardBackground,
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: themeColor.textPrimary,
                                 ),
-                                DropdownMenuItem(
-                                  value: 'male',
-                                  child: Text(
-                                    l10n.gender_male,
-                                    style: TextStyle(color: themeColor.textPrimary),
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    setInnerState(() => _selectedGender = val);
+                                    setState(() {});
+                                  }
+                                },
+                                items: [
+                                  DropdownMenuItem(
+                                    value: 'unspecified',
+                                    child: Text(
+                                      l10n.gender_unspecified,
+                                      style: TextStyle(
+                                        color: themeColor.textPrimary,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'female',
-                                  child: Text(
-                                    l10n.gender_female,
-                                    style: TextStyle(color: themeColor.textPrimary),
+                                  DropdownMenuItem(
+                                    value: 'male',
+                                    child: Text(
+                                      l10n.gender_male,
+                                      style: TextStyle(
+                                        color: themeColor.textPrimary,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                                  DropdownMenuItem(
+                                    value: 'female',
+                                    child: Text(
+                                      l10n.gender_female,
+                                      style: TextStyle(
+                                        color: themeColor.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  context.read<ProfileCubit>().updateProfileInfo(
-                    firstName: _firstNameController.text,
-                    lastName: _lastNameController.text,
-                    phone: _mainPhoneController.text,
-                    gender: _selectedGender,
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    context.read<ProfileCubit>().updateProfileInfo(
+                      firstName: _firstNameController.text,
+                      lastName: _lastNameController.text,
+                      phone: _mainPhoneController.text,
+                      gender: _selectedGender,
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: themeColor.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  l10n.general_save,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Technician Section
+            if (profile is TechnicianProfile) ...[
+              _buildTechnicianSection(profile),
+              const SizedBox(height: 32),
+            ],
+
+            // Phone Numbers Section
+            _buildSectionHeader(
+              l10n.phone_section_title,
+              onAdd: () => _showPhoneDialog(context, additionalPhones),
+            ),
+            const SizedBox(height: 12),
+            if (additionalPhones.isEmpty)
+              _buildEmptyState(l10n.profile_saved_phones)
+            else
+              Column(
+                children: additionalPhones
+                    .map(
+                      (phone) =>
+                          _buildPhoneItem(context, phone, additionalPhones),
+                    )
+                    .toList(),
+              ),
+            const SizedBox(height: 32),
+
+            // Addresses Section
+            _buildSectionHeader(
+              l10n.address_section_title,
+              onAdd: () => _showAddressBottomSheet(context),
+            ),
+            const SizedBox(height: 12),
+            AddressListWidget(
+              addresses: addresses,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              onAddAddress: () => _showAddressBottomSheet(context),
+              onSetPrimaryAddress: (address) {
+                final index = addresses.indexWhere((a) => a.id == address.id);
+                if (index != -1) {
+                  context.read<ProfileCubit>().setPrimaryAddress(index);
+                }
+              },
+              onEditAddress: (address) {
+                final index = addresses.indexWhere((a) => a.id == address.id);
+                if (index != -1) {
+                  _showAddressBottomSheet(
+                    context,
+                    address: address,
+                    index: index,
                   );
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: themeColor.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                l10n.general_save,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              onDeleteAddress: (address) {
+                final index = addresses.indexWhere((a) => a.id == address.id);
+                if (index != -1) {
+                  SoftDeleteWarningDialog.show(
+                    context,
+                    onConfirmDelete: () =>
+                        context.read<ProfileCubit>().deleteAddress(index),
+                  );
+                }
+              },
             ),
-          ),
-          const SizedBox(height: 32),
-
-          // Technician Section
-          if (profile is TechnicianProfile) ...[
-            _buildTechnicianSection(profile),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
           ],
-
-          // Phone Numbers Section
-          _buildSectionHeader(
-            l10n.phone_section_title,
-            onAdd: () => _showPhoneDialog(context, additionalPhones),
-          ),
-          const SizedBox(height: 12),
-          if (additionalPhones.isEmpty)
-            _buildEmptyState(l10n.profile_saved_phones)
-          else
-            Column(
-              children: additionalPhones
-                  .map(
-                    (phone) =>
-                        _buildPhoneItem(context, phone, additionalPhones),
-                  )
-                  .toList(),
-            ),
-          const SizedBox(height: 32),
-
-          // Addresses Section
-          _buildSectionHeader(
-            l10n.address_section_title,
-            onAdd: () => _showAddressBottomSheet(context),
-          ),
-          const SizedBox(height: 12),
-          AddressListWidget(
-            addresses: addresses,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            onAddAddress: () => _showAddressBottomSheet(context),
-            onSetPrimaryAddress: (address) {
-              final index = addresses.indexWhere((a) => a.id == address.id);
-              if (index != -1) {
-                context.read<ProfileCubit>().setPrimaryAddress(index);
-              }
-            },
-            onEditAddress: (address) {
-              final index = addresses.indexWhere((a) => a.id == address.id);
-              if (index != -1) {
-                _showAddressBottomSheet(context, address: address, index: index);
-              }
-            },
-            onDeleteAddress: (address) {
-              final index = addresses.indexWhere((a) => a.id == address.id);
-              if (index != -1) {
-                SoftDeleteWarningDialog.show(
-                  context,
-                  onConfirmDelete: () =>
-                      context.read<ProfileCubit>().deleteAddress(index),
-                );
-              }
-            },
-          ),
-          const SizedBox(height: 40),
-        ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildSectionHeader(String title, {VoidCallback? onAdd}) {
     final themeColor = context.themeColor;
@@ -517,7 +538,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.phone_android_rounded, size: 20, color: themeColor.secondaryText),
+          Icon(
+            Icons.phone_android_rounded,
+            size: 20,
+            color: themeColor.secondaryText,
+          ),
           const SizedBox(width: 12),
           Text(
             phone.phoneNumber,
@@ -638,7 +663,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           try {
             final govs = geoCubit.state.governorates;
             final matchedGov = govs.firstWhere(
-              (g) => g.nameAr == address.governorate || g.nameEn == address.governorate,
+              (g) =>
+                  g.nameAr == address.governorate ||
+                  g.nameEn == address.governorate,
               orElse: () => govs.first,
             );
             geoCubit.selectGovernorate(matchedGov.id).then((_) {
@@ -652,7 +679,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   try {
                     final districts = geoCubit.state.districts;
                     final matchedDistrict = districts.firstWhere(
-                      (d) => d.nameAr == address.district || d.nameEn == address.district,
+                      (d) =>
+                          d.nameAr == address.district ||
+                          d.nameEn == address.district,
                     );
                     geoCubit.selectDistrict(matchedDistrict.id);
                   } catch (_) {}
@@ -666,7 +695,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
     // Address Controllers
     final districtController = TextEditingController(text: address?.district);
-    final streetController = TextEditingController(text: address?.streetOrCompound);
+    final streetController = TextEditingController(
+      text: address?.streetOrCompound,
+    );
     final buildingController = TextEditingController(
       text: address?.buildingIdentifier,
     );
@@ -682,10 +713,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     AddressPropertyType selectedPropertyType = address?.propertyType == 'office'
         ? AddressPropertyType.office
         : (address?.propertyType == 'commercial'
-            ? AddressPropertyType.commercial
-            : (address?.propertyType == 'landmark'
-                ? AddressPropertyType.landmark
-                : AddressPropertyType.residential));
+              ? AddressPropertyType.commercial
+              : (address?.propertyType == 'landmark'
+                    ? AddressPropertyType.landmark
+                    : AddressPropertyType.residential));
 
     showModalBottomSheet(
       context: context,
@@ -716,7 +747,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: themeColor.secondaryText.withValues(alpha: 0.3),
+                          color: themeColor.secondaryText.withValues(
+                            alpha: 0.3,
+                          ),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -746,7 +779,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     const SizedBox(height: 16),
 
                     // Dynamic Cascading Dropdowns
-                    BlocBuilder<GeographicReferenceCubit, GeographicReferenceState>(
+                    BlocBuilder<
+                      GeographicReferenceCubit,
+                      GeographicReferenceState
+                    >(
                       builder: (blocContext, state) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -754,16 +790,22 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             // 1. Governorate Dropdown
                             DropdownButtonFormField<int>(
                               dropdownColor: themeColor.cardBackground,
-                              value: state.selectedGovernorateId,
-                              decoration: _inputDecoration(l10n.address_governorate),
+                              initialValue: state.selectedGovernorateId,
+                              decoration: _inputDecoration(
+                                l10n.address_governorate,
+                              ),
                               items: state.governorates
-                                  .map((g) => DropdownMenuItem<int>(
-                                        value: g.id,
-                                        child: Text(
-                                          g.getName(locale),
-                                          style: TextStyle(color: themeColor.textPrimary),
+                                  .map(
+                                    (g) => DropdownMenuItem<int>(
+                                      value: g.id,
+                                      child: Text(
+                                        g.getName(locale),
+                                        style: TextStyle(
+                                          color: themeColor.textPrimary,
                                         ),
-                                      ))
+                                      ),
+                                    ),
+                                  )
                                   .toList(),
                               onChanged: state.isLoadingGovernorates
                                   ? null
@@ -781,7 +823,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                                 state.isLoadingGovernorates
                                     ? 'جاري تحميل المحافظات...'
                                     : l10n.address_governorate,
-                                style: TextStyle(color: themeColor.secondaryText),
+                                style: TextStyle(
+                                  color: themeColor.secondaryText,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -789,18 +833,23 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             // 2. City Dropdown
                             DropdownButtonFormField<int>(
                               dropdownColor: themeColor.cardBackground,
-                              value: state.selectedCityId,
+                              initialValue: state.selectedCityId,
                               decoration: _inputDecoration(l10n.address_city),
                               items: state.cities
-                                  .map((c) => DropdownMenuItem<int>(
-                                        value: c.id,
-                                        child: Text(
-                                          c.getName(locale),
-                                          style: TextStyle(color: themeColor.textPrimary),
+                                  .map(
+                                    (c) => DropdownMenuItem<int>(
+                                      value: c.id,
+                                      child: Text(
+                                        c.getName(locale),
+                                        style: TextStyle(
+                                          color: themeColor.textPrimary,
                                         ),
-                                      ))
+                                      ),
+                                    ),
+                                  )
                                   .toList(),
-                              onChanged: (state.selectedGovernorateId == null ||
+                              onChanged:
+                                  (state.selectedGovernorateId == null ||
                                       state.isLoadingCities)
                                   ? null
                                   : (val) {
@@ -817,9 +866,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                                 state.isLoadingCities
                                     ? 'جاري تحميل المدن...'
                                     : (state.selectedGovernorateId == null
-                                        ? 'اختر المحافظة أولاً'
-                                        : l10n.address_city),
-                                style: TextStyle(color: themeColor.secondaryText),
+                                          ? 'اختر المحافظة أولاً'
+                                          : l10n.address_city),
+                                style: TextStyle(
+                                  color: themeColor.secondaryText,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -828,16 +879,20 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             if (state.districts.isNotEmpty) ...[
                               DropdownButtonFormField<int>(
                                 dropdownColor: themeColor.cardBackground,
-                                value: state.selectedDistrictId,
+                                initialValue: state.selectedDistrictId,
                                 decoration: _inputDecoration('المنطقة / الحي'),
                                 items: state.districts
-                                    .map((d) => DropdownMenuItem<int>(
-                                          value: d.id,
-                                          child: Text(
-                                            d.getName(locale),
-                                            style: TextStyle(color: themeColor.textPrimary),
+                                    .map(
+                                      (d) => DropdownMenuItem<int>(
+                                        value: d.id,
+                                        child: Text(
+                                          d.getName(locale),
+                                          style: TextStyle(
+                                            color: themeColor.textPrimary,
                                           ),
-                                        ))
+                                        ),
+                                      ),
+                                    )
                                     .toList(),
                                 onChanged: state.isLoadingDistricts
                                     ? null
@@ -848,8 +903,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                                         if (val != null) {
                                           final dist = state.districts
                                               .firstWhere((d) => d.id == val);
-                                          districtController.text =
-                                              dist.getName(locale);
+                                          districtController.text = dist
+                                              .getName(locale);
                                         }
                                       },
                                 validator: (val) =>
@@ -862,7 +917,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                                   state.isLoadingDistricts
                                       ? 'جاري تحميل الأحياء...'
                                       : 'اختر الحي / المنطقة',
-                                  style: TextStyle(color: themeColor.secondaryText),
+                                  style: TextStyle(
+                                    color: themeColor.secondaryText,
+                                  ),
                                 ),
                               ),
                             ] else ...[
@@ -873,7 +930,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                                     : 'المنطقة / الحي (مثال: الحي الأول)',
                                 enabled: state.selectedCityId != null,
                                 validator: (val) =>
-                                    InputValidator.validateEmpty(val, l10n: l10n),
+                                    InputValidator.validateEmpty(
+                                      val,
+                                      l10n: l10n,
+                                    ),
                               ),
                             ],
                           ],
@@ -900,10 +960,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             hint: l10n.address_building_number,
                             keyboardType: TextInputType.number,
                             validator: (val) =>
-                                InputValidator.validateEmpty(
-                                  val,
-                                  l10n: l10n,
-                                ),
+                                InputValidator.validateEmpty(val, l10n: l10n),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -956,7 +1013,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           color: Color(0xFF64748B),
                         ),
                       ),
-                      activeColor: themeColor.primary,
+                      activeThumbColor: themeColor.primary,
                       contentPadding: EdgeInsets.zero,
                     ),
                     const SizedBox(height: 20),
@@ -972,13 +1029,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             final selectedCity = state.selectedCity;
                             final selectedDistrict = state.selectedDistrict;
 
-                            final govName = selectedGov?.getName(locale) ??
+                            final govName =
+                                selectedGov?.getName(locale) ??
                                 selectedGov?.nameAr ??
                                 '';
-                            final cityName = selectedCity?.getName(locale) ??
+                            final cityName =
+                                selectedCity?.getName(locale) ??
                                 selectedCity?.nameAr ??
                                 '';
-                            final districtName = selectedDistrict?.getName(locale) ??
+                            final districtName =
+                                selectedDistrict?.getName(locale) ??
                                 (districtController.text.trim().isNotEmpty
                                     ? districtController.text.trim()
                                     : cityName);
@@ -1057,7 +1117,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       readOnly: readOnly,
       keyboardType: keyboardType,
       validator: validator,
-      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: themeColor.textPrimary),
+      style: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+        color: themeColor.textPrimary,
+      ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: themeColor.secondaryText, fontSize: 13),
@@ -1067,7 +1131,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           size: 20,
         ),
         filled: true,
-        fillColor: readOnly ? themeColor.nestedCardBackground : themeColor.cardBackground,
+        fillColor: readOnly
+            ? themeColor.nestedCardBackground
+            : themeColor.cardBackground,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: themeColor.cardBorder.color),
@@ -1078,10 +1144,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: themeColor.primary,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: themeColor.primary, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -1157,10 +1220,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: themeColor.primary,
-          width: 1.5,
-        ),
+        borderSide: BorderSide(color: themeColor.primary, width: 1.5),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
@@ -1198,7 +1258,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.verified_rounded, color: Colors.green, size: 16),
+                    const Icon(
+                      Icons.verified_rounded,
+                      color: Colors.green,
+                      size: 16,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       l10n.tech_profile_verified,
@@ -1268,7 +1332,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               Text(
                 tech.bio ?? l10n.tech_profile_bio_empty,
                 style: TextStyle(
-                  color: tech.bio != null ? themeColor.textPrimary : themeColor.secondaryText,
+                  color: tech.bio != null
+                      ? themeColor.textPrimary
+                      : themeColor.secondaryText,
                   fontSize: 14,
                   height: 1.5,
                 ),
@@ -1328,10 +1394,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             Text(
               l10n.tech_profile_skills_empty_admin_desc,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: themeColor.secondaryText,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
             ),
           ],
         ),
@@ -1351,9 +1414,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             color: themeColor.cardBackground,
             borderRadius: BorderRadius.circular(16),
             border: Border.fromBorderSide(themeColor.cardBorder),
-            boxShadow: [
-              themeColor.cardShadow,
-            ],
+            boxShadow: [themeColor.cardShadow],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1399,13 +1460,18 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      l10n.tech_profile_tasks_per_day(pool.maxDailyCapacity.toString()),
+                      l10n.tech_profile_tasks_per_day(
+                        pool.maxDailyCapacity.toString(),
+                      ),
                       style: const TextStyle(
                         color: Colors.green,
                         fontSize: 12,
@@ -1418,10 +1484,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               const SizedBox(height: 16),
               Text(
                 l10n.tech_profile_services_provided,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: themeColor.secondaryText,
-                ),
+                style: TextStyle(fontSize: 13, color: themeColor.secondaryText),
               ),
               const SizedBox(height: 8),
               if (poolSkills.isEmpty)
@@ -1438,9 +1501,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: poolSkills.map((skill) {
-                    final subServiceName = tech.subServiceNames[skill.subServiceId] ?? skill.subServiceId;
+                    final subServiceName =
+                        tech.subServiceNames[skill.subServiceId] ??
+                        skill.subServiceId;
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: themeColor.nestedCardBackground,
                         border: Border.fromBorderSide(themeColor.cardBorder),
@@ -1488,9 +1556,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         color: themeColor.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.fromBorderSide(themeColor.cardBorder),
-        boxShadow: [
-          themeColor.cardShadow,
-        ],
+        boxShadow: [themeColor.cardShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1514,10 +1580,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           ),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 13,
-              color: themeColor.secondaryText,
-            ),
+            style: TextStyle(fontSize: 13, color: themeColor.secondaryText),
           ),
         ],
       ),

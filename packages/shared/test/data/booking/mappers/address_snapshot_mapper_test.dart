@@ -35,6 +35,9 @@ void main() {
       final json = AddressSnapshotMapper.buildSnapshotJson(sampleAddress);
 
       expect(json['snapshot_version'], equals(2));
+      expect(json['governorate'], equals('القاهرة'));
+      expect(json['city'], equals('مدينة نصر'));
+      expect(json['district'], equals('الحي الأول'));
       expect(json.containsKey('address'), isTrue);
 
       final addrMap = json['address'] as Map<String, dynamic>;

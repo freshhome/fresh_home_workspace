@@ -30,7 +30,8 @@ class _DispatchLabViewState extends State<DispatchLabView> {
   final TextEditingController _techNameController = TextEditingController();
   final TextEditingController _techCapacityController = TextEditingController();
   final TextEditingController _techRatingController = TextEditingController();
-  final TextEditingController _customBookingCountController = TextEditingController(text: '10');
+  final TextEditingController _customBookingCountController =
+      TextEditingController(text: '10');
 
   @override
   void dispose() {
@@ -67,7 +68,7 @@ class _DispatchLabViewState extends State<DispatchLabView> {
               // 1. Simulation Control Bar
               _buildControlBar(context, state),
               const SizedBox(height: 16),
-              
+
               if (isDesktop)
                 Expanded(
                   child: Row(
@@ -126,10 +127,7 @@ class _DispatchLabViewState extends State<DispatchLabView> {
           );
 
           return isDesktop
-              ? Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: bodyContent,
-                )
+              ? Padding(padding: const EdgeInsets.all(16.0), child: bodyContent)
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: bodyContent,
@@ -146,14 +144,18 @@ class _DispatchLabViewState extends State<DispatchLabView> {
     final themeColor = context.themeColor;
     final cubit = context.read<DispatchLabCubit>();
 
-    final double totalCap = state.technicians.where((t) => t.isActive).fold(0, (sum, t) => sum + t.dailyCapacity);
+    final double totalCap = state.technicians
+        .where((t) => t.isActive)
+        .fold(0, (sum, t) => sum + t.dailyCapacity);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: themeColor.cardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: themeColor.unselectedItem.withValues(alpha: 0.1),
+        ),
       ),
       child: Wrap(
         spacing: 12,
@@ -168,35 +170,46 @@ class _DispatchLabViewState extends State<DispatchLabView> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: (state.currentBookingIndex >= state.bookings.length && state.bookings.isNotEmpty)
+                  color:
+                      (state.currentBookingIndex >= state.bookings.length &&
+                          state.bookings.isNotEmpty)
                       ? Colors.green.withValues(alpha: 0.1)
                       : state.isContinuousMode
-                          ? Colors.orange.withValues(alpha: 0.1)
-                          : Colors.grey.withValues(alpha: 0.1),
+                      ? Colors.orange.withValues(alpha: 0.1)
+                      : Colors.grey.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  (state.currentBookingIndex >= state.bookings.length && state.bookings.isNotEmpty)
+                  (state.currentBookingIndex >= state.bookings.length &&
+                          state.bookings.isNotEmpty)
                       ? 'مكتمل'
                       : state.isContinuousMode
-                          ? 'محاكاة مستمرة'
-                          : 'جاهز',
+                      ? 'محاكاة مستمرة'
+                      : 'جاهز',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
-                    color: (state.currentBookingIndex >= state.bookings.length && state.bookings.isNotEmpty)
+                    color:
+                        (state.currentBookingIndex >= state.bookings.length &&
+                            state.bookings.isNotEmpty)
                         ? Colors.green
                         : state.isContinuousMode
-                            ? Colors.orange
-                            : themeColor.secondaryText,
+                        ? Colors.orange
+                        : themeColor.secondaryText,
                   ),
                 ),
               ),
               Text(
                 'الحجوزات: ${state.currentBookingIndex} / ${state.bookings.length}',
-                style: TextStyle(fontWeight: FontWeight.bold, color: themeColor.textPrimary),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: themeColor.textPrimary,
+                ),
               ),
               Text(
                 'السعة الكلية النشطة: ${totalCap.toInt()} طلب',
@@ -220,7 +233,9 @@ class _DispatchLabViewState extends State<DispatchLabView> {
               IconButton(
                 icon: const Icon(Icons.replay_rounded),
                 tooltip: 'إعادة نفس المحاكاة خطوة بخطوة',
-                onPressed: state.bookings.isEmpty ? null : () => cubit.replaySimulation(),
+                onPressed: state.bookings.isEmpty
+                    ? null
+                    : () => cubit.replaySimulation(),
               ),
               const SizedBox(width: 4),
               // Next Booking Step
@@ -228,12 +243,19 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: themeColor.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
                 icon: const Icon(Icons.skip_next_rounded),
                 label: const Text('الحجز التالي'),
-                onPressed: (state.currentBookingIndex >= state.bookings.length || state.isContinuousMode)
+                onPressed:
+                    (state.currentBookingIndex >= state.bookings.length ||
+                        state.isContinuousMode)
                     ? null
                     : () {
                         final dec = cubit.processNextBooking();
@@ -245,13 +267,26 @@ class _DispatchLabViewState extends State<DispatchLabView> {
               // Play/Pause Continuous
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: state.isContinuousMode ? Colors.red : Colors.green,
+                  backgroundColor: state.isContinuousMode
+                      ? Colors.red
+                      : Colors.green,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
-                icon: Icon(state.isContinuousMode ? Icons.pause_rounded : Icons.play_arrow_rounded),
-                label: Text(state.isContinuousMode ? 'إيقاف مؤقت' : 'تشغيل مستمر'),
+                icon: Icon(
+                  state.isContinuousMode
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
+                ),
+                label: Text(
+                  state.isContinuousMode ? 'إيقاف مؤقت' : 'تشغيل مستمر',
+                ),
                 onPressed: state.bookings.isEmpty
                     ? null
                     : () {
@@ -263,7 +298,7 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                       },
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -272,14 +307,19 @@ class _DispatchLabViewState extends State<DispatchLabView> {
   // ============================================================================
   // WIDGET 2: RULES PIPELINE CONFIGURATION
   // ============================================================================
-  Widget _buildRulesConfigurationCard(BuildContext context, DispatchLabState state) {
+  Widget _buildRulesConfigurationCard(
+    BuildContext context,
+    DispatchLabState state,
+  ) {
     final themeColor = context.themeColor;
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+        side: BorderSide(
+          color: themeColor.unselectedItem.withValues(alpha: 0.1),
+        ),
       ),
       color: themeColor.cardBackground,
       child: Padding(
@@ -293,14 +333,22 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                 Expanded(
                   child: Row(
                     children: [
-                      Icon(Icons.settings_input_component_rounded, color: themeColor.primary, size: 20),
+                      Icon(
+                        Icons.settings_input_component_rounded,
+                        color: themeColor.primary,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'إعدادات محرك القواعد (Pipeline)',
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: themeColor.textPrimary),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: themeColor.textPrimary,
+                          ),
                         ),
                       ),
                     ],
@@ -308,7 +356,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: themeColor.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -316,11 +367,19 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.lock_outline_rounded, size: 12, color: themeColor.primary),
+                      Icon(
+                        Icons.lock_outline_rounded,
+                        size: 12,
+                        color: themeColor.primary,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'نشط ومقفل',
-                        style: TextStyle(color: themeColor.primary, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: themeColor.primary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -333,64 +392,123 @@ class _DispatchLabViewState extends State<DispatchLabView> {
               style: TextStyle(fontSize: 12, color: themeColor.secondaryText),
             ),
             const Divider(height: 24),
-            
+
             // Filters section
             Text(
               '1. مرحلة التصفية (Filtering):',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: themeColor.textPrimary),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: themeColor.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             if (state.activeFilterRules.isEmpty)
-              Text('لا توجد قواعد تصفية نشطة.', style: TextStyle(fontSize: 12, color: themeColor.secondaryText))
+              Text(
+                'لا توجد قواعد تصفية نشطة.',
+                style: TextStyle(fontSize: 12, color: themeColor.secondaryText),
+              )
             else
               ...state.activeFilterRules.map((filter) {
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   dense: true,
-                  leading: const Icon(Icons.check_circle_outline_rounded, color: Colors.green, size: 18),
-                  title: Text(filter.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  subtitle: Text(filter.description, style: TextStyle(fontSize: 11, color: themeColor.secondaryText)),
+                  leading: const Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: Colors.green,
+                    size: 18,
+                  ),
+                  title: Text(
+                    filter.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  subtitle: Text(
+                    filter.description,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: themeColor.secondaryText,
+                    ),
+                  ),
                 );
               }),
-            
+
             const Divider(height: 24),
-            
+
             // Rankings section
             Text(
               '2. مرحلة الترتيب (Ranking - بالترتيب):',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: themeColor.textPrimary),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: themeColor.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
-            
+
             if (state.activeRankingRules.isEmpty)
-              Text('لا توجد قواعد ترتيب نشطة.', style: TextStyle(fontSize: 12, color: themeColor.secondaryText))
+              Text(
+                'لا توجد قواعد ترتيب نشطة.',
+                style: TextStyle(fontSize: 12, color: themeColor.secondaryText),
+              )
             else
               Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.05)),
+                  border: Border.all(
+                    color: themeColor.unselectedItem.withValues(alpha: 0.05),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                   color: themeColor.nestedCardBackground,
                 ),
                 padding: const EdgeInsets.all(8),
                 child: Column(
-                  children: List.generate(state.activeRankingRules.length, (index) {
+                  children: List.generate(state.activeRankingRules.length, (
+                    index,
+                  ) {
                     final rule = state.activeRankingRules[index];
                     return Container(
                       margin: const EdgeInsets.symmetric(vertical: 4),
                       decoration: BoxDecoration(
                         color: themeColor.cardBackground,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                        border: Border.all(
+                          color: themeColor.unselectedItem.withValues(
+                            alpha: 0.1,
+                          ),
+                        ),
                       ),
                       child: ListTile(
                         dense: true,
                         leading: CircleAvatar(
                           radius: 12,
-                          backgroundColor: themeColor.primary.withValues(alpha: 0.1),
-                          child: Text('${index + 1}', style: TextStyle(color: themeColor.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+                          backgroundColor: themeColor.primary.withValues(
+                            alpha: 0.1,
+                          ),
+                          child: Text(
+                            '${index + 1}',
+                            style: TextStyle(
+                              color: themeColor.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                        title: Text(rule.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        subtitle: Text(rule.description, style: TextStyle(fontSize: 10, color: themeColor.secondaryText)),
+                        title: Text(
+                          rule.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        subtitle: Text(
+                          rule.description,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: themeColor.secondaryText,
+                          ),
+                        ),
                       ),
                     );
                   }),
@@ -398,11 +516,15 @@ class _DispatchLabViewState extends State<DispatchLabView> {
               ),
 
             const Divider(height: 24),
-            
+
             // Tie-breaking section
             Text(
               '3. كسر التعادل النهائي (Tie Breaking):',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: themeColor.textPrimary),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: themeColor.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Container(
@@ -411,21 +533,36 @@ class _DispatchLabViewState extends State<DispatchLabView> {
               decoration: BoxDecoration(
                 color: themeColor.nestedCardBackground,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.05)),
+                border: Border.all(
+                  color: themeColor.unselectedItem.withValues(alpha: 0.05),
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.shuffle_rounded, color: themeColor.primary, size: 20),
+                  Icon(
+                    Icons.shuffle_rounded,
+                    color: themeColor.primary,
+                    size: 20,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(state.activeTieBreaker.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(
+                          state.activeTieBreaker.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           'يستخدم لكسر التعادل عشوائياً عند التساوي التام في معايير الفرز.',
-                          style: TextStyle(fontSize: 10, color: themeColor.secondaryText),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: themeColor.secondaryText,
+                          ),
                         ),
                       ],
                     ),
@@ -442,7 +579,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
   // ============================================================================
   // WIDGET 3: SCENARIO MANAGEMENT
   // ============================================================================
-  Widget _buildScenarioManagementCard(BuildContext context, DispatchLabState state) {
+  Widget _buildScenarioManagementCard(
+    BuildContext context,
+    DispatchLabState state,
+  ) {
     final themeColor = context.themeColor;
     final cubit = context.read<DispatchLabCubit>();
 
@@ -450,7 +590,9 @@ class _DispatchLabViewState extends State<DispatchLabView> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+        side: BorderSide(
+          color: themeColor.unselectedItem.withValues(alpha: 0.1),
+        ),
       ),
       color: themeColor.cardBackground,
       child: Padding(
@@ -460,31 +602,63 @@ class _DispatchLabViewState extends State<DispatchLabView> {
           children: [
             Row(
               children: [
-                Icon(Icons.science_rounded, color: themeColor.primary, size: 20),
+                Icon(
+                  Icons.science_rounded,
+                  color: themeColor.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'إدارة سيناريوهات الفحص والتشغيل',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: themeColor.textPrimary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: themeColor.textPrimary,
+                  ),
                 ),
               ],
             ),
             const Divider(height: 24),
             // Scenario loading
-            Text('تحميل سيناريو جاهز:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: themeColor.textPrimary)),
+            Text(
+              'تحميل سيناريو جاهز:',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: themeColor.textPrimary,
+              ),
+            ),
             const SizedBox(height: 8),
             DropdownButtonFormField<DispatchLabScenario>(
-              value: state.currentScenarioName != null
-                  ? state.savedScenarios.firstWhere((s) => s.name == state.currentScenarioName, orElse: () => state.savedScenarios.first)
+              initialValue: state.currentScenarioName != null
+                  ? state.savedScenarios.firstWhere(
+                      (s) => s.name == state.currentScenarioName,
+                      orElse: () => state.savedScenarios.first,
+                    )
                   : null,
-              hint: const Text('اختر سيناريو لتشغيله', style: TextStyle(fontSize: 13)),
+              hint: const Text(
+                'اختر سيناريو لتشغيله',
+                style: TextStyle(fontSize: 13),
+              ),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               items: state.savedScenarios.map((scen) {
                 return DropdownMenuItem<DispatchLabScenario>(
                   value: scen,
-                  child: Text(scen.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    scen.name,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 );
               }).toList(),
               onChanged: (scen) {
@@ -493,11 +667,18 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                 }
               },
             ),
-            
+
             const Divider(height: 24),
-            
+
             // Booking generation controls
-            Text('توليد الحجوزات يدوياً:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: themeColor.textPrimary)),
+            Text(
+              'توليد الحجوزات يدوياً:',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: themeColor.textPrimary,
+              ),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -507,10 +688,15 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                       backgroundColor: themeColor.nestedCardBackground,
                       foregroundColor: themeColor.textPrimary,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     onPressed: () => cubit.generateBookings(10),
-                    child: const Text('10 طلبات', style: TextStyle(fontSize: 12)),
+                    child: const Text(
+                      '10 طلبات',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -520,7 +706,9 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                       backgroundColor: themeColor.nestedCardBackground,
                       foregroundColor: themeColor.textPrimary,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     onPressed: () => cubit.generateBookings(50),
                     child: const Text('50 طلب', style: TextStyle(fontSize: 12)),
@@ -533,10 +721,15 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                       backgroundColor: themeColor.nestedCardBackground,
                       foregroundColor: themeColor.textPrimary,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     onPressed: () => cubit.generateBookings(100),
-                    child: const Text('100 طلب', style: TextStyle(fontSize: 12)),
+                    child: const Text(
+                      '100 طلب',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ),
                 ),
               ],
@@ -552,8 +745,13 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                     style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
                       hintText: 'عدد مخصص',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
@@ -562,16 +760,28 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                   flex: 4,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: themeColor.primary.withValues(alpha: 0.1),
+                      backgroundColor: themeColor.primary.withValues(
+                        alpha: 0.1,
+                      ),
                       foregroundColor: themeColor.primary,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     onPressed: () {
-                      final val = int.tryParse(_customBookingCountController.text) ?? 10;
+                      final val =
+                          int.tryParse(_customBookingCountController.text) ??
+                          10;
                       cubit.generateBookings(val);
                     },
-                    child: const Text('توليد وتصفير', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'توليد وتصفير',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -586,14 +796,22 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                       backgroundColor: Colors.blue.withValues(alpha: 0.1),
                       foregroundColor: Colors.blue.shade800,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     icon: const Icon(Icons.save_rounded, size: 18),
-                    label: const Text('حفظ الإعدادات الحالية كسيناريو جديد', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    label: const Text(
+                      'حفظ الإعدادات الحالية كسيناريو جديد',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     onPressed: () => _showSaveScenarioDialog(context, cubit),
                   ),
-                )
+                ),
               ],
             ),
           ],
@@ -605,7 +823,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
   // ============================================================================
   // WIDGET 4: VIRTUAL TECHNICIANS STATS TABLE
   // ============================================================================
-  Widget _buildTechniciansTableCard(BuildContext context, DispatchLabState state) {
+  Widget _buildTechniciansTableCard(
+    BuildContext context,
+    DispatchLabState state,
+  ) {
     final themeColor = context.themeColor;
     final cubit = context.read<DispatchLabCubit>();
 
@@ -613,7 +834,9 @@ class _DispatchLabViewState extends State<DispatchLabView> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+        side: BorderSide(
+          color: themeColor.unselectedItem.withValues(alpha: 0.1),
+        ),
       ),
       color: themeColor.cardBackground,
       child: Padding(
@@ -630,23 +853,34 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.engineering_rounded, color: themeColor.primary, size: 20),
+                    Icon(
+                      Icons.engineering_rounded,
+                      color: themeColor.primary,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'إدارة بيانات الفنيين الافتراضيين',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: themeColor.textPrimary),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: themeColor.textPrimary,
+                      ),
                     ),
                   ],
                 ),
                 TextButton.icon(
                   onPressed: () => _showAddTechDialog(context, cubit),
                   icon: const Icon(Icons.add_rounded, size: 18),
-                  label: const Text('إضافة فني', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                )
+                  label: const Text(
+                    'إضافة فني',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ],
             ),
             const Divider(height: 16),
-            
+
             // Technicians scrollable list
             ListView.separated(
               shrinkWrap: true,
@@ -663,7 +897,9 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                       color: themeColor.cardBackground,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: themeColor.unselectedItem.withValues(alpha: 0.05),
+                        color: themeColor.unselectedItem.withValues(
+                          alpha: 0.05,
+                        ),
                       ),
                     ),
                     child: Column(
@@ -673,8 +909,9 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                           children: [
                             Switch(
                               value: tech.isActive,
-                              activeColor: themeColor.primary,
-                              onChanged: (val) => cubit.toggleTechnicianActive(tech.id),
+                              activeThumbColor: themeColor.primary,
+                              onChanged: (val) =>
+                                  cubit.toggleTechnicianActive(tech.id),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -683,8 +920,12 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
-                                  color: tech.isActive ? themeColor.textPrimary : themeColor.secondaryText,
-                                  decoration: tech.isActive ? null : TextDecoration.lineThrough,
+                                  color: tech.isActive
+                                      ? themeColor.textPrimary
+                                      : themeColor.secondaryText,
+                                  decoration: tech.isActive
+                                      ? null
+                                      : TextDecoration.lineThrough,
                                 ),
                               ),
                             ),
@@ -699,11 +940,19 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                                 // 1. Rating (نجمة وتحتها القيمة)
                                 Column(
                                   children: [
-                                    const Icon(Icons.star_rounded, color: Colors.amber, size: 22),
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      color: Colors.amber,
+                                      size: 22,
+                                    ),
                                     const SizedBox(height: 4),
                                     Text(
                                       '${tech.rating}',
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: themeColor.textPrimary,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -711,11 +960,19 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                                 // 2. Capacity (أيقونة السعة وتحتها القيمة)
                                 Column(
                                   children: [
-                                    const Icon(Icons.flash_on_rounded, color: Colors.blue, size: 20),
+                                    const Icon(
+                                      Icons.flash_on_rounded,
+                                      color: Colors.blue,
+                                      size: 20,
+                                    ),
                                     const SizedBox(height: 4),
                                     Text(
                                       '${tech.dailyCapacity}',
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: themeColor.textPrimary,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -724,18 +981,22 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                                 Column(
                                   children: [
                                     Icon(
-                                      Icons.donut_large_rounded, 
+                                      Icons.donut_large_rounded,
                                       color: tech.utilization > 1.0
                                           ? Colors.red
                                           : tech.utilization == 1.0
-                                              ? Colors.green
-                                              : themeColor.primary,
+                                          ? Colors.green
+                                          : themeColor.primary,
                                       size: 20,
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       '${tech.currentOrders}/${tech.dailyCapacity}',
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: themeColor.textPrimary),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: themeColor.textPrimary,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -745,13 +1006,22 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.edit_rounded, size: 20),
+                                  icon: const Icon(
+                                    Icons.edit_rounded,
+                                    size: 20,
+                                  ),
                                   color: themeColor.primary,
-                                  onPressed: () => _showEditTechDialog(context, cubit, tech),
+                                  onPressed: () =>
+                                      _showEditTechDialog(context, cubit, tech),
                                 ),
                                 IconButton(
-                                  icon: Icon(Icons.delete_outline_rounded, color: themeColor.error, size: 20),
-                                  onPressed: () => cubit.removeTechnician(tech.id),
+                                  icon: Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: themeColor.error,
+                                    size: 20,
+                                  ),
+                                  onPressed: () =>
+                                      cubit.removeTechnician(tech.id),
                                 ),
                               ],
                             ),
@@ -761,7 +1031,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                           const SizedBox(height: 8),
                           Text(
                             'آخر طلب تم تعيينه: الحجز رقم ${tech.lastAssignedOrderIndex}',
-                            style: TextStyle(fontSize: 10, color: themeColor.secondaryText),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: themeColor.secondaryText,
+                            ),
                           ),
                         ],
                       ],
@@ -779,19 +1052,26 @@ class _DispatchLabViewState extends State<DispatchLabView> {
   // ============================================================================
   // WIDGET 5: STAS AND COMPARATIVE SHARES
   // ============================================================================
-  Widget _buildStatsAndSharesCard(BuildContext context, DispatchLabState state) {
+  Widget _buildStatsAndSharesCard(
+    BuildContext context,
+    DispatchLabState state,
+  ) {
     final themeColor = context.themeColor;
-    
+
     final int totalBookingsProcessed = state.history.length;
-    
+
     // Sum of capacities for expected share
-    final int sumCapacities = state.technicians.where((t) => t.isActive).fold(0, (sum, t) => sum + t.dailyCapacity);
+    final int sumCapacities = state.technicians
+        .where((t) => t.isActive)
+        .fold(0, (sum, t) => sum + t.dailyCapacity);
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+        side: BorderSide(
+          color: themeColor.unselectedItem.withValues(alpha: 0.1),
+        ),
       ),
       color: themeColor.cardBackground,
       child: Padding(
@@ -801,12 +1081,20 @@ class _DispatchLabViewState extends State<DispatchLabView> {
           children: [
             Row(
               children: [
-                Icon(Icons.bar_chart_rounded, color: themeColor.primary, size: 20),
+                Icon(
+                  Icons.bar_chart_rounded,
+                  color: themeColor.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'مقارنة الحصص التوزيعية (Expected vs Actual Share)',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: themeColor.textPrimary),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: themeColor.textPrimary,
+                    ),
                   ),
                 ),
               ],
@@ -817,14 +1105,17 @@ class _DispatchLabViewState extends State<DispatchLabView> {
               style: TextStyle(fontSize: 12, color: themeColor.secondaryText),
             ),
             const Divider(height: 20),
-            
+
             if (totalBookingsProcessed == 0)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Text(
                     'قم بتشغيل المحاكاة لرؤية إحصائيات الحصص والعدالة التوزيعية.',
-                    style: TextStyle(color: themeColor.secondaryText, fontSize: 13),
+                    style: TextStyle(
+                      color: themeColor.secondaryText,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               )
@@ -835,12 +1126,13 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                 itemCount: state.technicians.length,
                 itemBuilder: (context, index) {
                   final tech = state.technicians[index];
-                  
+
                   // Expected Share %
-                  final double expectedPct = (sumCapacities == 0 || !tech.isActive) 
-                      ? 0.0 
+                  final double expectedPct =
+                      (sumCapacities == 0 || !tech.isActive)
+                      ? 0.0
                       : (tech.dailyCapacity / sumCapacities) * 100;
-                  
+
                   // Actual Share %
                   final double actualPct = (totalBookingsProcessed == 0)
                       ? 0.0
@@ -860,27 +1152,36 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                             Text(
                               tech.name,
                               style: TextStyle(
-                                fontWeight: FontWeight.bold, 
+                                fontWeight: FontWeight.bold,
                                 fontSize: 13,
-                                color: tech.isActive ? themeColor.textPrimary : themeColor.secondaryText,
+                                color: tech.isActive
+                                    ? themeColor.textPrimary
+                                    : themeColor.secondaryText,
                               ),
                             ),
                             Row(
                               children: [
                                 Text(
                                   'الفروقات: ',
-                                  style: TextStyle(fontSize: 11, color: themeColor.secondaryText),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: themeColor.secondaryText,
+                                  ),
                                 ),
                                 Text(
                                   '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(1)}%',
                                   style: TextStyle(
-                                    fontSize: 12, 
+                                    fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     color: diff.abs() < 5.0
                                         ? Colors.green
                                         : diff > 0
-                                            ? Colors.blue.shade700 // overallocation
-                                            : Colors.orange.shade700, // underallocation
+                                        ? Colors
+                                              .blue
+                                              .shade700 // overallocation
+                                        : Colors
+                                              .orange
+                                              .shade700, // underallocation
                                   ),
                                 ),
                               ],
@@ -895,15 +1196,22 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                             Row(
                               children: [
                                 SizedBox(
-                                  width: 90, 
-                                  child: Text('المتوقعة (${expectedPct.toStringAsFixed(1)}%):', style: TextStyle(fontSize: 10, color: themeColor.secondaryText))
+                                  width: 90,
+                                  child: Text(
+                                    'المتوقعة (${expectedPct.toStringAsFixed(1)}%):',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: themeColor.secondaryText,
+                                    ),
+                                  ),
                                 ),
                                 Expanded(
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
                                     child: LinearProgressIndicator(
                                       value: expectedPct / 100,
-                                      backgroundColor: themeColor.unselectedItem.withValues(alpha: 0.05),
+                                      backgroundColor: themeColor.unselectedItem
+                                          .withValues(alpha: 0.05),
                                       color: Colors.purple.shade400,
                                       minHeight: 4,
                                     ),
@@ -916,15 +1224,22 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                             Row(
                               children: [
                                 SizedBox(
-                                  width: 90, 
-                                  child: Text('الفعلية (${actualPct.toStringAsFixed(1)}%):', style: TextStyle(fontSize: 10, color: themeColor.secondaryText))
+                                  width: 90,
+                                  child: Text(
+                                    'الفعلية (${actualPct.toStringAsFixed(1)}%):',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: themeColor.secondaryText,
+                                    ),
+                                  ),
                                 ),
                                 Expanded(
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
                                     child: LinearProgressIndicator(
                                       value: actualPct / 100,
-                                      backgroundColor: themeColor.unselectedItem.withValues(alpha: 0.05),
+                                      backgroundColor: themeColor.unselectedItem
+                                          .withValues(alpha: 0.05),
                                       color: themeColor.primary,
                                       minHeight: 4,
                                     ),
@@ -956,7 +1271,9 @@ class _DispatchLabViewState extends State<DispatchLabView> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+        side: BorderSide(
+          color: themeColor.unselectedItem.withValues(alpha: 0.1),
+        ),
       ),
       color: themeColor.cardBackground,
       child: Padding(
@@ -973,11 +1290,19 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.timeline_rounded, color: themeColor.primary, size: 20),
+                    Icon(
+                      Icons.timeline_rounded,
+                      color: themeColor.primary,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'سجل توزيع الحجوزات (Timeline)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: themeColor.textPrimary),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: themeColor.textPrimary,
+                      ),
                     ),
                   ],
                 ),
@@ -985,7 +1310,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                   TextButton.icon(
                     style: TextButton.styleFrom(
                       foregroundColor: themeColor.primary,
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                     icon: const Icon(Icons.print_rounded, size: 16),
                     label: const Text('طباعة السجل في الكونسول'),
@@ -999,14 +1327,17 @@ class _DispatchLabViewState extends State<DispatchLabView> {
               style: TextStyle(fontSize: 12, color: themeColor.secondaryText),
             ),
             const Divider(height: 20),
-            
+
             if (state.history.isEmpty)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Text(
                     'لا يوجد حركات توزيع بعد.',
-                    style: TextStyle(color: themeColor.secondaryText, fontSize: 13),
+                    style: TextStyle(
+                      color: themeColor.secondaryText,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               )
@@ -1019,7 +1350,8 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                   itemCount: state.history.length,
                   itemBuilder: (context, index) {
                     // Show in reverse order (newest first)
-                    final decision = state.history[state.history.length - 1 - index];
+                    final decision =
+                        state.history[state.history.length - 1 - index];
                     final isAssigned = decision.selectedTechnician != null;
 
                     return Card(
@@ -1028,7 +1360,11 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                       margin: const EdgeInsets.symmetric(vertical: 4),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.05)),
+                        side: BorderSide(
+                          color: themeColor.unselectedItem.withValues(
+                            alpha: 0.05,
+                          ),
+                        ),
                       ),
                       child: InkWell(
                         onTap: () => _showDecisionDialog(context, decision),
@@ -1039,10 +1375,16 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                             children: [
                               CircleAvatar(
                                 radius: 14,
-                                backgroundColor: isAssigned ? themeColor.primary : themeColor.error,
+                                backgroundColor: isAssigned
+                                    ? themeColor.primary
+                                    : themeColor.error,
                                 child: Text(
                                   '#${decision.booking.sequenceNumber}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -1051,18 +1393,26 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
                                           'حجز ${decision.booking.serviceName}',
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
                                         ),
                                         Text(
-                                          isAssigned ? 'المُسند: ${decision.selectedTechnician!.name}' : 'فشل التعيين',
+                                          isAssigned
+                                              ? 'المُسند: ${decision.selectedTechnician!.name}'
+                                              : 'فشل التعيين',
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 12,
-                                            color: isAssigned ? themeColor.primary : themeColor.error,
+                                            color: isAssigned
+                                                ? themeColor.primary
+                                                : themeColor.error,
                                           ),
                                         ),
                                       ],
@@ -1070,7 +1420,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                                     const SizedBox(height: 4),
                                     Text(
                                       decision.reason,
-                                      style: TextStyle(fontSize: 11, color: themeColor.secondaryText),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: themeColor.secondaryText,
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -1078,7 +1431,11 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Icon(Icons.arrow_forward_ios_rounded, size: 12, color: themeColor.secondaryText),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 12,
+                                color: themeColor.secondaryText,
+                              ),
                             ],
                           ),
                         ),
@@ -1099,7 +1456,9 @@ class _DispatchLabViewState extends State<DispatchLabView> {
 
   void _showAddTechDialog(BuildContext context, DispatchLabCubit cubit) {
     final count = cubit.state.technicians.length;
-    final nextLetter = String.fromCharCode(65 + (count % 26)) + (count >= 26 ? '${(count / 26).floor() + 1}' : '');
+    final nextLetter =
+        String.fromCharCode(65 + (count % 26)) +
+        (count >= 26 ? '${(count / 26).floor() + 1}' : '');
     _techNameController.text = nextLetter;
     _techCapacityController.text = '${count + 1}';
     _techRatingController.text = '4.5';
@@ -1108,7 +1467,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('إضافة فني افتراضي جديد', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'إضافة فني افتراضي جديد',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1120,13 +1482,19 @@ class _DispatchLabViewState extends State<DispatchLabView> {
               TextField(
                 controller: _techCapacityController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'السعة اليومية للعمل (أوردر/يوم)'),
+                decoration: const InputDecoration(
+                  labelText: 'السعة اليومية للعمل (أوردر/يوم)',
+                ),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: _techRatingController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'التقييم (من 0 إلى 5)'),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'التقييم (من 0 إلى 5)',
+                ),
               ),
             ],
           ),
@@ -1138,8 +1506,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
             ElevatedButton(
               onPressed: () {
                 final name = _techNameController.text.trim();
-                final capacity = int.tryParse(_techCapacityController.text) ?? 5;
-                final rating = double.tryParse(_techRatingController.text) ?? 4.5;
+                final capacity =
+                    int.tryParse(_techCapacityController.text) ?? 5;
+                final rating =
+                    double.tryParse(_techRatingController.text) ?? 4.5;
                 if (name.isNotEmpty) {
                   cubit.addTechnician(name, capacity, rating);
                   Navigator.pop(context);
@@ -1153,7 +1523,11 @@ class _DispatchLabViewState extends State<DispatchLabView> {
     );
   }
 
-  void _showEditTechDialog(BuildContext context, DispatchLabCubit cubit, VirtualTechnician tech) {
+  void _showEditTechDialog(
+    BuildContext context,
+    DispatchLabCubit cubit,
+    VirtualTechnician tech,
+  ) {
     _techNameController.text = tech.name;
     _techCapacityController.text = tech.dailyCapacity.toString();
     _techRatingController.text = tech.rating.toString();
@@ -1162,7 +1536,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('تعديل بيانات الفني: ${tech.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(
+            'تعديل بيانات الفني: ${tech.name}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1174,12 +1551,16 @@ class _DispatchLabViewState extends State<DispatchLabView> {
               TextField(
                 controller: _techCapacityController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'السعة اليومية للعمل'),
+                decoration: const InputDecoration(
+                  labelText: 'السعة اليومية للعمل',
+                ),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: _techRatingController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(labelText: 'التقييم الحالي'),
               ),
             ],
@@ -1192,14 +1573,19 @@ class _DispatchLabViewState extends State<DispatchLabView> {
             ElevatedButton(
               onPressed: () {
                 final name = _techNameController.text.trim();
-                final capacity = int.tryParse(_techCapacityController.text) ?? tech.dailyCapacity;
-                final rating = double.tryParse(_techRatingController.text) ?? tech.rating;
+                final capacity =
+                    int.tryParse(_techCapacityController.text) ??
+                    tech.dailyCapacity;
+                final rating =
+                    double.tryParse(_techRatingController.text) ?? tech.rating;
                 if (name.isNotEmpty) {
-                  cubit.updateTechnician(tech.copyWith(
-                    name: name,
-                    dailyCapacity: capacity,
-                    rating: rating,
-                  ));
+                  cubit.updateTechnician(
+                    tech.copyWith(
+                      name: name,
+                      dailyCapacity: capacity,
+                      rating: rating,
+                    ),
+                  );
                   Navigator.pop(context);
                 }
               },
@@ -1217,7 +1603,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('حفظ كسيناريو مخصص', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'حفظ كسيناريو مخصص',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: TextField(
             controller: controller,
             decoration: const InputDecoration(
@@ -1266,7 +1655,9 @@ class _DispatchLabViewState extends State<DispatchLabView> {
             return Container(
               decoration: BoxDecoration(
                 color: themeColor.background,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
               ),
               child: Column(
                 children: [
@@ -1282,7 +1673,10 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                   ),
                   // Header
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -1291,39 +1685,49 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                           children: [
                             Text(
                               'فحص القرار بالتفصيل (Decision Inspector)',
-                              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: themeColor.textPrimary),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                color: themeColor.textPrimary,
+                              ),
                             ),
                             Text(
                               'للحجز #${decision.booking.sequenceNumber} - خدمة ${decision.booking.serviceName}',
-                              style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
+                              style: TextStyle(
+                                color: themeColor.secondaryText,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
                         IconButton(
                           icon: const Icon(Icons.close_rounded),
                           onPressed: () => Navigator.pop(context),
-                        )
+                        ),
                       ],
                     ),
                   ),
                   const Divider(),
-                  
+
                   // Content
                   Expanded(
                     child: ListView(
                       controller: scrollController,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       children: [
                         // Outcome Banner
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isAssigned 
+                            color: isAssigned
                                 ? themeColor.primary.withValues(alpha: 0.08)
                                 : themeColor.error.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isAssigned 
+                              color: isAssigned
                                   ? themeColor.primary.withValues(alpha: 0.15)
                                   : themeColor.error.withValues(alpha: 0.15),
                             ),
@@ -1332,53 +1736,109 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isAssigned 
+                                isAssigned
                                     ? 'الفائز بالطلب: ${decision.selectedTechnician!.name}'
                                     : 'لم يتم تعيين فائز للطلب',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
-                                  color: isAssigned ? themeColor.primary : themeColor.error,
+                                  color: isAssigned
+                                      ? themeColor.primary
+                                      : themeColor.error,
                                 ),
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 decision.reason,
-                                style: TextStyle(fontSize: 13, color: themeColor.textPrimary, height: 1.4),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: themeColor.textPrimary,
+                                  height: 1.4,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Technicians Evaluation Pipeline Table
                         Text(
                           'تتبع تقييم الفنيين خطوة بخطوة:',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: themeColor.textPrimary),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: themeColor.textPrimary,
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        
+
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: DataTable(
-                            headingRowColor: WidgetStateProperty.all(themeColor.nestedCardBackground),
+                            headingRowColor: WidgetStateProperty.all(
+                              themeColor.nestedCardBackground,
+                            ),
                             columns: const [
-                              DataColumn(label: Text('اسم الفني', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('الحالة', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('السعة المتبقية', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('نسبة الإشغال', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('التقييم', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('الانتظار', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('تتبع القرار والترتيب', style: TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(
+                                label: Text(
+                                  'اسم الفني',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'الحالة',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'السعة المتبقية',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'نسبة الإشغال',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'التقييم',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'الانتظار',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'تتبع القرار والترتيب',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
                             ],
                             rows: decision.technicianDetails.map((details) {
-                              final isWinner = isAssigned && details.technicianId == decision.selectedTechnician!.id;
-                              
+                              final isWinner =
+                                  isAssigned &&
+                                  details.technicianId ==
+                                      decision.selectedTechnician!.id;
+
                               return DataRow(
-                                color: WidgetStateProperty.resolveWith<Color?>((states) {
-                                  if (isWinner) return themeColor.primary.withValues(alpha: 0.05);
-                                  if (details.isExcluded) return Colors.red.withValues(alpha: 0.02);
+                                color: WidgetStateProperty.resolveWith<Color?>((
+                                  states,
+                                ) {
+                                  if (isWinner)
+                                    return themeColor.primary.withValues(
+                                      alpha: 0.05,
+                                    );
+                                  if (details.isExcluded)
+                                    return Colors.red.withValues(alpha: 0.02);
                                   return null;
                                 }),
                                 cells: [
@@ -1388,14 +1848,24 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                                       children: [
                                         if (isWinner)
                                           Padding(
-                                            padding: const EdgeInsets.only(left: 6.0),
-                                            child: Icon(Icons.star_rounded, color: Colors.amber.shade700, size: 18),
+                                            padding: const EdgeInsets.only(
+                                              left: 6.0,
+                                            ),
+                                            child: Icon(
+                                              Icons.star_rounded,
+                                              color: Colors.amber.shade700,
+                                              size: 18,
+                                            ),
                                           ),
                                         Text(
                                           details.name,
                                           style: TextStyle(
-                                            fontWeight: isWinner ? FontWeight.bold : FontWeight.normal,
-                                            color: details.isExcluded ? themeColor.secondaryText : themeColor.textPrimary,
+                                            fontWeight: isWinner
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            color: details.isExcluded
+                                                ? themeColor.secondaryText
+                                                : themeColor.textPrimary,
                                           ),
                                         ),
                                       ],
@@ -1404,25 +1874,37 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                                   // Status
                                   DataCell(
                                     Text(
-                                      details.isExcluded ? 'مستبعد' : 'مؤهل (رقم ${details.finalRank})',
+                                      details.isExcluded
+                                          ? 'مستبعد'
+                                          : 'مؤهل (رقم ${details.finalRank})',
                                       style: TextStyle(
-                                        color: details.isExcluded ? themeColor.error : Colors.green,
+                                        color: details.isExcluded
+                                            ? themeColor.error
+                                            : Colors.green,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12,
                                       ),
                                     ),
                                   ),
                                   // Capacity
-                                  DataCell(Text('${details.dailyCapacity - details.currentOrders} / ${details.dailyCapacity}')),
+                                  DataCell(
+                                    Text(
+                                      '${details.dailyCapacity - details.currentOrders} / ${details.dailyCapacity}',
+                                    ),
+                                  ),
                                   // Utilization
-                                  DataCell(Text('${(details.utilization * 100).toStringAsFixed(0)}%')),
+                                  DataCell(
+                                    Text(
+                                      '${(details.utilization * 100).toStringAsFixed(0)}%',
+                                    ),
+                                  ),
                                   // Rating
                                   DataCell(Text('${details.rating} ★')),
                                   // Idle Time
                                   DataCell(
                                     Text(
-                                      details.lastAssignedOrderIndex == null 
-                                          ? 'من البداية' 
+                                      details.lastAssignedOrderIndex == null
+                                          ? 'من البداية'
                                           : 'أوردر #${details.lastAssignedOrderIndex}',
                                       style: const TextStyle(fontSize: 12),
                                     ),
@@ -1430,15 +1912,21 @@ class _DispatchLabViewState extends State<DispatchLabView> {
                                   // Explanation
                                   DataCell(
                                     Container(
-                                      constraints: const BoxConstraints(maxWidth: 320),
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 320,
+                                      ),
                                       child: Text(
-                                        details.isExcluded 
-                                            ? 'مستبعد: ${details.exclusionReason}' 
+                                        details.isExcluded
+                                            ? 'مستبعد: ${details.exclusionReason}'
                                             : details.rankReason,
                                         style: TextStyle(
                                           fontSize: 11,
-                                          color: isWinner ? themeColor.primary : themeColor.textPrimary,
-                                          fontWeight: isWinner ? FontWeight.bold : FontWeight.normal,
+                                          color: isWinner
+                                              ? themeColor.primary
+                                              : themeColor.textPrimary,
+                                          fontWeight: isWinner
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
                                         ),
                                       ),
                                     ),
@@ -1462,53 +1950,87 @@ class _DispatchLabViewState extends State<DispatchLabView> {
 
   void _printHistoryToConsole(DispatchLabState state) {
     final buffer = StringBuffer();
-    buffer.writeln('================================================================================');
+    buffer.writeln(
+      '================================================================================',
+    );
     buffer.writeln('DISPATCH SIMULATION HISTORY LOG');
     buffer.writeln('Scenario: ${state.currentScenarioName ?? "Custom Run"}');
     buffer.writeln('Total Bookings Processed: ${state.history.length}');
-    buffer.writeln('Active Filters: ${state.activeFilterRules.map((f) => f.name).join(", ")}');
-    buffer.writeln('Active Rankings: ${state.activeRankingRules.map((r) => r.name).join(" -> ")}');
+    buffer.writeln(
+      'Active Filters: ${state.activeFilterRules.map((f) => f.name).join(", ")}',
+    );
+    buffer.writeln(
+      'Active Rankings: ${state.activeRankingRules.map((r) => r.name).join(" -> ")}',
+    );
     buffer.writeln('Tie Breaker: ${state.activeTieBreaker.name}');
-    buffer.writeln('================================================================================');
+    buffer.writeln(
+      '================================================================================',
+    );
     buffer.writeln();
 
     // 1. Technicians General Summary
-    buffer.writeln('================================================================================');
+    buffer.writeln(
+      '================================================================================',
+    );
     buffer.writeln('TECHNICIANS GENERAL SUMMARY (ملخص الفنيين العام)');
-    buffer.writeln('================================================================================');
-    buffer.writeln('Number of Active Technicians: ${state.technicians.where((t) => t.isActive).length}');
+    buffer.writeln(
+      '================================================================================',
+    );
+    buffer.writeln(
+      'Number of Active Technicians: ${state.technicians.where((t) => t.isActive).length}',
+    );
     for (final tech in state.technicians) {
-      buffer.writeln('* ${tech.name} (ID: ${tech.id}): Capacity = ${tech.dailyCapacity}, Rating = ${tech.rating.toStringAsFixed(1)} نجوم, Active = ${tech.isActive}');
+      buffer.writeln(
+        '* ${tech.name} (ID: ${tech.id}): Capacity = ${tech.dailyCapacity}, Rating = ${tech.rating.toStringAsFixed(1)} نجوم, Active = ${tech.isActive}',
+      );
     }
-    buffer.writeln('================================================================================');
+    buffer.writeln(
+      '================================================================================',
+    );
     buffer.writeln();
 
     // 2. Entire Distribution Sequence Order
-    buffer.writeln('================================================================================');
+    buffer.writeln(
+      '================================================================================',
+    );
     buffer.writeln('DISTRIBUTION SEQUENCE ORDER (ترتيب التوزيع بالكامل):');
-    buffer.writeln('================================================================================');
+    buffer.writeln(
+      '================================================================================',
+    );
     final sequence = state.history.map((dec) {
       final winner = dec.selectedTechnician;
       return winner != null ? winner.name : 'تعذر التوزيع';
     }).toList();
     buffer.writeln('Sequence: ${sequence.join(" -> ")}');
-    buffer.writeln('================================================================================');
+    buffer.writeln(
+      '================================================================================',
+    );
     buffer.writeln();
 
     for (final decision in state.history) {
       final booking = decision.booking;
       final winner = decision.selectedTechnician;
 
-      buffer.writeln('--------------------------------------------------------------------------------');
-      buffer.writeln('الحجز #${booking.sequenceNumber}: ${booking.serviceName}');
-      buffer.writeln('--------------------------------------------------------------------------------');
+      buffer.writeln(
+        '--------------------------------------------------------------------------------',
+      );
+      buffer.writeln(
+        'الحجز #${booking.sequenceNumber}: ${booking.serviceName}',
+      );
+      buffer.writeln(
+        '--------------------------------------------------------------------------------',
+      );
       if (winner != null) {
-        final details = decision.technicianDetails.firstWhere((d) => d.technicianId == winner.id);
+        final details = decision.technicianDetails.firstWhere(
+          (d) => d.technicianId == winner.id,
+        );
         final int ordersAfter = details.currentOrders + 1;
         final int remainingAfter = details.dailyCapacity - ordersAfter;
         buffer.writeln('- الفائز: ${winner.name} (ID: ${winner.id})');
         buffer.writeln('- السبب: ${decision.reason}');
-        buffer.writeln('- حالة الفني بعد التعيين: الحجز رقم [$ordersAfter] للفني، المتبقي له [$remainingAfter] طلب (من أصل [${details.dailyCapacity}] سعة كلية).');
+        buffer.writeln(
+          '- حالة الفني بعد التعيين: الحجز رقم [$ordersAfter] للفني، المتبقي له [$remainingAfter] طلب (من أصل [${details.dailyCapacity}] سعة كلية).',
+        );
       } else {
         buffer.writeln('- النتيجة: تعذر التوزيع');
         buffer.writeln('- السبب: ${decision.reason}');
@@ -1516,31 +2038,49 @@ class _DispatchLabViewState extends State<DispatchLabView> {
       buffer.writeln();
     }
 
-    buffer.writeln('================================================================================');
+    buffer.writeln(
+      '================================================================================',
+    );
     buffer.writeln('FINAL SIMULATION STATISTICS');
-    buffer.writeln('================================================================================');
-    
-    final int sumCapacities = state.technicians.where((t) => t.isActive).fold(0, (sum, t) => sum + t.dailyCapacity);
+    buffer.writeln(
+      '================================================================================',
+    );
+
+    final int sumCapacities = state.technicians
+        .where((t) => t.isActive)
+        .fold(0, (sum, t) => sum + t.dailyCapacity);
     final int totalProcessed = state.history.length;
 
     for (final tech in state.technicians) {
-      final double expectedPct = (sumCapacities == 0 || !tech.isActive) ? 0.0 : (tech.dailyCapacity / sumCapacities) * 100;
-      final double actualPct = totalProcessed == 0 ? 0.0 : (tech.currentOrders / totalProcessed) * 100;
+      final double expectedPct = (sumCapacities == 0 || !tech.isActive)
+          ? 0.0
+          : (tech.dailyCapacity / sumCapacities) * 100;
+      final double actualPct = totalProcessed == 0
+          ? 0.0
+          : (tech.currentOrders / totalProcessed) * 100;
       final double diff = actualPct - expectedPct;
 
       buffer.writeln('* ${tech.name} (Active: ${tech.isActive}):');
-      buffer.writeln('  - Orders: ${tech.currentOrders}/${tech.dailyCapacity} (Utilization: ${(tech.utilization * 100).toStringAsFixed(0)}%)');
+      buffer.writeln(
+        '  - Orders: ${tech.currentOrders}/${tech.dailyCapacity} (Utilization: ${(tech.utilization * 100).toStringAsFixed(0)}%)',
+      );
       buffer.writeln('  - Expected Share: ${expectedPct.toStringAsFixed(1)}%');
       buffer.writeln('  - Actual Share: ${actualPct.toStringAsFixed(1)}%');
-      buffer.writeln('  - Difference: ${diff >= 0 ? "+" : ""}${diff.toStringAsFixed(1)}%');
+      buffer.writeln(
+        '  - Difference: ${diff >= 0 ? "+" : ""}${diff.toStringAsFixed(1)}%',
+      );
     }
-    buffer.writeln('================================================================================');
+    buffer.writeln(
+      '================================================================================',
+    );
 
     debugPrint(buffer.toString());
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('تمت طباعة السجل الكامل بنجاح في كونسول المطورين (Console)'),
+        content: Text(
+          'تمت طباعة السجل الكامل بنجاح في كونسول المطورين (Console)',
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );

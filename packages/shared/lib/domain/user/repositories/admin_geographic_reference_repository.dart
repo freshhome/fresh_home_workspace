@@ -73,4 +73,13 @@ abstract class AdminGeographicReferenceRepository {
     required int id,
     required bool isActive,
   });
+
+  /// Admin: Deletes a governorate record.
+  Future<Either<Failure, Unit>> deleteGovernorate(int id);
+
+  /// Admin: Deletes a city record.
+  Future<Either<Failure, Unit>> deleteCity(int id);
+
+  /// Admin: Deletes a district record.
+  Future<Either<Failure, Unit>> deleteDistrict(int id);
 }

@@ -167,14 +167,20 @@ class _TechnicianOrderDetailsScreenState
 
   Future<void> _loadServiceDetails([Booking? order]) async {
     final booking = order ?? widget.order;
-    if (booking == null || booking.service.subServiceId.isEmpty) return;
-    if (_subService != null || _loadingService || _serviceLoadAttempted) return;
+    if (booking == null) return;
+    final sId = (booking.serviceId != null && booking.serviceId!.isNotEmpty)
+        ? booking.serviceId!
+        : (booking.service.subServiceId.isNotEmpty
+            ? booking.service.subServiceId
+            : booking.service.id);
+    if (sId.isEmpty) return;
+    if (_subService != null || _loadingService) return;
     setState(() {
       _loadingService = true;
       _serviceLoadAttempted = true;
     });
     final useCase = GetIt.instance<GetServiceByIdUseCase>();
-    final result = await useCase(booking.service.subServiceId);
+    final result = await useCase(sId);
     result.fold(
       (failure) {
         debugPrint(
@@ -556,10 +562,35 @@ class _TechnicianOrderDetailsScreenState
     final locale = Localizations.localeOf(context).languageCode;
     final List<Widget> items = [];
 
-    final Map<String, dynamic> rawInputs = _dynamicInputs.isNotEmpty 
-        ? _dynamicInputs 
-        : (order.pricingInputs ?? {});
-        
+    const excludedKeys = {
+      'name',
+      'phone',
+      'customer_name',
+      'customer_phone',
+      'client_name',
+      'client_phone',
+      'contact_name',
+      'contact_phone',
+      'user_name',
+      'user_phone',
+      'payment_method',
+      'payment_type',
+      'payment_status',
+      'total',
+      'price',
+      'selected_options',
+      'windows',
+      '__field_snapshot',
+      '__field_labels',
+      'address_id',
+      'service_id',
+      'sub_service_id',
+    };
+
+    final Map<String, dynamic> rawInputs = Map<String, dynamic>.from(
+      _dynamicInputs.isNotEmpty ? _dynamicInputs : (order.pricingInputs ?? {}),
+    )..removeWhere((k, _) => excludedKeys.contains(k.toLowerCase()));
+
     final List<FormattedField> formatted = DynamicFieldFormatter.formatBooking(
       pricingInputs: rawInputs,
       snapshot: _getEffectiveSnapshot(order),
@@ -567,11 +598,27 @@ class _TechnicianOrderDetailsScreenState
     );
 
     for (final f in formatted) {
+      String label = f.label;
+      String unit = f.unit ?? '';
+      if (_subService != null) {
+        final fieldDef = _subService!.price.fields
+            .where((df) => df.id.toLowerCase() == f.id.toLowerCase())
+            .firstOrNull;
+        if (fieldDef != null) {
+          if (label == f.id) {
+            label = fieldDef.label[locale] ?? fieldDef.label['ar'] ?? f.id;
+          }
+          if (unit.isEmpty && fieldDef.unit != null) {
+            unit = fieldDef.unit!;
+          }
+        }
+      }
+
       items.add(
         _buildProfessionalFieldRow(
           context,
-          f.label,
-          "${f.displayValue} ${f.unit ?? ''}".trim(),
+          label,
+          "${f.displayValue} $unit".trim(),
         ),
       );
     }

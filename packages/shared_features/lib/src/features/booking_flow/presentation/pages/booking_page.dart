@@ -57,6 +57,101 @@ class _BookingPageState extends State<BookingPage> {
     ];
   }
 
+  Future<void> _handleExit(BuildContext context, BookingFlowConfig config) async {
+    final cubit = context.read<BookingFlowCubit>();
+    final state = cubit.state;
+
+    final hasData = state.service != null ||
+        (state.manualClientName != null &&
+            state.manualClientName!.trim().isNotEmpty) ||
+        (state.manualClientPhone != null &&
+            state.manualClientPhone!.trim().isNotEmpty) ||
+        state.price != null ||
+        state.scheduledAt != null;
+
+    if (config.mode == BookingFlowMode.admin && hasData) {
+      final choice = await showDialog<String>(
+        context: context,
+        builder: (dialogCtx) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.drafts_outlined, color: Color(0xFF1E3A8A)),
+                SizedBox(width: 8),
+                Text(
+                  'حفظ الحجز كمسودة؟',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            content: const Text(
+              'هل ترغب في حفظ البيانات الحالية كمسودة للرجوع إليها واستكمال الحجز لاحقاً؟',
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 14),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop('discard'),
+                child: const Text(
+                  'خروج دون حفظ',
+                  style: TextStyle(fontFamily: 'Cairo', color: Colors.red),
+                ),
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E3A8A),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () => Navigator.of(dialogCtx).pop('save'),
+                icon: const Icon(Icons.save_rounded, size: 18, color: Colors.white),
+                label: const Text(
+                  'حفظ كمسودة وخروج',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (choice == 'save') {
+        await cubit.saveAsDraft();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'تم حفظ المسودة بنجاح',
+                style: TextStyle(fontFamily: 'Cairo'),
+              ),
+              backgroundColor: Color(0xFF10B981),
+              duration: Duration(seconds: 2),
+            ),
+          );
+          Navigator.of(context).pop();
+        }
+      } else if (choice == 'discard') {
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
+      }
+      return;
+    }
+
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<BookingFlowCubit>();
@@ -81,7 +176,7 @@ class _BookingPageState extends State<BookingPage> {
           if (state.currentStepIndex > 0) {
             context.read<BookingFlowCubit>().previousStep();
           } else {
-            Navigator.of(context).pop();
+            _handleExit(context, config);
           }
         },
         child: Scaffold(
@@ -94,10 +189,46 @@ class _BookingPageState extends State<BookingPage> {
                 if (state.currentStepIndex > 0) {
                   context.read<BookingFlowCubit>().previousStep();
                 } else {
-                  Navigator.of(context).pop();
+                  _handleExit(context, config);
                 }
               },
             ),
+            actions: [
+              if (config.mode == BookingFlowMode.admin)
+                TextButton.icon(
+                  onPressed: () async {
+                    await context.read<BookingFlowCubit>().saveAsDraft();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'تم حفظ المسودة بنجاح',
+                            style: TextStyle(fontFamily: 'Cairo'),
+                          ),
+                          backgroundColor: Color(0xFF10B981),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.bookmark_added_outlined,
+                    size: 18,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                  label: const Text(
+                    'حفظ كمسودة',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Color(0xFF1E3A8A),
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 8),
+            ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(110),
               child: BlocBuilder<BookingFlowCubit, BookingFlowState>(

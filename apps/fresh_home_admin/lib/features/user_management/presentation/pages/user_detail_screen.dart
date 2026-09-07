@@ -19,7 +19,8 @@ class UserDetailScreen extends StatefulWidget {
   State<UserDetailScreen> createState() => _UserDetailScreenState();
 }
 
-class _UserDetailScreenState extends State<UserDetailScreen> with TickerProviderStateMixin {
+class _UserDetailScreenState extends State<UserDetailScreen>
+    with TickerProviderStateMixin {
   late TabController _tabController;
   bool _isTechnician = false;
 
@@ -60,15 +61,30 @@ class _UserDetailScreenState extends State<UserDetailScreen> with TickerProvider
             indicatorColor: themeColor.primary,
             labelColor: themeColor.primary,
             unselectedLabelColor: Colors.grey,
-            labelStyle: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+            labelStyle: const TextStyle(
+              fontFamily: 'Cairo',
+              fontWeight: FontWeight.bold,
+            ),
             unselectedLabelStyle: const TextStyle(fontFamily: 'Cairo'),
             tabs: [
               const Tab(text: 'نظرة عامة', icon: Icon(Icons.dashboard_rounded)),
-              const Tab(text: 'الاتصال والعناوين', icon: Icon(Icons.contact_phone_rounded)),
-              const Tab(text: 'الأدوار والأمان', icon: Icon(Icons.admin_panel_settings_rounded)),
+              const Tab(
+                text: 'الاتصال والعناوين',
+                icon: Icon(Icons.contact_phone_rounded),
+              ),
+              const Tab(
+                text: 'الأدوار والأمان',
+                icon: Icon(Icons.admin_panel_settings_rounded),
+              ),
               if (_isTechnician)
-                const Tab(text: 'التخصصات (فني)', icon: Icon(Icons.build_circle_rounded)),
-              const Tab(text: 'النشاط والسجلات', icon: Icon(Icons.history_rounded)),
+                const Tab(
+                  text: 'التخصصات (فني)',
+                  icon: Icon(Icons.build_circle_rounded),
+                ),
+              const Tab(
+                text: 'النشاط والسجلات',
+                icon: Icon(Icons.history_rounded),
+              ),
             ],
           ),
         ),
@@ -77,21 +93,29 @@ class _UserDetailScreenState extends State<UserDetailScreen> with TickerProvider
             if (state is UserDetailSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.message, style: const TextStyle(fontFamily: 'Cairo')),
+                  content: Text(
+                    state.message,
+                    style: const TextStyle(fontFamily: 'Cairo'),
+                  ),
                   backgroundColor: Colors.green,
                 ),
               );
             } else if (state is UserDetailError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.message, style: const TextStyle(fontFamily: 'Cairo')),
+                  content: Text(
+                    state.message,
+                    style: const TextStyle(fontFamily: 'Cairo'),
+                  ),
                   backgroundColor: Colors.red,
                 ),
               );
             }
 
             if (state is UserDetailLoaded) {
-              final bool newIsTechnician = state.user.roles.contains(UserRole.technician);
+              final bool newIsTechnician = state.user.roles.contains(
+                UserRole.technician,
+              );
               if (newIsTechnician != _isTechnician) {
                 setState(() {
                   _isTechnician = newIsTechnician;
@@ -116,7 +140,10 @@ class _UserDetailScreenState extends State<UserDetailScreen> with TickerProvider
                 children: [
                   _OverviewTab(user: state.user),
                   _ContactTab(user: state.user),
-                  _SecurityTab(user: state.user, mainServices: state.mainServices),
+                  _SecurityTab(
+                    user: state.user,
+                    mainServices: state.mainServices,
+                  ),
                   if (_isTechnician)
                     _TechnicianTab(
                       user: state.user,
@@ -170,16 +197,27 @@ class _OverviewTab extends StatelessWidget {
               tag: 'user_avatar_${user.id}',
               child: CircleAvatar(
                 radius: 50,
-                backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
-                child: user.avatarUrl == null ? const Icon(Icons.person, size: 50) : null,
+                backgroundImage: user.avatarUrl != null
+                    ? NetworkImage(user.avatarUrl!)
+                    : null,
+                child: user.avatarUrl == null
+                    ? const Icon(Icons.person, size: 50)
+                    : null,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               '${user.firstName} ${user.lastName}',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Cairo',
+              ),
             ),
-            Text(user.email, style: const TextStyle(color: Colors.grey, fontFamily: 'Cairo')),
+            Text(
+              user.email,
+              style: const TextStyle(color: Colors.grey, fontFamily: 'Cairo'),
+            ),
             const SizedBox(height: 12),
             UserStatusBadge(status: user.accountStatus),
           ],
@@ -197,29 +235,75 @@ class _OverviewTab extends StatelessWidget {
       crossAxisSpacing: 12,
       childAspectRatio: 1.5,
       children: [
-        _statItem(context, 'تاريخ التسجيل', user.createdAt.toLocal().toString().split(' ').first, Icons.calendar_today_rounded),
-        _statItem(context, 'الجنس', user.gender == 'male' ? 'ذكر' : (user.gender == 'female' ? 'أنثى' : 'غير محدد'), Icons.person_outline_rounded),
-        _statItem(context, 'الأدوار', user.roles.length.toString(), Icons.badge_rounded),
-        _statItem(context, 'العناوين', (user.addresses?.length ?? 0).toString(), Icons.location_on_rounded),
+        _statItem(
+          context,
+          'تاريخ التسجيل',
+          user.createdAt.toLocal().toString().split(' ').first,
+          Icons.calendar_today_rounded,
+        ),
+        _statItem(
+          context,
+          'الجنس',
+          user.gender == 'male'
+              ? 'ذكر'
+              : (user.gender == 'female' ? 'أنثى' : 'غير محدد'),
+          Icons.person_outline_rounded,
+        ),
+        _statItem(
+          context,
+          'الأدوار',
+          user.roles.length.toString(),
+          Icons.badge_rounded,
+        ),
+        _statItem(
+          context,
+          'العناوين',
+          (user.addresses?.length ?? 0).toString(),
+          Icons.location_on_rounded,
+        ),
       ],
     );
   }
 
-  Widget _statItem(BuildContext context, String label, String value, IconData icon) {
+  Widget _statItem(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, size: 20, color: context.themeColor.primary),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey, fontFamily: 'Cairo')),
-          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+              fontFamily: 'Cairo',
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Cairo',
+            ),
+          ),
         ],
       ),
     );
@@ -228,38 +312,74 @@ class _OverviewTab extends StatelessWidget {
   Widget _buildStatusQuickActions(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('إجراءات سريعة للحساب', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+          const Text(
+            'إجراءات سريعة للحساب',
+            style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+          ),
           const Divider(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _actionBtn(context, 'تفعيل', Icons.check_circle_outline, Colors.green, () {
-                context.read<UserDetailCubit>().updateUserStatus(user.id, UserStatus.active);
-              }),
-              _actionBtn(context, 'تعليق', Icons.pause_circle_outline, Colors.orange, () {
-                context.read<UserDetailCubit>().updateUserStatus(user.id, UserStatus.suspended);
-              }),
+              _actionBtn(
+                context,
+                'تفعيل',
+                Icons.check_circle_outline,
+                Colors.green,
+                () {
+                  context.read<UserDetailCubit>().updateUserStatus(
+                    user.id,
+                    UserStatus.active,
+                  );
+                },
+              ),
+              _actionBtn(
+                context,
+                'تعليق',
+                Icons.pause_circle_outline,
+                Colors.orange,
+                () {
+                  context.read<UserDetailCubit>().updateUserStatus(
+                    user.id,
+                    UserStatus.suspended,
+                  );
+                },
+              ),
               _actionBtn(context, 'حظر', Icons.block_flipped, Colors.red, () {
-                context.read<UserDetailCubit>().updateUserStatus(user.id, UserStatus.banned);
+                context.read<UserDetailCubit>().updateUserStatus(
+                  user.id,
+                  UserStatus.banned,
+                );
               }),
             ],
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _actionBtn(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _actionBtn(
+    BuildContext context,
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       child: Column(
         children: [
           Icon(icon, color: color, size: 30),
-          Text(label, style: TextStyle(color: color, fontSize: 12, fontFamily: 'Cairo')),
+          Text(
+            label,
+            style: TextStyle(color: color, fontSize: 12, fontFamily: 'Cairo'),
+          ),
         ],
       ),
     );
@@ -277,25 +397,60 @@ class _ContactTab extends StatelessWidget {
       children: [
         _buildSectionTitle('أرقام الهاتف'),
         if (user.phones == null || user.phones!.isEmpty)
-          const Center(child: Text('لا توجد أرقام مسجلة', style: TextStyle(fontFamily: 'Cairo')))
+          const Center(
+            child: Text(
+              'لا توجد أرقام مسجلة',
+              style: TextStyle(fontFamily: 'Cairo'),
+            ),
+          )
         else
-          ...user.phones!.map((p) => ListTile(
-                leading: Icon(Icons.phone_rounded, color: p.isPrimary ? Colors.green : Colors.grey),
-                title: Text(p.phoneNumber),
-                trailing: p.isPrimary ? const Text('رئيسي', style: TextStyle(color: Colors.green, fontSize: 12, fontFamily: 'Cairo')) : null,
-              )),
+          ...user.phones!.map(
+            (p) => ListTile(
+              leading: Icon(
+                Icons.phone_rounded,
+                color: p.isPrimary ? Colors.green : Colors.grey,
+              ),
+              title: Text(p.phoneNumber),
+              trailing: p.isPrimary
+                  ? const Text(
+                      'رئيسي',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 12,
+                        fontFamily: 'Cairo',
+                      ),
+                    )
+                  : null,
+            ),
+          ),
         const SizedBox(height: 24),
         _buildSectionTitle('العناوين'),
         if (user.addresses == null || user.addresses!.isEmpty)
-          const Center(child: Text('لا توجد عناوين مسجلة', style: TextStyle(fontFamily: 'Cairo')))
+          const Center(
+            child: Text(
+              'لا توجد عناوين مسجلة',
+              style: TextStyle(fontFamily: 'Cairo'),
+            ),
+          )
         else
-          ...user.addresses!.map((a) => Card(
-                child: ListTile(
-                  leading: Icon(Icons.location_on_rounded, color: a.isPrimary ? Colors.green : Colors.grey),
-                  title: Text(a.fullAddress, style: const TextStyle(fontFamily: 'Cairo', fontSize: 14)),
-                  subtitle: Text(a.isPrimary ? 'العنوان الرئيسي' : 'عنوان إضافي', style: const TextStyle(fontSize: 12, fontFamily: 'Cairo')),
+          ...user.addresses!.map(
+            (a) => Card(
+              child: ListTile(
+                leading: Icon(
+                  Icons.location_on_rounded,
+                  color: a.isPrimary ? Colors.green : Colors.grey,
                 ),
-              )),
+                title: Text(
+                  a.fullAddress,
+                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
+                ),
+                subtitle: Text(
+                  a.isPrimary ? 'العنوان الرئيسي' : 'عنوان إضافي',
+                  style: const TextStyle(fontSize: 12, fontFamily: 'Cairo'),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -303,7 +458,14 @@ class _ContactTab extends StatelessWidget {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Cairo',
+        ),
+      ),
     );
   }
 }
@@ -322,17 +484,27 @@ class _SecurityTab extends StatelessWidget {
         Wrap(
           spacing: 8,
           children: user.roles
-              .map((r) => Chip(
-                    label: Text(r.translatedName(context), style: const TextStyle(fontFamily: 'Cairo')),
-                    backgroundColor: context.themeColor.primary.withValues(alpha: 0.1),
-                    onDeleted: () => _confirmRoleRemoval(context, r),
-                  ))
+              .map(
+                (r) => Chip(
+                  label: Text(
+                    r.translatedName(context),
+                    style: const TextStyle(fontFamily: 'Cairo'),
+                  ),
+                  backgroundColor: context.themeColor.primary.withValues(
+                    alpha: 0.1,
+                  ),
+                  onDeleted: () => _confirmRoleRemoval(context, r),
+                ),
+              )
               .toList(),
         ),
         TextButton.icon(
           onPressed: () => _showAddRoleDialog(context),
           icon: const Icon(Icons.add_moderator_rounded),
-          label: const Text('إضافة دور جديد', style: TextStyle(fontFamily: 'Cairo')),
+          label: const Text(
+            'إضافة دور جديد',
+            style: TextStyle(fontFamily: 'Cairo'),
+          ),
         ),
       ],
     );
@@ -341,7 +513,14 @@ class _SecurityTab extends StatelessWidget {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0, top: 16),
-      child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Cairo',
+        ),
+      ),
     );
   }
 
@@ -350,16 +529,28 @@ class _SecurityTab extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('تأكيد سحب الصلاحية', style: TextStyle(fontFamily: 'Cairo')),
-        content: Text('هل أنت متأكد من سحب دور ${role.translatedName(context)} من المستخدم؟', style: const TextStyle(fontFamily: 'Cairo')),
+        title: const Text(
+          'تأكيد سحب الصلاحية',
+          style: TextStyle(fontFamily: 'Cairo'),
+        ),
+        content: Text(
+          'هل أنت متأكد من سحب دور ${role.translatedName(context)} من المستخدم؟',
+          style: const TextStyle(fontFamily: 'Cairo'),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إلغاء'),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
               cubit.removeRole(user.id, role);
             },
-            child: const Text('نعم، سحب الصلاحية', style: TextStyle(color: Colors.red)),
+            child: const Text(
+              'نعم، سحب الصلاحية',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -368,12 +559,16 @@ class _SecurityTab extends StatelessWidget {
 
   void _showAddRoleDialog(BuildContext context) {
     final cubit = context.read<UserDetailCubit>();
-    final availableRoles = UserRole.values.where((r) => !user.roles.contains(r)).toList();
+    final availableRoles = UserRole.values
+        .where((r) => !user.roles.contains(r))
+        .toList();
     if (availableRoles.isEmpty) return;
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (modalContext) => BlocProvider.value(
         value: cubit,
         child: Padding(
@@ -381,19 +576,31 @@ class _SecurityTab extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('اختر الدور لإضافته', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 18)),
+              const Text(
+                'اختر الدور لإضافته',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
               const SizedBox(height: 16),
-              ...availableRoles.map((role) => ListTile(
-                    title: Text(role.translatedName(modalContext), style: const TextStyle(fontFamily: 'Cairo')),
-                    onTap: () {
-                      Navigator.pop(modalContext);
-                      if (role == UserRole.technician) {
-                        _showMainServiceDialog(context, cubit);
-                      } else {
-                        cubit.assignRole(user.id, role);
-                      }
-                    },
-                  )),
+              ...availableRoles.map(
+                (role) => ListTile(
+                  title: Text(
+                    role.translatedName(modalContext),
+                    style: const TextStyle(fontFamily: 'Cairo'),
+                  ),
+                  onTap: () {
+                    Navigator.pop(modalContext);
+                    if (role == UserRole.technician) {
+                      _showMainServiceDialog(context, cubit);
+                    } else {
+                      cubit.assignRole(user.id, role);
+                    }
+                  },
+                ),
+              ),
             ],
           ),
         ),
@@ -410,26 +617,41 @@ class _SecurityTab extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('الخدمة الأساسية للفني', style: TextStyle(fontFamily: 'Cairo')),
+        title: const Text(
+          'الخدمة الأساسية للفني',
+          style: TextStyle(fontFamily: 'Cairo'),
+        ),
         content: const Text(
           'يجب أن ينتمي الفني لخدمة أساسية واحدة (مثال: تنظيف، صيانة). اختر الخدمة:',
           style: TextStyle(fontFamily: 'Cairo', fontSize: 13),
         ),
         actions: [
-          ...mainServices.map((ms) => TextButton(
-                onPressed: () {
-                  Navigator.pop(dialogContext);
-                  cubit.assignRole(user.id, UserRole.technician, mainServiceId: ms['id']);
-                },
-                child: Text(ms['title']?['ar'] ?? ms['id'], style: const TextStyle(fontFamily: 'Cairo')),
-              )),
+          ...mainServices.map(
+            (ms) => TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                cubit.assignRole(
+                  user.id,
+                  UserRole.technician,
+                  mainServiceId: ms['id'],
+                );
+              },
+              child: Text(
+                ms['title']?['ar'] ?? ms['id'],
+                style: const TextStyle(fontFamily: 'Cairo'),
+              ),
+            ),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
               cubit.assignRole(user.id, UserRole.technician);
             },
-            child: const Text('تعيين كفني عام (لا ينصح)', style: TextStyle(color: Colors.grey, fontSize: 12)),
-          )
+            child: const Text(
+              'تعيين كفني عام (لا ينصح)',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ),
         ],
       ),
     );
@@ -462,22 +684,27 @@ class _TechnicianTab extends StatelessWidget {
           _buildTechnicianSummary(context),
           const SizedBox(height: 24),
         ],
-        
+
         // 1. Capacity Pools
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-             _buildSectionTitle('خزانات القدرة (Capacity Pools)'),
-             IconButton(
-               onPressed: () => _showUpsertPoolDialog(context),
-               icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
-             ),
+            _buildSectionTitle('خزانات القدرة (Capacity Pools)'),
+            IconButton(
+              onPressed: () => _showUpsertPoolDialog(context),
+              icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
+            ),
           ],
         ),
         if (capacityPools.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(child: Text('لا توجد خزانات سعة معرفة', style: TextStyle(color: Colors.grey))),
+            child: Center(
+              child: Text(
+                'لا توجد خزانات سعة معرفة',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
           )
         else
           ...capacityPools.map((pool) => _buildPoolItem(context, pool)),
@@ -488,23 +715,31 @@ class _TechnicianTab extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-             _buildSectionTitle('الخدمات المسندة (Skills)'),
-             if (capacityPools.isNotEmpty)
-               IconButton(
-                 onPressed: () => _showAddSkillDialog(context),
-                 icon: const Icon(Icons.add_circle_outline, color: Colors.green),
-               ),
+            _buildSectionTitle('الخدمات المسندة (Skills)'),
+            if (capacityPools.isNotEmpty)
+              IconButton(
+                onPressed: () => _showAddSkillDialog(context),
+                icon: const Icon(Icons.add_circle_outline, color: Colors.green),
+              ),
           ],
         ),
         if (capacityPools.isEmpty)
-           const Padding(
+          const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
-            child: Text('يجب إضافة خزان سعة أولاً لربط الخدمات به', style: TextStyle(color: Colors.red, fontSize: 13)),
+            child: Text(
+              'يجب إضافة خزان سعة أولاً لربط الخدمات به',
+              style: TextStyle(color: Colors.red, fontSize: 13),
+            ),
           ),
         if (technicianSkills.isEmpty && capacityPools.isNotEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(child: Text('لم يتم إسناد أي خدمات بعد', style: TextStyle(color: Colors.grey))),
+            child: Center(
+              child: Text(
+                'لم يتم إسناد أي خدمات بعد',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
           )
         else
           ...technicianSkills.map((skill) => _buildSkillItem(context, skill)),
@@ -512,8 +747,6 @@ class _TechnicianTab extends StatelessWidget {
     );
   }
 
-
-  
   String _getPoolName(String poolId) {
     final pool = capacityPools.firstWhere((e) => e.id == poolId);
     return pool.title;
@@ -536,33 +769,64 @@ class _TechnicianTab extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _buildSimpleStat('التقييم', tech.rating.toStringAsFixed(1), Icons.star_rounded, Colors.amber),
+          _buildSimpleStat(
+            'التقييم',
+            tech.rating.toStringAsFixed(1),
+            Icons.star_rounded,
+            Colors.amber,
+          ),
           _buildDivider(),
-          _buildSimpleStat('الطلبات', tech.completedJobs.toString(), Icons.check_circle_rounded, context.themeColor.primary),
+          _buildSimpleStat(
+            'الطلبات',
+            tech.completedJobs.toString(),
+            Icons.check_circle_rounded,
+            context.themeColor.primary,
+          ),
           _buildDivider(),
-          _buildSimpleStat('التوثيق', tech.isVerified ? 'موثق' : 'غير موثق', tech.isVerified ? Icons.verified_user_rounded : Icons.info_outline_rounded, tech.isVerified ? Colors.green : Colors.grey),
+          _buildSimpleStat(
+            'التوثيق',
+            tech.isVerified ? 'موثق' : 'غير موثق',
+            tech.isVerified
+                ? Icons.verified_user_rounded
+                : Icons.info_outline_rounded,
+            tech.isVerified ? Colors.green : Colors.grey,
+          ),
         ],
       ),
     );
   }
 
   Widget _buildPoolItem(BuildContext context, CapacityPoolRemoteModel pool) {
-    final linkedSkillsCount = technicianSkills.where((s) => s.capacityPoolId == pool.id).length;
-    
+    final linkedSkillsCount = technicianSkills
+        .where((s) => s.capacityPoolId == pool.id)
+        .length;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: Colors.blue.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
           child: const Icon(Icons.bubble_chart_rounded, color: Colors.blue),
         ),
-        title: Text(pool.title, style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+        title: Text(
+          pool.title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Cairo',
+          ),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('القدرة: ${pool.maxDailyCapacity}', style: const TextStyle(fontSize: 12)),
+            Text(
+              'القدرة: ${pool.maxDailyCapacity}',
+              style: const TextStyle(fontSize: 12),
+            ),
             if (linkedSkillsCount > 0)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -572,17 +836,31 @@ class _TechnicianTab extends StatelessWidget {
                       .where((s) => s.capacityPoolId == pool.id)
                       .take(3)
                       .map((s) {
-                        final title = availableSubServices.firstWhere(
-                          (sub) => sub['id'] == s.subServiceId,
-                          orElse: () => {'title': {'ar': s.subServiceId}},
-                        )['title']?['ar'] ?? s.subServiceId;
+                        final title =
+                            availableSubServices.firstWhere(
+                              (sub) => sub['id'] == s.subServiceId,
+                              orElse: () => {
+                                'title': {'ar': s.subServiceId},
+                              },
+                            )['title']?['ar'] ??
+                            s.subServiceId;
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.blue.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(title, style: const TextStyle(fontSize: 9, fontFamily: 'Cairo', color: Colors.blue)),
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontFamily: 'Cairo',
+                              color: Colors.blue,
+                            ),
+                          ),
                         );
                       })
                       .toList(),
@@ -594,12 +872,21 @@ class _TechnicianTab extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 20, color: Colors.blue),
+              icon: const Icon(
+                Icons.edit_outlined,
+                size: 20,
+                color: Colors.blue,
+              ),
               onPressed: () => _showUpsertPoolDialog(context, pool: pool),
             ),
-             IconButton(
-              icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-              onPressed: () => _confirmPoolRemoval(context, pool, linkedSkillsCount),
+            IconButton(
+              icon: const Icon(
+                Icons.delete_outline,
+                size: 20,
+                color: Colors.red,
+              ),
+              onPressed: () =>
+                  _confirmPoolRemoval(context, pool, linkedSkillsCount),
             ),
           ],
         ),
@@ -607,23 +894,42 @@ class _TechnicianTab extends StatelessWidget {
     );
   }
 
-  Widget _buildSkillItem(BuildContext context, TechnicianSkillRemoteModel skill) {
-    final subServiceTitle = availableSubServices.firstWhere(
-      (s) => s['id'] == skill.subServiceId, 
-      orElse: () => {'title': {'ar': skill.subServiceId}}
-    )['title']?['ar'] ?? skill.subServiceId;
+  Widget _buildSkillItem(
+    BuildContext context,
+    TechnicianSkillRemoteModel skill,
+  ) {
+    final subServiceTitle =
+        availableSubServices.firstWhere(
+          (s) => s['id'] == skill.subServiceId,
+          orElse: () => {
+            'title': {'ar': skill.subServiceId},
+          },
+        )['title']?['ar'] ??
+        skill.subServiceId;
 
     return Card(
-       margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: Colors.green.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
           child: const Icon(Icons.check_circle_outline, color: Colors.green),
         ),
-        title: Text(subServiceTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
-        subtitle: Text('خزان السعة: ${_getPoolName(skill.capacityPoolId)}', style: const TextStyle(fontSize: 12)),
+        title: Text(
+          subServiceTitle,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Cairo',
+          ),
+        ),
+        subtitle: Text(
+          'خزان السعة: ${_getPoolName(skill.capacityPoolId)}',
+          style: const TextStyle(fontSize: 12),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -631,12 +937,20 @@ class _TechnicianTab extends StatelessWidget {
               value: skill.isActive,
               onChanged: (val) {
                 context.read<UserDetailCubit>().toggleSkillActive(
-                  technicianId: user.id, skillId: skill.id, isActive: val);
+                  technicianId: user.id,
+                  skillId: skill.id,
+                  isActive: val,
+                );
               },
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-              onPressed: () => _confirmSkillRemoval(context, skill, subServiceTitle),
+              icon: const Icon(
+                Icons.delete_outline,
+                size: 20,
+                color: Colors.red,
+              ),
+              onPressed: () =>
+                  _confirmSkillRemoval(context, skill, subServiceTitle),
             ),
           ],
         ),
@@ -644,33 +958,60 @@ class _TechnicianTab extends StatelessWidget {
     );
   }
 
-  Widget _buildSimpleStat(String label, String value, IconData icon, Color color) {
+  Widget _buildSimpleStat(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Column(
         children: [
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11, fontFamily: 'Cairo')),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 11,
+              fontFamily: 'Cairo',
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildDivider() {
-    return Container(height: 30, width: 1, color: Colors.grey.withValues(alpha: 0.2));
+    return Container(
+      height: 30,
+      width: 1,
+      color: Colors.grey.withValues(alpha: 0.2),
+    );
   }
 
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Cairo',
+        ),
+      ),
     );
   }
 
-
-
-  void _showUpsertPoolDialog(BuildContext context, {CapacityPoolRemoteModel? pool}) {
+  void _showUpsertPoolDialog(
+    BuildContext context, {
+    CapacityPoolRemoteModel? pool,
+  }) {
     final cubit = context.read<UserDetailCubit>();
     String title = pool?.title ?? '';
     String? selectedMainServiceId = pool?.mainServiceId;
@@ -697,11 +1038,13 @@ class _TechnicianTab extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: themeColor.primary.withValues(alpha:0.1),
+                            color: themeColor.primary.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            pool == null ? Icons.add_business_rounded : Icons.edit_note_rounded,
+                            pool == null
+                                ? Icons.add_business_rounded
+                                : Icons.edit_note_rounded,
                             color: themeColor.primary,
                             size: 24,
                           ),
@@ -720,28 +1063,42 @@ class _TechnicianTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     DropdownButtonFormField<String>(
-                      value: selectedMainServiceId,
+                      initialValue: selectedMainServiceId,
                       items: mainServices.map((ms) {
                         final name = ms['title']?['ar'] ?? ms['id'];
                         return DropdownMenuItem(
                           value: ms['id'] as String,
-                          child: Text(name, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13)),
+                          child: Text(
+                            name,
+                            style: const TextStyle(
+                              fontFamily: 'Cairo',
+                              fontSize: 13,
+                            ),
+                          ),
                         );
                       }).toList(),
-                      onChanged: pool != null ? null : (val) {
-                        setState(() {
-                          selectedMainServiceId = val;
-                          if (pool == null && val != null) {
-                            final ms = mainServices.firstWhere((e) => e['id'] == val);
-                            final msName = ms['title']?['ar'] ?? '';
-                            title = '${user.firstName} ${user.lastName} - $msName';
-                            titleController.text = title;
-                          }
-                        });
-                      },
+                      onChanged: pool != null
+                          ? null
+                          : (val) {
+                              setState(() {
+                                selectedMainServiceId = val;
+                                if (pool == null && val != null) {
+                                  final ms = mainServices.firstWhere(
+                                    (e) => e['id'] == val,
+                                  );
+                                  final msName = ms['title']?['ar'] ?? '';
+                                  title =
+                                      '${user.firstName} ${user.lastName} - $msName';
+                                  titleController.text = title;
+                                }
+                              });
+                            },
                       decoration: const InputDecoration(
                         labelText: 'الخدمة الأساسية للخزان (القسم)',
-                        labelStyle: TextStyle(fontFamily: 'Cairo', fontSize: 13),
+                        labelStyle: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -776,9 +1133,12 @@ class _TechnicianTab extends StatelessWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: themeColor.primary.withValues(alpha:0.1),
+                            color: themeColor.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -799,7 +1159,8 @@ class _TechnicianTab extends StatelessWidget {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: 10, // 0 to 9
-                        separatorBuilder: (context, index) => const SizedBox(width: 12),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 12),
                         itemBuilder: (context, index) {
                           final isSelected = capacity == index;
                           return GestureDetector(
@@ -810,19 +1171,27 @@ class _TechnicianTab extends StatelessWidget {
                               duration: const Duration(milliseconds: 200),
                               width: 55,
                               decoration: BoxDecoration(
-                                color: isSelected ? themeColor.primary : themeColor.background,
+                                color: isSelected
+                                    ? themeColor.primary
+                                    : themeColor.background,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: isSelected ? themeColor.primary : themeColor.unselectedItem.withValues(alpha:0.2),
+                                  color: isSelected
+                                      ? themeColor.primary
+                                      : themeColor.unselectedItem.withValues(
+                                          alpha: 0.2,
+                                        ),
                                   width: isSelected ? 2 : 1,
                                 ),
                                 boxShadow: isSelected
                                     ? [
                                         BoxShadow(
-                                          color: themeColor.primary.withValues(alpha:0.3),
+                                          color: themeColor.primary.withValues(
+                                            alpha: 0.3,
+                                          ),
                                           blurRadius: 8,
                                           offset: const Offset(0, 4),
-                                        )
+                                        ),
                                       ]
                                     : [],
                               ),
@@ -833,7 +1202,9 @@ class _TechnicianTab extends StatelessWidget {
                                     fontSize: 20,
                                     fontWeight: FontWeight.w900,
                                     fontFamily: 'Cairo',
-                                    color: isSelected ? Colors.white : themeColor.textPrimary,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : themeColor.textPrimary,
                                   ),
                                 ),
                               ),
@@ -850,7 +1221,9 @@ class _TechnicianTab extends StatelessWidget {
                             onPressed: () => Navigator.pop(dialogContext),
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             child: Text(
                               'إلغاء',
@@ -883,7 +1256,9 @@ class _TechnicianTab extends StatelessWidget {
                               foregroundColor: Colors.white,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             child: const Text(
                               'حفظ الخزان',
@@ -907,22 +1282,40 @@ class _TechnicianTab extends StatelessWidget {
     );
   }
 
-  void _confirmPoolRemoval(BuildContext context, CapacityPoolRemoteModel pool, int linkedSkills) {
+  void _confirmPoolRemoval(
+    BuildContext context,
+    CapacityPoolRemoteModel pool,
+    int linkedSkills,
+  ) {
     if (linkedSkills > 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('لا يمكن حذف الخزان لارتباطه بخدمات. احذف الخدمات أولاً.', style: TextStyle(fontFamily: 'Cairo'))),
+        const SnackBar(
+          content: Text(
+            'لا يمكن حذف الخزان لارتباطه بخدمات. احذف الخدمات أولاً.',
+            style: TextStyle(fontFamily: 'Cairo'),
+          ),
+        ),
       );
       return;
     }
-    
+
     final cubit = context.read<UserDetailCubit>();
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('حذف الخزان', style: TextStyle(color: Colors.red, fontFamily: 'Cairo')),
-        content: Text('هل أنت متأكد من حذف خزان السعة "${pool.title}"؟', style: const TextStyle(fontFamily: 'Cairo')),
+        title: const Text(
+          'حذف الخزان',
+          style: TextStyle(color: Colors.red, fontFamily: 'Cairo'),
+        ),
+        content: Text(
+          'هل أنت متأكد من حذف خزان السعة "${pool.title}"؟',
+          style: const TextStyle(fontFamily: 'Cairo'),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إلغاء'),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
@@ -937,15 +1330,22 @@ class _TechnicianTab extends StatelessWidget {
 
   void _showAddSkillDialog(BuildContext context) {
     final cubit = context.read<UserDetailCubit>();
-    
+
     if (capacityPools.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يجب إضافة خزان سعة للفني أولاً قبل إسناد أي خدمات فرعية.', style: TextStyle(fontFamily: 'Cairo'))),
+        const SnackBar(
+          content: Text(
+            'يجب إضافة خزان سعة للفني أولاً قبل إسناد أي خدمات فرعية.',
+            style: TextStyle(fontFamily: 'Cairo'),
+          ),
+        ),
       );
       return;
     }
 
-    final assignedSubServiceIds = technicianSkills.map((e) => e.subServiceId).toSet();
+    final assignedSubServiceIds = technicianSkills
+        .map((e) => e.subServiceId)
+        .toSet();
     final Set<String> selectedSubServiceIds = {};
     String? selectedPoolId = capacityPools.first.id;
 
@@ -953,50 +1353,83 @@ class _TechnicianTab extends StatelessWidget {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) {
-          final selectedPool = capacityPools.firstWhere((p) => p.id == selectedPoolId);
+          final selectedPool = capacityPools.firstWhere(
+            (p) => p.id == selectedPoolId,
+          );
           final poolSubServices = availableSubServices.where((sub) {
-            final isMatch = sub['main_service_id'] == selectedPool.mainServiceId;
+            final isMatch =
+                sub['main_service_id'] == selectedPool.mainServiceId;
             final isNotAssigned = !assignedSubServiceIds.contains(sub['id']);
             return isMatch && isNotAssigned;
           }).toList();
 
           return AlertDialog(
-            title: const Text('إضافة خدمات للفني', style: TextStyle(fontFamily: 'Cairo')),
+            title: const Text(
+              'إضافة خدمات للفني',
+              style: TextStyle(fontFamily: 'Cairo'),
+            ),
             content: SizedBox(
               width: double.maxFinite,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DropdownButtonFormField<String>(
-                    value: selectedPoolId,
+                    initialValue: selectedPoolId,
                     items: capacityPools
-                        .map((p) => DropdownMenuItem(
-                              value: p.id,
-                              child: Text(p.title, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13)),
-                            ))
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p.id,
+                            child: Text(
+                              p.title,
+                              style: const TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        )
                         .toList(),
                     onChanged: (val) {
                       setState(() {
                         selectedPoolId = val;
-                        selectedSubServiceIds.clear(); // Clear selections when changing pools
+                        selectedSubServiceIds
+                            .clear(); // Clear selections when changing pools
                       });
                     },
-                    decoration: const InputDecoration(labelText: 'الربط بخزان السعة'),
+                    decoration: const InputDecoration(
+                      labelText: 'الربط بخزان السعة',
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('اختر الخدمات الفرعية:', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'اختر الخدمات الفرعية:',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   if (poolSubServices.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Text('لا توجد خدمات فرعية غير مسندة تحت تخصص هذا الخزان', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.grey)),
+                      child: Text(
+                        'لا توجد خدمات فرعية غير مسندة تحت تخصص هذا الخزان',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
                     )
                   else
                     Flexible(
                       child: Container(
                         constraints: const BoxConstraints(maxHeight: 300),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: Colors.grey.withValues(alpha: 0.3),
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: ListView.builder(
@@ -1005,9 +1438,17 @@ class _TechnicianTab extends StatelessWidget {
                           itemBuilder: (context, index) {
                             final item = poolSubServices[index];
                             final id = item['id'] as String;
-                            final isSelected = selectedSubServiceIds.contains(id);
+                            final isSelected = selectedSubServiceIds.contains(
+                              id,
+                            );
                             return CheckboxListTile(
-                              title: Text(item['title']?['ar'] ?? id, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13)),
+                              title: Text(
+                                item['title']?['ar'] ?? id,
+                                style: const TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 13,
+                                ),
+                              ),
                               value: isSelected,
                               onChanged: (bool? value) {
                                 setState(() {
@@ -1029,9 +1470,13 @@ class _TechnicianTab extends StatelessWidget {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('إلغاء'),
+              ),
               ElevatedButton(
-                onPressed: selectedSubServiceIds.isEmpty || selectedPoolId == null
+                onPressed:
+                    selectedSubServiceIds.isEmpty || selectedPoolId == null
                     ? null
                     : () {
                         Navigator.pop(dialogContext);
@@ -1050,15 +1495,25 @@ class _TechnicianTab extends StatelessWidget {
     );
   }
 
-  void _confirmSkillRemoval(BuildContext context, TechnicianSkillRemoteModel skill, String title) {
+  void _confirmSkillRemoval(
+    BuildContext context,
+    TechnicianSkillRemoteModel skill,
+    String title,
+  ) {
     final cubit = context.read<UserDetailCubit>();
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('حذف الخدمة', style: TextStyle(fontFamily: 'Cairo')),
-        content: Text('هل أنت متأكد من حذف خدمة $title من قائمة خدمات الفني؟', style: const TextStyle(fontFamily: 'Cairo')),
+        content: Text(
+          'هل أنت متأكد من حذف خدمة $title من قائمة خدمات الفني؟',
+          style: const TextStyle(fontFamily: 'Cairo'),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إلغاء'),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
@@ -1079,7 +1534,12 @@ class _ActivityTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (logs.isEmpty) {
-      return const Center(child: Text('لا توجد سجلات نشاط حالياً', style: TextStyle(fontFamily: 'Cairo')));
+      return const Center(
+        child: Text(
+          'لا توجد سجلات نشاط حالياً',
+          style: TextStyle(fontFamily: 'Cairo'),
+        ),
+      );
     }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -1090,12 +1550,20 @@ class _ActivityTab extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: context.themeColor.primary.withValues(alpha: 0.1),
+              backgroundColor: context.themeColor.primary.withValues(
+                alpha: 0.1,
+              ),
               child: const Icon(Icons.history_rounded, size: 20),
             ),
             title: Text(
-              log.newStatus != null ? 'تغيير الحالة إلى: ${log.newStatus}' : 'عملية على الحساب',
-              style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.bold),
+              log.newStatus != null
+                  ? 'تغيير الحالة إلى: ${log.newStatus}'
+                  : 'عملية على الحساب',
+              style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             subtitle: Text(
               'التاريخ: ${log.createdAt.toLocal().toString().split('.')[0]}',

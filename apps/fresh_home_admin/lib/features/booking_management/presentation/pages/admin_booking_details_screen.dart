@@ -677,8 +677,8 @@ class _AdminBookingDetailsContent extends StatelessWidget {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        final dateStr = suggestedDate != null 
-            ? DateFormat('yyyy-MM-dd').format(suggestedDate) 
+        final dateStr = suggestedDate != null
+            ? DateFormat('yyyy-MM-dd').format(suggestedDate)
             : null;
         return AlertDialog(
           shape: RoundedRectangleBorder(
@@ -724,7 +724,11 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.event_available_rounded, color: Color(0xFF16A34A), size: 20),
+                      const Icon(
+                        Icons.event_available_rounded,
+                        color: Color(0xFF16A34A),
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -744,7 +748,10 @@ class _AdminBookingDetailsContent extends StatelessWidget {
               ],
             ],
           ),
-          actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          actionsPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -1298,7 +1305,9 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                     icon: Icons.swap_horiz_rounded,
                     onPressed: canAction
                         ? () {
-                            debugPrint('🟢 [AdminBookingDetailsScreen] Button "تغيير الفني" clicked. bookingId: "${booking.id}", subServiceId: "${booking.service.subServiceId}", scheduledAt: "${booking.scheduledAt}"');
+                            debugPrint(
+                              '🟢 [AdminBookingDetailsScreen] Button "تغيير الفني" clicked. bookingId: "${booking.id}", subServiceId: "${booking.service.subServiceId}", scheduledAt: "${booking.scheduledAt}"',
+                            );
                             _showReassignSheet(context);
                           }
                         : null,
@@ -1958,7 +1967,9 @@ class _AdminBookingDetailsContent extends StatelessWidget {
   }
 
   void _showReassignSheet(BuildContext context) async {
-    debugPrint('🔍 [AdminBookingDetailsScreen] _showReassignSheet opened for Booking ID: "${booking.id}"');
+    debugPrint(
+      '🔍 [AdminBookingDetailsScreen] _showReassignSheet opened for Booking ID: "${booking.id}"',
+    );
     final reasonController = TextEditingController();
     String? selectedTechId;
     bool isLoadingTechs = true;
@@ -1974,22 +1985,29 @@ class _AdminBookingDetailsContent extends StatelessWidget {
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
           if (isLoadingTechs && technicians.isEmpty) {
-            debugPrint('🔍 [AdminBookingDetailsScreen] Initiating fetch for qualified technicians. SubService ID: "${booking.service.subServiceId}", Date: ${booking.scheduledAt}');
+            debugPrint(
+              '🔍 [AdminBookingDetailsScreen] Initiating fetch for qualified technicians. SubService ID: "${booking.service.subServiceId}", Date: ${booking.scheduledAt}',
+            );
             GetIt.I<UserManagementRepository>()
                 .getTechniciansBySubService(
                   booking.service.subServiceId,
                   date: booking.scheduledAt,
                 )
                 .then((list) {
-                  debugPrint('ℹ️ [AdminBookingDetailsScreen] Fetch complete. Received ${list.length} technicians.');
+                  debugPrint(
+                    'ℹ️ [AdminBookingDetailsScreen] Fetch complete. Received ${list.length} technicians.',
+                  );
                   if (context.mounted) {
                     setSheetState(() {
                       technicians = list;
                       isLoadingTechs = false;
                     });
                   }
-                }).catchError((error) {
-                  debugPrint('❌ [AdminBookingDetailsScreen] Fetch failed with error: $error');
+                })
+                .catchError((error) {
+                  debugPrint(
+                    '❌ [AdminBookingDetailsScreen] Fetch failed with error: $error',
+                  );
                   if (context.mounted) {
                     setSheetState(() {
                       isLoadingTechs = false;
@@ -2207,7 +2225,9 @@ class _AdminBookingDetailsContent extends StatelessWidget {
                       onPressed: (selectedTechId != null)
                           ? () {
                               final adminId = authCubit.userId ?? '';
-                              debugPrint('🚀 [AdminBookingDetailsScreen] Submitting reassignment. Technician ID: "$selectedTechId", Admin ID: "$adminId", Reason: "${reasonController.text}"');
+                              debugPrint(
+                                '🚀 [AdminBookingDetailsScreen] Submitting reassignment. Technician ID: "$selectedTechId", Admin ID: "$adminId", Reason: "${reasonController.text}"',
+                              );
                               bookingCubit.reassign(
                                 bookingId: booking.id,
                                 newTechnicianId: selectedTechId!,
@@ -2446,7 +2466,6 @@ class _EditOrderDetailsSheet extends StatefulWidget {
   final void Function(String) onError;
 
   const _EditOrderDetailsSheet({
-    super.key,
     required this.booking,
     required this.cubit,
     required this.onError,
@@ -2471,7 +2490,8 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
   @override
   void initState() {
     super.initState();
-    _selectedServiceId = widget.booking.serviceId ?? widget.booking.service.subServiceId;
+    _selectedServiceId =
+        widget.booking.serviceId ?? widget.booking.service.subServiceId;
     _loadServiceDetails();
   }
 
@@ -2482,10 +2502,12 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
           .select('id, title')
           .eq('parent_id', parentId)
           .eq('is_bookable', true);
-      
+
       if (mounted) {
         setState(() {
-          _siblings = (response as List).map((e) => Map<String, dynamic>.from(e)).toList();
+          _siblings = (response as List)
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
         });
       }
     } catch (e) {
@@ -2507,7 +2529,10 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
 
   Future<void> _loadServiceDetails() async {
     final getServiceById = GetIt.instance<GetServiceByIdUseCase>();
-    final sId = _selectedServiceId ?? widget.booking.serviceId ?? widget.booking.service.subServiceId;
+    final sId =
+        _selectedServiceId ??
+        widget.booking.serviceId ??
+        widget.booking.service.subServiceId;
     final result = await getServiceById(sId, forceRefresh: true);
 
     if (mounted) {
@@ -2533,10 +2558,11 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
           setState(() {
             _subService = subService;
             _loadingService = false;
-            
+
             // If the selected service is the original service of the booking, preserve original inputs.
             // Otherwise, reset them.
-            final originalId = widget.booking.serviceId ?? widget.booking.service.subServiceId;
+            final originalId =
+                widget.booking.serviceId ?? widget.booking.service.subServiceId;
             if (sId == originalId) {
               _dynamicInputs.clear();
               if (widget.booking.pricingInputs != null) {
@@ -2555,7 +2581,7 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
               _calculatedPricing = null;
             }
           });
-          
+
           if (service.parentId != null && _siblings.isEmpty) {
             _loadSiblings(service.parentId!);
           }
@@ -2733,7 +2759,10 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(16),
@@ -2741,12 +2770,21 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
-                    value: _selectedServiceId ?? widget.booking.serviceId ?? widget.booking.service.subServiceId,
+                    value:
+                        _selectedServiceId ??
+                        widget.booking.serviceId ??
+                        widget.booking.service.subServiceId,
                     isExpanded: true,
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Color(0xFF64748B),
+                    ),
                     items: _siblings.map((sib) {
-                      final titleMap = Map<String, dynamic>.from(sib['title'] as Map? ?? {});
-                      final titleStr = titleMap['ar'] ?? titleMap['en'] ?? sib['id'];
+                      final titleMap = Map<String, dynamic>.from(
+                        sib['title'] as Map? ?? {},
+                      );
+                      final titleStr =
+                          titleMap['ar'] ?? titleMap['en'] ?? sib['id'];
                       return DropdownMenuItem<String>(
                         value: sib['id'] as String,
                         child: Text(
@@ -2894,10 +2932,12 @@ class _EditOrderDetailsSheetState extends State<_EditOrderDetailsSheet> {
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
-                  
+
                   Booking targetBooking = widget.booking;
-                  if (_selectedServiceId != null && 
-                      _selectedServiceId != (widget.booking.serviceId ?? widget.booking.service.subServiceId)) {
+                  if (_selectedServiceId != null &&
+                      _selectedServiceId !=
+                          (widget.booking.serviceId ??
+                              widget.booking.service.subServiceId)) {
                     final newServiceSnapshot = BookedService(
                       id: _subService!.id,
                       subServiceId: _subService!.id,

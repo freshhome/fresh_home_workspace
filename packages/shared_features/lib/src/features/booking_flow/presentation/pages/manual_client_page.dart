@@ -5,7 +5,6 @@ import 'package:shared/shared.dart';
 import '../cubit/booking_flow_cubit.dart';
 import '../cubit/booking_flow_state.dart';
 
-
 /// Admin-only step: the admin enters the client's contact details manually.
 /// This replaces the profile-based [AddressPage] used in customer mode.
 class ManualClientPage extends StatefulWidget {
@@ -67,7 +66,8 @@ class _ManualClientPageState extends State<ManualClientPage> {
     _floorController.text = state.manualClientFloor ?? '';
     _apartmentController.text = state.manualClientApartment ?? '';
     _landmarkController.text = state.manualClientLandmark ?? '';
-    _locationUrlController.text = state.manualClientLocationUrl ?? state.address?.locationUrl ?? '';
+    _locationUrlController.text =
+        state.manualClientLocationUrl ?? state.address?.locationUrl ?? '';
     _selectedDistrictString = state.manualClientDistrict;
     _selectedPropertyType = state.manualClientPropertyType ?? 'residential';
 
@@ -82,11 +82,14 @@ class _ManualClientPageState extends State<ManualClientPage> {
             });
           }
         });
-      } else if (_selectedGovernorate != null && _selectedGovernorate!.isNotEmpty) {
+      } else if (_selectedGovernorate != null &&
+          _selectedGovernorate!.isNotEmpty) {
         try {
           final govs = _geoCubit.state.governorates;
           final matchedGov = govs.firstWhere(
-            (g) => g.nameAr == _selectedGovernorate || g.nameEn == _selectedGovernorate,
+            (g) =>
+                g.nameAr == _selectedGovernorate ||
+                g.nameEn == _selectedGovernorate,
           );
           _geoCubit.selectGovernorate(matchedGov.id).then((_) {
             if (_selectedCity != null && _selectedCity!.isNotEmpty) {
@@ -100,7 +103,9 @@ class _ManualClientPageState extends State<ManualClientPage> {
                     try {
                       final districts = _geoCubit.state.districts;
                       final matchedDistrict = districts.firstWhere(
-                        (d) => d.nameAr == _districtController.text || d.nameEn == _districtController.text,
+                        (d) =>
+                            d.nameAr == _districtController.text ||
+                            d.nameEn == _districtController.text,
                       );
                       _geoCubit.selectDistrict(matchedDistrict.id);
                     } catch (_) {}
@@ -157,15 +162,24 @@ class _ManualClientPageState extends State<ManualClientPage> {
     final selectedCity = geoState.selectedCity;
     final selectedDistrict = geoState.selectedDistrict;
 
-    final govName = selectedGov?.getName(locale) ?? selectedGov?.nameAr ?? _selectedGovernorate ?? '';
-    final cityName = selectedCity?.getName(locale) ?? selectedCity?.nameAr ?? _selectedCity ?? '';
+    final govName =
+        selectedGov?.getName(locale) ??
+        selectedGov?.nameAr ??
+        _selectedGovernorate ??
+        '';
+    final cityName =
+        selectedCity?.getName(locale) ??
+        selectedCity?.nameAr ??
+        _selectedCity ??
+        '';
 
     final String districtName;
     if (_isCustomDistrict) {
       districtName = _customDistrictController.text.trim().isNotEmpty
           ? _customDistrictController.text.trim()
           : cityName;
-    } else if (_selectedDistrictString != null && _selectedDistrictString!.isNotEmpty) {
+    } else if (_selectedDistrictString != null &&
+        _selectedDistrictString!.isNotEmpty) {
       districtName = _selectedDistrictString!;
     } else if (selectedDistrict != null) {
       districtName = selectedDistrict.getName(locale);
@@ -179,15 +193,30 @@ class _ManualClientPageState extends State<ManualClientPage> {
         ? _locationUrlController.text.trim()
         : null;
 
+    final String resolvedGovAr = selectedGov?.nameAr ??
+        (govName.toLowerCase().contains('giza')
+            ? 'الجيزة'
+            : (govName.toLowerCase().contains('cairo') ? 'القاهرة' : govName));
+    final String resolvedGovEn = selectedGov?.nameEn ??
+        (govName.contains('جيزة')
+            ? 'Giza'
+            : (govName.contains('قاهرة') ? 'Cairo' : govName));
+
     final address = Address(
       id: '',
       userId: '',
-      governorate: govName,
+      governorate: resolvedGovAr.isNotEmpty ? resolvedGovAr : govName,
       city: cityName,
       district: districtName,
       governorateId: selectedGov?.id,
       cityId: selectedCity?.id,
       districtId: selectedDistrict?.id,
+      governorateAr: resolvedGovAr,
+      governorateEn: resolvedGovEn,
+      cityAr: selectedCity?.nameAr ?? cityName,
+      cityEn: selectedCity?.nameEn ?? cityName,
+      districtAr: selectedDistrict?.nameAr ?? districtName,
+      districtEn: selectedDistrict?.nameEn ?? districtName,
       streetOrCompound: _streetController.text,
       buildingIdentifier: _buildingController.text,
       floor: _floorController.text,
@@ -234,7 +263,8 @@ class _ManualClientPageState extends State<ManualClientPage> {
       } else if (_selectedCity == null) {
         firstErrorFocus = _cityFocus;
       } else if (_isCustomDistrict &&
-          InputValidator.validateEmpty(_customDistrictController.text) != null) {
+          InputValidator.validateEmpty(_customDistrictController.text) !=
+              null) {
         firstErrorFocus = _customDistrictFocus;
       } else if (!_isCustomDistrict &&
           _selectedDistrictString == null &&
@@ -340,7 +370,9 @@ class _ManualClientPageState extends State<ManualClientPage> {
                     value: _geoCubit,
                     child: BlocBuilder<GeographicReferenceCubit, GeographicReferenceState>(
                       builder: (context, state) {
-                        final locale = Localizations.localeOf(context).languageCode;
+                        final locale = Localizations.localeOf(
+                          context,
+                        ).languageCode;
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,59 +387,92 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                     child: DropdownButtonFormField<int>(
                                       isExpanded: true,
                                       dropdownColor: themeColor.cardBackground,
-                                      value: state.selectedGovernorateId,
+                                      initialValue: state.selectedGovernorateId,
                                       focusNode: _governorateFocus,
                                       decoration: InputDecoration(
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 12,
+                                            ),
                                         filled: true,
-                                        fillColor: themeColor.background.withValues(alpha: 0.5),
+                                        fillColor: themeColor.background
+                                            .withValues(alpha: 0.5),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
-                                          borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: themeColor.unselectedItem
+                                                .withValues(alpha: 0.1),
+                                          ),
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
-                                          borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: themeColor.unselectedItem
+                                                .withValues(alpha: 0.1),
+                                          ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
-                                          borderSide: BorderSide(color: themeColor.primary),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: themeColor.primary,
+                                          ),
                                         ),
                                       ),
                                       items: state.governorates
-                                          .map((g) => DropdownMenuItem<int>(
-                                                value: g.id,
-                                                child: Text(
-                                                  g.getName(locale),
-                                                  overflow: TextOverflow.ellipsis,
-                                                  maxLines: 1,
-                                                  style: TextStyle(color: themeColor.textPrimary, fontSize: 13),
+                                          .map(
+                                            (g) => DropdownMenuItem<int>(
+                                              value: g.id,
+                                              child: Text(
+                                                g.getName(locale),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                                style: TextStyle(
+                                                  color: themeColor.textPrimary,
+                                                  fontSize: 13,
                                                 ),
-                                              ))
+                                              ),
+                                            ),
+                                          )
                                           .toList(),
                                       onChanged: state.isLoadingGovernorates
                                           ? null
                                           : (val) {
                                               _geoCubit.selectGovernorate(val);
                                               setState(() {
-                                                _selectedGovernorate = state.selectedGovernorate?.getName(locale);
+                                                _selectedGovernorate = state
+                                                    .selectedGovernorate
+                                                    ?.getName(locale);
                                                 _selectedCity = null;
                                                 _selectedDistrictString = null;
                                                 _isCustomDistrict = false;
-                                                _customDistrictController.clear();
+                                                _customDistrictController
+                                                    .clear();
                                                 _districtController.clear();
                                               });
                                               _syncToState();
                                             },
                                       validator: (val) =>
-                                          InputValidator.validateDropdownSelection(val?.toString(), l10n: l10n),
+                                          InputValidator.validateDropdownSelection(
+                                            val?.toString(),
+                                            l10n: l10n,
+                                          ),
                                       hint: Text(
                                         state.isLoadingGovernorates
                                             ? 'تحميل...'
                                             : l10n.address_governorate_label,
                                         overflow: TextOverflow.ellipsis,
                                         maxLines: 1,
-                                        style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
+                                        style: TextStyle(
+                                          color: themeColor.secondaryText,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -421,60 +486,97 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                     child: DropdownButtonFormField<int>(
                                       isExpanded: true,
                                       dropdownColor: themeColor.cardBackground,
-                                      value: state.selectedCityId,
+                                      initialValue: state.selectedCityId,
                                       focusNode: _cityFocus,
                                       decoration: InputDecoration(
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 12,
+                                            ),
                                         filled: true,
-                                        fillColor: themeColor.background.withValues(alpha: 0.5),
+                                        fillColor: themeColor.background
+                                            .withValues(alpha: 0.5),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
-                                          borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: themeColor.unselectedItem
+                                                .withValues(alpha: 0.1),
+                                          ),
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
-                                          borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: themeColor.unselectedItem
+                                                .withValues(alpha: 0.1),
+                                          ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
-                                          borderSide: BorderSide(color: themeColor.primary),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: themeColor.primary,
+                                          ),
                                         ),
                                       ),
                                       items: state.cities
-                                          .map((c) => DropdownMenuItem<int>(
-                                                value: c.id,
-                                                child: Text(
-                                                  c.getName(locale),
-                                                  overflow: TextOverflow.ellipsis,
-                                                  maxLines: 1,
-                                                  style: TextStyle(color: themeColor.textPrimary, fontSize: 13),
+                                          .map(
+                                            (c) => DropdownMenuItem<int>(
+                                              value: c.id,
+                                              child: Text(
+                                                c.getName(locale),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                                style: TextStyle(
+                                                  color: themeColor.textPrimary,
+                                                  fontSize: 13,
                                                 ),
-                                              ))
+                                              ),
+                                            ),
+                                          )
                                           .toList(),
-                                      onChanged: (state.selectedGovernorateId == null || state.isLoadingCities)
+                                      onChanged:
+                                          (state.selectedGovernorateId ==
+                                                  null ||
+                                              state.isLoadingCities)
                                           ? null
                                           : (val) {
                                               _geoCubit.selectCity(val);
                                               setState(() {
-                                                _selectedCity = state.selectedCity?.getName(locale);
+                                                _selectedCity = state
+                                                    .selectedCity
+                                                    ?.getName(locale);
                                                 _selectedDistrictString = null;
                                                 _isCustomDistrict = false;
-                                                _customDistrictController.clear();
+                                                _customDistrictController
+                                                    .clear();
                                                 _districtController.clear();
                                               });
                                               _syncToState();
                                             },
                                       validator: (val) =>
-                                          InputValidator.validateDropdownSelection(val?.toString(), l10n: l10n),
+                                          InputValidator.validateDropdownSelection(
+                                            val?.toString(),
+                                            l10n: l10n,
+                                          ),
                                       hint: Text(
                                         state.isLoadingCities
                                             ? 'تحميل...'
-                                            : (state.selectedGovernorateId == null
-                                                ? l10n.address_select_governorate_first
-                                                : l10n.address_select_city),
+                                            : (state.selectedGovernorateId ==
+                                                      null
+                                                  ? l10n.address_select_governorate_first
+                                                  : l10n.address_select_city),
                                         overflow: TextOverflow.ellipsis,
                                         maxLines: 1,
-                                        style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
+                                        style: TextStyle(
+                                          color: themeColor.secondaryText,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -487,69 +589,117 @@ class _ManualClientPageState extends State<ManualClientPage> {
                             // 3. District Dropdown / Custom Field
                             Builder(
                               builder: (context) {
-                                final dbDistricts = state.districts.map((d) => d.getName(locale)).toList();
-                                final staticDistricts = EgyptGeographicHierarchy.getDistricts(
-                                  _selectedGovernorate ?? state.selectedGovernorate?.getName(locale),
-                                  _selectedCity ?? state.selectedCity?.getName(locale),
-                                );
-                                final availableDistricts = dbDistricts.isNotEmpty ? dbDistricts : staticDistricts;
+                                final dbDistricts = state.districts
+                                    .map((d) => d.getName(locale))
+                                    .toList();
+                                final staticDistricts =
+                                    EgyptGeographicHierarchy.getDistricts(
+                                      _selectedGovernorate ??
+                                          state.selectedGovernorate?.getName(
+                                            locale,
+                                          ),
+                                      _selectedCity ??
+                                          state.selectedCity?.getName(locale),
+                                    );
+                                final availableDistricts =
+                                    dbDistricts.isNotEmpty
+                                    ? dbDistricts
+                                    : staticDistricts;
 
                                 if (availableDistricts.isNotEmpty) {
                                   return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       _buildLabeledField(
                                         label: 'المنطقة / الحي',
                                         child: DropdownButtonFormField<String>(
                                           isExpanded: true,
-                                          dropdownColor: themeColor.cardBackground,
-                                          value: availableDistricts.contains(_selectedDistrictString)
+                                          dropdownColor:
+                                              themeColor.cardBackground,
+                                          initialValue:
+                                              availableDistricts.contains(
+                                                _selectedDistrictString,
+                                              )
                                               ? _selectedDistrictString
                                               : null,
                                           focusNode: _districtFocus,
                                           decoration: InputDecoration(
-                                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 14,
+                                                  vertical: 12,
+                                                ),
                                             filled: true,
-                                            fillColor: themeColor.background.withValues(alpha: 0.5),
+                                            fillColor: themeColor.background
+                                                .withValues(alpha: 0.5),
                                             border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(16),
-                                              borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              borderSide: BorderSide(
+                                                color: themeColor.unselectedItem
+                                                    .withValues(alpha: 0.1),
+                                              ),
                                             ),
                                             enabledBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(16),
-                                              borderSide: BorderSide(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              borderSide: BorderSide(
+                                                color: themeColor.unselectedItem
+                                                    .withValues(alpha: 0.1),
+                                              ),
                                             ),
                                             focusedBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(16),
-                                              borderSide: BorderSide(color: themeColor.primary),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              borderSide: BorderSide(
+                                                color: themeColor.primary,
+                                              ),
                                             ),
                                           ),
                                           items: availableDistricts
-                                              .map((d) => DropdownMenuItem<String>(
-                                                    value: d,
-                                                    child: Text(
-                                                      d,
-                                                      style: TextStyle(color: themeColor.textPrimary, fontSize: 13),
-                                                      overflow: TextOverflow.ellipsis,
-                                                      maxLines: 1,
+                                              .map(
+                                                (d) => DropdownMenuItem<String>(
+                                                  value: d,
+                                                  child: Text(
+                                                    d,
+                                                    style: TextStyle(
+                                                      color: themeColor
+                                                          .textPrimary,
+                                                      fontSize: 13,
                                                     ),
-                                                  ))
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 1,
+                                                  ),
+                                                ),
+                                              )
                                               .toList(),
                                           onChanged: (val) {
                                             setState(() {
                                               _selectedDistrictString = val;
-                                              _isCustomDistrict = (val == 'أخرى');
+                                              _isCustomDistrict =
+                                                  (val == 'أخرى');
                                               if (!_isCustomDistrict) {
-                                                _districtController.text = val ?? '';
+                                                _districtController.text =
+                                                    val ?? '';
                                               }
                                             });
                                             _syncToState();
                                           },
                                           validator: (val) =>
-                                              InputValidator.validateDropdownSelection(val, l10n: l10n),
+                                              InputValidator.validateDropdownSelection(
+                                                val,
+                                                l10n: l10n,
+                                              ),
                                           hint: Text(
-                                            state.isLoadingDistricts ? 'تحميل...' : 'اختر الحي / المنطقة',
-                                            style: TextStyle(color: themeColor.secondaryText, fontSize: 12),
+                                            state.isLoadingDistricts
+                                                ? 'تحميل...'
+                                                : 'اختر الحي / المنطقة',
+                                            style: TextStyle(
+                                              color: themeColor.secondaryText,
+                                              fontSize: 12,
+                                            ),
                                             overflow: TextOverflow.ellipsis,
                                             maxLines: 1,
                                           ),
@@ -560,12 +710,19 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                         _buildLabeledField(
                                           label: 'اسم الحي / المنطقة يدوياً',
                                           child: _buildTextFormField(
-                                            controller: _customDistrictController,
+                                            controller:
+                                                _customDistrictController,
                                             focusNode: _customDistrictFocus,
-                                            icon: Icons.edit_location_alt_rounded,
+                                            icon:
+                                                Icons.edit_location_alt_rounded,
                                             themeColor: themeColor,
-                                            hint: 'أدخل اسم الحي أو المنطقة بدقة',
-                                            validator: (val) => InputValidator.validateEmpty(val, l10n: l10n),
+                                            hint:
+                                                'أدخل اسم الحي أو المنطقة بدقة',
+                                            validator: (val) =>
+                                                InputValidator.validateEmpty(
+                                                  val,
+                                                  l10n: l10n,
+                                                ),
                                           ),
                                         ),
                                       ],
@@ -583,7 +740,11 @@ class _ManualClientPageState extends State<ManualClientPage> {
                                     hint: state.selectedCityId == null
                                         ? 'اختر المدينة أولاً'
                                         : 'أدخل اسم المنطقة أو الحي (مثال: الحي الأول)',
-                                    validator: (val) => InputValidator.validateEmpty(val, l10n: l10n),
+                                    validator: (val) =>
+                                        InputValidator.validateEmpty(
+                                          val,
+                                          l10n: l10n,
+                                        ),
                                   ),
                                 );
                               },
@@ -612,11 +773,16 @@ class _ManualClientPageState extends State<ManualClientPage> {
                   // 3. Sub-Details (Building, Floor, Appt)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 20,
+                      horizontal: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: themeColor.background.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.1)),
+                      border: Border.all(
+                        color: themeColor.unselectedItem.withValues(alpha: 0.1),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -771,7 +937,11 @@ class _ManualClientPageState extends State<ManualClientPage> {
       keyboardType: keyboardType ?? TextInputType.text,
       validator: validator,
       onChanged: (_) => _syncToState(),
-      prefixIcon: Icon(icon, color: themeColor.primary.withValues(alpha: 0.7), size: 22),
+      prefixIcon: Icon(
+        icon,
+        color: themeColor.primary.withValues(alpha: 0.7),
+        size: 22,
+      ),
       radius: 16,
       fillColor: themeColor.background.withValues(alpha: 0.5),
     );
@@ -795,7 +965,8 @@ class _ManualClientPageState extends State<ManualClientPage> {
     required AppLocalizations l10n,
   }) {
     return FormField<String>(
-      validator: (val) => InputValidator.validateEmpty(controller.text, l10n: l10n),
+      validator: (val) =>
+          InputValidator.validateEmpty(controller.text, l10n: l10n),
       builder: (state) {
         final hasError = state.hasError;
         return Column(
@@ -820,11 +991,13 @@ class _ManualClientPageState extends State<ManualClientPage> {
               },
               hint: "00",
               radius: 12,
-              fillColor: hasError 
-                  ? themeColor.error.withValues(alpha: 0.05) 
+              fillColor: hasError
+                  ? themeColor.error.withValues(alpha: 0.05)
                   : themeColor.cardBackground,
               errorBorderColor: themeColor.error,
-              enabledBorderColor: themeColor.unselectedItem.withValues(alpha: 0.1),
+              enabledBorderColor: themeColor.unselectedItem.withValues(
+                alpha: 0.1,
+              ),
               focusedBorderColor: themeColor.primary,
             ),
           ],
@@ -841,7 +1014,10 @@ class _ManualClientPageState extends State<ManualClientPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [themeColor.primary, themeColor.primary.withValues(alpha: 0.8)],
+            colors: [
+              themeColor.primary,
+              themeColor.primary.withValues(alpha: 0.8),
+            ],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -855,7 +1031,11 @@ class _ManualClientPageState extends State<ManualClientPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.auto_fix_high_rounded, color: Colors.white, size: 20),
+            const Icon(
+              Icons.auto_fix_high_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Text(
               l10n.booking_autofill_debug,
@@ -925,4 +1105,3 @@ class _ManualClientPageState extends State<ManualClientPage> {
     );
   }
 }
-

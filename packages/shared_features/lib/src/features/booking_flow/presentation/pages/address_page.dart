@@ -476,7 +476,7 @@ class _AddressPageState extends State<AddressPage> {
                       label: l10n.address_governorate_label,
                       child: DropdownButtonFormField<int>(
                         dropdownColor: themeColor.cardBackground,
-                        value: state.selectedGovernorateId,
+                        initialValue: state.selectedGovernorateId,
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -552,7 +552,7 @@ class _AddressPageState extends State<AddressPage> {
                       label: l10n.address_region_label,
                       child: DropdownButtonFormField<int>(
                         dropdownColor: themeColor.cardBackground,
-                        value: state.selectedCityId,
+                        initialValue: state.selectedCityId,
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -632,7 +632,7 @@ class _AddressPageState extends State<AddressPage> {
                         label: 'المنطقة / الحي',
                         child: DropdownButtonFormField<int>(
                           dropdownColor: themeColor.cardBackground,
-                          value: state.selectedDistrictId,
+                          initialValue: state.selectedDistrictId,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16,

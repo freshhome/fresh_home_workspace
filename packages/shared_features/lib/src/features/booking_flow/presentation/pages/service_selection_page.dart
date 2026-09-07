@@ -49,7 +49,9 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
       setState(() {
-        _error = l10n?.error_service_repository_unavailable ?? 'Service repository unavailable';
+        _error =
+            l10n?.error_service_repository_unavailable ??
+            'Service repository unavailable';
         _loading = false;
       });
       return;
@@ -221,7 +223,11 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline_rounded, size: 48, color: themeColor.error),
+              Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: themeColor.error,
+              ),
               const SizedBox(height: 12),
               Text(
                 _error!,
@@ -323,11 +329,11 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 1.05,
-                        ),
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 1.05,
+                            ),
                         itemCount: currentLevelNodes.length,
                         itemBuilder: (context, index) {
                           final node = currentLevelNodes[index];
@@ -408,7 +414,8 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
       );
     }
 
-    final parentTitle = currentParent.title[isArabic ? 'ar' : 'en'] ??
+    final parentTitle =
+        currentParent.title[isArabic ? 'ar' : 'en'] ??
         currentParent.title['ar'] ??
         '';
 
@@ -442,9 +449,12 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
     required AppTextThemeExtension themeText,
     required bool isArabic,
   }) {
-    final title = parent.title[isArabic ? 'ar' : 'en'] ?? parent.title['ar'] ?? '';
+    final title =
+        parent.title[isArabic ? 'ar' : 'en'] ?? parent.title['ar'] ?? '';
     final description =
-        parent.description[isArabic ? 'ar' : 'en'] ?? parent.description['ar'] ?? '';
+        parent.description[isArabic ? 'ar' : 'en'] ??
+        parent.description['ar'] ??
+        '';
     final tintColor = _getServiceTint(title, themeColor);
     final imageUrl = _resolveImageUrl(parent.image);
     final fallbackIcon = _getServiceFallbackIcon(title);
@@ -492,9 +502,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                 decoration: BoxDecoration(
                   color: themeColor.cardBackground,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: tintColor.withValues(alpha: 0.2),
-                  ),
+                  border: Border.all(color: tintColor.withValues(alpha: 0.2)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.04),
@@ -507,7 +515,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                     ? Image.network(
                         imageUrl,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) =>
+                        errorBuilder: (_, _, _) =>
                             Icon(fallbackIcon, color: tintColor, size: 26),
                       )
                     : Icon(fallbackIcon, color: tintColor, size: 26),
@@ -551,8 +559,10 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                   onTap: _handleBackHierarchy,
                   borderRadius: BorderRadius.circular(14),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
                       color: themeColor.cardBackground,
                       borderRadius: BorderRadius.circular(14),
@@ -641,15 +651,15 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
         color: isPaused
             ? themeColor.cardBackground.withValues(alpha: 0.45)
             : isSelected
-                ? themeColor.primary.withValues(alpha: 0.05)
-                : themeColor.cardBackground,
+            ? themeColor.primary.withValues(alpha: 0.05)
+            : themeColor.cardBackground,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isSelected
               ? themeColor.primary
               : isPaused
-                  ? Colors.amber.withValues(alpha: 0.3)
-                  : themeColor.unselectedItem.withValues(alpha: 0.12),
+              ? Colors.amber.withValues(alpha: 0.3)
+              : themeColor.unselectedItem.withValues(alpha: 0.12),
           width: isSelected ? 2.0 : 1.2,
         ),
         boxShadow: [
@@ -678,7 +688,9 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                     if (childrenCount > 0)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: tintColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
@@ -700,9 +712,13 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                     else if (isBookableLeaf)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF16A34A).withValues(alpha: 0.12),
+                          color: const Color(
+                            0xFF16A34A,
+                          ).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
@@ -720,7 +736,9 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                     if (isPaused)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.amber.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
@@ -736,8 +754,11 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                         ),
                       )
                     else if (isSelected)
-                      Icon(Icons.check_circle_rounded,
-                          size: 18, color: themeColor.primary),
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 18,
+                        color: themeColor.primary,
+                      ),
                   ],
                 ),
                 const Spacer(),
@@ -774,7 +795,9 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                     fontWeight: isSelected ? FontWeight.w900 : FontWeight.w800,
                     fontSize: 13,
                     height: 1.25,
-                    color: isSelected ? themeColor.primary : themeColor.textPrimary,
+                    color: isSelected
+                        ? themeColor.primary
+                        : themeColor.textPrimary,
                     fontFamily: 'Cairo',
                   ),
                 ),

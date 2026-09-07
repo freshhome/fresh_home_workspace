@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
-import '../tokens/motion_tokens.dart';
 import '../utilities/reduced_motion_ext.dart';
 
 /// A high-fidelity native Flutter widget recreating the Fresh Home branding
@@ -122,10 +121,7 @@ class _FHBrandLogoPainter extends CustomPainter {
   final double progress;
   final bool isReducedMotion;
 
-  _FHBrandLogoPainter({
-    required this.progress,
-    required this.isReducedMotion,
-  });
+  _FHBrandLogoPainter({required this.progress, required this.isReducedMotion});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -230,10 +226,22 @@ class _FHBrandLogoPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     // 2x2 grid of small window rects
-    canvas.drawRect(const Rect.fromLTRB(9.75391, 9.97321, 18.0737, 17.5843), windowPaint);
-    canvas.drawRect(const Rect.fromLTRB(0.0, 9.97321, 8.31978, 17.5843), windowPaint);
-    canvas.drawRect(const Rect.fromLTRB(9.75391, 0.0, 18.0737, 7.61113), windowPaint);
-    canvas.drawRect(const Rect.fromLTRB(0.0, 0.0, 8.31978, 7.61113), windowPaint);
+    canvas.drawRect(
+      const Rect.fromLTRB(9.75391, 9.97321, 18.0737, 17.5843),
+      windowPaint,
+    );
+    canvas.drawRect(
+      const Rect.fromLTRB(0.0, 9.97321, 8.31978, 17.5843),
+      windowPaint,
+    );
+    canvas.drawRect(
+      const Rect.fromLTRB(9.75391, 0.0, 18.0737, 7.61113),
+      windowPaint,
+    );
+    canvas.drawRect(
+      const Rect.fromLTRB(0.0, 0.0, 8.31978, 7.61113),
+      windowPaint,
+    );
 
     canvas.restore();
   }
@@ -295,29 +303,44 @@ class _FHBrandLogoPainter extends CustomPainter {
     final Path smokePath1 = Path()
       ..moveTo(17.7649, 3.17875)
       ..cubicTo(
-        17.7649 - 0.1595, 3.17875 - 0.24572,
-        17.0156 + 0.2683, 3.02475 - 0.15799,
-        17.0156, 3.02475,
+        17.7649 - 0.1595,
+        3.17875 - 0.24572,
+        17.0156 + 0.2683,
+        3.02475 - 0.15799,
+        17.0156,
+        3.02475,
       )
       ..cubicTo(
-        17.0156 - 1.6243, 3.02475 + 0.99972,
-        11.4374, 5.29356,
-        11.4374, 5.29356,
+        17.0156 - 1.6243,
+        3.02475 + 0.99972,
+        11.4374,
+        5.29356,
+        11.4374,
+        5.29356,
       )
       ..cubicTo(
-        11.4374 - 14.04793, 5.29356 + 3.56834,
-        2.99505 - 0.00688, 23.0148 - 0.0173,
-        2.99505, 23.0148,
+        11.4374 - 14.04793,
+        5.29356 + 3.56834,
+        2.99505 - 0.00688,
+        23.0148 - 0.0173,
+        2.99505,
+        23.0148,
       )
       ..cubicTo(
-        2.99505 + 6.81091, 23.0148 + 0.4882,
-        18.9841 - 2.7471, 15.2039 + 6.8444,
-        18.9841, 15.2039,
+        2.99505 + 6.81091,
+        23.0148 + 0.4882,
+        18.9841 - 2.7471,
+        15.2039 + 6.8444,
+        18.9841,
+        15.2039,
       )
       ..cubicTo(
-        18.9841 + 2.1381, 15.2039 - 5.42324,
-        17.7649 + 0.9303, 3.17875 + 1.57636,
-        17.7649, 3.17875,
+        18.9841 + 2.1381,
+        15.2039 - 5.42324,
+        17.7649 + 0.9303,
+        3.17875 + 1.57636,
+        17.7649,
+        3.17875,
       )
       ..close();
 
@@ -325,14 +348,20 @@ class _FHBrandLogoPainter extends CustomPainter {
     final Path smokePath2 = Path()
       ..moveTo(13.8646, 11.7136)
       ..cubicTo(
-        13.8646 - 0.0281, 11.7136 + 0.0336,
-        3.11005 - 0.01683, 22.9357 - 0.5744,
-        3.11005, 22.9357,
+        13.8646 - 0.0281,
+        11.7136 + 0.0336,
+        3.11005 - 0.01683,
+        22.9357 - 0.5744,
+        3.11005,
+        22.9357,
       )
       ..cubicTo(
-        3.11005 - 0.01683, 22.9357 - 0.5744,
-        13.8646, 11.7136,
-        13.8646, 11.7136,
+        3.11005 - 0.01683,
+        22.9357 - 0.5744,
+        13.8646,
+        11.7136,
+        13.8646,
+        11.7136,
       )
       ..close();
 
@@ -408,9 +437,12 @@ class _FHBrandLogoPainter extends CustomPainter {
     final Path rOuterPath = Path()
       ..moveTo(21.9814, 0.0)
       ..cubicTo(
-        21.9814 + 21.2972, 0.0,
-        29.5117 + 15.6814, 29.5752 - 6.2491,
-        29.5117, 29.5752,
+        21.9814 + 21.2972,
+        0.0,
+        29.5117 + 15.6814,
+        29.5752 - 6.2491,
+        29.5117,
+        29.5752,
       )
       ..lineTo(42.0615, 49.8262)
       ..lineTo(30.1963, 49.8262)
@@ -425,19 +457,29 @@ class _FHBrandLogoPainter extends CustomPainter {
       ..moveTo(10.9531, 22.1299)
       ..lineTo(19.4717, 22.1299)
       ..cubicTo(
-        19.4717 + 6.1604, 22.1299,
-        28.4463 - 0.228, 15.5186 + 5.3584,
-        28.4463, 15.5186,
+        19.4717 + 6.1604,
+        22.1299,
+        28.4463 - 0.228,
+        15.5186 + 5.3584,
+        28.4463,
+        15.5186,
       )
       ..cubicTo(
-        28.4463 + 0.2279, 15.5186 - 5.3587,
-        19.4717 + 4.4337, 8.76855,
-        19.4717, 8.76855,
+        28.4463 + 0.2279,
+        15.5186 - 5.3587,
+        19.4717 + 4.4337,
+        8.76855,
+        19.4717,
+        8.76855,
       )
       ..lineTo(10.9531, 8.76855)
       ..close();
 
-    final Path rCombined = Path.combine(PathOperation.difference, rOuterPath, rInnerPath);
+    final Path rCombined = Path.combine(
+      PathOperation.difference,
+      rOuterPath,
+      rInnerPath,
+    );
     canvas.drawPath(rCombined, rPaint);
 
     canvas.restore();
@@ -486,6 +528,7 @@ class _FHBrandLogoPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _FHBrandLogoPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.isReducedMotion != isReducedMotion;
+    return oldDelegate.progress != progress ||
+        oldDelegate.isReducedMotion != isReducedMotion;
   }
 }

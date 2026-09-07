@@ -106,6 +106,7 @@ class DynamicFormRenderer extends StatelessWidget {
                 );
                 break;
               case DynamicFieldType.optionsGroup:
+              case DynamicFieldType.linearSectors:
                 fieldWidget = const SizedBox.shrink();
                 break;
             }
@@ -225,7 +226,9 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
                 final text = _controller.text.trim();
                 if (text.isNotEmpty) {
                   final parsed = double.tryParse(text);
-                  if (parsed != null && widget.field.min != null && parsed < widget.field.min!) {
+                  if (parsed != null &&
+                      widget.field.min != null &&
+                      parsed < widget.field.min!) {
                     _controller.text = widget.field.min!.toStringAsFixed(0);
                     widget.onChanged(widget.field.min!.toDouble());
                   }
@@ -282,7 +285,10 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  l10n.booking_min_required(widget.field.min!.toStringAsFixed(0), widget.field.unit ?? ''),
+                  l10n.booking_min_required(
+                    widget.field.min!.toStringAsFixed(0),
+                    widget.field.unit ?? '',
+                  ),
                   style: widget.themeText.textCaption.copyWith(
                     color: widget.themeColor.primary.withValues(alpha: 0.7),
                     fontSize: 12,
@@ -322,20 +328,38 @@ class DynamicToggleField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
-    
+
     // Retrieve custom options labels
     final optTrue = field.options != null && field.options!.isNotEmpty
-        ? field.options!.firstWhere((o) => o.id == 'true' || o.id == 'yes',
-            orElse: () => const DropdownOptionEntity(id: 'true', label: {'ar': 'نعم', 'en': 'Yes'}))
-        : const DropdownOptionEntity(id: 'true', label: {'ar': 'نعم', 'en': 'Yes'});
+        ? field.options!.firstWhere(
+            (o) => o.id == 'true' || o.id == 'yes',
+            orElse: () => const DropdownOptionEntity(
+              id: 'true',
+              label: {'ar': 'نعم', 'en': 'Yes'},
+            ),
+          )
+        : const DropdownOptionEntity(
+            id: 'true',
+            label: {'ar': 'نعم', 'en': 'Yes'},
+          );
 
     final optFalse = field.options != null && field.options!.length > 1
-        ? field.options!.firstWhere((o) => o.id == 'false' || o.id == 'no',
-            orElse: () => const DropdownOptionEntity(id: 'false', label: {'ar': 'لا', 'en': 'No'}))
-        : const DropdownOptionEntity(id: 'false', label: {'ar': 'لا', 'en': 'No'});
+        ? field.options!.firstWhere(
+            (o) => o.id == 'false' || o.id == 'no',
+            orElse: () => const DropdownOptionEntity(
+              id: 'false',
+              label: {'ar': 'لا', 'en': 'No'},
+            ),
+          )
+        : const DropdownOptionEntity(
+            id: 'false',
+            label: {'ar': 'لا', 'en': 'No'},
+          );
 
-    final String trueLabel = optTrue.label[locale] ?? optTrue.label['ar'] ?? 'نعم';
-    final String falseLabel = optFalse.label[locale] ?? optFalse.label['ar'] ?? 'لا';
+    final String trueLabel =
+        optTrue.label[locale] ?? optTrue.label['ar'] ?? 'نعم';
+    final String falseLabel =
+        optFalse.label[locale] ?? optFalse.label['ar'] ?? 'لا';
 
     final isTrueSelected = value == true;
     final isFalseSelected = value == false;
@@ -365,7 +389,10 @@ class DynamicToggleField extends StatelessWidget {
                 onTap: () => onChanged(true),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: isTrueSelected
                         ? themeColor.primary.withValues(alpha: 0.05)
@@ -374,7 +401,11 @@ class DynamicToggleField extends StatelessWidget {
                     border: Border.all(
                       color: isTrueSelected
                           ? themeColor.primary
-                          : (hasError ? themeColor.error : themeColor.unselectedItem.withValues(alpha: 0.2)),
+                          : (hasError
+                                ? themeColor.error
+                                : themeColor.unselectedItem.withValues(
+                                    alpha: 0.2,
+                                  )),
                       width: isTrueSelected ? 2.0 : 1.5,
                     ),
                     boxShadow: isTrueSelected
@@ -383,7 +414,7 @@ class DynamicToggleField extends StatelessWidget {
                               color: themeColor.primary.withValues(alpha: 0.15),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
-                            )
+                            ),
                           ]
                         : [themeColor.cardShadow],
                   ),
@@ -396,7 +427,9 @@ class DynamicToggleField extends StatelessWidget {
                             : Icons.radio_button_off_rounded,
                         color: isTrueSelected
                             ? themeColor.primary
-                            : (hasError ? themeColor.error : themeColor.unselectedItem),
+                            : (hasError
+                                  ? themeColor.error
+                                  : themeColor.unselectedItem),
                         size: 20,
                       ),
                       const SizedBox(width: 10),
@@ -404,8 +437,12 @@ class DynamicToggleField extends StatelessWidget {
                         child: Text(
                           trueLabel,
                           style: themeText.textBodyPrimary.copyWith(
-                            fontWeight: isTrueSelected ? FontWeight.bold : FontWeight.w600,
-                            color: isTrueSelected ? themeColor.primary : themeColor.textPrimary,
+                            fontWeight: isTrueSelected
+                                ? FontWeight.bold
+                                : FontWeight.w600,
+                            color: isTrueSelected
+                                ? themeColor.primary
+                                : themeColor.textPrimary,
                             fontSize: 13,
                           ),
                           textAlign: TextAlign.center,
@@ -423,7 +460,10 @@ class DynamicToggleField extends StatelessWidget {
                 onTap: () => onChanged(false),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: isFalseSelected
                         ? themeColor.primary.withValues(alpha: 0.05)
@@ -432,7 +472,11 @@ class DynamicToggleField extends StatelessWidget {
                     border: Border.all(
                       color: isFalseSelected
                           ? themeColor.primary
-                          : (hasError ? themeColor.error : themeColor.unselectedItem.withValues(alpha: 0.2)),
+                          : (hasError
+                                ? themeColor.error
+                                : themeColor.unselectedItem.withValues(
+                                    alpha: 0.2,
+                                  )),
                       width: isFalseSelected ? 2.0 : 1.5,
                     ),
                     boxShadow: isFalseSelected
@@ -441,7 +485,7 @@ class DynamicToggleField extends StatelessWidget {
                               color: themeColor.primary.withValues(alpha: 0.15),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
-                            )
+                            ),
                           ]
                         : [themeColor.cardShadow],
                   ),
@@ -454,7 +498,9 @@ class DynamicToggleField extends StatelessWidget {
                             : Icons.radio_button_off_rounded,
                         color: isFalseSelected
                             ? themeColor.primary
-                            : (hasError ? themeColor.error : themeColor.unselectedItem),
+                            : (hasError
+                                  ? themeColor.error
+                                  : themeColor.unselectedItem),
                         size: 20,
                       ),
                       const SizedBox(width: 10),
@@ -462,8 +508,12 @@ class DynamicToggleField extends StatelessWidget {
                         child: Text(
                           falseLabel,
                           style: themeText.textBodyPrimary.copyWith(
-                            fontWeight: isFalseSelected ? FontWeight.bold : FontWeight.w600,
-                            color: isFalseSelected ? themeColor.primary : themeColor.textPrimary,
+                            fontWeight: isFalseSelected
+                                ? FontWeight.bold
+                                : FontWeight.w600,
+                            color: isFalseSelected
+                                ? themeColor.primary
+                                : themeColor.textPrimary,
                             fontSize: 13,
                           ),
                           textAlign: TextAlign.center,
@@ -552,7 +602,7 @@ class DynamicDropdownField extends StatelessWidget {
         const SizedBox(height: 10),
         DropdownButtonFormField<String>(
           key: ValueKey(effectiveVal),
-          value: effectiveVal,
+          initialValue: effectiveVal,
           isExpanded: true,
           onChanged: onChanged,
           icon: Icon(
@@ -849,7 +899,9 @@ class DynamicCardStepper extends StatelessWidget {
           border: Border.all(
             color: hasError
                 ? themeColor.error
-                : (hasValue ? themeColor.primary : themeColor.unselectedItem.withValues(alpha: 0.15)),
+                : (hasValue
+                      ? themeColor.primary
+                      : themeColor.unselectedItem.withValues(alpha: 0.15)),
             width: hasError ? 2.0 : 1.5,
           ),
           boxShadow: [themeColor.cardShadow],
@@ -937,7 +989,7 @@ class DynamicCardStepper extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           );
-                        }
+                        },
                       ),
                     ),
                   ),
@@ -1073,7 +1125,9 @@ class DynamicCardToggle extends StatelessWidget {
             border: Border.all(
               color: hasError
                   ? themeColor.error
-                  : (value ? themeColor.primary : themeColor.unselectedItem.withValues(alpha: 0.15)),
+                  : (value
+                        ? themeColor.primary
+                        : themeColor.unselectedItem.withValues(alpha: 0.15)),
               width: hasError ? 2.0 : 1.5,
             ),
             boxShadow: [themeColor.cardShadow],
@@ -1152,7 +1206,7 @@ class DynamicCardToggle extends StatelessWidget {
                                     fontSize: 11,
                                   ),
                                 );
-                              }
+                              },
                             ),
                           ),
                         ],

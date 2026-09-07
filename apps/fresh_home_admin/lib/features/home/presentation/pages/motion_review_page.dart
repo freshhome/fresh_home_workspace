@@ -6,7 +6,7 @@ import 'package:shared_features/shared_features.dart'; // For BookingSuccessAnim
 /// Interactive Playground page for reviewing, editing, and previewing
 /// motion design system animations in the Admin Dashboard.
 class MotionReviewPage extends StatefulWidget {
-  const MotionReviewPage({Key? key}) : super(key: key);
+  const MotionReviewPage({super.key});
 
   @override
   State<MotionReviewPage> createState() => _MotionReviewPageState();
@@ -175,7 +175,7 @@ class _MotionReviewPageState extends State<MotionReviewPage> {
                   ),
                   Switch(
                     value: _simulatedReducedMotion,
-                    activeColor: Colors.pink.shade700,
+                    activeThumbColor: Colors.pink.shade700,
                     onChanged: (val) {
                       setState(() {
                         _simulatedReducedMotion = val;
@@ -552,7 +552,9 @@ class _MotionReviewPageState extends State<MotionReviewPage> {
                   });
                 },
                 icon: Icon(
-                  _logoTrigger ? Icons.pause_circle_outline : Icons.play_circle_outline,
+                  _logoTrigger
+                      ? Icons.pause_circle_outline
+                      : Icons.play_circle_outline,
                   color: const Color(0xFF0D47A1),
                 ),
                 label: Text(
@@ -562,7 +564,10 @@ class _MotionReviewPageState extends State<MotionReviewPage> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF0D47A1),
                   side: const BorderSide(color: Color(0xFF0D47A1)),
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 12.0,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),

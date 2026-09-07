@@ -23,7 +23,7 @@ class BookingRemoteModel {
   final DateTime updatedAt;
   final DateTime? assignedAt;
   final DateTime? acceptedAt;
-  final DateTime? dispatchedAt; 
+  final DateTime? dispatchedAt;
   final DateTime? arrivedAt;
   final DateTime? startedAt;
   final DateTime? completedAt;
@@ -94,7 +94,8 @@ class BookingRemoteModel {
         if (val.startsWith('[') && val.endsWith(']')) {
           try {
             final decoded = jsonDecode(val);
-            if (decoded is List) return decoded.map((e) => e.toString()).toList();
+            if (decoded is List)
+              return decoded.map((e) => e.toString()).toList();
           } catch (_) {}
         }
         return [val];
@@ -123,18 +124,36 @@ class BookingRemoteModel {
       addressId: json['address_id'] as String?,
       serviceId: json['service_id'] as String?,
       readableId: json['readable_id'] as String?,
-      createdAt: json['created_at'] != null ? const TimestampConverter().fromJson(json['created_at']) : DateTime.now(),
-      updatedAt: json['updated_at'] != null ? const TimestampConverter().fromJson(json['updated_at']) : DateTime.now(),
+      createdAt: json['created_at'] != null
+          ? const TimestampConverter().fromJson(json['created_at'])
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? const TimestampConverter().fromJson(json['updated_at'])
+          : DateTime.now(),
       isWhatsappConfirmed: json['is_whatsapp_confirmed'] as bool? ?? true,
       paymentMethod: json['payment_method'] as String?,
       paymentStatus: json['payment_status'] as String?,
-      assignedAt: json['assigned_at'] != null ? const TimestampConverter().fromJson(json['assigned_at']) : null,
-      acceptedAt: json['accepted_at'] != null ? const TimestampConverter().fromJson(json['accepted_at']) : null,
-      dispatchedAt: json['dispatched_at'] != null ? const TimestampConverter().fromJson(json['dispatched_at']) : null,
-      arrivedAt: json['arrived_at'] != null ? const TimestampConverter().fromJson(json['arrived_at']) : null,
-      startedAt: json['started_at'] != null ? const TimestampConverter().fromJson(json['started_at']) : null,
-      completedAt: json['completed_at'] != null ? const TimestampConverter().fromJson(json['completed_at']) : null,
-      cancelledAt: json['cancelled_at'] != null ? const TimestampConverter().fromJson(json['cancelled_at']) : null,
+      assignedAt: json['assigned_at'] != null
+          ? const TimestampConverter().fromJson(json['assigned_at'])
+          : null,
+      acceptedAt: json['accepted_at'] != null
+          ? const TimestampConverter().fromJson(json['accepted_at'])
+          : null,
+      dispatchedAt: json['dispatched_at'] != null
+          ? const TimestampConverter().fromJson(json['dispatched_at'])
+          : null,
+      arrivedAt: json['arrived_at'] != null
+          ? const TimestampConverter().fromJson(json['arrived_at'])
+          : null,
+      startedAt: json['started_at'] != null
+          ? const TimestampConverter().fromJson(json['started_at'])
+          : null,
+      completedAt: json['completed_at'] != null
+          ? const TimestampConverter().fromJson(json['completed_at'])
+          : null,
+      cancelledAt: json['cancelled_at'] != null
+          ? const TimestampConverter().fromJson(json['cancelled_at'])
+          : null,
       cancellationReasonCode: json['cancellation_reason_code'] as String?,
       cancelledByRole: json['cancelled_by_role'] as String?,
       isCritical: json['is_critical'] as bool? ?? false,
@@ -142,7 +161,9 @@ class BookingRemoteModel {
       pricingInputs: pricingInputsMap,
       fieldSnapshot: pricingInputsMap?['__field_snapshot'] != null
           ? DynamicFieldSnapshot.fromJson(
-              Map<String, dynamic>.from(pricingInputsMap!['__field_snapshot'] as Map),
+              Map<String, dynamic>.from(
+                pricingInputsMap!['__field_snapshot'] as Map,
+              ),
             )
           : null,
     );
@@ -179,18 +200,26 @@ class BookingRemoteModel {
       'is_whatsapp_confirmed': isWhatsappConfirmed,
       if (paymentMethod != null) 'payment_method': paymentMethod,
       if (paymentStatus != null) 'payment_status': paymentStatus,
-      if (assignedAt != null) 'assigned_at': const TimestampConverter().toJson(assignedAt!),
-      if (acceptedAt != null) 'accepted_at': const TimestampConverter().toJson(acceptedAt!),
-      if (dispatchedAt != null) 'dispatched_at': const TimestampConverter().toJson(dispatchedAt!),
-      if (arrivedAt != null) 'arrived_at': const TimestampConverter().toJson(arrivedAt!),
-      if (startedAt != null) 'started_at': const TimestampConverter().toJson(startedAt!),
-      if (completedAt != null) 'completed_at': const TimestampConverter().toJson(completedAt!),
-      if (cancelledAt != null) 'cancelled_at': const TimestampConverter().toJson(cancelledAt!),
-      if (cancellationReasonCode != null) 'cancellation_reason_code': cancellationReasonCode,
+      if (assignedAt != null)
+        'assigned_at': const TimestampConverter().toJson(assignedAt!),
+      if (acceptedAt != null)
+        'accepted_at': const TimestampConverter().toJson(acceptedAt!),
+      if (dispatchedAt != null)
+        'dispatched_at': const TimestampConverter().toJson(dispatchedAt!),
+      if (arrivedAt != null)
+        'arrived_at': const TimestampConverter().toJson(arrivedAt!),
+      if (startedAt != null)
+        'started_at': const TimestampConverter().toJson(startedAt!),
+      if (completedAt != null)
+        'completed_at': const TimestampConverter().toJson(completedAt!),
+      if (cancelledAt != null)
+        'cancelled_at': const TimestampConverter().toJson(cancelledAt!),
+      if (cancellationReasonCode != null)
+        'cancellation_reason_code': cancellationReasonCode,
       if (cancelledByRole != null) 'cancelled_by_role': cancelledByRole,
       'is_critical': isCritical,
       if (criticalReason != null) 'critical_reason': criticalReason,
-      if (resolvedPricingInputs != null) 'pricing_inputs': resolvedPricingInputs,
+      'pricing_inputs': ?resolvedPricingInputs,
     };
   }
 }

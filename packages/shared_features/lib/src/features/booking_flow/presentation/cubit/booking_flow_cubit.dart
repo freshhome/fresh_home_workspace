@@ -20,6 +20,9 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
   // Optional – only required in admin mode for service loading
   final ServiceRepository? serviceRepository;
 
+  // Optional – for saving and restoring booking drafts
+  final BookingDraftRepository? bookingDraftRepository;
+
   Timer? _debounceTimer;
   int _pricingRequestToken = 0;
 
@@ -31,13 +34,8 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     required this.checkActiveCouponsUseCase,
     this.profileRepository,
     this.serviceRepository,
-  }) : super(
-         BookingFlowState(
-           service: config.preSelectedService,
-           servicePrice: config.initialServicePrice,
-           dynamicInputs: _getInitialDynamicInputs(config.initialServicePrice),
-         ),
-       ) {
+    this.bookingDraftRepository,
+  }) : super(_createInitialState(config)) {
     _init();
   }
 
@@ -52,10 +50,16 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         state.service!.subServiceId,
       );
       result.fold((failure) => null, (serviceEntity) {
-        emit(state.copyWith(computedFields: serviceEntity.computedFields));
+        emit(state.copyWith(
+          servicePrice: state.servicePrice ?? serviceEntity.price,
+          computedFields: serviceEntity.computedFields,
+        ));
       });
     }
     await _checkActiveCoupons();
+    if (config.initialDraft != null) {
+      _validateCurrentStep();
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -722,7 +726,12 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
           ),
         );
       },
-      (newBookingId) {
+      (newBookingId) async {
+        if (state.activeDraftId != null && bookingDraftRepository != null) {
+          try {
+            await bookingDraftRepository!.deleteDraft(state.activeDraftId!);
+          } catch (_) {}
+        }
         if (isClosed) return;
         emit(
           state.copyWith(
@@ -730,6 +739,72 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
             generatedBookingId: newBookingId,
           ),
         );
+      },
+    );
+  }
+
+  // ── Draft Handling ─────────────────────────────────────────────────────────
+
+  Future<String?> saveAsDraft() async {
+    if (bookingDraftRepository == null) return null;
+
+    final draftId = state.activeDraftId ?? const Uuid().v4();
+    final now = DateTime.now();
+
+    final draft = BookingDraft(
+      id: draftId,
+      createdAt: now,
+      updatedAt: now,
+      currentStepIndex: state.currentStepIndex,
+      clientName: state.manualClientName?.trim().isNotEmpty == true
+          ? state.manualClientName!.trim()
+          : null,
+      clientPhone: state.manualClientPhone?.trim().isNotEmpty == true
+          ? state.manualClientPhone!.trim()
+          : null,
+      serviceName: state.service?.name['ar'] ?? state.service?.name['en'],
+      serviceTitle: state.service?.name,
+      subServiceId: state.service?.subServiceId,
+      serviceImage: state.service?.image,
+      priceTotal: state.price?.total,
+      area: state.area,
+      totalLinearMeters: state.totalLinearMeters,
+      useWindowsCalculator: state.useWindowsCalculator,
+      windows: state.windows
+          .map(
+            (w) => {
+              'width': w.width,
+              'height': w.height,
+              'quantity': w.quantity,
+              'isBothSides': w.isBothSides,
+            },
+          )
+          .toList(),
+      selectedOptions: state.selectedOptions,
+      dynamicInputs: state.dynamicInputs,
+      isPriceCalculated: state.isPriceCalculated,
+      scheduledAt: state.scheduledAt,
+      manualClientGovernorate: state.manualClientGovernorate,
+      manualClientCity: state.manualClientCity,
+      manualClientDistrict: state.manualClientDistrict,
+      manualClientStreet: state.manualClientStreet,
+      manualClientBuilding: state.manualClientBuilding,
+      manualClientFloor: state.manualClientFloor,
+      manualClientApartment: state.manualClientApartment,
+      manualClientLandmark: state.manualClientLandmark,
+      manualClientPropertyType: state.manualClientPropertyType,
+      manualClientLocationUrl:
+          state.manualClientLocationUrl ?? state.address?.locationUrl,
+      manualClientLatitude: state.manualClientLatitude,
+      manualClientLongitude: state.manualClientLongitude,
+    );
+
+    final result = await bookingDraftRepository!.saveDraft(draft);
+    return result.fold(
+      (failure) => null,
+      (_) {
+        emit(state.copyWith(activeDraftId: draftId, isDraftSaved: true));
+        return draftId;
       },
     );
   }
@@ -920,5 +995,84 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     PriceEntity? priceConfig,
   ) {
     return <String, dynamic>{};
+  }
+
+  static BookingFlowState _createInitialState(BookingFlowConfig config) {
+    final draft = config.initialDraft;
+    if (draft != null) {
+      BookedService? service;
+      if (draft.subServiceId != null) {
+        service = BookedService(
+          id: const Uuid().v4(),
+          subServiceId: draft.subServiceId!,
+          name: draft.serviceTitle ??
+              {
+                'ar': draft.serviceName ?? '',
+                'en': draft.serviceName ?? '',
+              },
+          image: draft.serviceImage ?? '',
+        );
+      } else {
+        service = config.preSelectedService;
+      }
+
+      final windows = draft.windows.map((w) {
+        return WindowDimension(
+          width: (w['width'] as num?)?.toDouble() ?? 0.0,
+          height: (w['height'] as num?)?.toDouble() ?? 0.0,
+          quantity: (w['quantity'] as num?)?.toInt() ?? 1,
+          isBothSides: w['isBothSides'] as bool? ?? false,
+        );
+      }).toList();
+
+      BookingPricing? price;
+      if (draft.priceTotal != null) {
+        price = BookingPricing(
+          basePrice: draft.priceTotal!,
+          extraFees: 0.0,
+          discount: 0.0,
+          total: draft.priceTotal!,
+        );
+      }
+
+      return BookingFlowState(
+        service: service,
+        servicePrice: config.initialServicePrice,
+        currentStepIndex: draft.currentStepIndex,
+        area: draft.area,
+        totalLinearMeters: draft.totalLinearMeters,
+        useWindowsCalculator: draft.useWindowsCalculator,
+        windows: windows,
+        selectedOptions: draft.selectedOptions,
+        dynamicInputs: draft.dynamicInputs.isNotEmpty
+            ? draft.dynamicInputs
+            : _getInitialDynamicInputs(config.initialServicePrice),
+        price: price,
+        isPriceCalculated: draft.isPriceCalculated,
+        scheduledAt: draft.scheduledAt,
+        manualClientName: draft.clientName,
+        manualClientPhone: draft.clientPhone,
+        manualClientGovernorate: draft.manualClientGovernorate,
+        manualClientCity: draft.manualClientCity,
+        manualClientDistrict: draft.manualClientDistrict,
+        manualClientStreet: draft.manualClientStreet,
+        manualClientBuilding: draft.manualClientBuilding,
+        manualClientFloor: draft.manualClientFloor,
+        manualClientApartment: draft.manualClientApartment,
+        manualClientLandmark: draft.manualClientLandmark,
+        manualClientPropertyType: draft.manualClientPropertyType,
+        manualClientLocationUrl: draft.manualClientLocationUrl,
+        manualClientLatitude: draft.manualClientLatitude,
+        manualClientLongitude: draft.manualClientLongitude,
+        activeDraftId: draft.id,
+      );
+    }
+
+    return BookingFlowState(
+      service: config.preSelectedService,
+      servicePrice: config.initialServicePrice,
+      dynamicInputs: _getInitialDynamicInputs(config.initialServicePrice),
+      activeDraftId: config.draftId,
+    );
   }
 }

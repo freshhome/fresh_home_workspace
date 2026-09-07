@@ -17,6 +17,53 @@ class FormattedField {
 }
 
 class DynamicFieldFormatter {
+  static const Set<String> _excludedKeys = {
+    'selected_options',
+    'windows',
+    '__field_snapshot',
+    '__field_labels',
+    'name',
+    'phone',
+    'customer_name',
+    'customer_phone',
+    'client_name',
+    'client_phone',
+    'contact_name',
+    'contact_phone',
+    'payment_method',
+    'payment_type',
+    'payment_status',
+    'total',
+    'price',
+    'address_id',
+    'service_id',
+    'sub_service_id',
+  };
+
+  static const Map<String, Map<String, String>> _knownFieldLabels = {
+    'area': {'ar': 'المساحة', 'en': 'Area'},
+    'rooms': {'ar': 'عدد الغرف', 'en': 'Rooms'},
+    'bathrooms': {'ar': 'عدد الحمامات', 'en': 'Bathrooms'},
+    'kitchens': {'ar': 'عدد المطابخ', 'en': 'Kitchens'},
+    'living_rooms': {'ar': 'عدد الصالات', 'en': 'Living Rooms'},
+    'floors': {'ar': 'عدد الطوابق', 'en': 'Floors'},
+    'balconies': {'ar': 'عدد الشرفات', 'en': 'Balconies'},
+    'windows': {'ar': 'النوافذ', 'en': 'Windows'},
+    'property_type': {'ar': 'نوع العقار', 'en': 'Property Type'},
+    'cleaning_type': {'ar': 'نوع التنظيف', 'en': 'Cleaning Type'},
+    'furnishing_status': {'ar': 'حالة الفرش', 'en': 'Furnishing Status'},
+    'duration': {'ar': 'المدة', 'en': 'Duration'},
+    'hours': {'ar': 'عدد الساعات', 'en': 'Hours'},
+    'technicians_count': {'ar': 'عدد الفنيين', 'en': 'Technicians Count'},
+    'frequency': {'ar': 'التكرار', 'en': 'Frequency'},
+    'notes': {'ar': 'ملاحظات', 'en': 'Notes'},
+  };
+
+  static const Map<String, Map<String, String>> _knownFieldUnits = {
+    'area': {'ar': 'م²', 'en': 'm²'},
+    'hours': {'ar': 'ساعة', 'en': 'hrs'},
+  };
+
   static List<FormattedField> formatBooking({
     required Map<String, dynamic> pricingInputs,
     required DynamicFieldSnapshot? snapshot,
@@ -24,13 +71,12 @@ class DynamicFieldFormatter {
   }) {
     final List<FormattedField> list = [];
 
-    // Filter metadata keys that are not input fields
+    // Filter metadata keys and customer info/payment methods
     final Map<String, dynamic> filteredInputs = Map<String, dynamic>.from(pricingInputs)
-      ..removeWhere((k, v) => v == null || v.toString() == 'null')
-      ..remove('selected_options')
-      ..remove('windows')
-      ..remove('__field_snapshot')
-      ..remove('__field_labels');
+      ..removeWhere((k, v) =>
+          v == null ||
+          v.toString() == 'null' ||
+          _excludedKeys.contains(k.toLowerCase()));
 
     if (snapshot != null) {
       // 1. Process using strongly-typed Snapshot Field Definitions
@@ -57,7 +103,17 @@ class DynamicFieldFormatter {
             }
           }
         }
-        final unitText = schema.unit?[locale] ?? schema.unit?['ar'];
+        if (labelText == key) {
+          final known = _knownFieldLabels[key.toLowerCase()];
+          if (known != null) {
+            labelText = known[locale] ?? known['ar'] ?? key;
+          }
+        }
+
+        var unitText = schema.unit?[locale] ?? schema.unit?['ar'];
+        if (unitText == null || unitText.isEmpty) {
+          unitText = _knownFieldUnits[key.toLowerCase()]?[locale] ?? _knownFieldUnits[key.toLowerCase()]?['ar'];
+        }
         String displayValue = '';
 
         if (schema.type == 'toggle') {
@@ -118,7 +174,14 @@ class DynamicFieldFormatter {
 
         // Try to translate label
         final labelMap = fieldLabels[key];
-        final labelText = labelMap?[locale] ?? labelMap?['ar'] ?? key;
+        var labelText = labelMap?[locale] ?? labelMap?['ar'] ?? key;
+        if (labelText == key) {
+          final known = _knownFieldLabels[key.toLowerCase()];
+          if (known != null) {
+            labelText = known[locale] ?? known['ar'] ?? key;
+          }
+        }
+        final unitText = _knownFieldUnits[key.toLowerCase()]?[locale] ?? _knownFieldUnits[key.toLowerCase()]?['ar'];
 
         // Try to translate value (e.g. if it is a dropdown option ID)
         String displayValue = '';
@@ -146,7 +209,7 @@ class DynamicFieldFormatter {
           label: labelText,
           displayValue: displayValue,
           type: 'text',
-          unit: null,
+          unit: unitText,
         ));
       }
     }

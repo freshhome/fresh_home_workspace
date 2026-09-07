@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared/shared.dart';
-import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/pricing_rule_entity.dart';
 import '../../domain/use_cases/upsert_pricing_rule_usecase.dart';
@@ -103,7 +102,10 @@ class _VisualRuleBuilderPageState extends State<VisualRuleBuilderPage> {
       debugPrint('❌ [VisualRuleBuilderPage Error]: $e\n$stackTrace');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.red.shade900, content: Text('فشل حفظ قاعدة AST الشرطية: $e')),
+        SnackBar(
+          backgroundColor: Colors.red.shade900,
+          content: Text('فشل حفظ قاعدة AST الشرطية: $e'),
+        ),
       );
     }
   }
@@ -135,220 +137,329 @@ class _VisualRuleBuilderPageState extends State<VisualRuleBuilderPage> {
     return Scaffold(
       backgroundColor: themeColor.background,
       appBar: AppBar(
-        title: const Text('باني القواعد الشرطية المرئي (AST)', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+        title: const Text(
+          'باني القواعد الشرطية المرئي (AST)',
+          style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _errorMessage!,
-                          style: const TextStyle(fontFamily: 'Cairo', color: Colors.red, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _isLoading = true;
-                              _errorMessage = null;
-                            });
-                            _loadService();
-                          },
-                          child: const Text('إعادة المحاولة', style: TextStyle(fontFamily: 'Cairo')),
-                        ),
-                      ],
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _errorMessage!,
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                )
-              : Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: Form(
-                    key: _formKey,
-                    child: ListView(
-                      padding: const EdgeInsets.all(20),
-                      children: [
-                        // Basic parameters block
-                        Container(
-                          decoration: BoxDecoration(
-                            color: themeColor.cardBackground,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [themeColor.cardShadow],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                TextFormField(
-                                  controller: _ruleNameController,
-                                  style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: themeColor.textPrimary),
-                                  decoration: _buildModernInputDecoration(
-                                    themeColor,
-                                    label: 'اسم القاعدة الشرطية (مثال: رسوم مساحات البنتهاوس)',
-                                    icon: Icons.title_rounded,
-                                  ),
-                                  validator: (value) => value == null || value.isEmpty ? 'حقل إلزامي' : null,
-                                ),
-                                const SizedBox(height: 16),
-                                DropdownButtonFormField<String>(
-                                  initialValue: _actionType,
-                                  isExpanded: true,
-                                  dropdownColor: themeColor.cardBackground,
-                                  style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: themeColor.textPrimary),
-                                  decoration: _buildModernInputDecoration(
-                                    themeColor,
-                                    label: 'نوع التعديل المالي (Action Type)',
-                                    icon: Icons.settings_applications_rounded,
-                                  ),
-                                  items: const [
-                                    DropdownMenuItem(value: 'multiply', child: Text('ضرب الحساب الكلي (Multiply)', style: TextStyle(fontFamily: 'Cairo'))),
-                                    DropdownMenuItem(value: 'add', child: Text('رسوم إضافية ثابتة (Add)', style: TextStyle(fontFamily: 'Cairo'))),
-                                    DropdownMenuItem(value: 'override', child: Text('تجاوز السعر بالكامل (Override)', style: TextStyle(fontFamily: 'Cairo'))),
-                                    DropdownMenuItem(value: 'percent', child: Text('نسبة مئوية (Percent)', style: TextStyle(fontFamily: 'Cairo'))),
-                                  ],
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() {
-                                        _actionType = val;
-                                      });
-                                    }
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                                DropdownButtonFormField<String>(
-                                  initialValue: _actionTarget,
-                                  isExpanded: true,
-                                  dropdownColor: themeColor.cardBackground,
-                                  style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: themeColor.textPrimary),
-                                  decoration: _buildModernInputDecoration(
-                                    themeColor,
-                                    label: 'هدف التعديل (Action Target)',
-                                    icon: Icons.gps_fixed_rounded,
-                                  ),
-                                  items: const [
-                                    DropdownMenuItem(value: 'subtotal', child: Text('المجموع الفرعي (Subtotal)', style: TextStyle(fontFamily: 'Cairo'))),
-                                    DropdownMenuItem(value: 'base_price', child: Text('السعر الأساسي فقط (Base Price)', style: TextStyle(fontFamily: 'Cairo'))),
-                                    DropdownMenuItem(value: 'extra_fees', child: Text('الرسوم الإضافية فقط (Extra Fees)', style: TextStyle(fontFamily: 'Cairo'))),
-                                  ],
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() {
-                                        _actionTarget = val;
-                                      });
-                                    }
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _modifierValueController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: themeColor.textPrimary),
-                                  decoration: _buildModernInputDecoration(
-                                    themeColor,
-                                    label: _actionType == 'multiply' ? 'معامل الضرب (مثال: 1.15 لزيادة 15%)' : 'القيمة المالية للعملية (مثال: 150)',
-                                    icon: Icons.attach_money_rounded,
-                                  ),
-                                  validator: (value) => double.tryParse(value ?? '') == null ? 'قيمة غير صالحة' : null,
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text('أولوية التقييم والتطبيق:', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: themeColor.textPrimary)),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: Icon(Icons.remove_circle_outline_rounded, color: themeColor.primary),
-                                          onPressed: () {
-                                            if (_priority > 1) {
-                                              setState(() => _priority--);
-                                            }
-                                          },
-                                        ),
-                                        Text('$_priority', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: themeColor.textPrimary)),
-                                        IconButton(
-                                          icon: Icon(Icons.add_circle_outline_rounded, color: themeColor.primary),
-                                          onPressed: () {
-                                            setState(() => _priority++);
-                                          },
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Visual AST rule block
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                          child: Text(
-                            'شجرة الشروط والمنطق الرياضي (AST Tree)',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: themeColor.primary,
-                            ),
-                          ),
-                        ),
-                        AstNodeBuilderWidget(
-                          node: _astRoot,
-                          dynamicFields: allFields,
-                          onChanged: () {
-                            setState(() {});
-                          },
-                        ),
-                        const SizedBox(height: 32),
-
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: themeColor.primary.withValues(alpha: 0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ElevatedButton(
-                            onPressed: _saveRule,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: themeColor.primary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              elevation: 0,
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.save_rounded, size: 20),
-                                SizedBox(width: 8),
-                                Text(
-                                  'تطبيق وحفظ القاعدة في AST',
-                                  style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      ],
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _isLoading = true;
+                          _errorMessage = null;
+                        });
+                        _loadService();
+                      },
+                      child: const Text(
+                        'إعادة المحاولة',
+                        style: TextStyle(fontFamily: 'Cairo'),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
+              ),
+            )
+          : Directionality(
+              textDirection: TextDirection.rtl,
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    // Basic parameters block
+                    Container(
+                      decoration: BoxDecoration(
+                        color: themeColor.cardBackground,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [themeColor.cardShadow],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextFormField(
+                              controller: _ruleNameController,
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 13,
+                                color: themeColor.textPrimary,
+                              ),
+                              decoration: _buildModernInputDecoration(
+                                themeColor,
+                                label:
+                                    'اسم القاعدة الشرطية (مثال: رسوم مساحات البنتهاوس)',
+                                icon: Icons.title_rounded,
+                              ),
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                  ? 'حقل إلزامي'
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<String>(
+                              initialValue: _actionType,
+                              isExpanded: true,
+                              dropdownColor: themeColor.cardBackground,
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 13,
+                                color: themeColor.textPrimary,
+                              ),
+                              decoration: _buildModernInputDecoration(
+                                themeColor,
+                                label: 'نوع التعديل المالي (Action Type)',
+                                icon: Icons.settings_applications_rounded,
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'multiply',
+                                  child: Text(
+                                    'ضرب الحساب الكلي (Multiply)',
+                                    style: TextStyle(fontFamily: 'Cairo'),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'add',
+                                  child: Text(
+                                    'رسوم إضافية ثابتة (Add)',
+                                    style: TextStyle(fontFamily: 'Cairo'),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'override',
+                                  child: Text(
+                                    'تجاوز السعر بالكامل (Override)',
+                                    style: TextStyle(fontFamily: 'Cairo'),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'percent',
+                                  child: Text(
+                                    'نسبة مئوية (Percent)',
+                                    style: TextStyle(fontFamily: 'Cairo'),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    _actionType = val;
+                                  });
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<String>(
+                              initialValue: _actionTarget,
+                              isExpanded: true,
+                              dropdownColor: themeColor.cardBackground,
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 13,
+                                color: themeColor.textPrimary,
+                              ),
+                              decoration: _buildModernInputDecoration(
+                                themeColor,
+                                label: 'هدف التعديل (Action Target)',
+                                icon: Icons.gps_fixed_rounded,
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'subtotal',
+                                  child: Text(
+                                    'المجموع الفرعي (Subtotal)',
+                                    style: TextStyle(fontFamily: 'Cairo'),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'base_price',
+                                  child: Text(
+                                    'السعر الأساسي فقط (Base Price)',
+                                    style: TextStyle(fontFamily: 'Cairo'),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'extra_fees',
+                                  child: Text(
+                                    'الرسوم الإضافية فقط (Extra Fees)',
+                                    style: TextStyle(fontFamily: 'Cairo'),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    _actionTarget = val;
+                                  });
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _modifierValueController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 13,
+                                color: themeColor.textPrimary,
+                              ),
+                              decoration: _buildModernInputDecoration(
+                                themeColor,
+                                label: _actionType == 'multiply'
+                                    ? 'معامل الضرب (مثال: 1.15 لزيادة 15%)'
+                                    : 'القيمة المالية للعملية (مثال: 150)',
+                                icon: Icons.attach_money_rounded,
+                              ),
+                              validator: (value) =>
+                                  double.tryParse(value ?? '') == null
+                                  ? 'قيمة غير صالحة'
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'أولوية التقييم والتطبيق:',
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontWeight: FontWeight.bold,
+                                    color: themeColor.textPrimary,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.remove_circle_outline_rounded,
+                                        color: themeColor.primary,
+                                      ),
+                                      onPressed: () {
+                                        if (_priority > 1) {
+                                          setState(() => _priority--);
+                                        }
+                                      },
+                                    ),
+                                    Text(
+                                      '$_priority',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: themeColor.textPrimary,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.add_circle_outline_rounded,
+                                        color: themeColor.primary,
+                                      ),
+                                      onPressed: () {
+                                        setState(() => _priority++);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Visual AST rule block
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 8,
+                      ),
+                      child: Text(
+                        'شجرة الشروط والمنطق الرياضي (AST Tree)',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: themeColor.primary,
+                        ),
+                      ),
+                    ),
+                    AstNodeBuilderWidget(
+                      node: _astRoot,
+                      dynamicFields: allFields,
+                      onChanged: () {
+                        setState(() {});
+                      },
+                    ),
+                    const SizedBox(height: 32),
+
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: themeColor.primary.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _saveRule,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: themeColor.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.save_rounded, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'تطبيق وحفظ القاعدة في AST',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -360,7 +471,11 @@ class _VisualRuleBuilderPageState extends State<VisualRuleBuilderPage> {
     return InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 12),
-      prefixIcon: Icon(icon, size: 18, color: themeColor.unselectedItem.withValues(alpha: 0.6)),
+      prefixIcon: Icon(
+        icon,
+        size: 18,
+        color: themeColor.unselectedItem.withValues(alpha: 0.6),
+      ),
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       fillColor: themeColor.background,
@@ -374,14 +489,9 @@ class _VisualRuleBuilderPageState extends State<VisualRuleBuilderPage> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: themeColor.primary,
-          width: 1.5,
-        ),
+        borderSide: BorderSide(color: themeColor.primary, width: 1.5),
       ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 }
@@ -418,11 +528,7 @@ class AstNode {
       } else if (double.tryParse(value ?? '') != null) {
         parsedValue = double.parse(value!);
       }
-      return {
-        'field': field,
-        'operator': operator,
-        'value': parsedValue,
-      };
+      return {'field': field, 'operator': operator, 'value': parsedValue};
     }
   }
 
@@ -471,7 +577,11 @@ class AstNodeBuilderWidget extends StatelessWidget {
   }) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey),
+      hintStyle: const TextStyle(
+        fontFamily: 'Cairo',
+        fontSize: 11,
+        color: Colors.grey,
+      ),
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       fillColor: themeColor.background,
@@ -485,14 +595,9 @@ class AstNodeBuilderWidget extends StatelessWidget {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(
-          color: themeColor.primary,
-          width: 1.2,
-        ),
+        borderSide: BorderSide(color: themeColor.primary, width: 1.2),
       ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
 
@@ -503,8 +608,12 @@ class AstNodeBuilderWidget extends StatelessWidget {
 
     if (node.type == 'AND' || node.type == 'OR') {
       final groupBgColor = node.type == 'AND'
-          ? (isDark ? Colors.blue.shade900.withValues(alpha: 0.2) : Colors.blue.shade50.withValues(alpha: 0.5))
-          : (isDark ? Colors.orange.shade900.withValues(alpha: 0.2) : Colors.orange.shade50.withValues(alpha: 0.5));
+          ? (isDark
+                ? Colors.blue.shade900.withValues(alpha: 0.2)
+                : Colors.blue.shade50.withValues(alpha: 0.5))
+          : (isDark
+                ? Colors.orange.shade900.withValues(alpha: 0.2)
+                : Colors.orange.shade50.withValues(alpha: 0.5));
 
       final groupBorderColor = node.type == 'AND'
           ? (isDark ? Colors.blue.shade700 : Colors.blue.shade300)
@@ -520,10 +629,7 @@ class AstNodeBuilderWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: themeColor.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: groupBorderColor,
-            width: 1.5,
-          ),
+          border: Border.all(color: groupBorderColor, width: 1.5),
           boxShadow: [themeColor.cardShadow],
         ),
         child: Column(
@@ -532,7 +638,10 @@ class AstNodeBuilderWidget extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: groupBgColor,
                     borderRadius: BorderRadius.circular(8),
@@ -584,7 +693,11 @@ class AstNodeBuilderWidget extends StatelessWidget {
                 ),
                 if (onRemove != null)
                   IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 22),
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.red,
+                      size: 22,
+                    ),
                     onPressed: onRemove,
                   ),
               ],
@@ -612,7 +725,9 @@ class AstNodeBuilderWidget extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: 'Cairo',
                           fontSize: 12,
-                          color: themeColor.unselectedItem.withValues(alpha: 0.6),
+                          color: themeColor.unselectedItem.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -647,32 +762,53 @@ class AstNodeBuilderWidget extends StatelessWidget {
                             type: DynamicFieldType.number,
                             label: {'ar': 'المساحة'},
                           );
-                    final isBoolOrDropdown = firstField.type == DynamicFieldType.toggle || firstField.type == DynamicFieldType.dropdown;
-                    node.conditions.add(AstNode(
-                      type: 'LEAF',
-                      field: firstField.id,
-                      operator: isBoolOrDropdown ? '=' : '>',
-                      value: firstField.type == DynamicFieldType.toggle
-                          ? 'true'
-                          : (firstField.type == DynamicFieldType.dropdown
-                              ? (firstField.options?.isNotEmpty == true ? firstField.options!.first.id : '')
-                              : '100'),
-                    ));
+                    final isBoolOrDropdown =
+                        firstField.type == DynamicFieldType.toggle ||
+                        firstField.type == DynamicFieldType.dropdown;
+                    node.conditions.add(
+                      AstNode(
+                        type: 'LEAF',
+                        field: firstField.id,
+                        operator: isBoolOrDropdown ? '=' : '>',
+                        value: firstField.type == DynamicFieldType.toggle
+                            ? 'true'
+                            : (firstField.type == DynamicFieldType.dropdown
+                                  ? (firstField.options?.isNotEmpty == true
+                                        ? firstField.options!.first.id
+                                        : '')
+                                  : '100'),
+                      ),
+                    );
                     onChanged();
                   },
                   icon: const Icon(Icons.add_rounded, size: 16),
                   label: const Text(
                     'إضافة شرط فرعي',
-                    style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? Colors.blue.shade900.withValues(alpha: 0.25) : Colors.blue.shade50,
-                    foregroundColor: isDark ? Colors.blue.shade200 : Colors.blue.shade900,
+                    backgroundColor: isDark
+                        ? Colors.blue.shade900.withValues(alpha: 0.25)
+                        : Colors.blue.shade50,
+                    foregroundColor: isDark
+                        ? Colors.blue.shade200
+                        : Colors.blue.shade900,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(color: isDark ? Colors.blue.shade800 : Colors.blue.shade100),
+                      side: BorderSide(
+                        color: isDark
+                            ? Colors.blue.shade800
+                            : Colors.blue.shade100,
+                      ),
                     ),
                   ),
                 ),
@@ -685,37 +821,58 @@ class AstNodeBuilderWidget extends StatelessWidget {
                             type: DynamicFieldType.number,
                             label: {'ar': 'المساحة'},
                           );
-                    final isBoolOrDropdown = firstField.type == DynamicFieldType.toggle || firstField.type == DynamicFieldType.dropdown;
-                    node.conditions.add(AstNode(
-                      type: 'AND',
-                      conditions: [
-                        AstNode(
-                          type: 'LEAF',
-                          field: firstField.id,
-                          operator: isBoolOrDropdown ? '=' : '>',
-                          value: firstField.type == DynamicFieldType.toggle
-                              ? 'true'
-                              : (firstField.type == DynamicFieldType.dropdown
-                                  ? (firstField.options?.isNotEmpty == true ? firstField.options!.first.id : '')
-                                  : '100'),
-                        )
-                      ],
-                    ));
+                    final isBoolOrDropdown =
+                        firstField.type == DynamicFieldType.toggle ||
+                        firstField.type == DynamicFieldType.dropdown;
+                    node.conditions.add(
+                      AstNode(
+                        type: 'AND',
+                        conditions: [
+                          AstNode(
+                            type: 'LEAF',
+                            field: firstField.id,
+                            operator: isBoolOrDropdown ? '=' : '>',
+                            value: firstField.type == DynamicFieldType.toggle
+                                ? 'true'
+                                : (firstField.type == DynamicFieldType.dropdown
+                                      ? (firstField.options?.isNotEmpty == true
+                                            ? firstField.options!.first.id
+                                            : '')
+                                      : '100'),
+                          ),
+                        ],
+                      ),
+                    );
                     onChanged();
                   },
                   icon: const Icon(Icons.playlist_add_rounded, size: 16),
                   label: const Text(
                     'إضافة مجموعة شروط',
-                    style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? Colors.purple.shade900.withValues(alpha: 0.25) : Colors.purple.shade50,
-                    foregroundColor: isDark ? Colors.purple.shade200 : Colors.purple.shade900,
+                    backgroundColor: isDark
+                        ? Colors.purple.shade900.withValues(alpha: 0.25)
+                        : Colors.purple.shade50,
+                    foregroundColor: isDark
+                        ? Colors.purple.shade200
+                        : Colors.purple.shade900,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(color: isDark ? Colors.purple.shade800 : Colors.purple.shade100),
+                      side: BorderSide(
+                        color: isDark
+                            ? Colors.purple.shade800
+                            : Colors.purple.shade100,
+                      ),
                     ),
                   ),
                 ),
@@ -736,10 +893,16 @@ class AstNodeBuilderWidget extends StatelessWidget {
       );
 
       final isToggle = selectedField.type == DynamicFieldType.toggle;
-      final isDropdown = selectedField.type == DynamicFieldType.dropdown || selectedField.type == DynamicFieldType.optionsGroup;
+      final isDropdown =
+          selectedField.type == DynamicFieldType.dropdown ||
+          selectedField.type == DynamicFieldType.optionsGroup;
 
-      final allowedOps = (isToggle || isDropdown) ? ['=', '!='] : ['=', '>', '<', '>=', '<='];
-      final initialOp = allowedOps.contains(node.operator) ? node.operator : '=';
+      final allowedOps = (isToggle || isDropdown)
+          ? ['=', '!=']
+          : ['=', '>', '<', '>=', '<='];
+      final initialOp = allowedOps.contains(node.operator)
+          ? node.operator
+          : '=';
 
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
@@ -747,7 +910,9 @@ class AstNodeBuilderWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: themeColor.background,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.12)),
+          border: Border.all(
+            color: themeColor.unselectedItem.withValues(alpha: 0.12),
+          ),
         ),
         child: Row(
           children: [
@@ -756,16 +921,29 @@ class AstNodeBuilderWidget extends StatelessWidget {
               child: DropdownButtonHideUnderline(
                 child: DropdownButtonFormField<String>(
                   key: ValueKey('${node.field}_field_dropdown'),
-                  initialValue: dynamicFields.any((f) => f.id == node.field) ? node.field : dynamicFields.first.id,
+                  initialValue: dynamicFields.any((f) => f.id == node.field)
+                      ? node.field
+                      : dynamicFields.first.id,
                   isExpanded: true,
                   dropdownColor: themeColor.cardBackground,
-                  style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: themeColor.textPrimary),
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 13,
+                    color: themeColor.textPrimary,
+                  ),
                   decoration: _buildMiniInputDecoration(themeColor),
                   items: dynamicFields.map((field) {
-                    final label = field.label['ar'] ?? field.label['en'] ?? field.id;
+                    final label =
+                        field.label['ar'] ?? field.label['en'] ?? field.id;
                     return DropdownMenuItem(
                       value: field.id,
-                      child: Text(label, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13)),
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 13,
+                        ),
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -782,7 +960,8 @@ class AstNodeBuilderWidget extends StatelessWidget {
                       if (selected.type == DynamicFieldType.toggle) {
                         node.operator = '=';
                         node.value = 'true';
-                      } else if (selected.type == DynamicFieldType.dropdown || selected.type == DynamicFieldType.optionsGroup) {
+                      } else if (selected.type == DynamicFieldType.dropdown ||
+                          selected.type == DynamicFieldType.optionsGroup) {
                         node.operator = '=';
                         final firstOpt = selected.options?.isNotEmpty == true
                             ? selected.options!.first.id
@@ -807,10 +986,17 @@ class AstNodeBuilderWidget extends StatelessWidget {
                   initialValue: initialOp,
                   isExpanded: true,
                   dropdownColor: themeColor.cardBackground,
-                  style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: themeColor.textPrimary),
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 13,
+                    color: themeColor.textPrimary,
+                  ),
                   decoration: _buildMiniInputDecoration(themeColor),
                   items: allowedOps.map((op) {
-                    return DropdownMenuItem(value: op, child: Text(op, style: const TextStyle(fontSize: 13)));
+                    return DropdownMenuItem(
+                      value: op,
+                      child: Text(op, style: const TextStyle(fontSize: 13)),
+                    );
                   }).toList(),
                   onChanged: (val) {
                     if (val != null) {
@@ -828,19 +1014,38 @@ class AstNodeBuilderWidget extends StatelessWidget {
                   ? DropdownButtonHideUnderline(
                       child: DropdownButtonFormField<String>(
                         key: ValueKey('${node.field}_toggle_val'),
-                        initialValue: node.value == 'true' || node.value == 'false' ? node.value : 'true',
+                        initialValue:
+                            node.value == 'true' || node.value == 'false'
+                            ? node.value
+                            : 'true',
                         isExpanded: true,
                         dropdownColor: themeColor.cardBackground,
-                        style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: themeColor.textPrimary),
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 13,
+                          color: themeColor.textPrimary,
+                        ),
                         decoration: _buildMiniInputDecoration(themeColor),
                         items: const [
                           DropdownMenuItem(
                             value: 'true',
-                            child: Text('نعم (true)', style: TextStyle(fontFamily: 'Cairo', fontSize: 13)),
+                            child: Text(
+                              'نعم (true)',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
                           DropdownMenuItem(
                             value: 'false',
-                            child: Text('لا (false)', style: TextStyle(fontFamily: 'Cairo', fontSize: 13)),
+                            child: Text(
+                              'لا (false)',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
                         ],
                         onChanged: (val) {
@@ -852,45 +1057,74 @@ class AstNodeBuilderWidget extends StatelessWidget {
                       ),
                     )
                   : isDropdown
-                      ? DropdownButtonHideUnderline(
-                          child: DropdownButtonFormField<String>(
-                            key: ValueKey('${node.field}_dropdown_val'),
-                            initialValue: (selectedField.options ?? []).any((opt) => opt.id == node.value)
-                                ? node.value
-                                : ((selectedField.options ?? []).isNotEmpty ? (selectedField.options ?? []).first.id : ''),
-                            isExpanded: true,
-                            dropdownColor: themeColor.cardBackground,
-                            style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: themeColor.textPrimary),
-                            decoration: _buildMiniInputDecoration(themeColor),
-                            items: (selectedField.options ?? []).map((opt) {
-                              final optLabel = opt.label['ar'] ?? opt.label['en'] ?? opt.id;
-                              return DropdownMenuItem(
-                                value: opt.id,
-                                child: Text(optLabel, style: const TextStyle(fontFamily: 'Cairo', fontSize: 13)),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                node.value = val;
-                                onChanged();
-                              }
-                            },
-                          ),
-                        )
-                      : TextFormField(
-                          key: ValueKey('${node.field}_text_val'),
-                          initialValue: node.value,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: themeColor.textPrimary),
-                          decoration: _buildMiniInputDecoration(themeColor, hintText: 'القيمة'),
-                          onChanged: (val) {
-                            node.value = val;
-                          },
+                  ? DropdownButtonHideUnderline(
+                      child: DropdownButtonFormField<String>(
+                        key: ValueKey('${node.field}_dropdown_val'),
+                        initialValue:
+                            (selectedField.options ?? []).any(
+                              (opt) => opt.id == node.value,
+                            )
+                            ? node.value
+                            : ((selectedField.options ?? []).isNotEmpty
+                                  ? (selectedField.options ?? []).first.id
+                                  : ''),
+                        isExpanded: true,
+                        dropdownColor: themeColor.cardBackground,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 13,
+                          color: themeColor.textPrimary,
                         ),
+                        decoration: _buildMiniInputDecoration(themeColor),
+                        items: (selectedField.options ?? []).map((opt) {
+                          final optLabel =
+                              opt.label['ar'] ?? opt.label['en'] ?? opt.id;
+                          return DropdownMenuItem(
+                            value: opt.id,
+                            child: Text(
+                              optLabel,
+                              style: const TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 13,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            node.value = val;
+                            onChanged();
+                          }
+                        },
+                      ),
+                    )
+                  : TextFormField(
+                      key: ValueKey('${node.field}_text_val'),
+                      initialValue: node.value,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 13,
+                        color: themeColor.textPrimary,
+                      ),
+                      decoration: _buildMiniInputDecoration(
+                        themeColor,
+                        hintText: 'القيمة',
+                      ),
+                      onChanged: (val) {
+                        node.value = val;
+                      },
+                    ),
             ),
             if (onRemove != null)
               IconButton(
-                icon: const Icon(Icons.close_rounded, color: Colors.red, size: 20),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.red,
+                  size: 20,
+                ),
                 onPressed: onRemove,
               ),
           ],

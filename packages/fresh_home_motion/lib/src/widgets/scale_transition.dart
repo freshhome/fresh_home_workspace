@@ -32,7 +32,7 @@ class FHScaleTransition extends StatefulWidget {
   final Animation<double>? animation;
 
   const FHScaleTransition({
-    Key? key,
+    super.key,
     required this.child,
     this.beginScale = 0.95,
     this.endScale = 1.0,
@@ -41,13 +41,14 @@ class FHScaleTransition extends StatefulWidget {
     this.alignment = Alignment.center,
     this.enabled = true,
     this.animation,
-  }) : super(key: key);
+  });
 
   @override
   State<FHScaleTransition> createState() => _FHScaleTransitionState();
 }
 
-class _FHScaleTransitionState extends State<FHScaleTransition> with SingleTickerProviderStateMixin {
+class _FHScaleTransitionState extends State<FHScaleTransition>
+    with SingleTickerProviderStateMixin {
   AnimationController? _internalController;
   late Animation<double> _scaleAnimation;
 
@@ -76,15 +77,10 @@ class _FHScaleTransitionState extends State<FHScaleTransition> with SingleTicker
 
     final effectiveCurve = widget.curve ?? FHMotionTokens.curve.decelerate;
 
-    _scaleAnimation = Tween<double>(
-      begin: widget.beginScale,
-      end: widget.endScale,
-    ).animate(
-      CurvedAnimation(
-        parent: _internalController!,
-        curve: effectiveCurve,
-      ),
-    );
+    _scaleAnimation =
+        Tween<double>(begin: widget.beginScale, end: widget.endScale).animate(
+          CurvedAnimation(parent: _internalController!, curve: effectiveCurve),
+        );
 
     _internalController!.forward();
   }
@@ -127,7 +123,9 @@ class _FHScaleTransitionState extends State<FHScaleTransition> with SingleTicker
       child: widget.child,
       builder: (context, child) {
         // If reduced motion is active, scaling is bypassed completely to avoid vestibular issues.
-        final scaleValue = prefersReduced ? widget.endScale : _scaleAnimation.value;
+        final scaleValue = prefersReduced
+            ? widget.endScale
+            : _scaleAnimation.value;
         return Transform.scale(
           scale: scaleValue,
           alignment: widget.alignment,

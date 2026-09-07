@@ -5,6 +5,8 @@ import 'package:shared/shared.dart';
 import 'package:shared_features/shared_features.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../cubit/admin_bookings_cubit.dart';
+import '../cubit/admin_booking_drafts_cubit.dart';
+import '../widgets/admin_booking_drafts_sheet.dart';
 import 'package:intl/intl.dart';
 
 class AdminBookingListScreen extends StatefulWidget {
@@ -95,6 +97,35 @@ class _AdminBookingListScreenState extends State<AdminBookingListScreen> {
                         _isSearching = true;
                       }
                     });
+                  },
+                ),
+                BlocBuilder<AdminBookingDraftsCubit, AdminBookingDraftsState>(
+                  builder: (context, draftState) {
+                    int count = 0;
+                    if (draftState is AdminBookingDraftsLoaded) {
+                      count = draftState.drafts.length;
+                    }
+                    return IconButton(
+                      tooltip: 'المسودات المعلقة ($count)',
+                      icon: Badge(
+                        isLabelVisible: count > 0,
+                        backgroundColor: const Color(0xFFF59E0B),
+                        label: Text(
+                          '$count',
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                            color: Colors.white,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.assignment_late_outlined,
+                          color: Color(0xFF1E3A8A),
+                        ),
+                      ),
+                      onPressed: () => AdminBookingDraftsSheet.show(context),
+                    );
                   },
                 ),
                 const SizedBox(width: 8),
@@ -230,7 +261,11 @@ class _AdminBookingListScreenState extends State<AdminBookingListScreen> {
                     mode: BookingFlowMode.admin,
                     actorId: adminId,
                   ),
-                );
+                ).then((_) {
+                  if (context.mounted) {
+                    context.read<AdminBookingDraftsCubit>().loadDrafts();
+                  }
+                });
               },
               backgroundColor: const Color(0xFF1E3A8A),
               icon: const Icon(Icons.add_rounded, color: Colors.white),

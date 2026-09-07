@@ -18,6 +18,10 @@ Future<void> initBookingFlowDI(GetIt getIt) async {
         // Service loading only in admin mode
         serviceRepository:
             config.requiresServiceSelection ? getIt<ServiceRepository>() : null,
+        // Draft saving/restoring
+        bookingDraftRepository: getIt.isRegistered<BookingDraftRepository>()
+            ? getIt<BookingDraftRepository>()
+            : null,
       );
     },
   );

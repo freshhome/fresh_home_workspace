@@ -7,6 +7,8 @@ import '../pages/admin_booking_list_screen.dart';
 import '../pages/admin_booking_details_screen.dart';
 import '../../../../core/di/injection_container.dart';
 
+import '../cubit/admin_booking_drafts_cubit.dart';
+
 class BookingManagementRoutes {
   static const String bookingListPath = '/admin/bookings';
   static const String bookingDetailPath = '/admin/bookings/detail';
@@ -15,8 +17,11 @@ class BookingManagementRoutes {
     GoRoute(
       path: bookingListPath,
       name: 'adminBookings',
-      builder: (context, state) => BlocProvider(
-        create: (context) => getIt<AdminBookingsCubit>(),
+      builder: (context, state) => MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (context) => getIt<AdminBookingsCubit>()),
+          BlocProvider(create: (context) => getIt<AdminBookingDraftsCubit>()),
+        ],
         child: const AdminBookingListScreen(),
       ),
       routes: [

@@ -343,12 +343,34 @@ function BookingFlowContent() {
   const dateScrollRef = useRef<HTMLDivElement>(null);
 
   // Multi-sector window calculator states for linear meter services
+  const linearSectorsField = useMemo(() => {
+    return selectedSubService?.price_config?.fields?.find(
+      (f: any) =>
+        f.type === "linearSectors" ||
+        f.type === "linear_sectors" ||
+        f.id === "window_sectors" ||
+        f.id === "windows"
+    );
+  }, [selectedSubService]);
+
+  const otherDynamicFields = useMemo(() => {
+    if (!selectedSubService?.price_config?.fields) return [];
+    return selectedSubService.price_config.fields.filter(
+      (f: any) =>
+        f.type !== "linearSectors" &&
+        f.type !== "linear_sectors" &&
+        f.id !== "window_sectors" &&
+        f.id !== "windows"
+    );
+  }, [selectedSubService]);
+
   const isLinearService = useMemo(() => {
     return (
+      !!linearSectorsField ||
       selectedSubService?.price_config?.type === "per_linear_meter" ||
       selectedSubService?.price_config?.calculator === "windows"
     );
-  }, [selectedSubService]);
+  }, [linearSectorsField, selectedSubService]);
 
   const [windowSectors, setWindowSectors] = useState<WindowSector[]>([
     { id: "sector_1", width: "1.0", height: "1.0", quantity: 1, is_both_sides: false }
@@ -1538,16 +1560,16 @@ function BookingFlowContent() {
                           </div>
 
                       {/* Dynamic price input fields based on active catalog schema */}
-                      {isLinearService ? (
+                      {isLinearService && (
                         <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-blue-900/40">
                           <div className="flex items-center justify-between pb-1">
                             <div>
                               <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                                 <AppWindow className="w-4 h-4 text-[#0091FF]" />
-                                <span>حاسبة أبعاد وقطاعات الألوميتال</span>
+                                <span>{linearSectorsField?.label?.ar || linearSectorsField?.label?.en || linearSectorsField?.label || "حاسبة أبعاد وقطاعات الألوميتال / الشبابيك"}</span>
                               </h3>
                               <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                                يمكنك إضافة مقاسات وقطاعات متعددة بكميات مختلفة. اكتب المقاس مباشرة بالأرقام العشرية.
+                                {linearSectorsField?.description?.ar || linearSectorsField?.description?.en || linearSectorsField?.description || "يمكنك إضافة مقاسات وقطاعات متعددة بكميات مختلفة. اكتب المقاس مباشرة بالأرقام العشرية."}
                               </p>
                             </div>
                             <span className="text-xs font-black text-[#0091FF] bg-blue-50 dark:bg-blue-950/80 px-2.5 py-1 rounded-xl border border-blue-100 dark:border-blue-900/50">
@@ -1746,9 +1768,12 @@ function BookingFlowContent() {
                             </div>
                           </div>
                         </div>
-                      ) : selectedSubService?.price_config?.fields && selectedSubService.price_config.fields.length > 0 ? (
+                      )}
+
+                      {/* Dynamic price input fields based on active catalog schema */}
+                      {otherDynamicFields && otherDynamicFields.length > 0 ? (
                         <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-blue-900/40">
-                          {selectedSubService.price_config.fields.map((field: any) => {
+                          {otherDynamicFields.map((field: any) => {
                             const val = pricingInputs[field.id];
                             const hasError = !!validationErrors[field.id];
                             const hasIcon = field.icon && (field.icon.startsWith("http") || field.icon.startsWith("/"));
@@ -1968,13 +1993,13 @@ function BookingFlowContent() {
                             );
                           })}
                         </div>
-                      ) : (
+                      ) : !isLinearService ? (
                         <div className="py-8 text-center bg-slate-50 dark:bg-[#050D24] rounded-2xl border border-slate-200/80 dark:border-blue-900/40 p-4">
                           <p className="text-xs font-bold text-slate-500">
                             هذه الخدمة جاهزة للتسعير المباشر. اضغط على زر "احسب السعر" أدناه.
                           </p>
                         </div>
-                      )}
+                      ) : null}
 
                       {/* Addons selection */}
                       {selectedSubService?.price_config?.options && selectedSubService.price_config.options.length > 0 && (

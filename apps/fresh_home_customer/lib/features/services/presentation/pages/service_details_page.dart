@@ -10,13 +10,11 @@ import 'package:fresh_home_customer/features/services/presentation/cubit/service
 import 'package:fresh_home_customer/features/services/presentation/widgets/details_options_section.dart';
 import 'package:fresh_home_customer/features/services/presentation/widgets/inclusion_exclusion_section.dart';
 import 'package:fresh_home_customer/features/services/presentation/widgets/instructions_section.dart';
-import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:shared/shared.dart';
 import 'package:shared_features/shared_features.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/presentation/widgets/shimmer_loading.dart';
-
 
 class ServiceDetailsPage extends StatefulWidget {
   final String serviceId;
@@ -44,7 +42,10 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
   void _checkIfFavorite() {
     try {
       final box = Hive.box(HiveBoxNames.settingsBox);
-      final List<dynamic> favorites = box.get('favorites', defaultValue: <dynamic>[]);
+      final List<dynamic> favorites = box.get(
+        'favorites',
+        defaultValue: <dynamic>[],
+      );
       setState(() {
         isFavorite = favorites.contains(widget.subServiceId);
       });
@@ -56,7 +57,9 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
   void _toggleFavorite() {
     try {
       final box = Hive.box(HiveBoxNames.settingsBox);
-      final List<dynamic> favorites = List.from(box.get('favorites', defaultValue: <dynamic>[]));
+      final List<dynamic> favorites = List.from(
+        box.get('favorites', defaultValue: <dynamic>[]),
+      );
       setState(() {
         if (favorites.contains(widget.subServiceId)) {
           favorites.remove(widget.subServiceId);
@@ -101,7 +104,8 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
         } else if (state is ServiceDetailsSuccess) {
           final service = state.service;
 
-          if (service.status != ServiceStatus.active && service.status != ServiceStatus.ready) {
+          if (service.status != ServiceStatus.active &&
+              service.status != ServiceStatus.ready) {
             return Scaffold(
               body: Stack(
                 children: [
@@ -133,7 +137,9 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                                 Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: themeColor.primary.withValues(alpha: 0.1),
+                                    color: themeColor.primary.withValues(
+                                      alpha: 0.1,
+                                    ),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
@@ -144,7 +150,9 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                                 ),
                                 const SizedBox(height: 24),
                                 Text(
-                                  isArabic ? 'الخدمة ستتوفر قريباً' : 'Service Available Soon',
+                                  isArabic
+                                      ? 'الخدمة ستتوفر قريباً'
+                                      : 'Service Available Soon',
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     fontFamily: 'Cairo',
@@ -175,7 +183,9 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                                       backgroundColor: themeColor.primary,
                                       foregroundColor: Colors.white,
                                       elevation: 0,
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(14),
                                       ),
@@ -227,7 +237,9 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
               actions: [
                 IconButton(
                   icon: Icon(
-                    isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    isFavorite
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
                     color: isFavorite ? Colors.redAccent : Colors.white,
                   ),
                   onPressed: _toggleFavorite,
@@ -242,13 +254,14 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
               themeColor,
               themeText,
             ),
-            floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
             body: RefreshIndicator(
               onRefresh: () => context.read<ServicesCubit>().getServiceDetails(
-                    subserviceId: widget.subServiceId,
-                    mainServiceId: widget.serviceId,
-                    forceRemote: true,
-                  ),
+                subserviceId: widget.subServiceId,
+                mainServiceId: widget.serviceId,
+                forceRemote: true,
+              ),
               color: themeColor.primary,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(
@@ -266,7 +279,9 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                           border: Border.all(color: Colors.amber.shade200),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.amber.shade900.withValues(alpha: 0.04),
+                              color: Colors.amber.shade900.withValues(
+                                alpha: 0.04,
+                              ),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -286,7 +301,9 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    isArabic ? 'تنويه: ستتوفر هذه الخدمة قريباً' : 'Notice: Service Available Soon',
+                                    isArabic
+                                        ? 'تنويه: ستتوفر هذه الخدمة قريباً'
+                                        : 'Notice: Service Available Soon',
                                     style: const TextStyle(
                                       fontFamily: 'Cairo',
                                       fontSize: 14,
@@ -319,24 +336,32 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          if (service.image != null && service.image!.isNotEmpty) ...[
+                          if (service.image != null &&
+                              service.image!.isNotEmpty) ...[
                             Container(
                               width: 80,
                               height: 80,
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: themeColor.primary.withValues(alpha: 0.05),
+                                color: themeColor.primary.withValues(
+                                  alpha: 0.05,
+                                ),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: themeColor.primary.withValues(alpha: 0.1)),
+                                border: Border.all(
+                                  color: themeColor.primary.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                ),
                               ),
                               child: CachedNetworkImage(
                                 imageUrl: service.image!,
                                 fit: BoxFit.contain,
-                                placeholder: (context, url) => const ShimmerLoading(
-                                  width: 56,
-                                  height: 56,
-                                  borderRadius: 12,
-                                ),
+                                placeholder: (context, url) =>
+                                    const ShimmerLoading(
+                                      width: 56,
+                                      height: 56,
+                                      borderRadius: 12,
+                                    ),
                                 errorWidget: (c, e, s) => Icon(
                                   Icons.cleaning_services_rounded,
                                   color: themeColor.primary,
@@ -359,11 +384,18 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                                     fontFamily: 'Cairo',
                                   ),
                                 ),
-                                if (service.description[isArabic ? 'ar' : 'en'] != null &&
-                                    service.description[isArabic ? 'ar' : 'en']!.isNotEmpty) ...[
+                                if (service.description[isArabic
+                                            ? 'ar'
+                                            : 'en'] !=
+                                        null &&
+                                    service
+                                        .description[isArabic ? 'ar' : 'en']!
+                                        .isNotEmpty) ...[
                                   const SizedBox(height: 6),
                                   Text(
-                                    service.description[isArabic ? 'ar' : 'en']!,
+                                    service.description[isArabic
+                                        ? 'ar'
+                                        : 'en']!,
                                     style: themeText.textCaption.copyWith(
                                       fontSize: 13,
                                       color: themeColor.secondaryText,
@@ -386,7 +418,12 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Base Price Indicator Card
-                          _buildStartingPriceCard(service, isArabic, themeColor, themeText),
+                          _buildStartingPriceCard(
+                            service,
+                            isArabic,
+                            themeColor,
+                            themeText,
+                          ),
                           const SizedBox(height: 24),
 
                           // Service detail tiles (what's included)
@@ -394,20 +431,28 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                           const SizedBox(height: 24),
 
                           // Exclusions
-                          InclusionExclusionSection(notIncluded: service.notIncluded),
+                          InclusionExclusionSection(
+                            notIncluded: service.notIncluded,
+                          ),
 
                           // Instructions
-                          InstructionsSection(instructions: service.instructions),
+                          InstructionsSection(
+                            instructions: service.instructions,
+                          ),
 
                           // Customer Reviews Section
                           BlocBuilder<ServiceReviewsCubit, ServiceReviewsState>(
                             builder: (context, reviewState) {
                               if (reviewState is ServiceReviewsLoading) {
-                                return const Center(child: CircularProgressIndicator());
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
                               } else if (reviewState is ServiceReviewsError) {
                                 return Center(
                                   child: Text(
-                                    isArabic ? 'فشل تحميل الآراء' : 'Failed to load reviews',
+                                    isArabic
+                                        ? 'فشل تحميل الآراء'
+                                        : 'Failed to load reviews',
                                     style: TextStyle(
                                       fontFamily: 'Cairo',
                                       fontSize: 13,
@@ -426,7 +471,9 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                                   children: [
                                     const Divider(height: 32, thickness: 1.2),
                                     Text(
-                                      isArabic ? 'آراء العملاء' : 'Customer Reviews',
+                                      isArabic
+                                          ? 'آراء العملاء'
+                                          : 'Customer Reviews',
                                       style: TextStyle(
                                         fontFamily: 'Cairo',
                                         fontSize: 16,
@@ -436,59 +483,101 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                                     ),
                                     const SizedBox(height: 16),
                                     Column(
-                                      children: List.generate(reviews.length, (index) {
+                                      children: List.generate(reviews.length, (
+                                        index,
+                                      ) {
                                         final review = reviews[index];
-                                        final dateText = review.createdAt.toLocal().toString().substring(0, 10);
-                                        final customerName = review.customerFullName.isNotEmpty
+                                        final dateText = review.createdAt
+                                            .toLocal()
+                                            .toString()
+                                            .substring(0, 10);
+                                        final customerName =
+                                            review.customerFullName.isNotEmpty
                                             ? review.customerFullName
-                                            : (isArabic ? 'عميل فريش هوم' : 'Fresh Home Client');
+                                            : (isArabic
+                                                  ? 'عميل فريش هوم'
+                                                  : 'Fresh Home Client');
 
                                         return Padding(
-                                          padding: EdgeInsets.only(bottom: index == reviews.length - 1 ? 0 : 12),
+                                          padding: EdgeInsets.only(
+                                            bottom: index == reviews.length - 1
+                                                ? 0
+                                                : 12,
+                                          ),
                                           child: Container(
                                             padding: const EdgeInsets.all(16),
                                             decoration: BoxDecoration(
                                               color: Colors.white,
-                                              borderRadius: BorderRadius.circular(16),
-                                              border: Border.all(color: Colors.grey.shade100),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: Colors.grey.shade100,
+                                              ),
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: Colors.black.withValues(alpha: 0.01),
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.01),
                                                   blurRadius: 10,
                                                   offset: const Offset(0, 4),
                                                 ),
                                               ],
                                             ),
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
                                                   children: [
                                                     Row(
                                                       children: [
                                                         CircleAvatar(
                                                           radius: 16,
-                                                          backgroundColor: themeColor.primary.withValues(alpha: 0.1),
-                                                          backgroundImage: review.customerAvatarUrl != null && review.customerAvatarUrl!.isNotEmpty
-                                                              ? CachedNetworkImageProvider(review.customerAvatarUrl!)
+                                                          backgroundColor:
+                                                              themeColor.primary
+                                                                  .withValues(
+                                                                    alpha: 0.1,
+                                                                  ),
+                                                          backgroundImage:
+                                                              review.customerAvatarUrl !=
+                                                                      null &&
+                                                                  review
+                                                                      .customerAvatarUrl!
+                                                                      .isNotEmpty
+                                                              ? CachedNetworkImageProvider(
+                                                                  review
+                                                                      .customerAvatarUrl!,
+                                                                )
                                                               : null,
-                                                          child: review.customerAvatarUrl != null && review.customerAvatarUrl!.isNotEmpty
+                                                          child:
+                                                              review.customerAvatarUrl !=
+                                                                      null &&
+                                                                  review
+                                                                      .customerAvatarUrl!
+                                                                      .isNotEmpty
                                                               ? null
                                                               : Icon(
-                                                                  Icons.person_rounded,
+                                                                  Icons
+                                                                      .person_rounded,
                                                                   size: 16,
-                                                                  color: themeColor.primary,
+                                                                  color: themeColor
+                                                                      .primary,
                                                                 ),
                                                         ),
-                                                        const SizedBox(width: 8),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
                                                         Text(
                                                           customerName,
                                                           style: TextStyle(
                                                             fontFamily: 'Cairo',
                                                             fontSize: 13,
-                                                            fontWeight: FontWeight.bold,
-                                                            color: themeColor.textPrimary,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: themeColor
+                                                                .textPrimary,
                                                           ),
                                                         ),
                                                       ],
@@ -498,25 +587,33 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                                                       style: TextStyle(
                                                         fontFamily: 'Cairo',
                                                         fontSize: 11,
-                                                        color: themeColor.secondaryText,
+                                                        color: themeColor
+                                                            .secondaryText,
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                                 const SizedBox(height: 10),
                                                 StarRatingWidget(
-                                                  initialRating: review.ratingValue.toDouble(),
+                                                  initialRating: review
+                                                      .ratingValue
+                                                      .toDouble(),
                                                   isReadOnly: true,
                                                   iconSize: 16,
                                                 ),
-                                                if (review.feedbackText != null && review.feedbackText!.isNotEmpty) ...[
+                                                if (review.feedbackText !=
+                                                        null &&
+                                                    review
+                                                        .feedbackText!
+                                                        .isNotEmpty) ...[
                                                   const SizedBox(height: 8),
                                                   Text(
                                                     review.feedbackText!,
                                                     style: TextStyle(
                                                       fontFamily: 'Cairo',
                                                       fontSize: 13,
-                                                      color: themeColor.secondaryText,
+                                                      color: themeColor
+                                                          .secondaryText,
                                                       height: 1.4,
                                                     ),
                                                   ),
@@ -530,17 +627,24 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                                     if (!reviewState.hasReachedMax) ...[
                                       const SizedBox(height: 16),
                                       if (reviewState.isLoadingMore)
-                                        const Center(child: CircularProgressIndicator())
+                                        const Center(
+                                          child: CircularProgressIndicator(),
+                                        )
                                       else
                                         Center(
                                           child: TextButton(
                                             onPressed: () {
-                                              context.read<ServiceReviewsCubit>().fetchNextPage(
-                                                serviceId: widget.subServiceId,
-                                              );
+                                              context
+                                                  .read<ServiceReviewsCubit>()
+                                                  .fetchNextPage(
+                                                    serviceId:
+                                                        widget.subServiceId,
+                                                  );
                                             },
                                             child: Text(
-                                              isArabic ? 'عرض المزيد من الآراء' : 'Show more reviews',
+                                              isArabic
+                                                  ? 'عرض المزيد من الآراء'
+                                                  : 'Show more reviews',
                                               style: TextStyle(
                                                 fontFamily: 'Cairo',
                                                 fontSize: 14,
@@ -625,7 +729,9 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
               ),
               const SizedBox(height: 4),
               Text(
-                isArabic ? 'السعر الأساسي المعتمد للخدمة' : 'Approved Base Price',
+                isArabic
+                    ? 'السعر الأساسي المعتمد للخدمة'
+                    : 'Approved Base Price',
                 style: TextStyle(
                   fontFamily: 'Cairo',
                   fontSize: 11,
@@ -665,18 +771,29 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
               ? (isArabic ? 'ستتوفر الخدمة قريباً' : 'Available Soon')
               : (isArabic ? 'احجز الآن' : 'Book Now'),
           leadingIcon: isPaused
-              ? const Icon(Icons.lock_clock_rounded, color: Colors.white, size: 20)
-              : const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
+              ? const Icon(
+                  Icons.lock_clock_rounded,
+                  color: Colors.white,
+                  size: 20,
+                )
+              : const Icon(
+                  Icons.calendar_month_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
           onPressed: isPaused
               ? null
               : () {
-                  final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+                  final userId =
+                      Supabase.instance.client.auth.currentUser?.id ?? '';
 
                   if (userId.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          isArabic ? 'يرجى تسجيل الدخول أولاً' : 'Please login first',
+                          isArabic
+                              ? 'يرجى تسجيل الدخول أولاً'
+                              : 'Please login first',
                         ),
                       ),
                     );
@@ -702,7 +819,8 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                   );
                 },
           height: 54,
-          borderRadius: 27, // Fully pill-shaped borders for a premium floating look
+          borderRadius:
+              27, // Fully pill-shaped borders for a premium floating look
           textStyle: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,

@@ -24,3 +24,8 @@ scratch/
 *.properties
 local.properties
 key.properties
+
+# Logs and analysis dumps
+*.log
+analysis_output*.txt
+final_check.txt

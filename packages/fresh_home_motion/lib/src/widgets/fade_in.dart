@@ -32,7 +32,7 @@ class FHFadeIn extends StatefulWidget {
   final Animation<double>? animation;
 
   const FHFadeIn({
-    Key? key,
+    super.key,
     required this.child,
     this.duration,
     this.curve,
@@ -41,13 +41,14 @@ class FHFadeIn extends StatefulWidget {
     this.endOpacity = 1.0,
     this.enabled = true,
     this.animation,
-  }) : super(key: key);
+  });
 
   @override
   State<FHFadeIn> createState() => _FHFadeInState();
 }
 
-class _FHFadeInState extends State<FHFadeIn> with SingleTickerProviderStateMixin {
+class _FHFadeInState extends State<FHFadeIn>
+    with SingleTickerProviderStateMixin {
   AnimationController? _internalController;
   late Animation<double> _fadeAnimation;
 
@@ -68,7 +69,8 @@ class _FHFadeInState extends State<FHFadeIn> with SingleTickerProviderStateMixin
       return;
     }
 
-    final effectiveDuration = widget.duration ?? FHMotionTokens.duration.standard;
+    final effectiveDuration =
+        widget.duration ?? FHMotionTokens.duration.standard;
     _internalController = AnimationController(
       vsync: this,
       duration: effectiveDuration,
@@ -76,15 +78,13 @@ class _FHFadeInState extends State<FHFadeIn> with SingleTickerProviderStateMixin
 
     final effectiveCurve = widget.curve ?? FHMotionTokens.curve.decelerate;
 
-    _fadeAnimation = Tween<double>(
-      begin: widget.beginOpacity,
-      end: widget.endOpacity,
-    ).animate(
-      CurvedAnimation(
-        parent: _internalController!,
-        curve: effectiveCurve,
-      ),
-    );
+    _fadeAnimation =
+        Tween<double>(
+          begin: widget.beginOpacity,
+          end: widget.endOpacity,
+        ).animate(
+          CurvedAnimation(parent: _internalController!, curve: effectiveCurve),
+        );
 
     if (widget.delay != null && widget.delay! > Duration.zero) {
       Future.delayed(widget.delay!, () {
@@ -135,11 +135,10 @@ class _FHFadeInState extends State<FHFadeIn> with SingleTickerProviderStateMixin
       child: widget.child,
       builder: (context, child) {
         // If reduced motion is preferred, bypass animated transitions and snap to final state opacity.
-        final opacityValue = prefersReduced ? widget.endOpacity : _fadeAnimation.value;
-        return Opacity(
-          opacity: opacityValue.clamp(0.0, 1.0),
-          child: child,
-        );
+        final opacityValue = prefersReduced
+            ? widget.endOpacity
+            : _fadeAnimation.value;
+        return Opacity(opacity: opacityValue.clamp(0.0, 1.0), child: child);
       },
     );
   }

@@ -9,10 +9,10 @@ class FHShimmer extends StatelessWidget {
   final Duration duration;
 
   const FHShimmer({
-    Key? key,
+    super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 1500),
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

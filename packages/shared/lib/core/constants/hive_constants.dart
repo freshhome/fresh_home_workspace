@@ -7,6 +7,7 @@ class HiveBoxNames {
   static const String bookingsBox = 'bookings_box';
   static const String servicesUpdatedBox = 'services_updated_box';
   static const String pendingActionsBox = 'pending_actions_box';
+  static const String bookingDraftsBox = 'booking_drafts_box';
 }
 // TODO :  الارقام دي عاوزه تتغير لارقام احترافيه اكثر 
 // ! لما تبدل الارقام امسح التطبق وشغله من جديد 

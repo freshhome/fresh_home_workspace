@@ -72,6 +72,7 @@ class HiveInitializer {
     await _openBoxSafe<ServicesUpdatedHiveModel>(HiveBoxNames.servicesUpdatedBox);
     await _openBoxSafe<PendingActionHiveModel>(HiveBoxNames.pendingActionsBox);
     await _openBoxSafe<BookingHiveModel>(HiveBoxNames.bookingsBox);
+    await _openBoxSafe<String>(HiveBoxNames.bookingDraftsBox);
   }
 
   static Future<Box<T>> _openBoxSafe<T>(String boxName) async {

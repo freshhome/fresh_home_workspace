@@ -1,4 +1,4 @@
-library fresh_home_motion;
+library;
 
 // Public APIs exposed to applications consuming this package.
 // Fully implemented tokens, foundation, and motion primitives are exported here.

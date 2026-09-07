@@ -4,7 +4,8 @@ enum DynamicFieldType {
   number,
   toggle,
   dropdown,
-  optionsGroup;
+  optionsGroup,
+  linearSectors;
 
   static DynamicFieldType fromString(String value) {
     switch (value) {
@@ -17,6 +18,11 @@ enum DynamicFieldType {
       case 'options_group':
       case 'optionsGroup':
         return DynamicFieldType.optionsGroup;
+      case 'linear_sectors':
+      case 'linearSectors':
+      case 'window_sectors':
+      case 'windowSectors':
+        return DynamicFieldType.linearSectors;
       default:
         return DynamicFieldType.number;
     }

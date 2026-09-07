@@ -4,9 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/shared.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../services_management/presentation/widgets/shared_icon_picker_dialog.dart';
-import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:shared/presentation/dialogs/dialog_helper.dart';
-import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
 import 'package:shared_features/shared_features.dart';
 
 import '../cubit/pricing_governance_cubit.dart';
@@ -236,6 +234,15 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
           !ids.contains('area')) {
         _validationWarning =
             '💡 توصية: يفضل إضافة حقل رقمي بمعرف "area" لحساب تسعير المتر المربع.';
+      }
+
+      if (_pricingMethod == PricingMethod.perLinearMeter &&
+          !_fields.any((f) =>
+              f.type == DynamicFieldType.linearSectors ||
+              f.id == 'total_linear_meters' ||
+              f.id == 'window_sectors')) {
+        _validationWarning =
+            '💡 توصية: يفضل إضافة حقل "أبعاد وقطاعات الألوميتال / الشبابيك" لحساب تسعير المتر الطولي للشبابيك.';
       }
 
       for (final f in _fields) {
@@ -3148,7 +3155,10 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
             itemBuilder: (context, idx) {
               final template = _fieldTemplates[idx];
               final bool isAdded = _fields.any((f) => f.id.trim() == template.id);
-              final bool isRecommended = template.id == 'area' && showAreaWarning;
+              final bool isRecommended = (template.id == 'area' && showAreaWarning) ||
+                  (template.type == DynamicFieldType.linearSectors &&
+                      _pricingMethod == PricingMethod.perLinearMeter &&
+                      !_fields.any((f) => f.type == DynamicFieldType.linearSectors));
 
               return GestureDetector(
                 onTap: isAdded ? null : () => _addFieldFromTemplate(template),
@@ -4881,6 +4891,21 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
 
   final List<DynamicFieldEntity> _fieldTemplates = const [
     DynamicFieldEntity(
+      id: 'window_sectors',
+      type: DynamicFieldType.linearSectors,
+      label: {
+        'ar': 'أبعاد وقطاعات الألوميتال / الشبابيك',
+        'en': 'Window / Sector Dimensions & Perimeter'
+      },
+      required: true,
+      unit: 'م.ط',
+      description: {
+        'ar': 'حاسبة تفاعلية لحساب محيط الشبابيك والقطاعات بالمتر الطولي مع خيار الوجهين',
+        'en': 'Interactive calculator for window/sector perimeter with single/both sides options'
+      },
+      icon: 'window',
+    ),
+    DynamicFieldEntity(
       id: 'area',
       type: DynamicFieldType.number,
       label: {
@@ -5016,6 +5041,9 @@ class _ServicePricingHubPageState extends State<ServicePricingHubPage>
         return Icons.pets_rounded;
       case 'history':
         return Icons.history_rounded;
+      case 'window':
+      case 'window_sectors':
+        return Icons.window_rounded;
       default:
         return Icons.add_circle_outline_rounded;
     }
@@ -5348,6 +5376,8 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
         return 'قائمة منسدلة';
       case DynamicFieldType.optionsGroup:
         return 'مجموعة خيارات';
+      case DynamicFieldType.linearSectors:
+        return 'حاسبة محيط وقطاعات (أبعاد)';
     }
   }
 
