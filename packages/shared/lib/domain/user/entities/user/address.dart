@@ -64,6 +64,9 @@ class Address extends Equatable {
   });
 
   bool get hasCoordinates => latitude != null && longitude != null;
+  bool get hasLocationUrl =>
+      locationUrl != null && locationUrl!.trim().isNotEmpty;
+  bool get hasLocation => hasCoordinates || hasLocationUrl;
   bool get isDeleted => deletedAt != null;
 
   /// Returns governorate name based on requested locale ('ar' or 'en').

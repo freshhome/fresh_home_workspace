@@ -750,7 +750,9 @@ class _TechnicianOrderDetailsScreenState
       customerPhone: canShowSensitive ? phone : null,
       scheduledTime: order.startTimeSlot,
       statusText: _getStatusArabicName(order.status),
-      onOpenMaps: canShowSensitive ? () => _openGoogleMaps(order.address) : null,
+      onOpenMaps: (canShowSensitive && order.address.hasLocation)
+          ? () => _openGoogleMaps(order.address)
+          : null,
       onCallPhone: canShowSensitive ? () => _launchPhone(phone) : null,
       onWhatsAppPhone: canShowSensitive ? () => _launchWhatsApp(phone) : null,
     );
@@ -779,8 +781,31 @@ class _TechnicianOrderDetailsScreenState
   }
 
   Future<void> _openGoogleMaps(Address address) async {
-    final query = AddressFormatter.toGoogleMapsQuery(address);
-    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+    Uri? url;
+
+    // 1. Direct GPS coordinates registered by the customer
+    if (address.hasCoordinates) {
+      url = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${address.latitude},${address.longitude}',
+      );
+    }
+    // 2. Location URL registered by the customer (Google Maps link, pin, etc.)
+    else if (address.hasLocationUrl) {
+      final loc = address.locationUrl!.trim();
+      final parsed = Uri.tryParse(loc);
+      if (parsed != null &&
+          (parsed.scheme == 'http' || parsed.scheme == 'https')) {
+        url = parsed;
+      } else if (!loc.startsWith('http')) {
+        url = Uri.tryParse('https://$loc');
+      }
+    }
+
+    if (url == null) {
+      debugPrint('No registered location to navigate to for this address.');
+      return;
+    }
+
     try {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);

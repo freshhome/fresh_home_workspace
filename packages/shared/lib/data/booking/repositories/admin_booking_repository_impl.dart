@@ -99,6 +99,20 @@ class AdminBookingRepositoryImpl implements AdminBookingRepository {
   }
 
   @override
+  Future<Either<Failure, void>> deleteBooking({
+    required String bookingId,
+  }) async {
+    try {
+      await _remoteDataSource.deleteBooking(bookingId);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Stream<Either<Failure, List<Booking>>> watchActiveBookings() {
     return _remoteDataSource.watchActiveBookings().map(
       (models) => Right<Failure, List<Booking>>(

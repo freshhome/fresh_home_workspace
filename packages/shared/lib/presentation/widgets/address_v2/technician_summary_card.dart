@@ -464,7 +464,8 @@ class TechnicianSummaryCard extends StatelessWidget {
             const SizedBox(height: 14),
 
             // ── 4. NAVIGATION BUTTON ("بدء الملاحة") ─────────────────────────
-            if (onOpenMaps != null)
+            // Only displayed if a location was actually registered by the customer.
+            if (onOpenMaps != null && address.hasLocation)
               Semantics(
                 button: true,
                 label: 'بدء الملاحة',

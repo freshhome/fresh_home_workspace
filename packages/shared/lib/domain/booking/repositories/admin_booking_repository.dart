@@ -35,6 +35,11 @@ abstract class AdminBookingRepository {
     String? reason,
   });
 
+  /// Permanently deletes a booking record (Admin only).
+  Future<Either<Failure, void>> deleteBooking({
+    required String bookingId,
+  });
+
   // --- Real-time Streams ---
   
   /// Streams all active bookings (assigned, accepted, on_the_way, in_progress).

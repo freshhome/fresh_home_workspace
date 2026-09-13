@@ -32,6 +32,8 @@ abstract class AdminBookingRemoteDataSource {
     String? reason,
   });
 
+  Future<void> deleteBooking(String bookingId);
+
   Stream<List<BookingRemoteModel>> watchActiveBookings();
   Stream<List<BookingRemoteModel>> watchCompletedBookings();
   Stream<List<BookingRemoteModel>> watchCancelledBookings();
@@ -237,6 +239,15 @@ class AdminBookingRemoteDataSourceImpl implements AdminBookingRemoteDataSource {
     } catch (e) {
       print('❌ [AdminBookingDataSource] Select Fetch Error: $e');
       rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteBooking(String bookingId) async {
+    try {
+      await _supabase.from(_tableName).delete().eq('id', bookingId);
+    } catch (e) {
+      throw ServerException('Failed to delete booking: $e');
     }
   }
 }
