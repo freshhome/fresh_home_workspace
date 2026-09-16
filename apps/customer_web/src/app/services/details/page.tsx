@@ -624,10 +624,11 @@ function ServiceDetailsContent() {
                               : `bg-[#F8FAFC] dark:bg-[#050D24]/40 border-slate-100 dark:border-blue-900/40 ${hasPoints ? "hover:bg-slate-50 dark:hover:bg-[#050D24]/70 hover:border-slate-200 dark:hover:border-blue-900/60" : ""}`
                           }`}
                         >
-                          {/* [UI-FIX] Card Header Row: Removed onClick from parent div to prevent double event trigger.
-                              Click is now handled exclusively by the button to avoid conflicting event propagation. */}
+                          {/* [UI-FIX] Card Header Row: flex-wrap + gap-y-2 prevents the "التفاصيل" button
+                              from overlapping the card title when the user zooms in or on narrow viewports.
+                              The button wraps below the title row instead of pushing over it. */}
                           <div 
-                            className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 sm:gap-4`}
+                            className={`p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:gap-x-4`}
                           >
                             <div className="flex items-center gap-3 sm:gap-3.5 flex-1 min-w-0">
                               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/80 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-2 shadow-2xs">
