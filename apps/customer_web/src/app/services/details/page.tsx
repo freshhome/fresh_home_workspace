@@ -632,13 +632,14 @@ function ServiceDetailsContent() {
                               : `bg-[#F8FAFC] dark:bg-[#050D24]/40 border-slate-100 dark:border-blue-900/40 ${hasPoints ? "hover:bg-slate-50 dark:hover:bg-[#050D24]/70 hover:border-slate-200 dark:hover:border-blue-900/60" : ""}`
                           }`}
                         >
-                          {/* [UI-FIX] Card Header Row: flex-wrap + gap-y-2 prevents the "التفاصيل" button
-                              from overlapping the card title when the user zooms in or on narrow viewports.
-                              The button wraps below the title row instead of pushing over it. */}
+                          {/* [UI-FIX] Card Header Row: flex-wrap with fluid flex-basis triggers early wrapping
+                              as soon as horizontal space cannot accommodate both title (~210px) and button (~100px),
+                              preventing any title squeeze or overlap when zooming in. Entire row is clickable when hasPoints. */}
                           <div 
-                            className={`p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:gap-x-4`}
+                            onClick={() => hasPoints && toggleInclusion(idx)}
+                            className={`p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2.5 sm:gap-x-4 ${hasPoints ? "cursor-pointer select-none" : ""}`}
                           >
-                            <div className="flex items-center gap-3 sm:gap-3.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-3 sm:gap-3.5 flex-[1_1_210px] min-w-[min(100%,190px)] max-w-full">
                               {/* [RESPONSIVE] Fluid icon 36px→44px via clamp() */}
                               <div className="w-[clamp(2.25rem,4vw,2.75rem)] h-[clamp(2.25rem,4vw,2.75rem)] rounded-xl bg-white dark:bg-[#071739] border border-slate-200/80 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-2 shadow-2xs">
                                 {itemIconUrl ? (
@@ -647,8 +648,8 @@ function ServiceDetailsContent() {
                                   <Sparkles className="w-[clamp(1rem,2vw,1.25rem)] h-[clamp(1rem,2vw,1.25rem)]" />
                                 )}
                               </div>
-                              {/* [UI-FIX] Unified font size: removed non-standard md:text-[17px], now uses md:text-base */}
-                              <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-snug break-words">
+                              {/* [UI-FIX] Clean font size and safe wrapping without breaking Arabic words */}
+                              <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-snug break-normal [overflow-wrap:anywhere]">
                                 {parsed.title}
                               </h4>
                             </div>
@@ -656,8 +657,11 @@ function ServiceDetailsContent() {
                             {hasPoints && (
                               <button
                                 type="button"
-                                onClick={() => toggleInclusion(idx)}
-                                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all shrink-0 cursor-pointer min-h-[40px] sm:min-h-[44px] select-none ${
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleInclusion(idx);
+                                }}
+                                className={`flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all shrink-0 cursor-pointer min-h-[40px] sm:min-h-[44px] select-none ms-auto sm:ms-0 ${
                                   isOpen
                                     ? "bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200 dark:border-blue-900/60 shadow-xs"
                                     : "bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-blue-900/40 hover:bg-slate-50 dark:hover:bg-slate-800"
