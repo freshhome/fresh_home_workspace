@@ -499,10 +499,6 @@ function ServiceDetailsContent() {
   }
 
   const inclusions = Array.isArray(currentService.details) ? currentService.details : [];
-  const validInclusions = inclusions.filter((item: any) => {
-    const parsed = parseDetailItem(item);
-    return parsed && parsed.title;
-  });
   const exclusions = Array.isArray(currentService.not_included)
     ? currentService.not_included
     : currentService.not_included?.ar?.points || currentService.not_included?.en?.points || [];
@@ -592,48 +588,33 @@ function ServiceDetailsContent() {
                   </div>
 
                   <div className="space-y-2 flex-1 min-w-0">
-                    {/* [RESPONSIVE] clamp() H1: fluid 22px→30px with no breakpoint jumps */}
-                    <h1 className="text-[clamp(1.375rem,4vw,1.875rem)] font-black text-slate-900 dark:text-white tracking-tight leading-snug">
+                    {/* [RESPONSIVE] fluid controlled H1 */}
+                    <h1 className="text-[clamp(1.25rem,2.5vw,1.5rem)] font-black text-slate-900 dark:text-white tracking-tight leading-snug">
                       {arTitle}
                     </h1>
 
-                    <p className="text-[clamp(0.75rem,1.5vw,0.875rem)] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                    <p className="text-[clamp(0.8125rem,1.4vw,0.875rem)] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
                       {arDesc}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* What's Included (Matches IMAGE 2 Visual Direction) */}
+              {/* What's Included */}
               {inclusions.length > 0 && (
                 <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-100/90 dark:border-blue-900/40 p-[clamp(1.25rem,3vw,2rem)] shadow-sm text-right space-y-4">
                   {/* Main Section Header */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3 text-slate-900 dark:text-white">
-                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs">
-                        <Check className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs">
+                        <Check className="w-5 h-5 stroke-[2.5]" />
                       </div>
-                      <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">ما تشمله الخدمة</h3>
+                      <h3 className="text-[clamp(1.125rem,2.2vw,1.375rem)] font-black text-slate-900 dark:text-white tracking-tight">ما تشمله الخدمة</h3>
                     </div>
-                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed pr-1 sm:pr-2">
+                    <p className="text-[clamp(0.8125rem,1.4vw,0.875rem)] text-slate-500 dark:text-slate-400 font-medium leading-relaxed pr-1 sm:pr-2">
                       اقرأ تفاصيل الخدمة بعناية لتتعرف على ما يتم تنفيذه بدقة واحترافية في منزلك.
                     </p>
                   </div>
-
-                  {/* Service Summary Element (Dynamic Categories Count from IMAGE 2) */}
-                  {validInclusions.length > 0 && (
-                    <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100/80 dark:border-blue-900/40 text-slate-800 dark:text-slate-200">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-100/80 dark:bg-blue-900/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center shrink-0">
-                          <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        </div>
-                        <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
-                          يشمل الخدمة <strong className="font-black text-[#0091FF] dark:text-[#22A5FC]">{validInclusions.length}</strong> مناطق رئيسية
-                        </span>
-                      </div>
-                      <ChevronDown className="w-4 h-4 text-blue-400 dark:text-blue-500" />
-                    </div>
-                  )}
 
                   {/* Section Category Cards */}
                   <div className="space-y-3 pt-1">
@@ -660,14 +641,14 @@ function ServiceDetailsContent() {
                           >
                             <div className="flex items-center gap-3 sm:gap-3.5 flex-[1_1_210px] min-w-[min(100%,190px)] max-w-full">
                               {/* Icon squircle */}
-                              <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-blue-50/90 dark:bg-blue-950/70 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-2.5 shadow-2xs">
+                              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-50/90 dark:bg-blue-950/70 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-2.5 shadow-2xs">
                                 {itemIconUrl ? (
                                   <img src={itemIconUrl} alt="" className="w-full h-full object-contain" />
                                 ) : (
-                                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+                                  <Sparkles className="w-5 h-5" />
                                 )}
                               </div>
-                              <h4 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-snug break-normal [overflow-wrap:anywhere]">
+                              <h4 className="text-[clamp(0.9375rem,1.8vw,1.0625rem)] font-black text-slate-900 dark:text-white leading-snug break-normal [overflow-wrap:anywhere]">
                                 {parsed.title}
                               </h4>
                             </div>
@@ -685,7 +666,7 @@ function ServiceDetailsContent() {
                                     : "bg-blue-50/70 dark:bg-blue-950/40 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100/60 dark:border-blue-900/30 hover:bg-blue-100/80 dark:hover:bg-blue-900/50"
                                 }`}
                               >
-                                <span>{isOpen ? "إخفاء" : "التفاصيل"}</span>
+                                <span className="text-[clamp(0.75rem,1.2vw,0.8125rem)]">{isOpen ? "إخفاء" : "التفاصيل"}</span>
                                 <ChevronDown className={`w-4 h-4 transition-transform duration-300 ease-out ${isOpen ? "rotate-180" : "rotate-0"}`} />
                               </button>
                             )}
@@ -709,7 +690,7 @@ function ServiceDetailsContent() {
                                         key={pIdx}
                                         className="flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl bg-[#F8FAFC] dark:bg-white/[0.03] hover:bg-slate-100/80 dark:hover:bg-white/[0.06] transition-colors"
                                       >
-                                        <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 leading-relaxed flex-1 text-right whitespace-pre-line">
+                                        <span className="text-[clamp(0.8125rem,1.5vw,0.875rem)] font-bold text-slate-700 dark:text-slate-200 leading-relaxed flex-1 text-right whitespace-pre-line">
                                           {pt}
                                         </span>
                                         <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-100/70 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] text-xs font-black flex items-center justify-center shrink-0 shadow-2xs">
