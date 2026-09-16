@@ -306,37 +306,13 @@ export default function Header() {
               )}
             </div>
 
-            {/* Mobile Menu Toggle & Actions */}
+            {/* Mobile Menu Toggle & Actions (Matches IMAGE 2: Menu + Theme Toggle) */}
             <div className="flex sm:hidden items-center gap-2">
-              {/* Account / Login on Mobile */}
-              {user ? (
-                <Link
-                  href="/profile"
-                  className="relative w-8 h-8 rounded-lg bg-gradient-to-tr from-[#0091FF] to-[#00D2FF] text-white font-black text-xs flex items-center justify-center border border-blue-400/40"
-                  title="الملف الشخصي"
-                >
-                  {profile?.avatarUrl ? (
-                    <img src={profile.avatarUrl} alt={displayName} className="w-full h-full rounded-lg object-cover" />
-                  ) : (
-                    <span>{userInitial}</span>
-                  )}
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white dark:ring-[#071330]"></span>
-                </Link>
-              ) : (
-                <Link
-                  href="/login"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white text-xs font-bold"
-                >
-                  <LogIn className="w-3.5 h-3.5 text-[#0091FF] dark:text-[#22A5FC]" />
-                  <span>دخول</span>
-                </Link>
-              )}
-
               {/* Theme Toggle Button on Mobile */}
               <button
                 onClick={toggleTheme}
                 aria-label="تبديل المظهر"
-                className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/10 cursor-pointer"
+                className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/10 cursor-pointer transition-colors"
               >
                 {isDark ? (
                   <Sun className="w-4 h-4 text-amber-400" />
@@ -347,7 +323,7 @@ export default function Header() {
               
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="p-2 rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/10 cursor-pointer"
+                className="p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/10 cursor-pointer transition-colors"
                 aria-label="القائمة"
               >
                 {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

@@ -7,7 +7,7 @@ import {
   ArrowRight, ArrowLeft, Calendar, Check, X, Star, 
   Sparkles, ShieldCheck, Heart, User, ChevronLeft,
   Layers, Zap, Home, ChevronRight, MessageCircle, Info,
-  ChevronDown, CheckCircle2
+  ChevronDown, CheckCircle2, FileText
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -499,6 +499,12 @@ function ServiceDetailsContent() {
   }
 
   const inclusions = Array.isArray(currentService.details) ? currentService.details : [];
+  const validInclusions = useMemo(() => {
+    return inclusions.filter((item: any) => {
+      const parsed = parseDetailItem(item);
+      return parsed && parsed.title;
+    });
+  }, [inclusions]);
   const exclusions = Array.isArray(currentService.not_included)
     ? currentService.not_included
     : currentService.not_included?.ar?.points || currentService.not_included?.en?.points || [];
@@ -600,21 +606,38 @@ function ServiceDetailsContent() {
                 </div>
               </div>
 
-              {/* What's Included */}
+              {/* What's Included (Matches IMAGE 2 Visual Direction) */}
               {inclusions.length > 0 && (
-                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-[clamp(1.25rem,3vw,2rem)] shadow-sm text-right space-y-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                        <Check className="w-4 h-4 stroke-[3]" />
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-100/90 dark:border-blue-900/40 p-[clamp(1.25rem,3vw,2rem)] shadow-sm text-right space-y-4">
+                  {/* Main Section Header */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 text-slate-900 dark:text-white">
+                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs">
+                        <Check className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
                       </div>
-                      <h3 className="text-[clamp(1rem,2vw,1.125rem)] font-black">ما تشمله الخدمة</h3>
+                      <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">ما تشمله الخدمة</h3>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium pr-10">
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed pr-1 sm:pr-2">
                       اقرأ تفاصيل الخدمة بعناية لتتعرف على ما يتم تنفيذه بدقة واحترافية في منزلك.
                     </p>
                   </div>
 
+                  {/* Service Summary Element (Dynamic Categories Count from IMAGE 2) */}
+                  {validInclusions.length > 0 && (
+                    <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100/80 dark:border-blue-900/40 text-slate-800 dark:text-slate-200">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-100/80 dark:bg-blue-900/60 text-[#0091FF] dark:text-[#22A5FC] flex items-center justify-center shrink-0">
+                          <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
+                        <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
+                          يشمل الخدمة <strong className="font-black text-[#0091FF] dark:text-[#22A5FC]">{validInclusions.length}</strong> مناطق رئيسية
+                        </span>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-blue-400 dark:text-blue-500" />
+                    </div>
+                  )}
+
+                  {/* Section Category Cards */}
                   <div className="space-y-3 pt-1">
                     {inclusions.map((item: any, idx: number) => {
                       const parsed = parseDetailItem(item);
@@ -626,30 +649,27 @@ function ServiceDetailsContent() {
                       return (
                         <div 
                           key={idx} 
-                          className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                          className={`rounded-3xl border transition-all duration-200 overflow-hidden ${
                             isOpen 
-                              ? "bg-slate-50/70 dark:bg-[#050D24]/80 border-blue-200 dark:border-blue-900/60 shadow-xs" 
-                              : `bg-[#F8FAFC] dark:bg-[#050D24]/40 border-slate-100 dark:border-blue-900/40 ${hasPoints ? "hover:bg-slate-50 dark:hover:bg-[#050D24]/70 hover:border-slate-200 dark:hover:border-blue-900/60" : ""}`
+                              ? "bg-white dark:bg-[#071739] border-blue-200/90 dark:border-blue-800/80 shadow-xs" 
+                              : `bg-white dark:bg-[#071739] border-slate-200/80 dark:border-blue-900/40 ${hasPoints ? "hover:border-blue-200 dark:hover:border-blue-900/70" : ""}`
                           }`}
                         >
-                          {/* [UI-FIX] Card Header Row: flex-wrap with fluid flex-basis triggers early wrapping
-                              as soon as horizontal space cannot accommodate both title (~210px) and button (~100px),
-                              preventing any title squeeze or overlap when zooming in. Entire row is clickable when hasPoints. */}
+                          {/* Card Header Row */}
                           <div 
                             onClick={() => hasPoints && toggleInclusion(idx)}
                             className={`p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2.5 sm:gap-x-4 ${hasPoints ? "cursor-pointer select-none" : ""}`}
                           >
                             <div className="flex items-center gap-3 sm:gap-3.5 flex-[1_1_210px] min-w-[min(100%,190px)] max-w-full">
-                              {/* [RESPONSIVE] Fluid icon 36px→44px via clamp() */}
-                              <div className="w-[clamp(2.25rem,4vw,2.75rem)] h-[clamp(2.25rem,4vw,2.75rem)] rounded-xl bg-white dark:bg-[#071739] border border-slate-200/80 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-2 shadow-2xs">
+                              {/* Icon squircle */}
+                              <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-blue-50/90 dark:bg-blue-950/70 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-2.5 shadow-2xs">
                                 {itemIconUrl ? (
                                   <img src={itemIconUrl} alt="" className="w-full h-full object-contain" />
                                 ) : (
-                                  <Sparkles className="w-[clamp(1rem,2vw,1.25rem)] h-[clamp(1rem,2vw,1.25rem)]" />
+                                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
                                 )}
                               </div>
-                              {/* [UI-FIX] Clean font size and safe wrapping without breaking Arabic words */}
-                              <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-snug break-normal [overflow-wrap:anywhere]">
+                              <h4 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-snug break-normal [overflow-wrap:anywhere]">
                                 {parsed.title}
                               </h4>
                             </div>
@@ -661,21 +681,19 @@ function ServiceDetailsContent() {
                                   e.stopPropagation();
                                   toggleInclusion(idx);
                                 }}
-                                className={`flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all shrink-0 cursor-pointer min-h-[40px] sm:min-h-[44px] select-none ms-auto sm:ms-0 ${
+                                className={`flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all shrink-0 cursor-pointer min-h-[40px] sm:min-h-[42px] select-none ms-auto sm:ms-0 ${
                                   isOpen
-                                    ? "bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200 dark:border-blue-900/60 shadow-xs"
-                                    : "bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-blue-900/40 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                    ? "bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200/80 dark:border-blue-900/60 shadow-xs"
+                                    : "bg-blue-50/70 dark:bg-blue-950/40 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100/60 dark:border-blue-900/30 hover:bg-blue-100/80 dark:hover:bg-blue-900/50"
                                 }`}
                               >
-                                <span className="hidden sm:inline">{isOpen ? "إخفاء التفاصيل" : "عرض التفاصيل"}</span>
-                                <span className="sm:hidden">{isOpen ? "إخفاء" : "التفاصيل"}</span>
+                                <span>{isOpen ? "إخفاء" : "التفاصيل"}</span>
                                 <ChevronDown className={`w-4 h-4 transition-transform duration-300 ease-out ${isOpen ? "rotate-180" : "rotate-0"}`} />
                               </button>
                             )}
                           </div>
 
-                          {/* [UI-FIX] AnimatePresence key is now unique per card index to prevent
-                              conflicting animations when multiple accordions are open simultaneously. */}
+                          {/* Accordion Content: Flatter Hierarchy with Sequential Badges */}
                           <AnimatePresence initial={false}>
                             {isOpen && hasPoints && (
                               <motion.div
@@ -686,20 +704,18 @@ function ServiceDetailsContent() {
                                 transition={{ duration: 0.28, ease: "easeInOut" }}
                                 className="overflow-hidden"
                               >
-                                {/* [RESPONSIVE] Fluid horizontal padding replaces px-3.5 sm:px-5 pair */}
-                                <div className="px-[clamp(0.875rem,2.5vw,1.25rem)] pb-4 pt-1 border-t border-slate-200/50 dark:border-blue-900/30">
-                                  <div className="space-y-3 pt-2.5">
+                                <div className="px-3.5 sm:px-4 pb-4 pt-1">
+                                  <div className="space-y-2 pt-1">
                                     {parsed.points.map((pt: string, pIdx: number) => (
                                       <div 
                                         key={pIdx}
-                                        className="flex items-start gap-3 p-[clamp(0.75rem,2vw,1rem)] rounded-2xl bg-white dark:bg-[#071739]/50 border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-colors"
+                                        className="flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl bg-[#F8FAFC] dark:bg-white/[0.03] hover:bg-slate-100/80 dark:hover:bg-white/[0.06] transition-colors"
                                       >
-                                        {/* [RESPONSIVE] Badge + text: clamp() replaces 4 separate breakpoint font sizes */}
-                                        <span className="w-[clamp(1.375rem,3vw,1.75rem)] h-[clamp(1.375rem,3vw,1.75rem)] rounded-lg bg-blue-50 dark:bg-blue-950/80 border border-blue-200/70 dark:border-blue-900/50 text-[#0091FF] dark:text-[#22A5FC] text-[clamp(0.7rem,1.5vw,0.875rem)] font-black flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                                          {pIdx + 1}
-                                        </span>
-                                        <span className="text-[clamp(0.875rem,2vw,1rem)] leading-[1.75] font-medium text-slate-700 dark:text-slate-200 whitespace-pre-line flex-1">
+                                        <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 leading-relaxed flex-1 text-right whitespace-pre-line">
                                           {pt}
+                                        </span>
+                                        <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-100/70 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] text-xs font-black flex items-center justify-center shrink-0 shadow-2xs">
+                                          {pIdx + 1}
                                         </span>
                                       </div>
                                     ))}
@@ -910,19 +926,16 @@ function ServiceDetailsContent() {
         </div>
       </main>
 
-      {/* Sticky Mobile Booking Bottom Bar */}
-      {/* [UI-FIX] Added pb-safe (safe-area-inset-bottom) for iPhone notch/home-bar support.
-          Using style prop for env() since Tailwind doesn't natively support env() values.
-          pb-4 serves as fallback on non-notch devices. */}
+      {/* Sticky Mobile Booking Bottom Bar (Matches IMAGE 2) */}
       <div
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#071739]/95 backdrop-blur-md border-t border-slate-200 dark:border-blue-900/60 shadow-2xl flex items-center justify-between gap-4 px-4 pt-4"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#071739]/95 backdrop-blur-md border-t border-slate-100 dark:border-blue-900/50 shadow-[0_-4px_20px_rgba(0,0,0,0.04)] flex items-center justify-between gap-4 px-4 pt-3.5"
         style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}
       >
         <div>
-          <span className="text-[10px] text-slate-400 block font-bold">{priceLabel}</span>
+          <span className="text-[11px] text-slate-400 block font-bold">{priceLabel}</span>
           <div className="flex items-baseline gap-1">
-            <span className="text-xl font-black text-[#0D327D] dark:text-[#22A5FC]">{startingPrice}</span>
-            <span className="text-[10px] font-black text-slate-500">{unitText}</span>
+            <span className="text-2xl font-black text-[#0D327D] dark:text-white">{startingPrice}</span>
+            <span className="text-xs font-bold text-slate-500 mr-1">{unitText}</span>
           </div>
         </div>
 
@@ -937,7 +950,7 @@ function ServiceDetailsContent() {
                 service_context: arTitle,
               })
             }
-            className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-[#25D366] text-white text-xs font-black shadow-md shadow-emerald-500/20"
+            className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-2xl bg-[#25D366] text-white text-xs sm:text-sm font-black shadow-md shadow-emerald-500/20"
           >
             <MessageCircle className="w-4 h-4" />
             <span>إشعاري عند التوفر</span>
@@ -945,7 +958,7 @@ function ServiceDetailsContent() {
         ) : (
           <Link
             href={`/booking?serviceId=${rootAncestorId}&subServiceId=${currentService.id}`}
-            className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-gradient-to-r from-[#0091FF] to-[#0077E6] text-white text-xs font-black shadow-md shadow-blue-500/20"
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-[#0091FF] hover:bg-[#0080E5] text-white text-xs sm:text-sm font-black shadow-md shadow-blue-500/25 transition-all"
           >
             <Calendar className="w-4 h-4" />
             <span>احجز الآن</span>
