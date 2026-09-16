@@ -330,19 +330,20 @@ function ServiceDetailsContent() {
             
             {/* Dynamic Breadcrumbs */}
             <div className="flex items-center justify-between flex-wrap gap-2 text-xs font-bold">
-              <nav className="flex items-center gap-1.5 text-slate-400 overflow-x-auto no-scrollbar py-1">
-                <Link href="/" className="hover:text-[#0091FF] text-slate-600 dark:text-slate-300 transition-colors">
+              {/* [RESPONSIVE] min-w-0 + flex-1 + truncate: mirrors leaf breadcrumb fix, prevents overflow on small screens */}
+              <nav className="flex items-center gap-1.5 text-slate-400 overflow-x-auto no-scrollbar py-1 min-w-0 flex-1">
+                <Link href="/" className="hover:text-[#0091FF] text-slate-600 dark:text-slate-300 transition-colors shrink-0">
                   الرئيسية
                 </Link>
                 {breadcrumbs.map((crumb, idx) => (
-                  <div key={crumb.id} className="flex items-center gap-1.5">
-                    <ChevronLeft className="w-3.5 h-3.5 text-slate-400" />
+                  <div key={crumb.id} className="flex items-center gap-1.5 min-w-0">
+                    <ChevronLeft className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     {crumb.isCurrent ? (
-                      <span className="text-[#0091FF] font-black">{crumb.title}</span>
+                      <span className="text-[#0091FF] font-black truncate max-w-[120px] sm:max-w-none">{crumb.title}</span>
                     ) : (
                       <Link
                         href={`/services/details?serviceId=${rootAncestorId}&subServiceId=${crumb.id}`}
-                        className="hover:text-[#0091FF] text-slate-600 dark:text-slate-300 transition-colors"
+                        className="hover:text-[#0091FF] text-slate-600 dark:text-slate-300 transition-colors truncate max-w-[100px] sm:max-w-none"
                       >
                         {crumb.title}
                       </Link>
@@ -365,8 +366,10 @@ function ServiceDetailsContent() {
             </div>
 
             {/* Branch Header Banner */}
-            <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/40 flex items-center justify-center p-3.5 shrink-0 overflow-hidden shadow-sm">
+            {/* [RESPONSIVE] flex-row flex-wrap: icon + title stay horizontal, wrap only if space truly runs out.
+                Icon scales fluidly 56px→80px. H1 scales fluidly 20px→30px. No breakpoint jumps. */}
+            <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-[clamp(1.25rem,3vw,2rem)] shadow-sm text-right flex flex-row flex-wrap items-center gap-4">
+              <div className="w-[clamp(3.5rem,8vw,5rem)] h-[clamp(3.5rem,8vw,5rem)] rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/40 flex items-center justify-center p-3 shrink-0 overflow-hidden shadow-sm">
                 {currentService.imageUrl ? (
                   <img
                     src={currentService.imageUrl}
@@ -374,19 +377,19 @@ function ServiceDetailsContent() {
                     className="w-full h-full object-contain"
                   />
                 ) : (
-                  <Layers className="w-10 h-10 text-[#0091FF]" />
+                  <Layers className="w-8 h-8 text-[#0091FF]" />
                 )}
               </div>
-              <div className="space-y-2 text-center sm:text-right flex-1">
-                <div className="flex items-center justify-center sm:justify-start gap-2.5">
-                  <h1 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white">
+              <div className="space-y-2 text-right flex-1 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="text-[clamp(1.25rem,4vw,1.875rem)] font-black text-slate-900 dark:text-white leading-snug">
                     خدمات {arTitle}
                   </h1>
-                  <span className="text-[10px] font-extrabold px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50">
+                  <span className="text-[10px] font-extrabold px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 shrink-0">
                     {childServices.length} خيارات متاحة
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-2xl">
+                <p className="text-[clamp(0.75rem,1.5vw,0.875rem)] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
                   {arDesc}
                 </p>
                 <p className="text-[11px] font-bold text-[#0091FF] dark:text-[#22A5FC] pt-1">
@@ -396,7 +399,9 @@ function ServiceDetailsContent() {
             </div>
 
             {/* Sub-Services Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* [RESPONSIVE] auto-fit minmax replaces 3 explicit breakpoints — cards tile naturally
+                based on available width, with no media queries needed */}
+            <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
               {childServices.map((child) => (
                 <div
                   key={child.id}
@@ -444,7 +449,8 @@ function ServiceDetailsContent() {
                   </div>
 
                   {/* CTA Action */}
-                  <div className="pt-3 border-t border-slate-100 dark:border-blue-900/40 flex items-center justify-between gap-2">
+                  {/* [RESPONSIVE] flex-wrap: price + CTA button wrap to next line if space is tight */}
+                  <div className="pt-3 border-t border-slate-100 dark:border-blue-900/40 flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[11px] font-black text-[#0D327D] dark:text-[#22A5FC]">
                       {child.priceText}
                     </span>
@@ -564,10 +570,12 @@ function ServiceDetailsContent() {
               )}
 
               {/* Service Hero Header Card */}
-              <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-right gap-5 sm:gap-6">
-                  {/* Clean Responsive Icon Badge */}
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-blue-50 to-sky-50 dark:from-[#050D24] dark:to-[#071739] border border-blue-100 dark:border-blue-900/60 flex items-center justify-center p-3 shrink-0 shadow-xs">
+              {/* [RESPONSIVE] flex-row flex-wrap: stays horizontal at all sizes, wraps gracefully if needed.
+                  Icon scales 48px→72px via clamp(). H1 22px→30px, desc 12px→14px — all fluid, no breakpoints. */}
+              <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-[clamp(1.25rem,3vw,2rem)] shadow-sm text-right">
+                <div className="flex flex-row flex-wrap items-center gap-4">
+                  {/* Fluid Icon Badge — scales with available space via clamp() */}
+                  <div className="w-[clamp(3rem,6vw,4.5rem)] h-[clamp(3rem,6vw,4.5rem)] rounded-2xl bg-gradient-to-br from-blue-50 to-sky-50 dark:from-[#050D24] dark:to-[#071739] border border-blue-100 dark:border-blue-900/60 flex items-center justify-center p-3 shrink-0 shadow-xs">
                     {currentService.imageUrl ? (
                       <img 
                         src={currentService.imageUrl} 
@@ -575,17 +583,17 @@ function ServiceDetailsContent() {
                         className="w-full h-full object-contain"
                       />
                     ) : (
-                      <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-[#0091FF] dark:text-[#22A5FC]" />
+                      <Sparkles className="w-8 h-8 text-[#0091FF] dark:text-[#22A5FC]" />
                     )}
                   </div>
 
                   <div className="space-y-2 flex-1 min-w-0">
-                    {/* [UI-FIX] H1 capped at text-3xl — 4xl was oversized on medium screens */}
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-snug">
+                    {/* [RESPONSIVE] clamp() H1: fluid 22px→30px with no breakpoint jumps */}
+                    <h1 className="text-[clamp(1.375rem,4vw,1.875rem)] font-black text-slate-900 dark:text-white tracking-tight leading-snug">
                       {arTitle}
                     </h1>
 
-                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium max-w-3xl">
+                    <p className="text-[clamp(0.75rem,1.5vw,0.875rem)] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
                       {arDesc}
                     </p>
                   </div>
@@ -594,13 +602,13 @@ function ServiceDetailsContent() {
 
               {/* What's Included */}
               {inclusions.length > 0 && (
-                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right space-y-4">
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-[clamp(1.25rem,3vw,2rem)] shadow-sm text-right space-y-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
                       <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
                         <Check className="w-4 h-4 stroke-[3]" />
                       </div>
-                      <h3 className="text-base sm:text-lg font-black">ما تشمله الخدمة</h3>
+                      <h3 className="text-[clamp(1rem,2vw,1.125rem)] font-black">ما تشمله الخدمة</h3>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium pr-10">
                       اقرأ تفاصيل الخدمة بعناية لتتعرف على ما يتم تنفيذه بدقة واحترافية في منزلك.
@@ -631,11 +639,12 @@ function ServiceDetailsContent() {
                             className={`p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:gap-x-4`}
                           >
                             <div className="flex items-center gap-3 sm:gap-3.5 flex-1 min-w-0">
-                              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/80 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-2 shadow-2xs">
+                              {/* [RESPONSIVE] Fluid icon 36px→44px via clamp() */}
+                              <div className="w-[clamp(2.25rem,4vw,2.75rem)] h-[clamp(2.25rem,4vw,2.75rem)] rounded-xl bg-white dark:bg-[#071739] border border-slate-200/80 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-2 shadow-2xs">
                                 {itemIconUrl ? (
                                   <img src={itemIconUrl} alt="" className="w-full h-full object-contain" />
                                 ) : (
-                                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+                                  <Sparkles className="w-[clamp(1rem,2vw,1.25rem)] h-[clamp(1rem,2vw,1.25rem)]" />
                                 )}
                               </div>
                               {/* [UI-FIX] Unified font size: removed non-standard md:text-[17px], now uses md:text-base */}
@@ -673,17 +682,19 @@ function ServiceDetailsContent() {
                                 transition={{ duration: 0.28, ease: "easeInOut" }}
                                 className="overflow-hidden"
                               >
-                                <div className="px-3.5 sm:px-5 pb-4 pt-1 border-t border-slate-200/50 dark:border-blue-900/30">
-                                  <div className="space-y-3 sm:space-y-3.5 pt-2.5">
+                                {/* [RESPONSIVE] Fluid horizontal padding replaces px-3.5 sm:px-5 pair */}
+                                <div className="px-[clamp(0.875rem,2.5vw,1.25rem)] pb-4 pt-1 border-t border-slate-200/50 dark:border-blue-900/30">
+                                  <div className="space-y-3 pt-2.5">
                                     {parsed.points.map((pt: string, pIdx: number) => (
                                       <div 
                                         key={pIdx}
-                                        className="flex items-start gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#071739]/50 border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-colors"
+                                        className="flex items-start gap-3 p-[clamp(0.75rem,2vw,1rem)] rounded-2xl bg-white dark:bg-[#071739]/50 border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-colors"
                                       >
-                                        <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-50 dark:bg-blue-950/80 border border-blue-200/70 dark:border-blue-900/50 text-[#0091FF] dark:text-[#22A5FC] text-xs sm:text-sm font-black flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                                        {/* [RESPONSIVE] Badge + text: clamp() replaces 4 separate breakpoint font sizes */}
+                                        <span className="w-[clamp(1.375rem,3vw,1.75rem)] h-[clamp(1.375rem,3vw,1.75rem)] rounded-lg bg-blue-50 dark:bg-blue-950/80 border border-blue-200/70 dark:border-blue-900/50 text-[#0091FF] dark:text-[#22A5FC] text-[clamp(0.7rem,1.5vw,0.875rem)] font-black flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                                           {pIdx + 1}
                                         </span>
-                                        <span className="text-[14px] sm:text-[15px] md:text-[16px] lg:text-[16.5px] leading-[1.75] font-medium text-slate-700 dark:text-slate-200 whitespace-pre-line flex-1">
+                                        <span className="text-[clamp(0.875rem,2vw,1rem)] leading-[1.75] font-medium text-slate-700 dark:text-slate-200 whitespace-pre-line flex-1">
                                           {pt}
                                         </span>
                                       </div>
@@ -702,29 +713,30 @@ function ServiceDetailsContent() {
 
               {/* What's NOT Included */}
               {exclusions.length > 0 && (
-                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right space-y-4">
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-[clamp(1.25rem,3vw,2rem)] shadow-sm text-right space-y-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
                       <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200/60 dark:border-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
                         <X className="w-4 h-4 stroke-[3]" />
                       </div>
-                      <h3 className="text-base sm:text-lg font-black">ما لا تشمله الخدمة</h3>
+                      <h3 className="text-[clamp(1rem,2vw,1.125rem)] font-black">ما لا تشمله الخدمة</h3>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium pr-10">
                       ملاحظة هامة للشفافية: البنود التالية غير مدرجة ضمن نطاق هذا الطلب وتتطلب خدمات إضافية منفصلة.
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1">
+                  {/* [RESPONSIVE] auto-fit replaces sm:grid-cols-2 breakpoint — items tile based on available width */}
+                  <div className="grid gap-[clamp(0.625rem,2vw,0.75rem)] pt-1" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
                     {exclusions.map((ex: any, idx: number) => (
                       <div 
                         key={idx} 
-                        className="flex items-start gap-3 p-3.5 sm:p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all hover:border-slate-200 dark:hover:border-blue-900/50"
+                        className="flex items-start gap-3 p-[clamp(0.75rem,2vw,1rem)] rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all hover:border-slate-200 dark:hover:border-blue-900/50"
                       >
-                        <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-rose-50 dark:bg-rose-950/80 border border-rose-200/70 dark:border-rose-900/50 text-rose-500 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                          <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                        <span className="w-[clamp(1.375rem,3vw,1.75rem)] h-[clamp(1.375rem,3vw,1.75rem)] rounded-lg bg-rose-50 dark:bg-rose-950/80 border border-rose-200/70 dark:border-rose-900/50 text-rose-500 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                          <X className="w-[clamp(0.875rem,2vw,1rem)] h-[clamp(0.875rem,2vw,1rem)] stroke-[2.5]" />
                         </span>
-                        <span className="text-[14px] sm:text-[15px] md:text-[16px] leading-[1.75] font-medium text-slate-700 dark:text-slate-200 whitespace-pre-line flex-1">
+                        <span className="text-[clamp(0.875rem,2vw,1rem)] leading-[1.75] font-medium text-slate-700 dark:text-slate-200 whitespace-pre-line flex-1">
                           {typeof ex === "string" ? ex : ex?.ar || ex?.en || ""}
                         </span>
                       </div>
@@ -735,20 +747,20 @@ function ServiceDetailsContent() {
 
               {/* Instructions */}
               {arInstructions && (
-                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right space-y-4">
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-[clamp(1.25rem,3vw,2rem)] shadow-sm text-right space-y-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
                       <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0">
                         <Info className="w-4 h-4" />
                       </div>
-                      <h3 className="text-base sm:text-lg font-black">تعليمات وإرشادات هامة قبل بدء الخدمة</h3>
+                      <h3 className="text-[clamp(1rem,2vw,1.125rem)] font-black">تعليمات وإرشادات هامة قبل بدء الخدمة</h3>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium pr-10">
                       يرجى الاطلاع على الإرشادات التالية لضمان تنفيذ الخدمة بأعلى معايير الدقة والسرعة.
                     </p>
                   </div>
 
-                  <div className="space-y-3 sm:space-y-3.5 pt-1">
+                  <div className="space-y-3 pt-1">
                     {arInstructions
                       .split("\n")
                       .map((line: string) => line.trim())
@@ -758,12 +770,12 @@ function ServiceDetailsContent() {
                         return (
                           <div 
                             key={iIdx}
-                            className="flex items-start gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] text-slate-700 dark:text-slate-200"
+                            className="flex items-start gap-3 p-[clamp(0.75rem,2vw,1rem)] rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] text-slate-700 dark:text-slate-200"
                           >
-                            <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#0091FF]/10 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200/50 dark:border-blue-900/40 text-xs sm:text-sm font-black flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                            <span className="w-[clamp(1.375rem,3vw,1.75rem)] h-[clamp(1.375rem,3vw,1.75rem)] rounded-lg bg-[#0091FF]/10 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200/50 dark:border-blue-900/40 text-[clamp(0.7rem,1.5vw,0.875rem)] font-black flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                               {iIdx + 1}
                             </span>
-                            <span className="text-[14px] sm:text-[15px] md:text-[16px] leading-[1.75] font-medium whitespace-pre-line flex-1">
+                            <span className="text-[clamp(0.875rem,2vw,1rem)] leading-[1.75] font-medium whitespace-pre-line flex-1">
                               {cleanText || instruction}
                             </span>
                           </div>
@@ -775,7 +787,7 @@ function ServiceDetailsContent() {
 
               {/* Customer Reviews */}
               {reviews.length > 0 && (
-                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right space-y-4">
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-[clamp(1.25rem,3vw,2rem)] shadow-sm text-right space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-base font-black text-slate-900 dark:text-white">تقييمات وتجارب العملاء</h3>
                     <div className="flex items-center gap-1 text-amber-500 text-xs font-black">
@@ -818,7 +830,8 @@ function ServiceDetailsContent() {
                 <div className="space-y-1 pb-5 border-b border-slate-100 dark:border-blue-900/40">
                   <span className="text-xs font-bold text-slate-400 block">{priceLabel}</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl sm:text-4xl font-black text-[#0D327D] dark:text-[#22A5FC]">{startingPrice}</span>
+                    {/* [RESPONSIVE] clamp() sidebar price: fluid 30px→36px replaces text-3xl sm:text-4xl jump */}
+                    <span className="text-[clamp(1.875rem,4vw,2.25rem)] font-black text-[#0D327D] dark:text-[#22A5FC]">{startingPrice}</span>
                     <span className="text-xs font-black text-slate-500 dark:text-slate-400">{unitText}</span>
                   </div>
                   <span className="text-[10px] text-slate-400 font-medium block">
