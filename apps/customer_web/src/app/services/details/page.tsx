@@ -243,11 +243,55 @@ function ServiceDetailsContent() {
   }, [currentService?.id, childServices.length, rootAncestorId, breadcrumbs]);
 
   if (loading) {
+    // [UI-FIX] Professional skeleton loader instead of a plain spinner
     return (
       <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#040A1C] flex flex-col font-sans">
         <Header />
-        <main className="flex-1 flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-[#0091FF]"></div>
+        <main className="flex-1 pt-24 pb-20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Breadcrumb skeleton */}
+            <div className="mb-6 flex items-center gap-2">
+              <div className="h-3.5 w-12 rounded-full bg-slate-200 dark:bg-blue-900/30 animate-pulse" />
+              <div className="h-3.5 w-3.5 rounded-full bg-slate-200 dark:bg-blue-900/30 animate-pulse" />
+              <div className="h-3.5 w-24 rounded-full bg-slate-200 dark:bg-blue-900/30 animate-pulse" />
+              <div className="h-3.5 w-3.5 rounded-full bg-slate-200 dark:bg-blue-900/30 animate-pulse" />
+              <div className="h-3.5 w-32 rounded-full bg-slate-200 dark:bg-blue-900/30 animate-pulse" />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-8 space-y-6">
+                {/* Hero card skeleton */}
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm">
+                  <div className="flex items-start gap-5">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-200 dark:bg-blue-900/30 animate-pulse shrink-0" />
+                    <div className="space-y-3 flex-1">
+                      <div className="h-6 sm:h-8 w-3/4 rounded-xl bg-slate-200 dark:bg-blue-900/30 animate-pulse" />
+                      <div className="h-3.5 w-full rounded-full bg-slate-100 dark:bg-blue-900/20 animate-pulse" />
+                      <div className="h-3.5 w-2/3 rounded-full bg-slate-100 dark:bg-blue-900/20 animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+                {/* Inclusions skeleton */}
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm space-y-4">
+                  <div className="h-5 w-32 rounded-xl bg-slate-200 dark:bg-blue-900/30 animate-pulse" />
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-[#050D24]/40 border border-slate-100 dark:border-blue-900/40">
+                      <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-blue-900/30 animate-pulse shrink-0" />
+                      <div className="h-4 flex-1 rounded-full bg-slate-200 dark:bg-blue-900/30 animate-pulse" />
+                      <div className="w-20 h-8 rounded-xl bg-slate-100 dark:bg-blue-900/20 animate-pulse shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Sidebar skeleton */}
+              <div className="lg:col-span-4">
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 shadow-sm space-y-4">
+                  <div className="h-10 w-28 rounded-xl bg-slate-200 dark:bg-blue-900/30 animate-pulse" />
+                  <div className="h-3.5 w-full rounded-full bg-slate-100 dark:bg-blue-900/20 animate-pulse" />
+                  <div className="h-12 w-full rounded-2xl bg-slate-200 dark:bg-blue-900/30 animate-pulse mt-2" />
+                </div>
+              </div>
+            </div>
+          </div>
         </main>
         <Footer />
       </div>
@@ -466,19 +510,20 @@ function ServiceDetailsContent() {
           
           {/* Dynamic Breadcrumb & Favorite */}
           <div className="mb-6 flex items-center justify-between flex-wrap gap-2 text-xs font-bold">
-            <nav className="flex items-center gap-1.5 text-slate-400 overflow-x-auto no-scrollbar py-1">
-              <Link href="/" className="hover:text-[#0091FF] text-slate-600 dark:text-slate-300 transition-colors">
+            {/* [UI-FIX] Breadcrumb: overflow-hidden + max-w to prevent spill on 360px screens */}
+            <nav className="flex items-center gap-1.5 text-slate-400 overflow-x-auto no-scrollbar py-1 min-w-0 flex-1">
+              <Link href="/" className="hover:text-[#0091FF] text-slate-600 dark:text-slate-300 transition-colors shrink-0">
                 الرئيسية
               </Link>
               {breadcrumbs.map((crumb) => (
-                <div key={crumb.id} className="flex items-center gap-1.5">
-                  <ChevronLeft className="w-3.5 h-3.5 text-slate-400" />
+                <div key={crumb.id} className="flex items-center gap-1.5 min-w-0">
+                  <ChevronLeft className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   {crumb.isCurrent ? (
-                    <span className="text-[#0091FF] font-black">{crumb.title}</span>
+                    <span className="text-[#0091FF] font-black truncate max-w-[140px] sm:max-w-none">{crumb.title}</span>
                   ) : (
                     <Link
                       href={`/services/details?serviceId=${rootAncestorId}&subServiceId=${crumb.id}`}
-                      className="hover:text-[#0091FF] text-slate-600 dark:text-slate-300 transition-colors"
+                      className="hover:text-[#0091FF] text-slate-600 dark:text-slate-300 transition-colors truncate max-w-[100px] sm:max-w-none"
                     >
                       {crumb.title}
                     </Link>
@@ -535,7 +580,8 @@ function ServiceDetailsContent() {
                   </div>
 
                   <div className="space-y-2 flex-1 min-w-0">
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-snug">
+                    {/* [UI-FIX] H1 capped at text-3xl — 4xl was oversized on medium screens */}
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-snug">
                       {arTitle}
                     </h1>
 
@@ -575,13 +621,13 @@ function ServiceDetailsContent() {
                           className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                             isOpen 
                               ? "bg-slate-50/70 dark:bg-[#050D24]/80 border-blue-200 dark:border-blue-900/60 shadow-xs" 
-                              : "bg-[#F8FAFC] dark:bg-[#050D24]/40 border-slate-100 dark:border-blue-900/40 hover:border-slate-200 dark:hover:border-blue-900/60"
+                              : `bg-[#F8FAFC] dark:bg-[#050D24]/40 border-slate-100 dark:border-blue-900/40 ${hasPoints ? "hover:bg-slate-50 dark:hover:bg-[#050D24]/70 hover:border-slate-200 dark:hover:border-blue-900/60" : ""}`
                           }`}
                         >
-                          {/* Card Header Row: Icon + Title + Details Action Button */}
+                          {/* [UI-FIX] Card Header Row: Removed onClick from parent div to prevent double event trigger.
+                              Click is now handled exclusively by the button to avoid conflicting event propagation. */}
                           <div 
-                            onClick={() => hasPoints && toggleInclusion(idx)}
-                            className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 ${hasPoints ? "cursor-pointer select-none" : ""}`}
+                            className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 sm:gap-4`}
                           >
                             <div className="flex items-center gap-3 sm:gap-3.5 flex-1 min-w-0">
                               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/80 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-2 shadow-2xs">
@@ -591,7 +637,8 @@ function ServiceDetailsContent() {
                                   <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                                 )}
                               </div>
-                              <h4 className="text-sm sm:text-base md:text-[17px] font-black text-slate-900 dark:text-white leading-snug break-words">
+                              {/* [UI-FIX] Unified font size: removed non-standard md:text-[17px], now uses md:text-base */}
+                              <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-snug break-words">
                                 {parsed.title}
                               </h4>
                             </div>
@@ -599,10 +646,7 @@ function ServiceDetailsContent() {
                             {hasPoints && (
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleInclusion(idx);
-                                }}
+                                onClick={() => toggleInclusion(idx)}
                                 className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all shrink-0 cursor-pointer min-h-[40px] sm:min-h-[44px] select-none ${
                                   isOpen
                                     ? "bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200 dark:border-blue-900/60 shadow-xs"
@@ -616,11 +660,12 @@ function ServiceDetailsContent() {
                             )}
                           </div>
 
-                          {/* Expanded Points (Numbered 1 to N) with Smooth Animation */}
+                          {/* [UI-FIX] AnimatePresence key is now unique per card index to prevent
+                              conflicting animations when multiple accordions are open simultaneously. */}
                           <AnimatePresence initial={false}>
                             {isOpen && hasPoints && (
                               <motion.div
-                                key="inclusions-content"
+                                key={`inclusions-content-${idx}`}
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: "auto", opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
@@ -848,7 +893,13 @@ function ServiceDetailsContent() {
       </main>
 
       {/* Sticky Mobile Booking Bottom Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#071739]/95 backdrop-blur-md border-t border-slate-200 dark:border-blue-900/60 p-4 shadow-2xl flex items-center justify-between gap-4">
+      {/* [UI-FIX] Added pb-safe (safe-area-inset-bottom) for iPhone notch/home-bar support.
+          Using style prop for env() since Tailwind doesn't natively support env() values.
+          pb-4 serves as fallback on non-notch devices. */}
+      <div
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#071739]/95 backdrop-blur-md border-t border-slate-200 dark:border-blue-900/60 shadow-2xl flex items-center justify-between gap-4 px-4 pt-4"
+        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}
+      >
         <div>
           <span className="text-[10px] text-slate-400 block font-bold">{priceLabel}</span>
           <div className="flex items-baseline gap-1">
