@@ -499,12 +499,10 @@ function ServiceDetailsContent() {
   }
 
   const inclusions = Array.isArray(currentService.details) ? currentService.details : [];
-  const validInclusions = useMemo(() => {
-    return inclusions.filter((item: any) => {
-      const parsed = parseDetailItem(item);
-      return parsed && parsed.title;
-    });
-  }, [inclusions]);
+  const validInclusions = inclusions.filter((item: any) => {
+    const parsed = parseDetailItem(item);
+    return parsed && parsed.title;
+  });
   const exclusions = Array.isArray(currentService.not_included)
     ? currentService.not_included
     : currentService.not_included?.ar?.points || currentService.not_included?.en?.points || [];
