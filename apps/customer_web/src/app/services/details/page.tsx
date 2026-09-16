@@ -688,13 +688,13 @@ function ServiceDetailsContent() {
                                     {parsed.points.map((pt: string, pIdx: number) => (
                                       <div 
                                         key={pIdx}
-                                        className="flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl bg-[#F8FAFC] dark:bg-white/[0.03] hover:bg-slate-100/80 dark:hover:bg-white/[0.06] transition-colors"
+                                        className="flex items-start gap-3 p-3 sm:p-3.5 rounded-2xl bg-[#F8FAFC] dark:bg-white/[0.03] hover:bg-slate-100/80 dark:hover:bg-white/[0.06] transition-colors"
                                       >
+                                        <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-100/70 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] text-xs font-black flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                                          {pIdx + 1}
+                                        </span>
                                         <span className="text-[clamp(0.8125rem,1.5vw,0.875rem)] font-bold text-slate-700 dark:text-slate-200 leading-relaxed flex-1 text-right whitespace-pre-line">
                                           {pt}
-                                        </span>
-                                        <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-100/70 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] text-xs font-black flex items-center justify-center shrink-0 shadow-2xs">
-                                          {pIdx + 1}
                                         </span>
                                       </div>
                                     ))}
