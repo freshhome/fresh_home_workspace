@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { trackViewItem, trackContactWhatsApp } from "@/lib/gtm";
@@ -580,17 +581,17 @@ function ServiceDetailsContent() {
                           {/* Card Header Row: Icon + Title + Details Action Button */}
                           <div 
                             onClick={() => hasPoints && toggleInclusion(idx)}
-                            className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 ${hasPoints ? "cursor-pointer select-none" : ""}`}
+                            className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 ${hasPoints ? "cursor-pointer select-none" : ""}`}
                           >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/80 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-1.5 shadow-2xs">
+                            <div className="flex items-center gap-3 sm:gap-3.5 flex-1 min-w-0">
+                              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/80 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-2 shadow-2xs">
                                 {itemIconUrl ? (
                                   <img src={itemIconUrl} alt="" className="w-full h-full object-contain" />
                                 ) : (
-                                  <Sparkles className="w-4 h-4" />
+                                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                                 )}
                               </div>
-                              <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 truncate">
+                              <h4 className="text-sm sm:text-base md:text-[17px] font-black text-slate-900 dark:text-white leading-snug break-words">
                                 {parsed.title}
                               </h4>
                             </div>
@@ -602,36 +603,50 @@ function ServiceDetailsContent() {
                                   e.stopPropagation();
                                   toggleInclusion(idx);
                                 }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
+                                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all shrink-0 cursor-pointer min-h-[40px] sm:min-h-[44px] select-none ${
                                   isOpen
-                                    ? "bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200 dark:border-blue-900/60"
+                                    ? "bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200 dark:border-blue-900/60 shadow-xs"
                                     : "bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-blue-900/40 hover:bg-slate-50 dark:hover:bg-slate-800"
                                 }`}
                               >
-                                <span>{isOpen ? "إخفاء التفاصيل" : "عرض التفاصيل"}</span>
-                                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                                <span className="hidden sm:inline">{isOpen ? "إخفاء التفاصيل" : "عرض التفاصيل"}</span>
+                                <span className="sm:hidden">{isOpen ? "إخفاء" : "التفاصيل"}</span>
+                                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ease-out ${isOpen ? "rotate-180" : "rotate-0"}`} />
                               </button>
                             )}
                           </div>
 
-                          {/* Expanded Points (Numbered 1 to N) */}
-                          {isOpen && hasPoints && (
-                            <div className="px-4 pb-4 pt-1 border-t border-slate-200/60 dark:border-blue-900/30">
-                              <div className="space-y-2 pt-2">
-                                {parsed.points.map((pt: string, pIdx: number) => (
-                                  <div 
-                                    key={pIdx}
-                                    className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-[#071739]/60 border border-slate-100 dark:border-blue-900/30 text-xs font-medium text-slate-700 dark:text-slate-300"
-                                  >
-                                    <span className="w-5 h-5 rounded-md bg-blue-50 dark:bg-blue-950/80 border border-blue-100 dark:border-blue-900/50 text-[#0091FF] dark:text-[#22A5FC] text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
-                                      {pIdx + 1}
-                                    </span>
-                                    <span className="leading-relaxed flex-1">{pt}</span>
+                          {/* Expanded Points (Numbered 1 to N) with Smooth Animation */}
+                          <AnimatePresence initial={false}>
+                            {isOpen && hasPoints && (
+                              <motion.div
+                                key="inclusions-content"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.28, ease: "easeInOut" }}
+                                className="overflow-hidden"
+                              >
+                                <div className="px-3.5 sm:px-5 pb-4 pt-1 border-t border-slate-200/50 dark:border-blue-900/30">
+                                  <div className="space-y-3 sm:space-y-3.5 pt-2.5">
+                                    {parsed.points.map((pt: string, pIdx: number) => (
+                                      <div 
+                                        key={pIdx}
+                                        className="flex items-start gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#071739]/50 border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-colors"
+                                      >
+                                        <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-50 dark:bg-blue-950/80 border border-blue-200/70 dark:border-blue-900/50 text-[#0091FF] dark:text-[#22A5FC] text-xs sm:text-sm font-black flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                                          {pIdx + 1}
+                                        </span>
+                                        <span className="text-[14px] sm:text-[15px] md:text-[16px] lg:text-[16.5px] leading-[1.75] font-medium text-slate-700 dark:text-slate-200 whitespace-pre-line flex-1">
+                                          {pt}
+                                        </span>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
                       );
                     })}
@@ -654,16 +669,16 @@ function ServiceDetailsContent() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1">
                     {exclusions.map((ex: any, idx: number) => (
                       <div 
                         key={idx} 
-                        className="flex items-start gap-2.5 p-3 rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100 dark:border-blue-900/30 text-xs font-medium text-slate-700 dark:text-slate-300 transition-all hover:border-slate-200 dark:hover:border-blue-900/50"
+                        className="flex items-start gap-3 p-3.5 sm:p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all hover:border-slate-200 dark:hover:border-blue-900/50"
                       >
-                        <span className="w-5 h-5 rounded-md bg-rose-50 dark:bg-rose-950/80 border border-rose-200/80 dark:border-rose-900/50 text-rose-500 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
-                          <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-rose-50 dark:bg-rose-950/80 border border-rose-200/70 dark:border-rose-900/50 text-rose-500 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                          <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
                         </span>
-                        <span className="leading-relaxed flex-1">
+                        <span className="text-[14px] sm:text-[15px] md:text-[16px] leading-[1.75] font-medium text-slate-700 dark:text-slate-200 whitespace-pre-line flex-1">
                           {typeof ex === "string" ? ex : ex?.ar || ex?.en || ""}
                         </span>
                       </div>
@@ -687,7 +702,7 @@ function ServiceDetailsContent() {
                     </p>
                   </div>
 
-                  <div className="space-y-2.5 pt-1">
+                  <div className="space-y-3 sm:space-y-3.5 pt-1">
                     {arInstructions
                       .split("\n")
                       .map((line: string) => line.trim())
@@ -697,12 +712,12 @@ function ServiceDetailsContent() {
                         return (
                           <div 
                             key={iIdx}
-                            className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100 dark:border-blue-900/30 text-xs font-medium text-slate-700 dark:text-slate-300"
+                            className="flex items-start gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] text-slate-700 dark:text-slate-200"
                           >
-                            <span className="w-5 h-5 rounded-md bg-[#0091FF]/10 text-[#0091FF] dark:text-[#22A5FC] text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#0091FF]/10 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200/50 dark:border-blue-900/40 text-xs sm:text-sm font-black flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                               {iIdx + 1}
                             </span>
-                            <span className="leading-relaxed flex-1">
+                            <span className="text-[14px] sm:text-[15px] md:text-[16px] leading-[1.75] font-medium whitespace-pre-line flex-1">
                               {cleanText || instruction}
                             </span>
                           </div>
