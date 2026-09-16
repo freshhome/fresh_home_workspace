@@ -278,6 +278,15 @@ class HomePage extends StatelessWidget {
                         onTap: () =>
                             GoRouter.of(context).push('/admin/dispatch-lab'),
                       ),
+                      // Web Analytics
+                      _buildFeatureCard(
+                        context,
+                        title: 'إحصائيات الموقع',
+                        icon: Icons.analytics_rounded,
+                        color: Colors.deepOrange,
+                        onTap: () =>
+                            GoRouter.of(context).push('/admin/web-analytics'),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 80),

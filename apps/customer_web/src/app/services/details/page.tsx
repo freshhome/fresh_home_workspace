@@ -6,7 +6,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { 
   ArrowRight, ArrowLeft, Calendar, Check, X, Star, 
   Sparkles, ShieldCheck, Heart, User, ChevronLeft,
-  Layers, Zap, Home, ChevronRight, MessageCircle, Info
+  Layers, Zap, Home, ChevronRight, MessageCircle, Info,
+  ChevronDown, CheckCircle2
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -85,6 +86,13 @@ function ServiceDetailsContent() {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("+201000000000");
+  const [expandedInclusions, setExpandedInclusions] = useState<number[]>([0]);
+
+  const toggleInclusion = (idx: number) => {
+    setExpandedInclusions((prev) =>
+      prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
+    );
+  };
 
   useEffect(() => {
     if (!targetId) {
@@ -511,9 +519,9 @@ function ServiceDetailsContent() {
 
               {/* Service Hero Header Card */}
               <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                  {/* Clean Icon Badge (NOT a huge cover photo) */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/40 flex items-center justify-center p-3.5 shrink-0 overflow-hidden shadow-sm">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-right gap-5 sm:gap-6">
+                  {/* Clean Responsive Icon Badge */}
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-blue-50 to-sky-50 dark:from-[#050D24] dark:to-[#071739] border border-blue-100 dark:border-blue-900/60 flex items-center justify-center p-3 shrink-0 shadow-xs">
                     {currentService.imageUrl ? (
                       <img 
                         src={currentService.imageUrl} 
@@ -521,26 +529,16 @@ function ServiceDetailsContent() {
                         className="w-full h-full object-contain"
                       />
                     ) : (
-                      <Sparkles className="w-10 h-10 text-[#0091FF] dark:text-[#22A5FC]" />
+                      <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-[#0091FF] dark:text-[#22A5FC]" />
                     )}
                   </div>
 
-                  <div className="space-y-2.5 text-center sm:text-right flex-1">
-                    <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                      <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/80 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50">
-                        خدمة منزلية معتمدة
-                      </span>
-                      <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50 flex items-center gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>مشمول بضمان Fresh Home</span>
-                      </span>
-                    </div>
-
-                    <h1 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                  <div className="space-y-2 flex-1 min-w-0">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-snug">
                       {arTitle}
                     </h1>
 
-                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium max-w-3xl">
                       {arDesc}
                     </p>
                   </div>
@@ -550,24 +548,89 @@ function ServiceDetailsContent() {
               {/* What's Included */}
               {inclusions.length > 0 && (
                 <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right space-y-4">
-                  <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-                    <Check className="w-5 h-5 text-emerald-500" />
-                    <h3 className="text-base font-black">ما تشمله الخدمة</h3>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                        <Check className="w-4 h-4 stroke-[3]" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-black">ما تشمله الخدمة</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium pr-10">
+                      اقرأ تفاصيل الخدمة بعناية لتتعرف على ما يتم تنفيذه بدقة واحترافية في منزلك.
+                    </p>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 pt-1">
                     {inclusions.map((item: any, idx: number) => {
                       const parsed = parseDetailItem(item);
                       if (!parsed) return null;
+                      const isOpen = expandedInclusions.includes(idx);
+                      const hasPoints = parsed.points && parsed.points.length > 0;
+                      const itemIconUrl = resolveServiceImage(parsed.icon);
+
                       return (
-                        <div key={idx} className="p-3.5 rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100 dark:border-blue-900/40 space-y-1">
-                          <h4 className="text-xs font-black text-slate-800 dark:text-slate-200">{parsed.title}</h4>
-                          {parsed.points.length > 0 && (
-                            <ul className="list-disc list-inside text-xs text-slate-500 dark:text-slate-400 space-y-1 pr-1 font-medium">
-                              {parsed.points.map((pt: string, pIdx: number) => (
-                                <li key={pIdx}>{pt}</li>
-                              ))}
-                            </ul>
+                        <div 
+                          key={idx} 
+                          className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                            isOpen 
+                              ? "bg-slate-50/70 dark:bg-[#050D24]/80 border-blue-200 dark:border-blue-900/60 shadow-xs" 
+                              : "bg-[#F8FAFC] dark:bg-[#050D24]/40 border-slate-100 dark:border-blue-900/40 hover:border-slate-200 dark:hover:border-blue-900/60"
+                          }`}
+                        >
+                          {/* Card Header Row: Icon + Title + Details Action Button */}
+                          <div 
+                            onClick={() => hasPoints && toggleInclusion(idx)}
+                            className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 ${hasPoints ? "cursor-pointer select-none" : ""}`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#071739] border border-slate-200/80 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0 p-1.5 shadow-2xs">
+                                {itemIconUrl ? (
+                                  <img src={itemIconUrl} alt="" className="w-full h-full object-contain" />
+                                ) : (
+                                  <Sparkles className="w-4 h-4" />
+                                )}
+                              </div>
+                              <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 truncate">
+                                {parsed.title}
+                              </h4>
+                            </div>
+
+                            {hasPoints && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleInclusion(idx);
+                                }}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
+                                  isOpen
+                                    ? "bg-blue-50 dark:bg-blue-950/70 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200 dark:border-blue-900/60"
+                                    : "bg-white dark:bg-[#071739] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-blue-900/40 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                }`}
+                              >
+                                <span>{isOpen ? "إخفاء التفاصيل" : "عرض التفاصيل"}</span>
+                                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Expanded Points (Numbered 1 to N) */}
+                          {isOpen && hasPoints && (
+                            <div className="px-4 pb-4 pt-1 border-t border-slate-200/60 dark:border-blue-900/30">
+                              <div className="space-y-2 pt-2">
+                                {parsed.points.map((pt: string, pIdx: number) => (
+                                  <div 
+                                    key={pIdx}
+                                    className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-[#071739]/60 border border-slate-100 dark:border-blue-900/30 text-xs font-medium text-slate-700 dark:text-slate-300"
+                                  >
+                                    <span className="w-5 h-5 rounded-md bg-blue-50 dark:bg-blue-950/80 border border-blue-100 dark:border-blue-900/50 text-[#0091FF] dark:text-[#22A5FC] text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                                      {pIdx + 1}
+                                    </span>
+                                    <span className="leading-relaxed flex-1">{pt}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           )}
                         </div>
                       );
@@ -579,16 +642,30 @@ function ServiceDetailsContent() {
               {/* What's NOT Included */}
               {exclusions.length > 0 && (
                 <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right space-y-4">
-                  <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-                    <X className="w-5 h-5 text-rose-500" />
-                    <h3 className="text-base font-black">ما لا تشمله الخدمة</h3>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
+                      <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200/60 dark:border-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                        <X className="w-4 h-4 stroke-[3]" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-black">ما لا تشمله الخدمة</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium pr-10">
+                      ملاحظة هامة للشفافية: البنود التالية غير مدرجة ضمن نطاق هذا الطلب وتتطلب خدمات إضافية منفصلة.
+                    </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                     {exclusions.map((ex: any, idx: number) => (
-                      <div key={idx} className="flex items-center gap-2 p-3 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 text-rose-700 dark:text-rose-300 text-xs font-bold">
-                        <X className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                        <span>{typeof ex === "string" ? ex : ex?.ar || ex?.en || ""}</span>
+                      <div 
+                        key={idx} 
+                        className="flex items-start gap-2.5 p-3 rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100 dark:border-blue-900/30 text-xs font-medium text-slate-700 dark:text-slate-300 transition-all hover:border-slate-200 dark:hover:border-blue-900/50"
+                      >
+                        <span className="w-5 h-5 rounded-md bg-rose-50 dark:bg-rose-950/80 border border-rose-200/80 dark:border-rose-900/50 text-rose-500 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                          <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                        </span>
+                        <span className="leading-relaxed flex-1">
+                          {typeof ex === "string" ? ex : ex?.ar || ex?.en || ""}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -597,13 +674,40 @@ function ServiceDetailsContent() {
 
               {/* Instructions */}
               {arInstructions && (
-                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right space-y-3">
-                  <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-                    <Info className="w-5 h-5 text-[#0091FF]" />
-                    <h3 className="text-base font-black">تعليمات وإرشادات مهمة</h3>
+                <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-6 sm:p-8 shadow-sm text-right space-y-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#0091FF] dark:text-[#22A5FC] shrink-0">
+                        <Info className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-black">تعليمات وإرشادات هامة قبل بدء الخدمة</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium pr-10">
+                      يرجى الاطلاع على الإرشادات التالية لضمان تنفيذ الخدمة بأعلى معايير الدقة والسرعة.
+                    </p>
                   </div>
-                  <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium bg-[#F8FAFC] dark:bg-[#050D24] p-4 rounded-2xl border border-slate-100 dark:border-blue-900/30 whitespace-pre-line">
-                    {arInstructions}
+
+                  <div className="space-y-2.5 pt-1">
+                    {arInstructions
+                      .split("\n")
+                      .map((line: string) => line.trim())
+                      .filter((line: string) => line.length > 0)
+                      .map((instruction: string, iIdx: number) => {
+                        const cleanText = instruction.replace(/^([0-9]+[-.)\s]+|[-•*]\s*)/, "").trim();
+                        return (
+                          <div 
+                            key={iIdx}
+                            className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100 dark:border-blue-900/30 text-xs font-medium text-slate-700 dark:text-slate-300"
+                          >
+                            <span className="w-5 h-5 rounded-md bg-[#0091FF]/10 text-[#0091FF] dark:text-[#22A5FC] text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                              {iIdx + 1}
+                            </span>
+                            <span className="leading-relaxed flex-1">
+                              {cleanText || instruction}
+                            </span>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               )}

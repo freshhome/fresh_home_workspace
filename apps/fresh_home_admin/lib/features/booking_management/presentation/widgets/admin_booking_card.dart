@@ -26,75 +26,14 @@ class AdminBookingCard extends StatelessWidget {
     required this.booking,
   });
 
-  Color _getStatusColor(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.created:
-      case OrderStatus.pending:
-        return const Color(0xFF64748B);
-      case OrderStatus.assigned:
-      case OrderStatus.accepted:
-      case OrderStatus.ready:
-        return const Color(0xFF1E3A8A);
-      case OrderStatus.pendingInspection:
-        return const Color(0xFF8B5CF6);
-      case OrderStatus.onTheWay:
-        return const Color(0xFFF59E0B);
-      case OrderStatus.arrived:
-        return const Color(0xFF06B6D4);
-      case OrderStatus.inProgress:
-        return const Color(0xFF3B82F6);
-      case OrderStatus.completed:
-        return const Color(0xFF10B981);
-      case OrderStatus.cancelled:
-      case OrderStatus.failed:
-      case OrderStatus.failedNoShow:
-      case OrderStatus.expired:
-        return const Color(0xFFEF4444);
-    }
-  }
-
-  String _getStatusText(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.created:
-        return 'جديد';
-      case OrderStatus.pending:
-        return 'بانتظار تعيين';
-      case OrderStatus.assigned:
-        return 'مسند لفني';
-      case OrderStatus.accepted:
-        return 'مقبول';
-      case OrderStatus.ready:
-        return 'جاهز للتنفيذ';
-      case OrderStatus.onTheWay:
-        return 'في الطريق';
-      case OrderStatus.arrived:
-        return 'وصل للموقع';
-      case OrderStatus.inProgress:
-        return 'قيد العمل';
-      case OrderStatus.completed:
-        return 'مكتمل';
-      case OrderStatus.cancelled:
-        return 'ملغي';
-      case OrderStatus.failed:
-        return 'فاشل';
-      case OrderStatus.failedNoShow:
-        return 'فشل (عدم حضور)';
-      case OrderStatus.expired:
-        return 'منتهي';
-      case OrderStatus.pendingInspection:
-        return 'بانتظار المعاينة';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final serviceName = booking.service.name['ar'] ??
         booking.service.name['en'] ??
         'خدمة منزلية';
 
-    final districtName = (booking.address.district != null &&
-            booking.address.district!.trim().isNotEmpty)
-        ? booking.address.district!.trim()
+    final districtName = booking.address.district.trim().isNotEmpty
+        ? booking.address.district.trim()
         : (booking.address.city.trim().isNotEmpty
             ? booking.address.city.trim()
             : (booking.address.governorate.trim().isNotEmpty

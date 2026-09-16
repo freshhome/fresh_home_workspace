@@ -33,6 +33,8 @@ import '../../features/whatsapp_settings/presentation/cubit/whatsapp_settings_cu
 import '../../features/dispatch_lab/presentation/routes/dispatch_lab_routes.dart';
 import '../../features/geographic_management/di/geographic_management_di.dart';
 import '../../features/geographic_management/presentation/routes/geographic_management_routes.dart';
+import '../../features/web_analytics/di/web_analytics_di.dart';
+import '../../features/web_analytics/presentation/routes/web_analytics_routes.dart';
 
 final getIt = GetIt.instance;
 
@@ -42,6 +44,9 @@ Future<void> initAppDI() async {
 
   // Initialize Geographic Management DI
   initGeographicManagementDI();
+
+  // Initialize Web Analytics DI
+  initWebAnalyticsDI(getIt);
 
   // Initialize shared features DI with navigation config for Admin
   await initSharedFeaturesDI(
@@ -60,6 +65,7 @@ Future<void> initAppDI() async {
       ...ReviewsModerationRoutes.routes,
       ...DispatchLabRoutes.routes,
       ...GeographicManagementRoutes.routes,
+      ...WebAnalyticsRoutes.routes,
     ],
 
     navigationConfig: NavigationConfig(
