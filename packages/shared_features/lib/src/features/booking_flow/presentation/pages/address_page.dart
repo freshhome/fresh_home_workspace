@@ -17,11 +17,7 @@ class AddressPage extends StatefulWidget {
 
 class _AddressPageState extends State<AddressPage> {
   final _districtController = TextEditingController();
-  final _streetController = TextEditingController();
-  final _buildingController = TextEditingController(text: '1');
-  final _floorController = TextEditingController(text: '1');
-  final _apartmentController = TextEditingController(text: '1');
-  final _landmarkController = TextEditingController();
+  final _addressDetailsController = TextEditingController();
   final _phoneController = TextEditingController();
   final _otherCityController = TextEditingController();
 
@@ -61,10 +57,8 @@ class _AddressPageState extends State<AddressPage> {
           (a) =>
               a.governorate == state.address!.governorate &&
               a.city == state.address!.city &&
-              a.streetOrCompound == state.address!.streetOrCompound &&
-              a.buildingIdentifier == state.address!.buildingIdentifier &&
-              a.floor == state.address!.floor &&
-              a.apartmentOrUnit == state.address!.apartmentOrUnit,
+              a.district == state.address!.district &&
+              a.addressDetails.trim() == state.address!.addressDetails.trim(),
         );
         _selectedAddressIndex = idx != -1 ? idx : -1;
       } else {
@@ -101,11 +95,7 @@ class _AddressPageState extends State<AddressPage> {
   @override
   void dispose() {
     _districtController.dispose();
-    _streetController.dispose();
-    _buildingController.dispose();
-    _floorController.dispose();
-    _apartmentController.dispose();
-    _landmarkController.dispose();
+    _addressDetailsController.dispose();
     _phoneController.dispose();
     _otherCityController.dispose();
     _scrollController.dispose();
@@ -152,12 +142,8 @@ class _AddressPageState extends State<AddressPage> {
       governorateId: selectedGov?.id,
       cityId: selectedCity?.id,
       districtId: selectedDistrict?.id,
-      streetOrCompound: _streetController.text,
-      buildingIdentifier: _buildingController.text,
-      floor: _floorController.text,
-      apartmentOrUnit: _apartmentController.text,
-      propertyType: _selectedPropertyType,
-      landmark: _landmarkController.text,
+      addressDetails: _addressDetailsController.text.trim(),
+      locationUrl: state.address?.locationUrl,
       latitude: _latitude,
       longitude: _longitude,
       createdAt: DateTime.now(),
@@ -254,12 +240,8 @@ class _AddressPageState extends State<AddressPage> {
           governorateId: selectedGov?.id,
           cityId: selectedCity?.id,
           districtId: selectedDistrict?.id,
-          streetOrCompound: _streetController.text,
-          buildingIdentifier: _buildingController.text,
-          floor: _floorController.text,
-          apartmentOrUnit: _apartmentController.text,
-          propertyType: _selectedPropertyType,
-          landmark: _landmarkController.text,
+          addressDetails: _addressDetailsController.text.trim(),
+          locationUrl: state.address?.locationUrl,
           latitude: _latitude,
           longitude: _longitude,
           createdAt: DateTime.now(),
@@ -733,82 +715,31 @@ class _AddressPageState extends State<AddressPage> {
             ),
             const SizedBox(height: 16),
             _buildLabeledField(
-              label: l10n.address_street_label,
+              label: 'تفاصيل العنوان والوصول',
               child: BaseTextFormField(
-                controller: _streetController,
-                hint: l10n.address_street_hint,
+                controller: _addressDetailsController,
+                hint: 'اسم الشارع، رقم المبنى أو الفيلا، الدور، الشقة، وأي علامة مميزة',
                 radius: 16,
+                maxLines: 3,
                 fillColor: themeColor.background.withValues(alpha: 0.5),
                 prefixIcon: Icon(
-                  Icons.edit_road_rounded,
-                  color: themeColor.primary.withValues(alpha: 0.7),
-                  size: 22,
-                ),
-                validator: (val) =>
-                    InputValidator.validateEmpty(val, l10n: l10n),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Improved Numeric Grid
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
-              decoration: BoxDecoration(
-                color: themeColor.background.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: themeColor.unselectedItem.withValues(alpha: 0.1),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildNumericInputItem(
-                      label: l10n.address_building_label,
-                      controller: _buildingController,
-                      icon: Icons.home_work_rounded,
-                      themeColor: themeColor,
-                      l10n: l10n,
-                    ),
-                  ),
-                  _buildVerticalDivider(themeColor),
-                  Expanded(
-                    child: _buildNumericInputItem(
-                      label: l10n.address_floor_label,
-                      controller: _floorController,
-                      icon: Icons.layers_rounded,
-                      themeColor: themeColor,
-                      l10n: l10n,
-                    ),
-                  ),
-                  _buildVerticalDivider(themeColor),
-                  Expanded(
-                    child: _buildNumericInputItem(
-                      label: l10n.address_apartment_label,
-                      controller: _apartmentController,
-                      icon: Icons.door_front_door_rounded,
-                      themeColor: themeColor,
-                      l10n: l10n,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildLabeledField(
-              label: 'علامة مميزة (اختياري)',
-              child: BaseTextFormField(
-                controller: _landmarkController,
-                hint: 'مثال: بجوار مسجد المصطفى / أمام الصيدلية',
-                radius: 16,
-                fillColor: themeColor.background.withValues(alpha: 0.5),
-                prefixIcon: Icon(
-                  Icons.turned_in_not_rounded,
+                  Icons.home_rounded,
                   color: themeColor.primary.withValues(alpha: 0.7),
                   size: 22,
                 ),
                 onChanged: (_) => _onChanged(),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'يرجى إدخال تفاصيل العنوان';
+                  }
+                  if (val.trim().length < 5) {
+                    return 'تفاصيل العنوان يجب ألا تقل عن 5 أحرف';
+                  }
+                  if (val.trim().length > 500) {
+                    return 'تفاصيل العنوان يجب ألا تزيد عن 500 حرف';
+                  }
+                  return null;
+                },
               ),
             ),
             const SizedBox(height: 16),
@@ -1027,7 +958,7 @@ class _AddressPageState extends State<AddressPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${addressesList[index].streetOrCompound}, ${l10n.address_building_label} ${addressesList[index].buildingIdentifier}',
+                          addressesList[index].addressDetails,
                           style: TextStyle(
                             fontSize: 11,
                             height: 1.4,
@@ -1174,62 +1105,6 @@ class _AddressPageState extends State<AddressPage> {
     );
   }
 
-  Widget _buildVerticalDivider(ThemeColorExtension themeColor) {
-    return Container(
-      height: 40,
-      width: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      color: themeColor.unselectedItem.withValues(alpha: 0.1),
-    );
-  }
-
-  Widget _buildNumericInputItem({
-    required String label,
-    required TextEditingController controller,
-    required IconData icon,
-    required ThemeColorExtension themeColor,
-    required AppLocalizations l10n,
-  }) {
-    return FormField<String>(
-      validator: (val) =>
-          InputValidator.validateAddressNumeric(controller.text, l10n: l10n),
-      builder: (state) {
-        final hasError = state.hasError;
-        return Column(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: hasError ? themeColor.error : themeColor.secondaryText,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            BaseTextFormField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              onChanged: (val) {
-                state.didChange(val);
-                _onChanged();
-              },
-              hint: "00",
-              radius: 12,
-              fillColor: hasError
-                  ? themeColor.error.withValues(alpha: 0.05)
-                  : themeColor.cardBackground,
-              errorBorderColor: themeColor.error,
-              enabledBorderColor: themeColor.unselectedItem.withValues(
-                alpha: 0.1,
-              ),
-              focusedBorderColor: themeColor.primary,
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   void _fillAddressFields(Address address) {
     if (address.governorateId != null) {
@@ -1276,10 +1151,7 @@ class _AddressPageState extends State<AddressPage> {
       _selectedCity = address.city;
     });
     _districtController.text = address.district;
-    _streetController.text = address.streetOrCompound;
-    _buildingController.text = address.buildingIdentifier;
-    _floorController.text = address.floor ?? '';
-    _apartmentController.text = address.apartmentOrUnit ?? '';
+    _addressDetailsController.text = address.addressDetails;
   }
 
   void _clearAddressFields() {
@@ -1289,10 +1161,6 @@ class _AddressPageState extends State<AddressPage> {
       _selectedCity = null;
     });
     _districtController.clear();
-    _streetController.clear();
-    _buildingController.text = '1';
-    _floorController.text = '1';
-    _apartmentController.text = '1';
-    _landmarkController.clear();
+    _addressDetailsController.clear();
   }
 }

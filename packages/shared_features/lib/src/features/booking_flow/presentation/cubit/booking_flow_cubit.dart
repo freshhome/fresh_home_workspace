@@ -493,12 +493,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
     String? governorate,
     String? city,
     String? district,
-    String? street,
-    String? building,
-    String? floor,
-    String? apartment,
-    String? landmark,
-    String? propertyType,
+    String? addressDetails,
     String? locationUrl,
     double? latitude,
     double? longitude,
@@ -510,12 +505,8 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         manualClientGovernorate: governorate ?? state.manualClientGovernorate,
         manualClientCity: city ?? state.manualClientCity,
         manualClientDistrict: district ?? state.manualClientDistrict,
-        manualClientStreet: street ?? state.manualClientStreet,
-        manualClientBuilding: building ?? state.manualClientBuilding,
-        manualClientFloor: floor ?? state.manualClientFloor,
-        manualClientApartment: apartment ?? state.manualClientApartment,
-        manualClientLandmark: landmark ?? state.manualClientLandmark,
-        manualClientPropertyType: propertyType ?? state.manualClientPropertyType,
+        manualClientAddressDetails:
+            addressDetails ?? state.manualClientAddressDetails,
         manualClientLocationUrl: locationUrl ?? state.manualClientLocationUrl,
         manualClientLatitude: latitude ?? state.manualClientLatitude,
         manualClientLongitude: longitude ?? state.manualClientLongitude,
@@ -787,12 +778,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
       manualClientGovernorate: state.manualClientGovernorate,
       manualClientCity: state.manualClientCity,
       manualClientDistrict: state.manualClientDistrict,
-      manualClientStreet: state.manualClientStreet,
-      manualClientBuilding: state.manualClientBuilding,
-      manualClientFloor: state.manualClientFloor,
-      manualClientApartment: state.manualClientApartment,
-      manualClientLandmark: state.manualClientLandmark,
-      manualClientPropertyType: state.manualClientPropertyType,
+      manualClientAddressDetails: state.manualClientAddressDetails,
       manualClientLocationUrl:
           state.manualClientLocationUrl ?? state.address?.locationUrl,
       manualClientLatitude: state.manualClientLatitude,
@@ -814,12 +800,8 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
       final gov = state.manualClientGovernorate;
       final city = state.manualClientCity;
       final district = state.manualClientDistrict;
-      final street = state.manualClientStreet;
-      final building = state.manualClientBuilding;
-      final floor = state.manualClientFloor;
-      final apartment = state.manualClientApartment;
-      final landmark = state.manualClientLandmark;
-      if (gov == null || city == null || street == null || building == null) {
+      final addressDetails = state.manualClientAddressDetails;
+      if (gov == null || city == null || addressDetails == null || addressDetails.trim().isEmpty) {
         return null;
       }
       return Address(
@@ -831,12 +813,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         governorateId: state.address?.governorateId,
         cityId: state.address?.cityId,
         districtId: state.address?.districtId,
-        streetOrCompound: street,
-        buildingIdentifier: building,
-        floor: floor,
-        apartmentOrUnit: apartment,
-        landmark: landmark,
-        propertyType: state.manualClientPropertyType,
+        addressDetails: addressDetails.trim(),
         locationUrl: state.manualClientLocationUrl,
         latitude: state.manualClientLatitude,
         longitude: state.manualClientLongitude,
@@ -874,10 +851,8 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
       (a) =>
           a.governorate == usedAddress.governorate &&
           a.city == usedAddress.city &&
-          a.streetOrCompound == usedAddress.streetOrCompound &&
-          a.buildingIdentifier == usedAddress.buildingIdentifier &&
-          a.floor == usedAddress.floor &&
-          a.apartmentOrUnit == usedAddress.apartmentOrUnit,
+          a.district == usedAddress.district &&
+          a.addressDetails.trim() == usedAddress.addressDetails.trim(),
     );
 
     final isNewPhone = !phones.any((p) => p.phoneNumber == usedPhone);
@@ -890,11 +865,8 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
           governorate: usedAddress.governorate,
           city: usedAddress.city,
           district: usedAddress.district,
-          streetOrCompound: usedAddress.streetOrCompound,
-          buildingIdentifier: usedAddress.buildingIdentifier,
-          floor: usedAddress.floor,
-          apartmentOrUnit: usedAddress.apartmentOrUnit,
-          landmark: usedAddress.landmark,
+          addressDetails: usedAddress.addressDetails,
+          locationUrl: usedAddress.locationUrl,
           latitude: usedAddress.latitude,
           longitude: usedAddress.longitude,
           createdAt: DateTime.now(),
@@ -928,10 +900,8 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         (a) =>
             a.governorate == usedAddress.governorate &&
             a.city == usedAddress.city &&
-            a.streetOrCompound == usedAddress.streetOrCompound &&
-            a.buildingIdentifier == usedAddress.buildingIdentifier &&
-            a.floor == usedAddress.floor &&
-            a.apartmentOrUnit == usedAddress.apartmentOrUnit,
+            a.district == usedAddress.district &&
+            a.addressDetails.trim() == usedAddress.addressDetails.trim(),
         orElse: () => usedAddress,
       );
     });
@@ -962,10 +932,8 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
               phoneRegex.hasMatch(state.manualClientPhone!.trim()) &&
               state.manualClientGovernorate != null &&
               state.manualClientCity != null &&
-              state.manualClientStreet != null &&
-              state.manualClientStreet!.trim().isNotEmpty &&
-              state.manualClientBuilding != null &&
-              state.manualClientBuilding!.trim().isNotEmpty;
+              state.manualClientAddressDetails != null &&
+              state.manualClientAddressDetails!.trim().length >= 5;
           break;
         case 4: // confirmation
           isValid = true;
@@ -1055,12 +1023,7 @@ class BookingFlowCubit extends Cubit<BookingFlowState> {
         manualClientGovernorate: draft.manualClientGovernorate,
         manualClientCity: draft.manualClientCity,
         manualClientDistrict: draft.manualClientDistrict,
-        manualClientStreet: draft.manualClientStreet,
-        manualClientBuilding: draft.manualClientBuilding,
-        manualClientFloor: draft.manualClientFloor,
-        manualClientApartment: draft.manualClientApartment,
-        manualClientLandmark: draft.manualClientLandmark,
-        manualClientPropertyType: draft.manualClientPropertyType,
+        manualClientAddressDetails: draft.manualClientAddressDetails,
         manualClientLocationUrl: draft.manualClientLocationUrl,
         manualClientLatitude: draft.manualClientLatitude,
         manualClientLongitude: draft.manualClientLongitude,

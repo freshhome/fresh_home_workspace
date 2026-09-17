@@ -4,7 +4,8 @@ import 'package:shared/domain/user/entities/user/address.dart';
 
 part 'address_model.g.dart';
 
-/// Data Model (DTO) for User Address in Fresh Home System V2.
+/// Data Model (DTO) for User Address in Fresh Home System V3.
+/// V3 replaces street/building/floor/apartment/landmark with [addressDetails].
 @HiveType(typeId: HiveTypeIds.address)
 class AddressModel {
   @HiveField(0)
@@ -18,34 +19,26 @@ class AddressModel {
   @HiveField(4)
   final String district;
   @HiveField(5)
-  final String streetOrCompound;
+  final String addressDetails;
   @HiveField(6)
-  final String buildingIdentifier;
+  final String? locationUrl;
   @HiveField(7)
-  final String? floor;
-  @HiveField(8)
-  final String? apartmentOrUnit;
-  @HiveField(9)
-  final String? landmark;
-  @HiveField(10)
   final double? latitude;
-  @HiveField(11)
+  @HiveField(8)
   final double? longitude;
-  @HiveField(12)
+  @HiveField(9)
   final bool isPrimary;
-  @HiveField(13)
+  @HiveField(10)
   final DateTime? deletedAt;
-  @HiveField(14)
+  @HiveField(11)
   final DateTime createdAt;
-  @HiveField(15)
+  @HiveField(12)
   final DateTime updatedAt;
-  @HiveField(16)
-  final String? propertyType;
-  @HiveField(17)
+  @HiveField(13)
   final int? governorateId;
-  @HiveField(18)
+  @HiveField(14)
   final int? cityId;
-  @HiveField(19)
+  @HiveField(15)
   final int? districtId;
 
   const AddressModel({
@@ -57,12 +50,8 @@ class AddressModel {
     this.governorateId,
     this.cityId,
     this.districtId,
-    required this.streetOrCompound,
-    required this.buildingIdentifier,
-    this.floor,
-    this.apartmentOrUnit,
-    this.landmark,
-    this.propertyType,
+    required this.addressDetails,
+    this.locationUrl,
     this.latitude,
     this.longitude,
     this.isPrimary = false,
@@ -72,6 +61,24 @@ class AddressModel {
   });
 
   factory AddressModel.fromJson(Map<String, dynamic> json) {
+    // V3 → V2 legacy fallback: if address_details is absent, reconstruct from old fields.
+    final rawAddressDetails = json['address_details'] as String?;
+    final legacyStreet = json['street_or_compound'] as String? ?? json['street'] as String? ?? '';
+    final legacyBuilding = json['building_identifier'] as String? ?? json['building_number'] as String? ?? '';
+    final legacyFloor = json['floor'] as String?;
+    final legacyApartment = json['apartment_or_unit'] as String? ?? json['apartment'] as String?;
+    final legacyLandmark = json['landmark'] as String?;
+
+    final addressDetails = rawAddressDetails?.isNotEmpty == true
+        ? rawAddressDetails!
+        : _reconstructAddressDetails(
+            street: legacyStreet,
+            building: legacyBuilding,
+            floor: legacyFloor,
+            apartment: legacyApartment,
+            landmark: legacyLandmark,
+          );
+
     return AddressModel(
       id: json['id'] as String? ?? '',
       userId: json['user_id'] as String? ?? '',
@@ -81,12 +88,8 @@ class AddressModel {
       governorateId: (json['governorate_id'] as num?)?.toInt(),
       cityId: (json['city_id'] as num?)?.toInt(),
       districtId: (json['district_id'] as num?)?.toInt(),
-      streetOrCompound: json['street_or_compound'] as String? ?? json['street'] as String? ?? '',
-      buildingIdentifier: json['building_identifier'] as String? ?? json['building_number'] as String? ?? '',
-      floor: json['floor'] as String?,
-      apartmentOrUnit: json['apartment_or_unit'] as String? ?? json['apartment'] as String?,
-      landmark: json['landmark'] as String?,
-      propertyType: json['property_type'] as String?,
+      addressDetails: addressDetails,
+      locationUrl: json['location_url'] as String? ?? json['locationUrl'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       isPrimary: json['is_primary'] as bool? ?? false,
@@ -106,16 +109,12 @@ class AddressModel {
       if (governorateId != null) 'governorate_id': governorateId,
       if (cityId != null) 'city_id': cityId,
       if (districtId != null) 'district_id': districtId,
-      'street_or_compound': streetOrCompound,
-      'building_identifier': buildingIdentifier,
-      'floor': floor,
-      'apartment_or_unit': apartmentOrUnit,
-      'landmark': landmark,
-      'property_type': propertyType,
-      'latitude': latitude,
-      'longitude': longitude,
+      'address_details': addressDetails,
+      if (locationUrl != null && locationUrl!.isNotEmpty) 'location_url': locationUrl,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
       'is_primary': isPrimary,
-      'deleted_at': deletedAt?.toIso8601String(),
+      if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
     };
   }
 
@@ -129,12 +128,8 @@ class AddressModel {
       governorateId: governorateId,
       cityId: cityId,
       districtId: districtId,
-      streetOrCompound: streetOrCompound,
-      buildingIdentifier: buildingIdentifier,
-      floor: floor,
-      apartmentOrUnit: apartmentOrUnit,
-      landmark: landmark,
-      propertyType: propertyType,
+      addressDetails: addressDetails,
+      locationUrl: locationUrl,
       latitude: latitude,
       longitude: longitude,
       isPrimary: isPrimary,
@@ -154,12 +149,8 @@ class AddressModel {
       governorateId: entity.governorateId,
       cityId: entity.cityId,
       districtId: entity.districtId,
-      streetOrCompound: entity.streetOrCompound,
-      buildingIdentifier: entity.buildingIdentifier,
-      floor: entity.floor,
-      apartmentOrUnit: entity.apartmentOrUnit,
-      landmark: entity.landmark,
-      propertyType: entity.propertyType,
+      addressDetails: entity.addressDetails,
+      locationUrl: entity.locationUrl,
       latitude: entity.latitude,
       longitude: entity.longitude,
       isPrimary: entity.isPrimary,
@@ -167,5 +158,23 @@ class AddressModel {
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     );
+  }
+
+  /// Reconstructs a readable address_details string from legacy V2 fields
+  /// to ensure backward compatibility when reading old DB records.
+  static String _reconstructAddressDetails({
+    required String street,
+    required String building,
+    String? floor,
+    String? apartment,
+    String? landmark,
+  }) {
+    final parts = <String>[];
+    if (street.isNotEmpty) parts.add(street);
+    if (building.isNotEmpty) parts.add(building);
+    if (floor != null && floor.isNotEmpty) parts.add('الدور $floor');
+    if (apartment != null && apartment.isNotEmpty) parts.add('شقة $apartment');
+    if (landmark != null && landmark.isNotEmpty) parts.add('($landmark)');
+    return parts.join('، ');
   }
 }

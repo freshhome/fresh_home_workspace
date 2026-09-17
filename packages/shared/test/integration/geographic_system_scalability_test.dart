@@ -124,8 +124,7 @@ void main() {
         cityEn: 'Hurghada',
         districtAr: 'الجونة',
         districtEn: 'El Gouna',
-        streetOrCompound: 'Marina Boulevard',
-        buildingIdentifier: 'Building 4',
+        addressDetails: 'Marina Boulevard, Building 4',
         latitude: 27.3948,
         longitude: 33.6765,
         createdAt: DateTime.now(),
@@ -175,8 +174,7 @@ void main() {
         cityEn: 'Hurghada',
         districtAr: 'الجونة',
         districtEn: 'El Gouna',
-        streetOrCompound: 'Marina Boulevard',
-        buildingIdentifier: 'Building 4',
+        addressDetails: 'Marina Boulevard, Building 4',
         latitude: 27.3948,
         longitude: 33.6765,
         createdAt: DateTime.now(),
@@ -184,7 +182,7 @@ void main() {
       );
 
       final snapshotJson = AddressSnapshotMapper.buildSnapshotJson(dynamicAddress);
-      expect(snapshotJson['snapshot_version'], equals(2));
+      expect(snapshotJson['snapshot_version'], equals(3));
       expect(snapshotJson['address']['governorate_ar'], equals('البحر الأحمر'));
       expect(snapshotJson['address']['city_ar'], equals('الغردقة'));
       expect(snapshotJson['address']['district_ar'], equals('الجونة'));

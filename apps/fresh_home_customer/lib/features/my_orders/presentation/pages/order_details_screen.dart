@@ -279,9 +279,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         _buildInfoTile(
                           context,
                           'العنوان',
-                          '${currentOrder.address.governorate}, ${currentOrder.address.city}\n'
-                              '${currentOrder.address.streetOrCompound}, مبنى ${currentOrder.address.buildingIdentifier}, '
-                              'دور ${currentOrder.address.floor ?? '-'}, شقة ${currentOrder.address.apartmentOrUnit ?? '-'}',
+                          '${currentOrder.address.governorate}، ${currentOrder.address.city}${currentOrder.address.district.isNotEmpty ? '، ${currentOrder.address.district}' : ''}\n'
+                              '${currentOrder.address.addressDetails}',
                           onEdit: canCancelOrEdit
                               ? () async {
                                   final result = await context.pushNamed(

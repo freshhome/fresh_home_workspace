@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
-import 'package:shared/domain/booking/repositories/booking_draft_repository.dart';
 import 'package:fresh_home_admin/features/booking_management/presentation/cubit/admin_bookings_cubit.dart';
 import 'package:fresh_home_admin/features/booking_management/presentation/cubit/admin_booking_drafts_cubit.dart';
 import 'package:fresh_home_admin/features/booking_management/presentation/pages/admin_booking_list_screen.dart';
@@ -56,8 +55,7 @@ void main() {
       governorate: 'القاهرة',
       city: 'التجمع',
       district: 'الحي الأول',
-      streetOrCompound: 'شارع التسعين',
-      buildingIdentifier: '1',
+      addressDetails: 'شارع التسعين، عمارة 1',
       createdAt: now,
       updatedAt: now,
     ),
@@ -88,8 +86,7 @@ void main() {
       governorate: 'القاهرة',
       city: 'المعادي',
       district: 'دجلة',
-      streetOrCompound: 'شارع النصر',
-      buildingIdentifier: '1',
+      addressDetails: 'شارع النصر، عمارة 1',
       createdAt: now,
       updatedAt: now,
     ),

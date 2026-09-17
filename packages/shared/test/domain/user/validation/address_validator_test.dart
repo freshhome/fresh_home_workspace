@@ -3,18 +3,14 @@ import 'package:shared/domain/user/entities/user/address.dart';
 import 'package:shared/domain/user/validation/address_validator.dart';
 
 void main() {
-  group('AddressValidator Unit Tests', () {
+  group('AddressValidator Unit Tests (V3)', () {
     final validAddress = Address(
       id: 'addr-1',
       userId: 'user-1',
       governorate: 'Cairo',
       city: 'New Cairo',
       district: 'Fifth Settlement',
-      streetOrCompound: 'South 90th Street',
-      buildingIdentifier: 'Building 12',
-      floor: '3',
-      apartmentOrUnit: '302',
-      landmark: 'Near Air Force Hospital',
+      addressDetails: 'شارع التسعين الجنوبي، مبنى 12، الدور 3، شقة 302 (بجوار مستشفى الجوي)',
       latitude: 30.0275,
       longitude: 31.4361,
       isPrimary: true,
@@ -31,6 +27,7 @@ void main() {
           expect(r.governorate, 'Cairo');
           expect(r.city, 'New Cairo');
           expect(r.district, 'Fifth Settlement');
+          expect(r.addressDetails.isNotEmpty, isTrue);
         },
       );
     });
@@ -41,10 +38,18 @@ void main() {
       expect(result.isLeft(), isTrue);
     });
 
-    test('should return left failure when streetOrCompound length is less than 3', () {
-      final invalid = validAddress.copyWith(streetOrCompound: 'St');
+    test('should return left failure when addressDetails is less than 5 chars', () {
+      final invalid = validAddress.copyWith(addressDetails: 'Hi');
       final result = AddressValidator.validate(invalid);
       expect(result.isLeft(), isTrue);
+      result.fold((f) => expect(f.code, 'INVALID_ADDRESS_DETAILS'), (_) => fail('Should fail'));
+    });
+
+    test('should return left failure when addressDetails is empty / whitespace-only', () {
+      final invalid = validAddress.copyWith(addressDetails: '   ');
+      final result = AddressValidator.validate(invalid);
+      expect(result.isLeft(), isTrue);
+      result.fold((f) => expect(f.code, 'INVALID_ADDRESS_DETAILS'), (_) => fail('Should fail'));
     });
 
     test('should return left failure when latitude is out of range', () {
@@ -100,8 +105,7 @@ void main() {
         governorate: 'Cairo',
         city: 'New Cairo',
         district: 'Fifth Settlement',
-        streetOrCompound: 'Street 90',
-        buildingIdentifier: 'Bld 1',
+        addressDetails: 'شارع الطيران، مبنى 7، شقة 12',
         latitude: 30.0,
         longitude: null,
         createdAt: DateTime.now(),
@@ -117,8 +121,7 @@ void main() {
         governorate: 'Cairo',
         city: 'New Cairo',
         district: 'Fifth Settlement',
-        streetOrCompound: 'Street 90',
-        buildingIdentifier: 'Bld 1',
+        addressDetails: 'شارع الطيران، مبنى 7، شقة 12',
         latitude: null,
         longitude: 31.0,
         createdAt: DateTime.now(),
@@ -139,13 +142,8 @@ void main() {
       final emptyDistrict = validAddress.copyWith(district: '');
       expect(AddressValidator.validate(emptyDistrict).isLeft(), isTrue);
 
-      final emptyStreet = validAddress.copyWith(streetOrCompound: '  ');
-      expect(AddressValidator.validate(emptyStreet).isLeft(), isTrue);
-
-      final emptyBld = validAddress.copyWith(buildingIdentifier: '   ');
-      expect(AddressValidator.validate(emptyBld).isLeft(), isTrue);
+      final emptyDetails = validAddress.copyWith(addressDetails: '   ');
+      expect(AddressValidator.validate(emptyDetails).isLeft(), isTrue);
     });
   });
 }
-
-

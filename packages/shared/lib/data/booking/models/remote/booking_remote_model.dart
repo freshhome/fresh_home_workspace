@@ -219,7 +219,7 @@ class BookingRemoteModel {
       if (cancelledByRole != null) 'cancelled_by_role': cancelledByRole,
       'is_critical': isCritical,
       if (criticalReason != null) 'critical_reason': criticalReason,
-      'pricing_inputs': ?resolvedPricingInputs,
+      if (resolvedPricingInputs != null) 'pricing_inputs': resolvedPricingInputs,
     };
   }
 }

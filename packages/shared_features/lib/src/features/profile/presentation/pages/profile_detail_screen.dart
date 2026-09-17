@@ -695,28 +695,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
     // Address Controllers
     final districtController = TextEditingController(text: address?.district);
-    final streetController = TextEditingController(
-      text: address?.streetOrCompound,
+    final addressDetailsController = TextEditingController(
+      text: address?.addressDetails,
     );
-    final buildingController = TextEditingController(
-      text: address?.buildingIdentifier,
-    );
-    final floorController = TextEditingController(text: address?.floor);
-    final apartmentController = TextEditingController(
-      text: address?.apartmentOrUnit,
-    );
-    final landmarkController = TextEditingController(text: address?.landmark);
 
     final addressFormKey = GlobalKey<FormState>();
 
     bool isPrimaryAddress = address?.isPrimary ?? false;
-    AddressPropertyType selectedPropertyType = address?.propertyType == 'office'
-        ? AddressPropertyType.office
-        : (address?.propertyType == 'commercial'
-              ? AddressPropertyType.commercial
-              : (address?.propertyType == 'landmark'
-                    ? AddressPropertyType.landmark
-                    : AddressPropertyType.residential));
 
     showModalBottomSheet(
       context: context,
@@ -767,16 +752,6 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Property Type Selector
-                    PropertyTypeSelector(
-                      selectedType: selectedPropertyType,
-                      onChanged: (type) {
-                        setModalState(() {
-                          selectedPropertyType = type;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16),
 
                     // Dynamic Cascading Dropdowns
                     BlocBuilder<
@@ -942,51 +917,23 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Street
+                    // Address Details
                     BaseTextFormField(
-                      controller: streetController,
-                      hint: l10n.address_street,
-                      validator: (val) =>
-                          InputValidator.validateEmpty(val, l10n: l10n),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Building, Floor, Apartment
-                    Row(
-                      children: [
-                        Expanded(
-                          child: BaseTextFormField(
-                            controller: buildingController,
-                            hint: l10n.address_building_number,
-                            keyboardType: TextInputType.number,
-                            validator: (val) =>
-                                InputValidator.validateEmpty(val, l10n: l10n),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: BaseTextFormField(
-                            controller: floorController,
-                            hint: l10n.address_floor_number,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: BaseTextFormField(
-                            controller: apartmentController,
-                            hint: l10n.address_apartment_number,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Landmark Field
-                    BaseTextFormField(
-                      controller: landmarkController,
-                      hint: 'علامة مميزة (اختياري)',
+                      controller: addressDetailsController,
+                      hint: 'تفاصيل العنوان (الشارع، رقم المبنى، الدور، الشقة، وأي علامة مميزة)',
+                      maxLines: 3,
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'يرجى إدخال تفاصيل العنوان';
+                        }
+                        if (val.trim().length < 5) {
+                          return 'تفاصيل العنوان يجب ألا تقل عن 5 أحرف';
+                        }
+                        if (val.trim().length > 500) {
+                          return 'تفاصيل العنوان يجب ألا تزيد عن 500 حرف';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
 
@@ -1052,12 +999,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                               governorateId: selectedGov?.id,
                               cityId: selectedCity?.id,
                               districtId: selectedDistrict?.id,
-                              streetOrCompound: streetController.text,
-                              buildingIdentifier: buildingController.text,
-                              floor: floorController.text,
-                              apartmentOrUnit: apartmentController.text,
-                              propertyType: selectedPropertyType.name,
-                              landmark: landmarkController.text,
+                              addressDetails: addressDetailsController.text.trim(),
+                              locationUrl: address?.locationUrl,
+                              latitude: address?.latitude,
+                              longitude: address?.longitude,
                               isPrimary: isPrimaryAddress,
                               createdAt: address?.createdAt ?? DateTime.now(),
                               updatedAt: DateTime.now(),

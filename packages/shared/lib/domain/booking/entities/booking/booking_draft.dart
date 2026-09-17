@@ -36,12 +36,8 @@ class BookingDraft extends Equatable {
   final String? manualClientGovernorate;
   final String? manualClientCity;
   final String? manualClientDistrict;
-  final String? manualClientStreet;
-  final String? manualClientBuilding;
-  final String? manualClientFloor;
-  final String? manualClientApartment;
-  final String? manualClientLandmark;
-  final String? manualClientPropertyType;
+  /// V3: Single free-text field replacing street, building, floor, apartment, landmark.
+  final String? manualClientAddressDetails;
   final String? manualClientLocationUrl;
   final double? manualClientLatitude;
   final double? manualClientLongitude;
@@ -70,12 +66,7 @@ class BookingDraft extends Equatable {
     this.manualClientGovernorate,
     this.manualClientCity,
     this.manualClientDistrict,
-    this.manualClientStreet,
-    this.manualClientBuilding,
-    this.manualClientFloor,
-    this.manualClientApartment,
-    this.manualClientLandmark,
-    this.manualClientPropertyType,
+    this.manualClientAddressDetails,
     this.manualClientLocationUrl,
     this.manualClientLatitude,
     this.manualClientLongitude,
@@ -105,12 +96,7 @@ class BookingDraft extends Equatable {
     String? manualClientGovernorate,
     String? manualClientCity,
     String? manualClientDistrict,
-    String? manualClientStreet,
-    String? manualClientBuilding,
-    String? manualClientFloor,
-    String? manualClientApartment,
-    String? manualClientLandmark,
-    String? manualClientPropertyType,
+    String? manualClientAddressDetails,
     String? manualClientLocationUrl,
     double? manualClientLatitude,
     double? manualClientLongitude,
@@ -139,12 +125,7 @@ class BookingDraft extends Equatable {
       manualClientGovernorate: manualClientGovernorate ?? this.manualClientGovernorate,
       manualClientCity: manualClientCity ?? this.manualClientCity,
       manualClientDistrict: manualClientDistrict ?? this.manualClientDistrict,
-      manualClientStreet: manualClientStreet ?? this.manualClientStreet,
-      manualClientBuilding: manualClientBuilding ?? this.manualClientBuilding,
-      manualClientFloor: manualClientFloor ?? this.manualClientFloor,
-      manualClientApartment: manualClientApartment ?? this.manualClientApartment,
-      manualClientLandmark: manualClientLandmark ?? this.manualClientLandmark,
-      manualClientPropertyType: manualClientPropertyType ?? this.manualClientPropertyType,
+      manualClientAddressDetails: manualClientAddressDetails ?? this.manualClientAddressDetails,
       manualClientLocationUrl: manualClientLocationUrl ?? this.manualClientLocationUrl,
       manualClientLatitude: manualClientLatitude ?? this.manualClientLatitude,
       manualClientLongitude: manualClientLongitude ?? this.manualClientLongitude,
@@ -176,12 +157,7 @@ class BookingDraft extends Equatable {
       'manualClientGovernorate': manualClientGovernorate,
       'manualClientCity': manualClientCity,
       'manualClientDistrict': manualClientDistrict,
-      'manualClientStreet': manualClientStreet,
-      'manualClientBuilding': manualClientBuilding,
-      'manualClientFloor': manualClientFloor,
-      'manualClientApartment': manualClientApartment,
-      'manualClientLandmark': manualClientLandmark,
-      'manualClientPropertyType': manualClientPropertyType,
+      'manualClientAddressDetails': manualClientAddressDetails,
       'manualClientLocationUrl': manualClientLocationUrl,
       'manualClientLatitude': manualClientLatitude,
       'manualClientLongitude': manualClientLongitude,
@@ -227,16 +203,35 @@ class BookingDraft extends Equatable {
       manualClientGovernorate: map['manualClientGovernorate'] as String?,
       manualClientCity: map['manualClientCity'] as String?,
       manualClientDistrict: map['manualClientDistrict'] as String?,
-      manualClientStreet: map['manualClientStreet'] as String?,
-      manualClientBuilding: map['manualClientBuilding'] as String?,
-      manualClientFloor: map['manualClientFloor'] as String?,
-      manualClientApartment: map['manualClientApartment'] as String?,
-      manualClientLandmark: map['manualClientLandmark'] as String?,
-      manualClientPropertyType: map['manualClientPropertyType'] as String?,
+      manualClientAddressDetails: map['manualClientAddressDetails'] as String?
+          ?? _reconstructAddressDetails(
+               street: map['manualClientStreet'] as String? ?? '',
+               building: map['manualClientBuilding'] as String? ?? '',
+               floor: map['manualClientFloor'] as String?,
+               apartment: map['manualClientApartment'] as String?,
+               landmark: map['manualClientLandmark'] as String?,
+             ),
       manualClientLocationUrl: map['manualClientLocationUrl'] as String?,
       manualClientLatitude: (map['manualClientLatitude'] as num?)?.toDouble(),
       manualClientLongitude: (map['manualClientLongitude'] as num?)?.toDouble(),
     );
+  }
+
+  /// Reconstructs addressDetails from legacy V2 fields for backward-compatible deserialization.
+  static String _reconstructAddressDetails({
+    required String street,
+    required String building,
+    String? floor,
+    String? apartment,
+    String? landmark,
+  }) {
+    final parts = <String>[];
+    if (street.isNotEmpty) parts.add(street);
+    if (building.isNotEmpty) parts.add(building);
+    if (floor != null && floor.isNotEmpty) parts.add('الدور $floor');
+    if (apartment != null && apartment.isNotEmpty) parts.add('شقة $apartment');
+    if (landmark != null && landmark.isNotEmpty) parts.add('($landmark)');
+    return parts.isEmpty ? '' : parts.join('، ');
   }
 
   String toJson() => jsonEncode(toMap());
@@ -268,12 +263,7 @@ class BookingDraft extends Equatable {
         manualClientGovernorate,
         manualClientCity,
         manualClientDistrict,
-        manualClientStreet,
-        manualClientBuilding,
-        manualClientFloor,
-        manualClientApartment,
-        manualClientLandmark,
-        manualClientPropertyType,
+        manualClientAddressDetails,
         manualClientLocationUrl,
         manualClientLatitude,
         manualClientLongitude,

@@ -19,8 +19,7 @@ void main() {
       scheduledAt: now.add(const Duration(days: 1)),
       manualClientGovernorate: 'القاهرة',
       manualClientCity: 'المعادي',
-      manualClientStreet: 'شارع 9',
-      manualClientBuilding: 'عمارة 15',
+      manualClientAddressDetails: 'شارع 9، عمارة 15',
     );
 
     test('should convert BookingDraft toMap and fromMap correctly', () {
@@ -35,7 +34,7 @@ void main() {
       expect(fromMapDraft.priceTotal, equals(1250.0));
       expect(fromMapDraft.manualClientGovernorate, equals('القاهرة'));
       expect(fromMapDraft.manualClientCity, equals('المعادي'));
-      expect(fromMapDraft.manualClientStreet, equals('شارع 9'));
+      expect(fromMapDraft.manualClientAddressDetails, equals('شارع 9، عمارة 15'));
       expect(fromMapDraft.currentStepIndex, equals(3));
     });
 
@@ -53,15 +52,13 @@ void main() {
     test('should support copyWith for updating client address when received on WhatsApp', () {
       final updatedDraft = draft.copyWith(
         manualClientLocationUrl: 'https://maps.google.com/?q=30.0,31.0',
-        manualClientFloor: '4',
-        manualClientApartment: '402',
+        manualClientAddressDetails: 'شارع 9، عمارة 15، دور 4، شقة 402',
       );
 
       expect(updatedDraft.id, equals(draft.id));
       expect(updatedDraft.clientName, equals('أحمد محمود'));
       expect(updatedDraft.manualClientLocationUrl, equals('https://maps.google.com/?q=30.0,31.0'));
-      expect(updatedDraft.manualClientFloor, equals('4'));
-      expect(updatedDraft.manualClientApartment, equals('402'));
+      expect(updatedDraft.manualClientAddressDetails, equals('شارع 9، عمارة 15، دور 4، شقة 402'));
     });
   });
 }

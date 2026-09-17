@@ -3,7 +3,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared/shared.dart';
-import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
 import 'package:shared_features/shared_features.dart';
 import '../cubit/admin_booking_details_cubit.dart';
 import 'package:intl/intl.dart';
@@ -944,7 +943,7 @@ class _AdminBookingDetailsContent extends StatelessWidget {
   Widget _buildCustomerCard(BuildContext context, UserProfile? customer) {
     final address = booking.address;
     final fullAddress =
-        '${address.city}، ${address.streetOrCompound}، عمارة ${address.buildingIdentifier}${address.apartmentOrUnit != null ? '، شقة ${address.apartmentOrUnit}' : ''}${address.floor != null ? '، دور ${address.floor}' : ''}';
+        '${address.city}، ${address.district} - ${address.addressDetails}';
 
     // 1. Start with Manual Contact Data (Snapshot)
     String displayName = booking.contact.name;

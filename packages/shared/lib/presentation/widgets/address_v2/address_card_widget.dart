@@ -221,32 +221,8 @@ class AddressCardWidget extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
 
-                    // Optional Landmark Row
-                    if (address.landmark != null && address.landmark!.trim().isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.place_outlined,
-                            size: 14,
-                            color: Color(0xFF94A3B8),
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              'بجوار: ${address.landmark}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF64748B),
-                                fontStyle: FontStyle.italic,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    // Landmark is now part of addressDetails (V3);
+                    // the addressDetails text already displayed above contains all access details.
 
                     // Action Buttons Row (Set Primary / Edit / Delete)
                     if (!isDisabled &&
@@ -339,23 +315,8 @@ class AddressCardWidget extends StatelessWidget {
     );
   }
 
-  AddressPropertyType get _effectivePropertyType {
-    if (address.propertyType != null && address.propertyType!.isNotEmpty) {
-      switch (address.propertyType!.toLowerCase()) {
-        case 'office':
-          return AddressPropertyType.office;
-        case 'commercial':
-          return AddressPropertyType.commercial;
-        case 'landmark':
-          return AddressPropertyType.landmark;
-        case 'residential':
-        case 'home':
-        default:
-          return AddressPropertyType.residential;
-      }
-    }
-    return propertyType;
-  }
+  /// V3: address.propertyType has been removed; rely solely on the widget parameter.
+  AddressPropertyType get _effectivePropertyType => propertyType;
 
   Widget _buildPropertyIconContainer(Color primaryColor) {
     IconData iconData;
@@ -438,23 +399,12 @@ class AddressCardWidget extends StatelessWidget {
   }
 
   String _buildDetailedAddressLine() {
-    final parts = <String>[];
-    parts.add(address.streetOrCompound);
-    parts.add('مبنى ${address.buildingIdentifier}');
-
-    if (address.floor != null && address.floor!.trim().isNotEmpty) {
-      parts.add('دور ${address.floor}');
-    }
-    if (address.apartmentOrUnit != null && address.apartmentOrUnit!.trim().isNotEmpty) {
-      parts.add('شقة ${address.apartmentOrUnit}');
-    }
-
-    return parts.join('، ');
+    return address.addressDetails;
   }
 
   String _buildSemanticsLabel() {
     final status = isSelected ? 'محدد' : '';
     final primary = address.isPrimary ? 'العنوان الرئيسي' : '';
-    return 'عنوان ${address.district}، ${address.streetOrCompound}، مبنى ${address.buildingIdentifier}. $primary $status';
+    return 'عنوان ${address.district}، ${address.addressDetails}. $primary $status';
   }
 }

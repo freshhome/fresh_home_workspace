@@ -22,25 +22,24 @@ class AddressModelAdapter extends TypeAdapter<AddressModel> {
       governorate: fields[2] as String,
       city: fields[3] as String,
       district: fields[4] as String,
-      streetOrCompound: fields[5] as String,
-      buildingIdentifier: fields[6] as String,
-      floor: fields[7] as String?,
-      apartmentOrUnit: fields[8] as String?,
-      landmark: fields[9] as String?,
-      latitude: fields[10] as double?,
-      longitude: fields[11] as double?,
-      isPrimary: fields[12] as bool,
-      deletedAt: fields[13] as DateTime?,
-      createdAt: fields[14] as DateTime,
-      updatedAt: fields[15] as DateTime,
-      propertyType: fields[16] as String?,
+      governorateId: fields[13] as int?,
+      cityId: fields[14] as int?,
+      districtId: fields[15] as int?,
+      addressDetails: fields[5] as String,
+      locationUrl: fields[6] as String?,
+      latitude: fields[7] as double?,
+      longitude: fields[8] as double?,
+      isPrimary: fields[9] as bool,
+      deletedAt: fields[10] as DateTime?,
+      createdAt: fields[11] as DateTime,
+      updatedAt: fields[12] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, AddressModel obj) {
     writer
-      ..writeByte(17)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -52,29 +51,27 @@ class AddressModelAdapter extends TypeAdapter<AddressModel> {
       ..writeByte(4)
       ..write(obj.district)
       ..writeByte(5)
-      ..write(obj.streetOrCompound)
+      ..write(obj.addressDetails)
       ..writeByte(6)
-      ..write(obj.buildingIdentifier)
+      ..write(obj.locationUrl)
       ..writeByte(7)
-      ..write(obj.floor)
-      ..writeByte(8)
-      ..write(obj.apartmentOrUnit)
-      ..writeByte(9)
-      ..write(obj.landmark)
-      ..writeByte(10)
       ..write(obj.latitude)
-      ..writeByte(11)
+      ..writeByte(8)
       ..write(obj.longitude)
-      ..writeByte(12)
+      ..writeByte(9)
       ..write(obj.isPrimary)
-      ..writeByte(13)
+      ..writeByte(10)
       ..write(obj.deletedAt)
-      ..writeByte(14)
+      ..writeByte(11)
       ..write(obj.createdAt)
-      ..writeByte(15)
+      ..writeByte(12)
       ..write(obj.updatedAt)
-      ..writeByte(16)
-      ..write(obj.propertyType);
+      ..writeByte(13)
+      ..write(obj.governorateId)
+      ..writeByte(14)
+      ..write(obj.cityId)
+      ..writeByte(15)
+      ..write(obj.districtId);
   }
 
   @override

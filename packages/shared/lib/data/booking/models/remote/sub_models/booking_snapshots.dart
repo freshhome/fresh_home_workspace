@@ -60,6 +60,7 @@ class ServiceSnapshotModel {
   };
 }
 
+/// V3: Replaces fragmented street/building/floor/apartment/landmark with [addressDetails].
 class AddressSnapshotModel {
   final String governorate;
   final String city;
@@ -73,12 +74,10 @@ class AddressSnapshotModel {
   final String? cityEn;
   final String? districtAr;
   final String? districtEn;
-  final String street;
-  final String buildingNumber;
-  final String? apartmentNumber;
-  final String? floorNumber;
-  final String? landmark;
-  final String? propertyType;
+
+  /// V3: Single unified field replacing street, building, floor, apartment, landmark.
+  final String addressDetails;
+
   final String? locationUrl;
   final double? latitude;
   final double? longitude;
@@ -96,12 +95,7 @@ class AddressSnapshotModel {
     this.cityEn,
     this.districtAr,
     this.districtEn,
-    required this.street,
-    required this.buildingNumber,
-    this.apartmentNumber,
-    this.floorNumber,
-    this.landmark,
-    this.propertyType,
+    required this.addressDetails,
     this.locationUrl,
     this.latitude,
     this.longitude,
@@ -109,7 +103,7 @@ class AddressSnapshotModel {
 
   factory AddressSnapshotModel.fromJson(dynamic rawJson) {
     if (rawJson == null) {
-      return const AddressSnapshotModel(governorate: '', city: '', district: '', street: '', buildingNumber: '');
+      return const AddressSnapshotModel(governorate: '', city: '', district: '', addressDetails: '');
     }
 
     Map<String, dynamic> data;
@@ -117,12 +111,12 @@ class AddressSnapshotModel {
       try {
         data = jsonDecode(rawJson) as Map<String, dynamic>;
       } catch (_) {
-        return const AddressSnapshotModel(governorate: '', city: '', district: '', street: '', buildingNumber: '');
+        return const AddressSnapshotModel(governorate: '', city: '', district: '', addressDetails: '');
       }
     } else if (rawJson is Map) {
       data = Map<String, dynamic>.from(rawJson);
     } else {
-      return const AddressSnapshotModel(governorate: '', city: '', district: '', street: '', buildingNumber: '');
+      return const AddressSnapshotModel(governorate: '', city: '', district: '', addressDetails: '');
     }
 
     if (data.containsKey('address') && data['address'] is Map) {
@@ -150,6 +144,24 @@ class AddressSnapshotModel {
     final dAr = data['district_ar'] as String?;
     final dEn = data['district_en'] as String?;
 
+    // V3 → V2 legacy fallback: reconstruct addressDetails from old fields if needed.
+    final rawAddressDetails = data['address_details'] as String?;
+    final legacyStreet = data['street'] as String? ?? data['street_or_compound'] as String? ?? '';
+    final legacyBuilding = data['buildingNumber'] as String? ?? data['building_number'] as String? ?? data['building_identifier'] as String? ?? '';
+    final legacyFloor = data['floorNumber'] as String? ?? data['floor'] as String? ?? data['floor_number'] as String?;
+    final legacyApartment = data['apartmentNumber'] as String? ?? data['apartment'] as String? ?? data['apartment_number'] as String? ?? data['apartment_or_unit'] as String?;
+    final legacyLandmark = data['landmark'] as String?;
+
+    final addressDetails = rawAddressDetails?.isNotEmpty == true
+        ? rawAddressDetails!
+        : _reconstructAddressDetails(
+            street: legacyStreet,
+            building: legacyBuilding,
+            floor: legacyFloor,
+            apartment: legacyApartment,
+            landmark: legacyLandmark,
+          );
+
     return AddressSnapshotModel(
       governorate: (data['governorate'] ?? govAr ?? govEn ?? '') as String,
       city: (data['city'] ?? cAr ?? cEn ?? '') as String,
@@ -163,12 +175,7 @@ class AddressSnapshotModel {
       cityEn: cEn,
       districtAr: dAr,
       districtEn: dEn,
-      street: (data['street'] ?? data['street_or_compound'] ?? '') as String,
-      buildingNumber: (data['buildingNumber'] ?? data['building_number'] ?? data['building_identifier'] ?? '') as String,
-      apartmentNumber: (data['apartmentNumber'] ?? data['apartment'] ?? data['apartment_number'] ?? data['apartment_or_unit']) as String?,
-      floorNumber: (data['floorNumber'] ?? data['floor'] ?? data['floor_number']) as String?,
-      landmark: data['landmark'] as String?,
-      propertyType: (data['propertyType'] ?? data['property_type']) as String?,
+      addressDetails: addressDetails,
       locationUrl: (data['location_url'] ?? data['locationUrl']) as String?,
       latitude: parseDouble(data['latitude']),
       longitude: parseDouble(data['longitude']),
@@ -183,7 +190,7 @@ class AddressSnapshotModel {
                 ? 'القاهرة'
                 : governorate));
     return {
-      'snapshot_version': 2,
+      'snapshot_version': 3,
       'governorate': govAr,
       'city': cityAr ?? city,
       'district': districtAr ?? district,
@@ -200,17 +207,28 @@ class AddressSnapshotModel {
         'city_en': cityEn ?? city,
         'district_ar': districtAr ?? district,
         'district_en': districtEn ?? district,
-        'street_or_compound': street,
-        'building_identifier': buildingNumber,
-        if (apartmentNumber != null) 'apartment_or_unit': apartmentNumber,
-        if (floorNumber != null) 'floor': floorNumber,
-        if (landmark != null) 'landmark': landmark,
-        if (propertyType != null) 'property_type': propertyType,
+        'address_details': addressDetails,
         if (locationUrl != null && locationUrl!.isNotEmpty) 'location_url': locationUrl,
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
       },
     };
+  }
+
+  static String _reconstructAddressDetails({
+    required String street,
+    required String building,
+    String? floor,
+    String? apartment,
+    String? landmark,
+  }) {
+    final parts = <String>[];
+    if (street.isNotEmpty) parts.add(street);
+    if (building.isNotEmpty) parts.add(building);
+    if (floor != null && floor.isNotEmpty) parts.add('الدور $floor');
+    if (apartment != null && apartment.isNotEmpty) parts.add('شقة $apartment');
+    if (landmark != null && landmark.isNotEmpty) parts.add('($landmark)');
+    return parts.join('، ');
   }
 }
 

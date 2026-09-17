@@ -97,10 +97,9 @@ class UserProfileMapper {
                     governorate: a.governorate,
                     city: a.city,
                     district: a.city,
-                    streetOrCompound: a.street,
-                    buildingIdentifier: a.buildingNumber,
-                    floor: a.floor,
-                    apartmentOrUnit: a.apartment,
+                    addressDetails: [a.street, a.buildingNumber, if (a.floor != null) 'الدور ${a.floor}', if (a.apartment != null) 'شقة ${a.apartment}']
+                        .where((s) => s.isNotEmpty)
+                        .join('، '),
                     latitude: a.latitude,
                     longitude: a.longitude,
                     createdAt: DateTime.now(),

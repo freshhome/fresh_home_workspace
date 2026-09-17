@@ -56,12 +56,7 @@ class BookingFlowState {
   final String? manualClientGovernorate;
   final String? manualClientCity;
   final String? manualClientDistrict;
-  final String? manualClientStreet;
-  final String? manualClientBuilding;
-  final String? manualClientFloor;
-  final String? manualClientApartment;
-  final String? manualClientLandmark;
-  final String? manualClientPropertyType;
+  final String? manualClientAddressDetails;
   final String? manualClientLocationUrl;
   final double? manualClientLatitude;
   final double? manualClientLongitude;
@@ -107,12 +102,7 @@ class BookingFlowState {
     this.manualClientGovernorate,
     this.manualClientCity,
     this.manualClientDistrict,
-    this.manualClientStreet,
-    this.manualClientBuilding,
-    this.manualClientFloor,
-    this.manualClientApartment,
-    this.manualClientLandmark,
-    this.manualClientPropertyType,
+    this.manualClientAddressDetails,
     this.manualClientLocationUrl,
     this.manualClientLatitude,
     this.manualClientLongitude,
@@ -157,12 +147,7 @@ class BookingFlowState {
     String? manualClientGovernorate,
     String? manualClientCity,
     String? manualClientDistrict,
-    String? manualClientStreet,
-    String? manualClientBuilding,
-    String? manualClientFloor,
-    String? manualClientApartment,
-    String? manualClientLandmark,
-    String? manualClientPropertyType,
+    String? manualClientAddressDetails,
     String? manualClientLocationUrl,
     double? manualClientLatitude,
     double? manualClientLongitude,
@@ -207,14 +192,8 @@ class BookingFlowState {
           manualClientGovernorate ?? this.manualClientGovernorate,
       manualClientCity: manualClientCity ?? this.manualClientCity,
       manualClientDistrict: manualClientDistrict ?? this.manualClientDistrict,
-      manualClientStreet: manualClientStreet ?? this.manualClientStreet,
-      manualClientBuilding: manualClientBuilding ?? this.manualClientBuilding,
-      manualClientFloor: manualClientFloor ?? this.manualClientFloor,
-      manualClientApartment:
-          manualClientApartment ?? this.manualClientApartment,
-      manualClientLandmark: manualClientLandmark ?? this.manualClientLandmark,
-      manualClientPropertyType:
-          manualClientPropertyType ?? this.manualClientPropertyType,
+      manualClientAddressDetails:
+          manualClientAddressDetails ?? this.manualClientAddressDetails,
       manualClientLocationUrl:
           manualClientLocationUrl ?? this.manualClientLocationUrl,
       manualClientLatitude: manualClientLatitude ?? this.manualClientLatitude,

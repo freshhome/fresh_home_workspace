@@ -34,7 +34,7 @@ class MockAddressRepository implements AddressRepository {
 }
 
 void main() {
-  group('Phase 5.1 — Address Booking Pipeline End-to-End Integration Tests', () {
+  group('Phase 5.1 — Address Booking Pipeline End-to-End Integration Tests (V3)', () {
     late MockAddressRepository mockRepository;
     late CreateAddressUseCase createAddressUseCase;
 
@@ -58,12 +58,7 @@ void main() {
       cityEn: 'Nasr City',
       districtAr: 'الحي الأول',
       districtEn: 'First District',
-      streetOrCompound: 'شارع الطيران',
-      buildingIdentifier: 'مبنى 15',
-      floor: '3',
-      apartmentOrUnit: '301',
-      landmark: 'بجوار المسجد الكبير',
-      propertyType: 'residential',
+      addressDetails: 'شارع الطيران، مبنى 15، الدور 3، شقة 301 (بجوار المسجد الكبير)',
       latitude: 30.0500,
       longitude: 31.3333,
       isPrimary: true,
@@ -82,11 +77,11 @@ void main() {
       expect(savedAddress.cityId, equals(10));
       expect(savedAddress.districtId, equals(100));
 
-      // Step 2: Build Address Snapshot V2 JSON
+      // Step 2: Build Address Snapshot V3 JSON
       final snapshotJson = AddressSnapshotMapper.buildSnapshotJson(savedAddress);
 
-      // Step 3: Verify Version 2 contract fields in JSON
-      expect(snapshotJson['snapshot_version'], equals(2));
+      // Step 3: Verify Version 3 contract fields in JSON
+      expect(snapshotJson['snapshot_version'], equals(3));
       final addressData = snapshotJson['address'] as Map<String, dynamic>;
       expect(addressData['address_id'], equals('addr-e2e-1'));
       expect(addressData['governorate_id'], equals(1));
@@ -98,6 +93,7 @@ void main() {
       expect(addressData['city_en'], equals('Nasr City'));
       expect(addressData['district_ar'], equals('الحي الأول'));
       expect(addressData['district_en'], equals('First District'));
+      expect(addressData.containsKey('address_details'), isTrue);
 
       // Step 4: Map through BookingSnapshotModel & BookingMapper
       final snapshotModel = AddressSnapshotModel.fromJson(snapshotJson);
@@ -114,7 +110,7 @@ void main() {
       final createResult = await createAddressUseCase(validBilingualAddress);
       expect(createResult.isRight(), isTrue);
 
-      // Step 2: Build Snapshot V2 & map through BookingSnapshotModel
+      // Step 2: Build Snapshot V3 & map through BookingSnapshotModel
       final snapshotJson = AddressSnapshotMapper.buildSnapshotJson(validBilingualAddress);
       final snapshotModel = AddressSnapshotModel.fromJson(snapshotJson);
       final bookingAddressEntity = BookingMapper.addressSnapshotToEntity(snapshotModel);
@@ -136,8 +132,7 @@ void main() {
         governorateId: null,
         cityId: 10,
         districtId: 100,
-        streetOrCompound: 'شارع الطيران',
-        buildingIdentifier: 'مبنى 15',
+        addressDetails: 'شارع الطيران، مبنى 15',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -160,8 +155,7 @@ void main() {
         governorateId: 1,
         cityId: null,
         districtId: 100,
-        streetOrCompound: 'شارع الطيران',
-        buildingIdentifier: 'مبنى 15',
+        addressDetails: 'شارع الطيران، مبنى 15',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -177,7 +171,7 @@ void main() {
 
 
     test('Scenario 4 — Snapshot Round-Trip & Historical Immutability Verification', () async {
-      // Step 1: Create V2 Snapshot at booking creation time
+      // Step 1: Create V3 Snapshot at booking creation time
       final initialSnapshotJson = AddressSnapshotMapper.buildSnapshotJson(
         validBilingualAddress,
         governorateAr: 'القاهرة',
@@ -201,15 +195,17 @@ void main() {
       expect(historicalAddress.getCityName('en'), equals('Nasr City'));
       expect(historicalAddress.getDistrictName('ar'), equals('الحي الأول'));
       expect(historicalAddress.getDistrictName('en'), equals('First District'));
+      // V3: addressDetails must survive round-trip
+      expect(historicalAddress.addressDetails, contains('شارع الطيران'));
     });
 
-    test('Scenario 5 — Backward Compatibility Pipeline Verification (V1 & Legacy Flat)', () async {
-      // Part A: Version 1 Snapshot Pipeline
-      final v1SnapshotJson = {
-        'snapshot_version': 1,
+    test('Scenario 5 — Backward Compatibility Pipeline Verification (V2 & Legacy Flat)', () async {
+      // Part A: Version 2 Snapshot Pipeline (old format with street/building)
+      final v2SnapshotJson = {
+        'snapshot_version': 2,
         'address': {
-          'address_id': 'addr-v1-test',
-          'user_id': 'user-v1-test',
+          'address_id': 'addr-v2-test',
+          'user_id': 'user-v2-test',
           'governorate': 'Cairo',
           'city': 'New Cairo',
           'district': 'Fifth Settlement',
@@ -220,14 +216,15 @@ void main() {
         }
       };
 
-      final parsedV1Address = AddressSnapshotMapper.parseSnapshotJson(v1SnapshotJson);
-      expect(parsedV1Address.id, equals('addr-v1-test'));
-      expect(parsedV1Address.governorate, equals('Cairo'));
-      expect(parsedV1Address.city, equals('New Cairo'));
-      expect(parsedV1Address.district, equals('Fifth Settlement'));
-      expect(parsedV1Address.streetOrCompound, equals('90th South Street'));
-      expect(parsedV1Address.getGovernorateName('en'), equals('Cairo'));
-      expect(parsedV1Address.getGovernorateName('ar'), equals('Cairo'));
+      final parsedV2Address = AddressSnapshotMapper.parseSnapshotJson(v2SnapshotJson);
+      expect(parsedV2Address.id, equals('addr-v2-test'));
+      expect(parsedV2Address.governorate, equals('Cairo'));
+      expect(parsedV2Address.city, equals('New Cairo'));
+      expect(parsedV2Address.district, equals('Fifth Settlement'));
+      // V3 fallback: addressDetails reconstructed from V2 fields
+      expect(parsedV2Address.addressDetails, contains('90th South Street'));
+      expect(parsedV2Address.getGovernorateName('en'), equals('Cairo'));
+      expect(parsedV2Address.getGovernorateName('ar'), equals('Cairo'));
 
       // Part B: Legacy Flat JSON Pipeline
       final legacyFlatJson = {
@@ -244,8 +241,9 @@ void main() {
       expect(parsedFlatAddress.governorate, equals('Giza'));
       expect(parsedFlatAddress.city, equals('Dokki'));
       expect(parsedFlatAddress.district, equals('Mosaddak'));
-      expect(parsedFlatAddress.streetOrCompound, equals('Iran Street'));
-      expect(parsedFlatAddress.buildingIdentifier, equals('7'));
+      // V3 fallback: addressDetails reconstructed from legacy street + building
+      expect(parsedFlatAddress.addressDetails, contains('Iran Street'));
+      expect(parsedFlatAddress.addressDetails, contains('7'));
     });
   });
 }

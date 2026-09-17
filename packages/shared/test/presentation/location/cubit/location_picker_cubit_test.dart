@@ -87,8 +87,7 @@ void main() {
         governorate: 'Cairo',
         city: 'Nasr City',
         district: 'First District',
-        streetOrCompound: 'Tayaran Street',
-        buildingIdentifier: '15',
+        addressDetails: 'Tayaran Street, Building 15',
         latitude: 30.0500,
         longitude: 31.3333,
         createdAt: DateTime.now(),
@@ -100,7 +99,7 @@ void main() {
       expect(addressWithGps.longitude, equals(31.3333));
     });
 
-    test('Test 11 — Booking Snapshot V2 remains 100% valid and preserves coordinates', () {
+    test('Test 11 — Booking Snapshot V3 remains 100% valid and preserves coordinates', () {
       final addressWithGps = Address(
         id: 'addr-gps-snapshot',
         userId: 'user-1',
@@ -116,8 +115,7 @@ void main() {
         cityEn: 'Nasr City',
         districtAr: 'الحي الأول',
         districtEn: 'First District',
-        streetOrCompound: 'Tayaran Street',
-        buildingIdentifier: '15',
+        addressDetails: 'Tayaran Street, Building 15',
         latitude: 30.0500,
         longitude: 31.3333,
         createdAt: DateTime.now(),
@@ -125,7 +123,7 @@ void main() {
       );
 
       final snapshotJson = AddressSnapshotMapper.buildSnapshotJson(addressWithGps);
-      expect(snapshotJson['snapshot_version'], equals(2));
+      expect(snapshotJson['snapshot_version'], equals(3));
 
       final parsedAddress = AddressSnapshotMapper.parseSnapshotJson(snapshotJson);
       expect(parsedAddress.hasCoordinates, isTrue);

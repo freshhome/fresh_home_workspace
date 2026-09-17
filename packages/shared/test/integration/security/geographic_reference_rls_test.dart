@@ -209,8 +209,7 @@ void main() {
           district: 'الحي الأول',
           governorateId: null,
           cityId: 105,
-          streetOrCompound: 'شارع الطيران',
-          buildingIdentifier: 'مبنى 1',
+          addressDetails: 'شارع الطيران، مبنى 1',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );

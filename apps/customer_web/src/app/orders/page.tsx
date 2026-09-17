@@ -826,11 +826,12 @@ function OrderTrackingContent() {
                     </div>
                   )}
 
-                  {addressSnap.street && (
+                  {(addressSnap.address_details || addressSnap.street_or_compound || addressSnap.street) && (
                     <div className="border-t border-slate-100 dark:border-blue-900/40 pt-3 space-y-1">
                       <span className="text-slate-500 dark:text-slate-400 font-bold block">العنوان المسجل للخدمة:</span>
                       <p className="text-[11px] text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                        {addressSnap.governorate}، {addressSnap.city}، {addressSnap.district ? `${addressSnap.district}، ` : ""}{addressSnap.street_or_compound || addressSnap.street}، عمارة {addressSnap.building_identifier || addressSnap.building}{addressSnap.floor ? `، دور ${addressSnap.floor}` : ""}{addressSnap.apartment_or_unit || addressSnap.apartment ? `، شقة ${addressSnap.apartment_or_unit || addressSnap.apartment}` : ""}{addressSnap.landmark ? ` (${addressSnap.landmark})` : ""}
+                        {addressSnap.governorate}، {addressSnap.city}، {addressSnap.district ? `${addressSnap.district}، ` : ""}
+                        {addressSnap.address_details || `${addressSnap.street_or_compound || addressSnap.street || ''}، عمارة ${addressSnap.building_identifier || addressSnap.building || ''}${addressSnap.floor ? `، دور ${addressSnap.floor}` : ''}${addressSnap.apartment_or_unit || addressSnap.apartment ? `، شقة ${addressSnap.apartment_or_unit || addressSnap.apartment}` : ''}${addressSnap.landmark ? ` (${addressSnap.landmark})` : ''}`}
                       </p>
                     </div>
                   )}

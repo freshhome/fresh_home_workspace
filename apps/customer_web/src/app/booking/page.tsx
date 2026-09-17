@@ -300,15 +300,12 @@ function BookingFlowContent() {
     governorate: "",
     city: "",
     district: "",
-    street_or_compound: "",
-    building_identifier: "",
-    floor: "",
-    apartment_or_unit: "",
-    landmark: "",
-    location_url: ""
+    address_details: "",
+    location_url: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
   const [customDistrict, setCustomDistrict] = useState("");
-  const [propertyType, setPropertyType] = useState<"apartment" | "villa" | "office">("apartment");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   
   // Saved Addresses for Logged In User
@@ -485,16 +482,15 @@ function BookingFlowContent() {
               setSelectedSavedAddressId(primary.id);
               setSelectedAddressMode("saved");
               
+              const details = primary.address_details || `${primary.street_or_compound || primary.street || ""} - مبنى ${primary.building_identifier || primary.building_number || ""}${primary.floor ? ` - دور ${primary.floor}` : ""}${primary.apartment_or_unit || primary.apartment ? ` - شقة ${primary.apartment_or_unit || primary.apartment}` : ""}${primary.landmark ? ` (${primary.landmark})` : ""}`;
               setAddress({
                 governorate: primary.governorate || "القاهرة",
                 city: primary.city || "التجمع الخامس",
                 district: primary.district || "الحي الأول",
-                street_or_compound: primary.street_or_compound || primary.street || "",
-                building_identifier: primary.building_identifier || primary.building_number || "",
-                floor: primary.floor || "",
-                apartment_or_unit: primary.apartment_or_unit || primary.apartment || "",
-                landmark: primary.landmark || "",
-                location_url: primary.location_url || ""
+                address_details: details.trim(),
+                location_url: primary.location_url || "",
+                latitude: primary.latitude || null,
+                longitude: primary.longitude || null,
               });
             }
           } catch {
@@ -934,8 +930,7 @@ function BookingFlowContent() {
           isGovSupported &&
           address.city.trim() !== "" &&
           effDistrict !== "" &&
-          address.street_or_compound.trim() !== "" &&
-          address.building_identifier.trim() !== ""
+          address.address_details.trim().length >= 5
         );
       }
       case 3: {
@@ -1006,16 +1001,15 @@ function BookingFlowContent() {
   const handleSelectSavedAddress = (addr: any) => {
     setSelectedSavedAddressId(addr.id);
     setSelectedAddressMode("saved");
+    const details = addr.address_details || `${addr.street_or_compound || addr.street || ""} - مبنى ${addr.building_identifier || addr.building_number || ""}${addr.floor ? ` - دور ${addr.floor}` : ""}${addr.apartment_or_unit || addr.apartment ? ` - شقة ${addr.apartment_or_unit || addr.apartment}` : ""}${addr.landmark ? ` (${addr.landmark})` : ""}`;
     setAddress({
       governorate: addr.governorate || "القاهرة",
       city: addr.city || "التجمع الخامس",
       district: addr.district || "الحي الأول",
-      street_or_compound: addr.street_or_compound || addr.street || "",
-      building_identifier: addr.building_identifier || addr.building_number || "",
-      floor: addr.floor || "",
-      apartment_or_unit: addr.apartment_or_unit || addr.apartment || "",
-      landmark: addr.landmark || "",
-      location_url: addr.location_url || ""
+      address_details: details.trim(),
+      location_url: addr.location_url || "",
+      latitude: addr.latitude || null,
+      longitude: addr.longitude || null,
     });
   };
 
@@ -1112,21 +1106,22 @@ function BookingFlowContent() {
 
       const finalDistrict = address.district === "أخرى" ? customDistrict.trim() : address.district.trim();
 
-      // Address System V2 Snapshot Payload
+      // Address System V3 Snapshot Payload
       const addressSnapshot = {
+        snapshot_version: 3,
         governorate: address.governorate,
         city: address.city,
         district: finalDistrict,
-        street_or_compound: address.street_or_compound.trim(),
-        building_identifier: address.building_identifier.trim(),
-        floor: address.floor.trim(),
-        apartment_or_unit: address.apartment_or_unit.trim(),
-        landmark: address.landmark.trim(),
-        location_url: (address.location_url || "").trim(),
+        address_details: address.address_details.trim(),
+        location_url: (address.location_url || "").trim() || null,
+        latitude: address.latitude || null,
+        longitude: address.longitude || null,
         // Legacy field aliases for backwards compatibility
-        street: address.street_or_compound.trim(),
-        building: address.building_identifier.trim(),
-        apartment: address.apartment_or_unit.trim()
+        street_or_compound: address.address_details.trim(),
+        street: address.address_details.trim(),
+        building_identifier: "",
+        building: "",
+        apartment: ""
       };
 
       // Save new address to user profile if user is logged in
@@ -1137,12 +1132,10 @@ function BookingFlowContent() {
             governorate: address.governorate,
             city: address.city,
             district: finalDistrict,
-            street_or_compound: address.street_or_compound.trim(),
-            building_identifier: address.building_identifier.trim(),
-            floor: address.floor.trim() || null,
-            apartment_or_unit: address.apartment_or_unit.trim() || null,
-            landmark: address.landmark.trim() || null,
+            address_details: address.address_details.trim(),
             location_url: (address.location_url || "").trim() || null,
+            latitude: address.latitude || null,
+            longitude: address.longitude || null,
             is_primary: savedAddresses.length === 0
           });
         } catch (addrErr) {
@@ -2294,7 +2287,7 @@ function BookingFlowContent() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {savedAddresses.map((addr) => {
                               const isSelected = selectedSavedAddressId === addr.id;
-                              const fullText = `${addr.governorate || ""}، ${addr.city || ""} - ${addr.district || ""} - ${addr.street_or_compound || addr.street || ""}، مبنى ${addr.building_identifier || addr.building_number || ""}`;
+                              const fullText = addr.address_details ? `${addr.governorate || ""}، ${addr.city || ""} - ${addr.district || ""} - ${addr.address_details}` : `${addr.governorate || ""}، ${addr.city || ""} - ${addr.district || ""} - ${addr.street_or_compound || addr.street || ""}، مبنى ${addr.building_identifier || addr.building_number || ""}`;
                               return (
                                 <div
                                   key={addr.id}
@@ -2446,129 +2439,25 @@ function BookingFlowContent() {
                           </div>
                         )}
 
-                        {/* 3. Property Type Segmented Toggle */}
-                        <div className="space-y-1.5 pt-0.5">
-                          <label className="block text-xs font-black text-slate-900 dark:text-white">
-                            نوع العقار
-                          </label>
-                          <div className="grid grid-cols-3 w-full p-1 rounded-xl bg-slate-50/80 dark:bg-[#050D24] border border-slate-200 dark:border-blue-900/60 gap-1">
-                            {[
-                              { id: "apartment", label: "شقة" },
-                              { id: "villa", label: "فيلا" },
-                              { id: "office", label: "مكتب" }
-                            ].map((tab) => {
-                              const isActive = propertyType === tab.id;
-                              return (
-                                <button
-                                  type="button"
-                                  key={tab.id}
-                                  onClick={() => setPropertyType(tab.id as any)}
-                                  className={`w-full py-2 rounded-lg text-xs font-black text-center transition-all cursor-pointer ${
-                                    isActive 
-                                      ? "bg-[#21A5FB] text-white shadow-xs" 
-                                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                                  }`}
-                                >
-                                  {tab.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* 4. Street or Compound Name */}
+                        {/* 3. Address Details Textarea */}
                         <div className="space-y-1.5">
                           <label className="block text-xs font-black text-slate-900 dark:text-white">
-                            اسم الشارع أو الكومباوند
+                            تفاصيل العنوان والوصول (الشارع، رقم المبنى أو الفيلا، الدور، الشقة، وأي علامة مميزة) <span className="text-red-500">*</span>
                           </label>
                           <div className="relative">
-                            <input
-                              type="text"
-                              placeholder="شارع التسعين الشمالي / كمبوند ميفيدا"
-                              value={address.street_or_compound}
-                              onChange={(e) => setAddress({ ...address, street_or_compound: e.target.value })}
-                              className={`w-full p-2.5 sm:p-3 pl-10 rounded-xl border text-xs font-bold transition-all bg-white dark:bg-[#071739] text-slate-900 dark:text-white caret-[#21A5FB] placeholder:text-slate-400 dark:placeholder:text-slate-500 ${
-                                address.street_or_compound.trim() !== ""
+                            <textarea
+                              rows={3}
+                              placeholder="مثال: شارع التسعين الشمالي، عمارة 42، الدور الثالث، شقة 12، بجوار المستشفى الجوي"
+                              value={address.address_details}
+                              onChange={(e) => setAddress({ ...address, address_details: e.target.value })}
+                              className={`w-full p-2.5 sm:p-3 rounded-xl border text-xs font-bold transition-all bg-white dark:bg-[#071739] text-slate-900 dark:text-white caret-[#21A5FB] placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none ${
+                                address.address_details.trim().length >= 5
                                   ? "border-[#21A5FB] ring-2 ring-[#21A5FB]/15 shadow-2xs"
                                   : "border-slate-200 dark:border-blue-900/60 hover:border-slate-300"
                               } focus:border-[#21A5FB] focus:ring-4 focus:ring-[#21A5FB]/20 focus:outline-none`}
-                            />
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                              <Building className="w-4 h-4 opacity-60" />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 5. Building, Floor, Apartment (3 Columns) */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="space-y-1.5">
-                            <label className="block text-xs font-black text-slate-900 dark:text-white">
-                              {propertyType === "villa" ? "رقم / اسم الفيلا" : "رقم / اسم المبنى"}
-                            </label>
-                            <input
-                              type="text"
-                              placeholder={propertyType === "villa" ? "فيلا 18" : "عمارة 42"}
-                              value={address.building_identifier}
-                              onChange={(e) => setAddress({ ...address, building_identifier: e.target.value })}
-                              className={`w-full p-2.5 sm:p-3 rounded-xl border text-xs font-bold transition-all bg-white dark:bg-[#071739] text-slate-900 dark:text-white caret-[#21A5FB] placeholder:text-slate-400 dark:placeholder:text-slate-500 ${
-                                address.building_identifier.trim() !== ""
-                                  ? "border-[#21A5FB] ring-2 ring-[#21A5FB]/15 shadow-2xs"
-                                  : "border-slate-200 dark:border-blue-900/60 hover:border-slate-300"
-                              } focus:border-[#21A5FB] focus:ring-4 focus:ring-[#21A5FB]/20 focus:outline-none`}
+                              required
                             />
                           </div>
-
-                          <div className="space-y-1.5">
-                            <label className="block text-xs font-black text-slate-900 dark:text-white">
-                              الدور
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="الثالث"
-                              value={address.floor}
-                              onChange={(e) => setAddress({ ...address, floor: e.target.value })}
-                              className={`w-full p-2.5 sm:p-3 rounded-xl border text-xs font-bold transition-all bg-white dark:bg-[#071739] text-slate-900 dark:text-white caret-[#21A5FB] placeholder:text-slate-400 dark:placeholder:text-slate-500 ${
-                                address.floor.trim() !== ""
-                                  ? "border-[#21A5FB] ring-2 ring-[#21A5FB]/15 shadow-2xs"
-                                  : "border-slate-200 dark:border-blue-900/60 hover:border-slate-300"
-                              } focus:border-[#21A5FB] focus:ring-4 focus:ring-[#21A5FB]/20 focus:outline-none`}
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="block text-xs font-black text-slate-900 dark:text-white">
-                              {propertyType === "office" ? "رقم المكتب" : "رقم الشقة"}
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="شقة 12"
-                              value={address.apartment_or_unit}
-                              onChange={(e) => setAddress({ ...address, apartment_or_unit: e.target.value })}
-                              className={`w-full p-2.5 sm:p-3 rounded-xl border text-xs font-bold transition-all bg-white dark:bg-[#071739] text-slate-900 dark:text-white caret-[#21A5FB] placeholder:text-slate-400 dark:placeholder:text-slate-500 ${
-                                address.apartment_or_unit.trim() !== ""
-                                  ? "border-[#21A5FB] ring-2 ring-[#21A5FB]/15 shadow-2xs"
-                                  : "border-slate-200 dark:border-blue-900/60 hover:border-slate-300"
-                              } focus:border-[#21A5FB] focus:ring-4 focus:ring-[#21A5FB]/20 focus:outline-none`}
-                            />
-                          </div>
-                        </div>
-
-                        {/* 6. Landmark (Optional) */}
-                        <div className="space-y-1 sm:space-y-1.5">
-                          <label className="block text-xs font-black text-slate-900 dark:text-white">
-                            علامة مميزة (اختياري)
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="مثال: بجوار مستشفى الجوي / أمام النادي الأهلي"
-                            value={address.landmark}
-                            onChange={(e) => setAddress({ ...address, landmark: e.target.value })}
-                            className={`w-full p-2.5 sm:p-3 rounded-xl border text-xs font-bold transition-all bg-white dark:bg-[#071739] text-slate-900 dark:text-white caret-[#21A5FB] placeholder:text-slate-400 dark:placeholder:text-slate-500 ${
-                              address.landmark.trim() !== ""
-                                ? "border-[#21A5FB] ring-2 ring-[#21A5FB]/15 shadow-2xs"
-                                : "border-slate-200 dark:border-blue-900/60 hover:border-slate-300"
-                            } focus:border-[#21A5FB] focus:ring-4 focus:ring-[#21A5FB]/20 focus:outline-none`}
-                          />
                         </div>
 
                         {/* 7. Location URL on Map (Optional) */}
@@ -2882,17 +2771,15 @@ function BookingFlowContent() {
                         </div>
                       )}
 
-                      {/* Location Address V2 Breakdown */}
-                      {currentStep >= 2 && (address.street_or_compound || address.building_identifier) && (
+                      {/* Location Address V3 Breakdown */}
+                      {currentStep >= 2 && address.address_details && (
                         <div className="space-y-1 border-t border-slate-100 dark:border-blue-900/30 pt-3">
                           <span className="font-bold block text-slate-400">العنوان:</span>
                           <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">
                             {address.governorate}، {address.city} - {address.district === "أخرى" ? customDistrict : address.district}
                           </p>
                           <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
-                            {address.street_or_compound}، مبنى {address.building_identifier}
-                            {address.floor ? `، طابق ${address.floor}` : ""}
-                            {address.apartment_or_unit ? `، شقة ${address.apartment_or_unit}` : ""}
+                            {address.address_details}
                           </p>
                         </div>
                       )}

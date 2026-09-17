@@ -97,10 +97,8 @@ class EditOrderCubit extends Cubit<EditOrderState> {
     bool isNewAddress = !addresses.any((a) =>
         a.governorate == usedAddress.governorate &&
         a.city == usedAddress.city &&
-        a.streetOrCompound == usedAddress.streetOrCompound &&
-        a.buildingIdentifier == usedAddress.buildingIdentifier &&
-        a.floor == usedAddress.floor &&
-        a.apartmentOrUnit == usedAddress.apartmentOrUnit);
+        a.district == usedAddress.district &&
+        a.addressDetails.trim() == usedAddress.addressDetails.trim());
 
     bool isNewPhone = !phones.any((p) => p.phoneNumber == usedPhone);
 
@@ -112,11 +110,8 @@ class EditOrderCubit extends Cubit<EditOrderState> {
           governorate: usedAddress.governorate,
           city: usedAddress.city,
           district: usedAddress.district,
-          streetOrCompound: usedAddress.streetOrCompound,
-          buildingIdentifier: usedAddress.buildingIdentifier,
-          floor: usedAddress.floor,
-          apartmentOrUnit: usedAddress.apartmentOrUnit,
-          landmark: usedAddress.landmark,
+          addressDetails: usedAddress.addressDetails,
+          locationUrl: usedAddress.locationUrl,
           latitude: usedAddress.latitude,
           longitude: usedAddress.longitude,
           createdAt: DateTime.now(),
@@ -146,10 +141,8 @@ class EditOrderCubit extends Cubit<EditOrderState> {
         (a) =>
             a.governorate == usedAddress.governorate &&
             a.city == usedAddress.city &&
-            a.streetOrCompound == usedAddress.streetOrCompound &&
-            a.buildingIdentifier == usedAddress.buildingIdentifier &&
-            a.floor == usedAddress.floor &&
-            a.apartmentOrUnit == usedAddress.apartmentOrUnit,
+            a.district == usedAddress.district &&
+            a.addressDetails.trim() == usedAddress.addressDetails.trim(),
         orElse: () => usedAddress,
       );
     });

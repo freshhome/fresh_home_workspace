@@ -21,11 +21,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _districtController = TextEditingController();
-  final _streetController = TextEditingController();
-  final _buildingController = TextEditingController();
-  final _floorController = TextEditingController();
-  final _apartmentController = TextEditingController();
-  final _landmarkController = TextEditingController();
+  final _addressDetailsController = TextEditingController();
   final _locationUrlController = TextEditingController();
   final _customDistrictController = TextEditingController();
 
@@ -36,11 +32,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
   final _districtFocus = FocusNode();
   final _customDistrictFocus = FocusNode();
   final _locationUrlFocus = FocusNode();
-  final _streetFocus = FocusNode();
-  final _buildingFocus = FocusNode();
-  final _floorFocus = FocusNode();
-  final _apartmentFocus = FocusNode();
-  final _landmarkFocus = FocusNode();
+  final _addressDetailsFocus = FocusNode();
 
   late final GeographicReferenceCubit _geoCubit;
 
@@ -61,15 +53,10 @@ class _ManualClientPageState extends State<ManualClientPage> {
     _selectedGovernorate = state.manualClientGovernorate;
     _selectedCity = state.manualClientCity;
     _districtController.text = state.manualClientDistrict ?? '';
-    _streetController.text = state.manualClientStreet ?? '';
-    _buildingController.text = state.manualClientBuilding ?? '';
-    _floorController.text = state.manualClientFloor ?? '';
-    _apartmentController.text = state.manualClientApartment ?? '';
-    _landmarkController.text = state.manualClientLandmark ?? '';
+    _addressDetailsController.text = state.manualClientAddressDetails ?? '';
     _locationUrlController.text =
         state.manualClientLocationUrl ?? state.address?.locationUrl ?? '';
     _selectedDistrictString = state.manualClientDistrict;
-    _selectedPropertyType = state.manualClientPropertyType ?? 'residential';
 
     _geoCubit.loadGovernorates().then((_) {
       if (state.address != null && state.address!.governorateId != null) {
@@ -125,11 +112,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
     _nameController.dispose();
     _phoneController.dispose();
     _districtController.dispose();
-    _streetController.dispose();
-    _buildingController.dispose();
-    _floorController.dispose();
-    _apartmentController.dispose();
-    _landmarkController.dispose();
+    _addressDetailsController.dispose();
     _locationUrlController.dispose();
     _customDistrictController.dispose();
 
@@ -140,11 +123,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
     _districtFocus.dispose();
     _customDistrictFocus.dispose();
     _locationUrlFocus.dispose();
-    _streetFocus.dispose();
-    _buildingFocus.dispose();
-    _floorFocus.dispose();
-    _apartmentFocus.dispose();
-    _landmarkFocus.dispose();
+    _addressDetailsFocus.dispose();
     super.dispose();
   }
 
@@ -217,12 +196,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
       cityEn: selectedCity?.nameEn ?? cityName,
       districtAr: selectedDistrict?.nameAr ?? districtName,
       districtEn: selectedDistrict?.nameEn ?? districtName,
-      streetOrCompound: _streetController.text,
-      buildingIdentifier: _buildingController.text,
-      floor: _floorController.text,
-      apartmentOrUnit: _apartmentController.text,
-      propertyType: _selectedPropertyType,
-      landmark: _landmarkController.text,
+      addressDetails: _addressDetailsController.text.trim(),
       locationUrl: locationUrl,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -234,12 +208,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
       governorate: govName,
       city: cityName,
       district: districtName,
-      street: _streetController.text,
-      building: _buildingController.text,
-      floor: _floorController.text,
-      apartment: _apartmentController.text,
-      landmark: _landmarkController.text,
-      propertyType: _selectedPropertyType,
+      addressDetails: _addressDetailsController.text.trim(),
       locationUrl: locationUrl,
     );
     context.read<BookingFlowCubit>().updateAddress(address);
@@ -270,16 +239,8 @@ class _ManualClientPageState extends State<ManualClientPage> {
           _selectedDistrictString == null &&
           InputValidator.validateEmpty(_districtController.text) != null) {
         firstErrorFocus = _districtFocus;
-      } else if (InputValidator.validateEmpty(_streetController.text) != null) {
-        firstErrorFocus = _streetFocus;
-      } else if (InputValidator.validateEmpty(_buildingController.text) !=
-          null) {
-        firstErrorFocus = _buildingFocus;
-      } else if (InputValidator.validateEmpty(_floorController.text) != null) {
-        firstErrorFocus = _floorFocus;
-      } else if (InputValidator.validateEmpty(_apartmentController.text) !=
-          null) {
-        firstErrorFocus = _apartmentFocus;
+      } else if (_addressDetailsController.text.trim().length < 5) {
+        firstErrorFocus = _addressDetailsFocus;
       }
 
       if (firstErrorFocus != null) {
@@ -757,80 +718,26 @@ class _ManualClientPageState extends State<ManualClientPage> {
                   const SizedBox(height: 16),
 
                   _buildLabeledField(
-                    label: l10n.address_street_label,
+                    label: 'تفاصيل العنوان والوصول',
                     child: _buildTextFormField(
-                      controller: _streetController,
-                      focusNode: _streetFocus,
-                      icon: Icons.edit_road_rounded,
+                      controller: _addressDetailsController,
+                      focusNode: _addressDetailsFocus,
+                      icon: Icons.home_rounded,
                       themeColor: themeColor,
-                      validator: (val) =>
-                          InputValidator.validateEmpty(val, l10n: l10n),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 3. Sub-Details (Building, Floor, Appt)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 20,
-                      horizontal: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: themeColor.background.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: themeColor.unselectedItem.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildNumericInputItem(
-                            label: l10n.address_building_label,
-                            controller: _buildingController,
-                            focusNode: _buildingFocus,
-                            icon: Icons.home_work_rounded,
-                            themeColor: themeColor,
-                            l10n: l10n,
-                          ),
-                        ),
-                        _buildVerticalDivider(themeColor),
-                        Expanded(
-                          child: _buildNumericInputItem(
-                            label: l10n.address_floor_label,
-                            controller: _floorController,
-                            focusNode: _floorFocus,
-                            icon: Icons.layers_rounded,
-                            themeColor: themeColor,
-                            l10n: l10n,
-                          ),
-                        ),
-                        _buildVerticalDivider(themeColor),
-                        Expanded(
-                          child: _buildNumericInputItem(
-                            label: l10n.address_apartment_label,
-                            controller: _apartmentController,
-                            focusNode: _apartmentFocus,
-                            icon: Icons.door_front_door_rounded,
-                            themeColor: themeColor,
-                            l10n: l10n,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _buildLabeledField(
-                    label: 'علامة مميزة (اختياري)',
-                    child: _buildTextFormField(
-                      controller: _landmarkController,
-                      focusNode: _landmarkFocus,
-                      icon: Icons.turned_in_not_rounded,
-                      themeColor: themeColor,
+                      hint: 'اسم الشارع، رقم المبنى أو الفيلا، الدور، الشقة، وأي علامة مميزة',
+                      maxLines: 3,
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'يرجى إدخال تفاصيل العنوان';
+                        }
+                        if (val.trim().length < 5) {
+                          return 'تفاصيل العنوان يجب ألا تقل عن 5 أحرف';
+                        }
+                        if (val.trim().length > 500) {
+                          return 'تفاصيل العنوان يجب ألا تزيد عن 500 حرف';
+                        }
+                        return null;
+                      },
                     ),
                   ),
 
@@ -929,6 +836,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
     String hint = '',
+    int maxLines = 1,
   }) {
     return BaseTextFormField(
       controller: controller,
@@ -936,6 +844,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
       focusNode: focusNode,
       keyboardType: keyboardType ?? TextInputType.text,
       validator: validator,
+      maxLines: maxLines,
       onChanged: (_) => _syncToState(),
       prefixIcon: Icon(
         icon,
@@ -947,64 +856,6 @@ class _ManualClientPageState extends State<ManualClientPage> {
     );
   }
 
-  Widget _buildVerticalDivider(ThemeColorExtension themeColor) {
-    return Container(
-      height: 40,
-      width: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      color: themeColor.unselectedItem.withValues(alpha: 0.1),
-    );
-  }
-
-  Widget _buildNumericInputItem({
-    required String label,
-    required TextEditingController controller,
-    required FocusNode focusNode,
-    required IconData icon,
-    required ThemeColorExtension themeColor,
-    required AppLocalizations l10n,
-  }) {
-    return FormField<String>(
-      validator: (val) =>
-          InputValidator.validateEmpty(controller.text, l10n: l10n),
-      builder: (state) {
-        final hasError = state.hasError;
-        return Column(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: hasError ? themeColor.error : themeColor.secondaryText,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            BaseTextFormField(
-              controller: controller,
-              focusNode: focusNode,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              onChanged: (val) {
-                state.didChange(val);
-                _syncToState();
-              },
-              hint: "00",
-              radius: 12,
-              fillColor: hasError
-                  ? themeColor.error.withValues(alpha: 0.05)
-                  : themeColor.cardBackground,
-              errorBorderColor: themeColor.error,
-              enabledBorderColor: themeColor.unselectedItem.withValues(
-                alpha: 0.1,
-              ),
-              focusedBorderColor: themeColor.primary,
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Widget _buildAutoFillButton(ThemeColorExtension themeColor) {
     final l10n = AppLocalizations.of(context)!;
@@ -1054,10 +905,7 @@ class _ManualClientPageState extends State<ManualClientPage> {
   void _autoFill(AppLocalizations l10n) {
     _nameController.text = l10n.role_client;
     _phoneController.text = "01012345678";
-    _streetController.text = "90 Street";
-    _buildingController.text = "10";
-    _floorController.text = "2";
-    _apartmentController.text = "5";
+    _addressDetailsController.text = "90 Street, Building 10, Floor 2, Apt 5";
 
     final govs = _geoCubit.state.governorates;
     if (govs.isNotEmpty) {

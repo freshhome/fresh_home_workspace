@@ -2,7 +2,9 @@ import 'package:fpdart/fpdart.dart';
 import 'package:shared/core/error/failures.dart';
 import 'package:shared/domain/user/entities/user/address.dart';
 
-/// Domain Validator enforcing architectural validation rules for Address System V2.
+/// Domain Validator enforcing architectural validation rules for Address System V3.
+/// V3 replaces individual street/building/floor/apartment/landmark checks with
+/// a single [addressDetails] validation (min 5, max 500 characters).
 class AddressValidator {
   static Either<ValidationFailure, Address> validate(Address address) {
     final governorate = address.governorate.trim();
@@ -29,40 +31,12 @@ class AddressValidator {
       ));
     }
 
-    final streetOrCompound = address.streetOrCompound.trim();
-    if (streetOrCompound.length < 3 || streetOrCompound.length > 255) {
+    // V3: Single consolidated field replaces street, building, floor, apartment, landmark.
+    final addressDetails = address.addressDetails.trim();
+    if (addressDetails.length < 5 || addressDetails.length > 500) {
       return left(const ValidationFailure(
-        message: 'Street / Compound must be between 3 and 255 characters.',
-        code: 'INVALID_STREET_OR_COMPOUND',
-      ));
-    }
-
-    final buildingIdentifier = address.buildingIdentifier.trim();
-    if (buildingIdentifier.isEmpty || buildingIdentifier.length > 100) {
-      return left(const ValidationFailure(
-        message: 'Building identifier must be between 1 and 100 characters.',
-        code: 'INVALID_BUILDING_IDENTIFIER',
-      ));
-    }
-
-    if (address.floor != null && address.floor!.trim().length > 50) {
-      return left(const ValidationFailure(
-        message: 'Floor cannot exceed 50 characters.',
-        code: 'INVALID_FLOOR',
-      ));
-    }
-
-    if (address.apartmentOrUnit != null && address.apartmentOrUnit!.trim().length > 50) {
-      return left(const ValidationFailure(
-        message: 'Apartment / Unit cannot exceed 50 characters.',
-        code: 'INVALID_APARTMENT_OR_UNIT',
-      ));
-    }
-
-    if (address.landmark != null && address.landmark!.trim().length > 255) {
-      return left(const ValidationFailure(
-        message: 'Landmark cannot exceed 255 characters.',
-        code: 'INVALID_LANDMARK',
+        message: 'Address details must be between 5 and 500 characters.',
+        code: 'INVALID_ADDRESS_DETAILS',
       ));
     }
 
@@ -93,7 +67,6 @@ class AddressValidator {
     }
 
     if (address.cityId != null && address.governorateId == null) {
-
       return left(const ValidationFailure(
         message: 'City ID cannot be provided without Governorate ID.',
         code: 'INVALID_HIERARCHY',
@@ -112,11 +85,8 @@ class AddressValidator {
       governorate: governorate,
       city: city,
       district: district,
-      streetOrCompound: streetOrCompound,
-      buildingIdentifier: buildingIdentifier,
-      floor: address.floor?.trim(),
-      apartmentOrUnit: address.apartmentOrUnit?.trim(),
-      landmark: address.landmark?.trim(),
+      addressDetails: addressDetails,
+      locationUrl: address.locationUrl?.trim(),
     ));
   }
 }

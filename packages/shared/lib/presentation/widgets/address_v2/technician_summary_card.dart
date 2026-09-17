@@ -62,13 +62,6 @@ class TechnicianSummaryCard extends StatelessWidget {
         ? '${address.governorate} - ${address.city} (${address.district})'
         : '${address.governorate} - ${address.city}';
 
-    final String floorText = (address.floor != null && address.floor!.trim().isNotEmpty)
-        ? address.floor!
-        : '-';
-
-    final String unitText = (address.apartmentOrUnit != null && address.apartmentOrUnit!.trim().isNotEmpty)
-        ? address.apartmentOrUnit!
-        : '-';
 
     final String formattedTime = _formatTimeDisplay(scheduledTime);
     final String effectiveStatus = statusText ?? 'في انتظار التنفيذ';
@@ -279,30 +272,18 @@ class TechnicianSummaryCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (address.streetOrCompound.isNotEmpty) ...[
+                      if (address.addressDetails.isNotEmpty) ...[
                         const SizedBox(height: 3),
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                address.streetOrCompound,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF64748B),
-                                  fontFamily: 'Cairo',
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.map_outlined,
-                              size: 14,
-                              color: Color(0xFF94A3B8),
-                            ),
-                          ],
+                        Text(
+                          address.addressDetails,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                            fontFamily: 'Cairo',
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ],
@@ -311,155 +292,7 @@ class TechnicianSummaryCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 14),
-
-            // ── 3. BUILDING / FLOOR / UNIT PILLS (VERTICAL STACK) ────────────
-            Row(
-              children: [
-                // Box 1: Building (مبنى)
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFDBEAFE)),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.apartment_rounded,
-                          size: 22,
-                          color: Color(0xFF1D4ED8),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'مبنى',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1D4ED8),
-                            fontFamily: 'Cairo',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          address.buildingIdentifier,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF1E40AF),
-                            fontFamily: 'Cairo',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-
-                // Box 2: Floor (الدور)
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFDCFCE7)),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.stairs_rounded,
-                          size: 22,
-                          color: Color(0xFF15803D),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'الدور',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF15803D),
-                            fontFamily: 'Cairo',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          floorText,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF166534),
-                            fontFamily: 'Cairo',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-
-                // Box 3: Unit (الوحدة)
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFAF5FF),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFF3E8FF)),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.door_front_door_rounded,
-                          size: 22,
-                          color: Color(0xFF7E22CE),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'الوحدة',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF7E22CE),
-                            fontFamily: 'Cairo',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          unitText,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF6B21A8),
-                            fontFamily: 'Cairo',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            // (V3: addressDetails already shown in section 2 above)
 
             const SizedBox(height: 14),
 
@@ -533,64 +366,8 @@ class TechnicianSummaryCard extends StatelessWidget {
                 ),
               ),
 
-            // ── 5. CONDITIONAL ARRIVAL NOTES BANNER ──────────────────────────
-            if (address.landmark != null && address.landmark!.trim().isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBEB),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.subtitles_rounded,
-                        size: 18,
-                        color: Color(0xFFD97706),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'ملاحظات الوصول',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFB45309),
-                              fontFamily: 'Cairo',
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            address.landmark!,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF92400E),
-                              fontFamily: 'Cairo',
-                              height: 1.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            // V3: landmark is now part of addressDetails (displayed in section 2 above).
+
 
             // ── 6. CONTACT ACTION BUTTONS (CALL & WHATSAPP) ─────────────────
             if (onCallPhone != null || onWhatsAppPhone != null) ...[

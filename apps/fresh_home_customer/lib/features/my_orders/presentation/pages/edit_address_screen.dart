@@ -18,11 +18,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _districtController;
-  late TextEditingController _streetController;
-  late TextEditingController _buildingController;
-  late TextEditingController _floorController;
-  late TextEditingController _apartmentController;
-  late TextEditingController _landmarkController;
+  late TextEditingController _addressDetailsController;
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _otherCityController;
@@ -31,7 +27,6 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
 
   String? _selectedGovernorate;
   String? _selectedCity;
-  AddressPropertyType _propertyType = AddressPropertyType.residential;
 
   @override
   void initState() {
@@ -41,20 +36,8 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
     _districtController = TextEditingController(
       text: widget.order.address.district,
     );
-    _streetController = TextEditingController(
-      text: widget.order.address.streetOrCompound,
-    );
-    _buildingController = TextEditingController(
-      text: widget.order.address.buildingIdentifier,
-    );
-    _floorController = TextEditingController(
-      text: widget.order.address.floor ?? '',
-    );
-    _apartmentController = TextEditingController(
-      text: widget.order.address.apartmentOrUnit ?? '',
-    );
-    _landmarkController = TextEditingController(
-      text: widget.order.address.landmark ?? '',
+    _addressDetailsController = TextEditingController(
+      text: widget.order.address.addressDetails,
     );
     _nameController = TextEditingController(text: widget.order.contact.name);
     _phoneController = TextEditingController(
@@ -70,16 +53,6 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
     _selectedCity = widget.order.address.city.isNotEmpty
         ? widget.order.address.city
         : null;
-
-    if (widget.order.address.propertyType != null) {
-      if (widget.order.address.propertyType == 'office') {
-        _propertyType = AddressPropertyType.office;
-      } else if (widget.order.address.propertyType == 'commercial') {
-        _propertyType = AddressPropertyType.commercial;
-      } else if (widget.order.address.propertyType == 'landmark') {
-        _propertyType = AddressPropertyType.landmark;
-      }
-    }
 
     _geoCubit.loadGovernorates().then((_) {
       if (widget.order.address.governorateId != null) {
@@ -134,11 +107,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
   @override
   void dispose() {
     _districtController.dispose();
-    _streetController.dispose();
-    _buildingController.dispose();
-    _floorController.dispose();
-    _apartmentController.dispose();
-    _landmarkController.dispose();
+    _addressDetailsController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
     _otherCityController.dispose();
@@ -185,16 +154,6 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                 AddressFormComponents.buildSectionTitle(
                   l10n.address_details_title,
                   context,
-                ),
-                const SizedBox(height: 24),
-
-                PropertyTypeSelector(
-                  selectedType: _propertyType,
-                  onChanged: (val) {
-                    setState(() {
-                      _propertyType = val;
-                    });
-                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -398,76 +357,25 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                 const SizedBox(height: 16),
 
                 AddressFormComponents.buildLabeledField(
-                  label: l10n.address_street_label,
-
+                  label: 'تفاصيل العنوان والوصول',
                   context: context,
                   child: BaseTextFormField(
-                    controller: _streetController,
-                    hint: l10n.address_street_hint,
+                    controller: _addressDetailsController,
+                    hint: 'اسم الشارع، رقم المبنى، الدور، الشقة، وأي علامة مميزة',
                     radius: 12,
-                    validator: (val) =>
-                        InputValidator.validateEmpty(val, l10n: l10n),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: AddressFormComponents.buildLabeledField(
-                        label: l10n.address_building_label,
-                        context: context,
-                        child: BaseTextFormField(
-                          controller: _buildingController,
-                          hint: '01',
-                          radius: 12,
-                          keyboardType: TextInputType.number,
-                          validator: (val) =>
-                              InputValidator.validateAddressNumeric(
-                                val,
-                                l10n: l10n,
-                              ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AddressFormComponents.buildLabeledField(
-                        label: l10n.address_floor_label,
-                        context: context,
-                        child: BaseTextFormField(
-                          controller: _floorController,
-                          hint: '02',
-                          radius: 12,
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AddressFormComponents.buildLabeledField(
-                        label: l10n.address_apartment_label,
-                        context: context,
-                        child: BaseTextFormField(
-                          controller: _apartmentController,
-                          hint: '03',
-                          radius: 12,
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                AddressFormComponents.buildLabeledField(
-                  label: 'علامة مميزة (اختياري)',
-                  context: context,
-                  child: BaseTextFormField(
-                    controller: _landmarkController,
-                    hint: 'علامة مميزة كمسجد أو محل مشهور',
-                    radius: 12,
+                    maxLines: 3,
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'يرجى إدخال تفاصيل العنوان';
+                      }
+                      if (val.trim().length < 5) {
+                        return 'تفاصيل العنوان يجب ألا تقل عن 5 أحرف';
+                      }
+                      if (val.trim().length > 500) {
+                        return 'تفاصيل العنوان يجب ألا تزيد عن 500 حرف';
+                      }
+                      return null;
+                    },
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -572,18 +480,16 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                               governorateId: selectedGov?.id,
                               cityId: selectedCity?.id,
                               districtId: selectedDistrict?.id,
-                              streetOrCompound: _streetController.text,
-                              buildingIdentifier: _buildingController.text,
-                              floor: _floorController.text,
-                              apartmentOrUnit: _apartmentController.text,
-                              landmark: _landmarkController.text,
-                              propertyType: _propertyType.name,
+                              addressDetails: _addressDetailsController.text.trim(),
+                              locationUrl: widget.order.address.locationUrl,
+                              latitude: widget.order.address.latitude,
+                              longitude: widget.order.address.longitude,
                               createdAt: widget.order.address.createdAt,
                               updatedAt: DateTime.now(),
                             ),
                             contact: Contact(
-                              name: _nameController.text,
-                              phone: [_phoneController.text],
+                              name: _nameController.text.trim(),
+                              phone: [_phoneController.text.trim()],
                             ),
                           );
                         }

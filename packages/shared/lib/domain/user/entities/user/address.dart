@@ -3,7 +3,9 @@ import 'package:shared/domain/user/value_objects/city_value.dart';
 import 'package:shared/domain/user/value_objects/district_value.dart';
 import 'package:shared/domain/user/value_objects/governorate_value.dart';
 
-/// Domain Entity representing a User Address in Fresh Home System V2.
+/// Domain Entity representing a User Address in Fresh Home System V3.
+/// V3 replaces the fragmented 5-field access details (street, building, floor, apartment, landmark)
+/// with a single [addressDetails] free-text field for flexibility and reduced friction.
 class Address extends Equatable {
   final String id;
   final String userId;
@@ -19,12 +21,11 @@ class Address extends Equatable {
   final String? cityEn;
   final String? districtAr;
   final String? districtEn;
-  final String streetOrCompound;
-  final String buildingIdentifier;
-  final String? floor;
-  final String? apartmentOrUnit;
-  final String? landmark;
-  final String? propertyType;
+
+  /// V3: Single free-text field replacing streetOrCompound, buildingIdentifier,
+  /// floor, apartmentOrUnit, and landmark. Required. Min 5, Max 500 chars.
+  final String addressDetails;
+
   final String? locationUrl;
   final double? latitude;
   final double? longitude;
@@ -48,12 +49,7 @@ class Address extends Equatable {
     this.cityEn,
     this.districtAr,
     this.districtEn,
-    required this.streetOrCompound,
-    required this.buildingIdentifier,
-    this.floor,
-    this.apartmentOrUnit,
-    this.landmark,
-    this.propertyType,
+    required this.addressDetails,
     this.locationUrl,
     this.latitude,
     this.longitude,
@@ -96,8 +92,7 @@ class Address extends Equatable {
   String maskedToString() {
     return 'Address(id: $id, userId: $userId, governorate: $governorate, city: $city, '
         'district: $district, governorateId: $governorateId, cityId: $cityId, districtId: $districtId, '
-        'streetOrCompound: $streetOrCompound, buildingIdentifier: $buildingIdentifier, '
-        'floor: ***, apartmentOrUnit: ***, landmark: ***, propertyType: $propertyType, latitude: ***, longitude: ***, '
+        'addressDetails: ***, locationUrl: ***, latitude: ***, longitude: ***, '
         'isPrimary: $isPrimary, isDeleted: $isDeleted)';
   }
 
@@ -116,12 +111,7 @@ class Address extends Equatable {
     String? cityEn,
     String? districtAr,
     String? districtEn,
-    String? streetOrCompound,
-    String? buildingIdentifier,
-    String? floor,
-    String? apartmentOrUnit,
-    String? landmark,
-    String? propertyType,
+    String? addressDetails,
     String? locationUrl,
     double? latitude,
     double? longitude,
@@ -145,12 +135,7 @@ class Address extends Equatable {
       cityEn: cityEn ?? this.cityEn,
       districtAr: districtAr ?? this.districtAr,
       districtEn: districtEn ?? this.districtEn,
-      streetOrCompound: streetOrCompound ?? this.streetOrCompound,
-      buildingIdentifier: buildingIdentifier ?? this.buildingIdentifier,
-      floor: floor ?? this.floor,
-      apartmentOrUnit: apartmentOrUnit ?? this.apartmentOrUnit,
-      landmark: landmark ?? this.landmark,
-      propertyType: propertyType ?? this.propertyType,
+      addressDetails: addressDetails ?? this.addressDetails,
       locationUrl: locationUrl ?? this.locationUrl,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
@@ -177,12 +162,7 @@ class Address extends Equatable {
         cityEn,
         districtAr,
         districtEn,
-        streetOrCompound,
-        buildingIdentifier,
-        floor,
-        apartmentOrUnit,
-        landmark,
-        propertyType,
+        addressDetails,
         locationUrl,
         latitude,
         longitude,
@@ -192,4 +172,3 @@ class Address extends Equatable {
         updatedAt,
       ];
 }
-

@@ -7,6 +7,7 @@ import 'package:shared/presentation/localization/translations/app_localizations.
 import 'package:shared/presentation/theme/components/colors/theme_color_extension.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 import 'package:shared/presentation/dialogs/dialog_helper.dart';
+import 'package:shared/domain/user/services/address_formatter.dart';
 import '../cubit/booking_flow_cubit.dart';
 import '../cubit/booking_flow_state.dart';
 
@@ -74,22 +75,13 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
 
         final String displayedAddress = isAdmin
             ? [
+                state.manualClientGovernorate,
                 state.manualClientCity,
-                state.manualClientStreet,
-                state.manualClientBuilding != null
-                    ? l10n.booking_building_val(state.manualClientBuilding!)
-                    : null,
-              ].whereType<String>().join(', ')
+                state.manualClientDistrict,
+                state.manualClientAddressDetails,
+              ].whereType<String>().where((s) => s.isNotEmpty).join('، ')
             : address != null
-                ? [
-                    address.governorate,
-                    address.city,
-                    address.streetOrCompound,
-                    l10n.booking_building_val(address.buildingIdentifier),
-                    address.apartmentOrUnit != null && address.apartmentOrUnit!.isNotEmpty
-                        ? l10n.booking_apartment_val(address.apartmentOrUnit!)
-                        : null,
-                  ].whereType<String>().join(', ')
+                ? AddressFormatter.toSingleLine(address)
                 : l10n.confirmation_no_address;
 
         final String displayedName = isAdmin

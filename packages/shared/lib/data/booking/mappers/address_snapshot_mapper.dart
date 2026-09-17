@@ -2,11 +2,12 @@ import 'package:shared/domain/user/entities/user/address.dart';
 
 /// Mapper enforcing the Immutable Versioned Address Snapshot contract for Bookings.
 /// Spec Reference: docs/address_system_v2_specification.md Section 7
+/// V3: Replaces fragmented street/building/floor/apartment/landmark with [addressDetails].
 class AddressSnapshotMapper {
-  static const int currentSnapshotVersion = 2;
+  static const int currentSnapshotVersion = 3;
 
   /// Builds a versioned, immutable JSON snapshot of an Address for embedding in a Booking.
-  /// Snapshot V2 stores reference IDs as well as immutable bilingual names (governorate_ar/en, city_ar/en, district_ar/en).
+  /// Snapshot V3 stores governorate/city/district + unified addressDetails + optional location.
   static Map<String, dynamic> buildSnapshotJson(
     Address address, {
     String? governorateAr,
@@ -47,21 +48,18 @@ class AddressSnapshotMapper {
         'city_en': cEn,
         'district_ar': dAr,
         'district_en': dEn,
-        'street_or_compound': address.streetOrCompound,
-        'building_identifier': address.buildingIdentifier,
-        'floor': address.floor,
-        'apartment_or_unit': address.apartmentOrUnit,
-        'landmark': address.landmark,
-        'property_type': address.propertyType,
-        'latitude': address.latitude,
-        'longitude': address.longitude,
+        'address_details': address.addressDetails,
+        if (address.locationUrl != null && address.locationUrl!.isNotEmpty)
+          'location_url': address.locationUrl,
+        if (address.latitude != null) 'latitude': address.latitude,
+        if (address.longitude != null) 'longitude': address.longitude,
         'snapshot_created_at': DateTime.now().toIso8601String(),
       },
     };
   }
 
   /// Parses an embedded JSON address snapshot from a Booking record.
-  /// Handles forward and backward compatibility (Legacy flat, V1, V2).
+  /// Handles forward and backward compatibility (Legacy flat, V1, V2, V3).
   static Address parseSnapshotJson(Map<String, dynamic> json) {
     Map<String, dynamic> addressData;
     if (json.containsKey('address') && json['address'] is Map) {
@@ -78,6 +76,24 @@ class AddressSnapshotMapper {
     final dAr = addressData['district_ar'] as String?;
     final dEn = addressData['district_en'] as String?;
 
+    // V3 → V2 legacy fallback: reconstruct addressDetails from old fields if needed.
+    final rawAddressDetails = addressData['address_details'] as String?;
+    final legacyStreet = addressData['street_or_compound'] as String? ?? addressData['street'] as String? ?? '';
+    final legacyBuilding = addressData['building_identifier'] as String? ?? addressData['building_number'] as String? ?? '';
+    final legacyFloor = addressData['floor'] as String?;
+    final legacyApartment = addressData['apartment_or_unit'] as String? ?? addressData['apartment'] as String?;
+    final legacyLandmark = addressData['landmark'] as String?;
+
+    final addressDetails = rawAddressDetails?.isNotEmpty == true
+        ? rawAddressDetails!
+        : _reconstructAddressDetails(
+            street: legacyStreet,
+            building: legacyBuilding,
+            floor: legacyFloor,
+            apartment: legacyApartment,
+            landmark: legacyLandmark,
+          );
+
     return Address(
       id: addressData['address_id'] as String? ?? addressData['id'] as String? ?? '',
       userId: addressData['user_id'] as String? ?? '',
@@ -93,20 +109,32 @@ class AddressSnapshotMapper {
       cityEn: cEn,
       districtAr: dAr,
       districtEn: dEn,
-      streetOrCompound: addressData['street_or_compound'] as String? ?? addressData['street'] as String? ?? '',
-      buildingIdentifier: addressData['building_identifier'] as String? ?? addressData['building_number'] as String? ?? '',
-      floor: addressData['floor'] as String?,
-      apartmentOrUnit: addressData['apartment_or_unit'] as String? ?? addressData['apartment'] as String?,
-      landmark: addressData['landmark'] as String?,
-      propertyType: addressData['property_type'] as String? ?? addressData['propertyType'] as String?,
+      addressDetails: addressDetails,
+      locationUrl: addressData['location_url'] as String? ?? addressData['locationUrl'] as String?,
       latitude: (addressData['latitude'] as num?)?.toDouble(),
       longitude: (addressData['longitude'] as num?)?.toDouble(),
       isPrimary: false,
-      createdAt: addressData['snapshot_created_at'] != null 
+      createdAt: addressData['snapshot_created_at'] != null
           ? DateTime.parse(addressData['snapshot_created_at'] as String)
           : DateTime.now(),
       updatedAt: DateTime.now(),
     );
   }
-}
 
+  /// Reconstructs a readable address_details string from legacy V2 snapshot fields.
+  static String _reconstructAddressDetails({
+    required String street,
+    required String building,
+    String? floor,
+    String? apartment,
+    String? landmark,
+  }) {
+    final parts = <String>[];
+    if (street.isNotEmpty) parts.add(street);
+    if (building.isNotEmpty) parts.add(building);
+    if (floor != null && floor.isNotEmpty) parts.add('الدور $floor');
+    if (apartment != null && apartment.isNotEmpty) parts.add('شقة $apartment');
+    if (landmark != null && landmark.isNotEmpty) parts.add('($landmark)');
+    return parts.join('، ');
+  }
+}

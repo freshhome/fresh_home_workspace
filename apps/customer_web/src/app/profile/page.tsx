@@ -38,11 +38,8 @@ function ProfileContent() {
     governorate: "القاهرة",
     city: "التجمع الخامس",
     district: "الحي الأول",
-    street_or_compound: "",
-    building_identifier: "",
-    floor: "",
-    apartment_or_unit: "",
-    landmark: ""
+    address_details: "",
+    location_url: "",
   });
   const [profileCustomDistrict, setProfileCustomDistrict] = useState("");
   const [addressError, setAddressError] = useState("");
@@ -218,8 +215,8 @@ function ProfileContent() {
       return;
     }
 
-    if (!newAddress.street_or_compound.trim() || !newAddress.building_identifier.trim() || !effDistrict) {
-      setAddressError("يرجى ملء كافة الحقول الإجبارية (المحافظة، المدينة، الحي، الشارع، المبنى).");
+    if (!newAddress.address_details.trim() || newAddress.address_details.trim().length < 5 || !effDistrict) {
+      setAddressError("يرجى ملء كافة الحقول الإجبارية (المحافظة، المدينة، الحي، وتفاصيل العنوان بما لا يقل عن 5 أحرف).");
       return;
     }
 
@@ -232,11 +229,8 @@ function ProfileContent() {
           governorate: newAddress.governorate,
           city: newAddress.city,
           district: effDistrict,
-          street_or_compound: newAddress.street_or_compound.trim(),
-          building_identifier: newAddress.building_identifier.trim(),
-          floor: newAddress.floor.trim() || null,
-          apartment_or_unit: newAddress.apartment_or_unit.trim() || null,
-          landmark: newAddress.landmark.trim() || null,
+          address_details: newAddress.address_details.trim(),
+          location_url: newAddress.location_url.trim() || null,
           is_primary: addresses.length === 0,
         });
 
@@ -246,11 +240,8 @@ function ProfileContent() {
         governorate: "القاهرة",
         city: "التجمع الخامس",
         district: "الحي الأول",
-        street_or_compound: "",
-        building_identifier: "",
-        floor: "",
-        apartment_or_unit: "",
-        landmark: ""
+        address_details: "",
+        location_url: "",
       });
       setProfileCustomDistrict("");
       setAddingAddress(false);
@@ -629,79 +620,17 @@ function ProfileContent() {
                     </div>
                   </div>
 
-                  {newAddress.district === "أخرى" && (
-                    <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        اسم الحي / المنطقة المخصصة
-                      </label>
-                      <input 
-                        type="text" 
-                        placeholder="اكتب اسم الحي..."
-                        value={profileCustomDistrict}
-                        onChange={(e) => setProfileCustomDistrict(e.target.value)}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
-                      />
-                    </div>
-                  )}
-
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                      اسم الشارع أو الكومباوند
+                      تفاصيل العنوان والوصول (الشارع، رقم المبنى، الدور، الشقة، وأي علامة مميزة) <span className="text-red-500">*</span>
                     </label>
-                    <input 
-                      type="text" 
-                      placeholder="مثال: شارع التسعين الشمالي / كمبوند ميفيدا"
-                      value={newAddress.street_or_compound}
-                      onChange={(e) => setNewAddress({ ...newAddress, street_or_compound: e.target.value })}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
+                    <textarea 
+                      rows={3}
+                      placeholder="مثال: شارع التسعين الشمالي، عمارة 14 ب، الدور الثالث، شقة 5، بجوار المستشفى الجوي"
+                      value={newAddress.address_details}
+                      onChange={(e) => setNewAddress({ ...newAddress, address_details: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none resize-none"
                       required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        رقم / اسم المبنى أو الفيلا
-                      </label>
-                      <input 
-                        type="text" 
-                        placeholder="14 ب"
-                        value={newAddress.building_identifier}
-                        onChange={(e) => setNewAddress({ ...newAddress, building_identifier: e.target.value })}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">الدور / الطابق</label>
-                      <input 
-                        type="text" 
-                        placeholder="3"
-                        value={newAddress.floor}
-                        onChange={(e) => setNewAddress({ ...newAddress, floor: e.target.value })}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">رقم الشقة / الوحدة</label>
-                      <input 
-                        type="text" 
-                        placeholder="5"
-                        value={newAddress.apartment_or_unit}
-                        onChange={(e) => setNewAddress({ ...newAddress, apartment_or_unit: e.target.value })}
-                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">علامة مميزة (اختياري)</label>
-                    <input 
-                      type="text" 
-                      placeholder="مثال: بجوار مستشفى الجوي"
-                      value={newAddress.landmark}
-                      onChange={(e) => setNewAddress({ ...newAddress, landmark: e.target.value })}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-blue-900/60 text-xs font-bold bg-white dark:bg-[#071739] text-slate-900 dark:text-white focus:border-[#0091FF] focus:outline-none"
                     />
                   </div>
 
@@ -729,7 +658,7 @@ function ProfileContent() {
                   <p className="text-xs font-bold text-slate-400 py-4">لم تقم بحفظ أي عناوين بعد.</p>
                 ) : (
                   addresses.map((addr) => {
-                    const fullDetails = `${addr.street_or_compound || addr.street || ""} - مبنى ${addr.building_identifier || addr.building_number || ""}${addr.floor ? ` - دور ${addr.floor}` : ""}${addr.apartment_or_unit || addr.apartment ? ` - شقة ${addr.apartment_or_unit || addr.apartment}` : ""}${addr.landmark ? ` (${addr.landmark})` : ""}`;
+                    const fullDetails = addr.address_details || `${addr.street_or_compound || addr.street || ""} - مبنى ${addr.building_identifier || addr.building_number || ""}${addr.floor ? ` - دور ${addr.floor}` : ""}${addr.apartment_or_unit || addr.apartment ? ` - شقة ${addr.apartment_or_unit || addr.apartment}` : ""}${addr.landmark ? ` (${addr.landmark})` : ""}`;
                     return (
                       <div key={addr.id} className="p-4 rounded-2xl border border-slate-100 dark:border-blue-900/40 bg-[#F8FAFC] dark:bg-[#050D24] flex items-center justify-between gap-4">
                         <div className="space-y-1">

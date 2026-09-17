@@ -42,8 +42,8 @@ class TechnicianOrderCard extends StatelessWidget {
       return city;
     }
 
-    final street = address.streetOrCompound.trim();
-    if (street.isNotEmpty) return street;
+    final details = address.addressDetails.trim();
+    if (details.isNotEmpty) return details;
 
     return address.getGovernorateName(locale);
   }
