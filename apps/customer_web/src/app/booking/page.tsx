@@ -16,6 +16,7 @@ import { supabase } from "@/lib/supabase";
 import { GEOGRAPHIC_HIERARCHY, isCoverageSupported, ALLOWED_GOVERNORATES } from "@/lib/geo";
 import ExpansionModal from "@/components/ExpansionModal";
 import { trackCalculatePrice, trackBeginCheckout, trackCheckoutProgress } from "@/lib/gtm";
+import { getOrCreateBrowserId } from "@/lib/device";
 
 // Step titles
 const STEPS = ["حساب السعر", "اختيار الموعد", "العنوان", "المراجعة والتأكيد"];
@@ -1147,12 +1148,15 @@ function BookingFlowContent() {
         title: selectedSubService?.title?.ar || selectedSubService?.title || "حجز خدمة فريش هوم"
       };
 
+      const browserId = getOrCreateBrowserId();
+
       const pricingPayload: Record<string, any> = {
         ...pricingInputs,
         payment_method: paymentMethod,
         selected_options: selectedAddons,
         phone: phone.trim(),
-        name: name.trim()
+        name: name.trim(),
+        browser_id: browserId
       };
 
       if (isLinearService) {
@@ -1182,7 +1186,7 @@ function BookingFlowContent() {
         p_contact_name: name.trim(),
         p_contact_phones: [phone.trim()],
         p_start_time_slot: time24,
-        p_is_whatsapp_confirmed: userId !== null
+        p_is_whatsapp_confirmed: userId !== null ? true : false
       });
 
       if (bookingError) throw bookingError;
@@ -1190,6 +1194,8 @@ function BookingFlowContent() {
       if (bookingId) {
         if (typeof window !== "undefined") {
           localStorage.setItem(`booking_created_${bookingId}`, new Date().toISOString());
+          localStorage.setItem(`booking_phone_${bookingId}`, phone.trim());
+          localStorage.setItem("fresh_home_last_phone", phone.trim());
         }
         router.push(`/orders?bookingId=${bookingId}&success=true`);
       } else {

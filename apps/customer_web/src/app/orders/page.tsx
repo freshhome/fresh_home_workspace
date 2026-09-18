@@ -50,6 +50,7 @@ function OrderTrackingContent() {
   const [userBookings, setUserBookings] = useState<any[]>([]);
   const [loadingUserBookings, setLoadingUserBookings] = useState(false);
   const [searchInput, setSearchInput] = useState("");
+  const [phoneSearchInput, setPhoneSearchInput] = useState("");
 
   useEffect(() => {
     if (!booking || booking.is_whatsapp_confirmed) {
@@ -132,143 +133,138 @@ function OrderTrackingContent() {
   }, [bookingId]);
 
   useEffect(() => {
-    async function fetchBookingDetails() {
+    let pollInterval: NodeJS.Timeout | null = null;
+
+    const urlPhone = searchParams.get("phone") || "";
+    const localPhone = typeof window !== "undefined"
+      ? (localStorage.getItem(`booking_phone_${bookingId}`) || localStorage.getItem("fresh_home_last_phone") || urlPhone || "")
+      : urlPhone;
+
+    const applyBookingData = (bookingData: any) => {
+      setBooking(bookingData);
+
+      // 2. Map status to active step index
+      const statusMap: Record<string, number> = {
+        "created": 0,
+        "assigned": 1,
+        "accepted": 2,
+        "on_the_way": 3,
+        "arrived": 4,
+        "in_progress": 5,
+        "completed": 6,
+        "cancelled": -1
+      };
+
+      const currentStatus = bookingData.status || "created";
+      if (statusMap[currentStatus] !== undefined) {
+        setActiveStep(statusMap[currentStatus]);
+      }
+
+      // 3. Set technician details from RPC data if confirmed and assigned
+      if (bookingData.technician && bookingData.is_whatsapp_confirmed) {
+        setTechnician({
+          name: `م/ ${bookingData.technician.name}`,
+          rating: bookingData.technician.rating ? Number(bookingData.technician.rating).toFixed(1) : "4.9",
+          jobs: bookingData.technician.completed_jobs || 120,
+          phone: "01012345678" // Fallback number for testing
+        });
+      } else {
+        setTechnician(null);
+      }
+    };
+
+    async function fetchBookingDetails(isInitial = false) {
       if (!bookingId) {
-        setLoading(false);
+        if (isInitial) setLoading(false);
         return;
       }
-      setLoading(true);
+      if (isInitial) setLoading(true);
       try {
-        // 1. Fetch booking record via get_guest_booking_details RPC
+        // 1. Fetch booking record via secure get_guest_booking_details RPC
         const { data: bookingData, error: bookingError } = await supabase
           .rpc("get_guest_booking_details", {
-            p_booking_id: bookingId
+            p_booking_id: bookingId,
+            p_phone: localPhone ? localPhone.trim() : null
           });
 
         if (bookingError) throw bookingError;
-        setBooking(bookingData);
+        if (bookingData) {
+          applyBookingData(bookingData);
 
-        // Primary Booking Conversion: Authoritative single-fire purchase tracking
-        if (isSuccess && bookingData) {
-          const serviceSnap = bookingData.service_snapshot || {};
-          const addrSnap = bookingData.address_snapshot || {};
-          const priceSnap = bookingData.price_snapshot || {};
+          // Primary Booking Conversion: Authoritative single-fire purchase tracking
+          if (isInitial && isSuccess) {
+            const serviceSnap = bookingData.service_snapshot || {};
+            const addrSnap = bookingData.address_snapshot || {};
+            const priceSnap = bookingData.price_snapshot || {};
 
-          trackPurchase({
-            booking_id: bookingData.id,
-            readable_id: bookingData.readable_id || bookingData.id,
-            value: Number(priceSnap.total) || 0,
-            currency: "EGP",
-            service_id: bookingData.service_id || "FH-S-SERVICE",
-            service_name: typeof serviceSnap.title === "string" ? serviceSnap.title : serviceSnap.title?.ar || "خدمة فريش هوم",
-            category_id: null,
-            category_name: null,
-            user_type: user ? "registered" : "guest",
-            is_whatsapp_confirmed: Boolean(bookingData.is_whatsapp_confirmed),
-            scheduled_date: bookingData.scheduled_day,
-            scheduled_slot: bookingData.start_time_slot,
-            governorate: addrSnap.governorate,
-            city: addrSnap.city,
-            district: addrSnap.district,
-            payment_type: bookingData.payment_method || "cash",
-          });
-        }
+            trackPurchase({
+              booking_id: bookingData.id,
+              readable_id: bookingData.readable_id || bookingData.id,
+              value: Number(priceSnap.total) || 0,
+              currency: "EGP",
+              service_id: bookingData.service_id || "FH-S-SERVICE",
+              service_name: typeof serviceSnap.title === "string" ? serviceSnap.title : serviceSnap.title?.ar || "خدمة فريش هوم",
+              category_id: null,
+              category_name: null,
+              user_type: user ? "registered" : "guest",
+              is_whatsapp_confirmed: Boolean(bookingData.is_whatsapp_confirmed),
+              scheduled_date: bookingData.scheduled_day,
+              scheduled_slot: bookingData.start_time_slot,
+              governorate: addrSnap.governorate,
+              city: addrSnap.city,
+              district: addrSnap.district,
+              payment_type: bookingData.payment_method || "cash",
+            });
+          }
 
-        if (isSuccess && bookingData.is_whatsapp_confirmed === false) {
-          setShowConfirmModal(true);
-        }
+          if (isInitial && isSuccess && bookingData.is_whatsapp_confirmed === false) {
+            setShowConfirmModal(true);
+          }
 
-        // 2. Map status to active step index
-        const statusMap: Record<string, number> = {
-          "created": 0,
-          "assigned": 1,
-          "accepted": 2,
-          "on_the_way": 3,
-          "arrived": 4,
-          "in_progress": 5,
-          "completed": 6,
-          "cancelled": -1
-        };
-
-        const currentStatus = bookingData.status || "created";
-        if (statusMap[currentStatus] !== undefined) {
-          setActiveStep(statusMap[currentStatus]);
-        }
-
-        // 3. Set technician details from RPC data if assigned
-        if (bookingData.technician) {
-          setTechnician({
-            name: `م/ ${bookingData.technician.name}`,
-            rating: bookingData.technician.rating ? Number(bookingData.technician.rating).toFixed(1) : "4.9",
-            jobs: bookingData.technician.completed_jobs || 120,
-            phone: "01012345678" // Fallback number for testing
-          });
+          // Manage polling: if booking is pending WhatsApp confirmation, poll every 6 seconds
+          if (bookingData.is_whatsapp_confirmed === false && !pollInterval) {
+            pollInterval = setInterval(() => {
+              fetchBookingDetails(false);
+            }, 6000);
+          } else if (bookingData.is_whatsapp_confirmed && pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+          }
         }
       } catch (e) {
         console.error("Error fetching booking details:", e);
       } finally {
-        setLoading(false);
+        if (isInitial) setLoading(false);
       }
     }
 
-    fetchBookingDetails();
+    fetchBookingDetails(true);
 
     // 4. Set up realtime subscription to listen for status changes
+    let channel: any = null;
     if (bookingId) {
-      const channel = supabase
+      channel = supabase
         .channel(`realtime-booking-${bookingId}`)
         .on(
           "postgres_changes",
           {
             event: "UPDATE",
             schema: "public",
-            table: "bookings",
-            filter: `id=eq.${bookingId}`
+            table: "bookings"
           },
           async (payload: any) => {
-            console.log("Realtime update received for booking:", payload.new);
-            
-            // Re-fetch the full booking details using get_guest_booking_details RPC to update UI state safely
-            try {
-              const { data: updatedBooking } = await supabase
-                .rpc("get_guest_booking_details", { p_booking_id: bookingId });
-              
-              if (updatedBooking) {
-                setBooking(updatedBooking);
-                const statusMap: Record<string, number> = {
-                  "created": 0,
-                  "assigned": 1,
-                  "accepted": 2,
-                  "on_the_way": 3,
-                  "arrived": 4,
-                  "in_progress": 5,
-                  "completed": 6,
-                  "cancelled": -1
-                };
-                const currentStatus = updatedBooking.status || "created";
-                if (statusMap[currentStatus] !== undefined) {
-                  setActiveStep(statusMap[currentStatus]);
-                }
-                if (updatedBooking.technician) {
-                  setTechnician({
-                    name: `م/ ${updatedBooking.technician.name}`,
-                    rating: updatedBooking.technician.rating ? Number(updatedBooking.technician.rating).toFixed(1) : "4.9",
-                    jobs: updatedBooking.technician.completed_jobs || 120,
-                    phone: "01012345678"
-                  });
-                }
-              }
-            } catch (err) {
-              console.error("Error updating booking via RPC on realtime event:", err);
+            if (payload?.new?.id === bookingId || payload?.new?.readable_id === bookingId) {
+              fetchBookingDetails(false);
             }
           }
         )
         .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
     }
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+      if (channel) supabase.removeChannel(channel);
+    };
   }, [bookingId]);
 
   if (loading) {
@@ -392,7 +388,8 @@ function OrderTrackingContent() {
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (searchInput.trim()) {
-                      router.push(`/orders?bookingId=${searchInput.trim()}`);
+                      const phoneParam = phoneSearchInput.trim() ? `&phone=${encodeURIComponent(phoneSearchInput.trim())}` : "";
+                      router.push(`/orders?bookingId=${encodeURIComponent(searchInput.trim())}${phoneParam}`);
                     }
                   }}
                   className="space-y-4"
@@ -406,6 +403,17 @@ function OrderTrackingContent() {
                       onChange={(e) => setSearchInput(e.target.value)}
                       className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-left font-mono"
                       required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-600">رقم الهاتف المستخدم في الحجز (اختياري لعرض التفاصيل الكاملة)</label>
+                    <input 
+                      type="tel" 
+                      placeholder="مثال: 01012345678"
+                      value={phoneSearchInput}
+                      onChange={(e) => setPhoneSearchInput(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-primary focus:outline-none bg-white text-left font-mono"
                     />
                   </div>
 
@@ -512,9 +520,9 @@ function OrderTrackingContent() {
               </div>
 
               <div className="space-y-2">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">طلبك في انتظار التأكيد عبر واتساب</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">لتأكيد موعدك، يُرجى تأكيد الحجز عبر واتساب</h1>
                 <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed font-medium">
-                  تم تسجيل حجزك بنجاح. يرجى إرسال رسالة التأكيد عبر واتساب للحفاظ على موعد الزيارة وتجنب إلغاء الحجز تلقائياً خلال 60 دقيقة.
+                  تم استلام طلبك بنجاح. لتأكيد موعد زيارتك وضمان حجز الوقت المطلوب رسمياً، يُرجى إرسال رسالة التأكيد عبر واتساب خلال 60 دقيقة.
                 </p>
               </div>
 
@@ -631,10 +639,14 @@ function OrderTrackingContent() {
                         {/* Step Labels */}
                         <div className="flex-1 pb-2">
                           <h4 className={`text-xs font-black ${isActive ? "text-[#0091FF] dark:text-[#22A5FC]" : isCompleted ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500"}`}>
-                            {step.label}
+                            {idx === 0 && booking?.is_whatsapp_confirmed === false
+                              ? "تم استلام الطلب (بانتظار تأكيد الواتساب)"
+                              : step.label}
                           </h4>
                           <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block mt-0.5">
-                            {isActive ? "نشط حالياً" : isCompleted ? "مكتمل" : step.time}
+                            {idx === 1 && booking?.is_whatsapp_confirmed === false
+                              ? "يتم التعيين فور التأكيد"
+                              : isActive ? "نشط حالياً" : isCompleted ? "مكتمل" : step.time}
                           </span>
                         </div>
                       </div>
@@ -648,44 +660,59 @@ function OrderTrackingContent() {
             <div className="lg:col-span-4 space-y-6">
               
               {/* Technician details card */}
-              <div className="bg-white dark:bg-[#071739] rounded-3xl p-6 border border-slate-200/90 dark:border-blue-900/50 shadow-sm space-y-4 transition-colors">
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block border-b border-slate-100 dark:border-blue-900/40 pb-2">الفني المخصص لطلبك</span>
-                
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/60 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 flex items-center justify-center rounded-2xl font-bold shrink-0">
-                    <Award className="w-6 h-6 stroke-[2]" />
+              {booking?.is_whatsapp_confirmed === false ? (
+                <div className="bg-white dark:bg-[#071739] rounded-3xl p-6 border border-slate-200/90 dark:border-blue-900/50 shadow-sm space-y-4 transition-colors">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block border-b border-slate-100 dark:border-blue-900/40 pb-2">الفني المخصص لطلبك</span>
+                  <div className="bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/50 rounded-2xl p-5 text-center space-y-2.5">
+                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center mx-auto shadow-xs">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <h4 className="text-xs font-black text-slate-800 dark:text-slate-100">بانتظار تأكيد الواتساب</h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                      سيتم إسناد فني معتمد لطلبك وتأكيد موعد الزيارة فور إرسال رسالة التأكيد عبر واتساب.
+                    </p>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-extrabold text-slate-900 dark:text-white leading-normal">{finalTech.name}</h4>
-                    <div className="flex items-center gap-1.5 mt-1 text-xs">
-                      <div className="flex items-center text-amber-500 font-bold gap-0.5">
-                        <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                        <span>{finalTech.rating}</span>
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-[#071739] rounded-3xl p-6 border border-slate-200/90 dark:border-blue-900/50 shadow-sm space-y-4 transition-colors">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block border-b border-slate-100 dark:border-blue-900/40 pb-2">الفني المخصص لطلبك</span>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/60 text-[#0091FF] dark:text-[#22A5FC] border border-blue-100 dark:border-blue-900/50 flex items-center justify-center rounded-2xl font-bold shrink-0">
+                      <Award className="w-6 h-6 stroke-[2]" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-extrabold text-slate-900 dark:text-white leading-normal">{finalTech.name}</h4>
+                      <div className="flex items-center gap-1.5 mt-1 text-xs">
+                        <div className="flex items-center text-amber-500 font-bold gap-0.5">
+                          <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                          <span>{finalTech.rating}</span>
+                        </div>
+                        <span className="text-slate-400 dark:text-slate-500">• {finalTech.jobs} خدمة منجزة</span>
                       </div>
-                      <span className="text-slate-400 dark:text-slate-500">• {finalTech.jobs} خدمة منجزة</span>
                     </div>
                   </div>
-                </div>
 
-                {/* Call buttons */}
-                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 dark:border-blue-900/40">
-                  <a 
-                    href={`tel:${finalTech.phone}`}
-                    className="flex items-center justify-center gap-1.5 border border-slate-200 dark:border-blue-900/60 hover:border-[#0091FF] text-slate-700 dark:text-slate-200 hover:text-[#0091FF] font-bold py-2.5 rounded-xl text-[10px] sm:text-xs transition-colors cursor-pointer"
-                  >
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>اتصال تلفني</span>
-                  </a>
-                  <a 
-                    href={buildWhatsAppUrl(finalTech.phone, `مرحباً، أود الاستفسار بخصوص الحجز رقم ${finalBookingId}`)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-bold py-2.5 rounded-xl text-[10px] sm:text-xs transition-colors cursor-pointer"
-                  >
-                    <span>واتساب الفني</span>
-                  </a>
+                  {/* Call buttons */}
+                  <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 dark:border-blue-900/40">
+                    <a 
+                      href={`tel:${finalTech.phone}`}
+                      className="flex items-center justify-center gap-1.5 border border-slate-200 dark:border-blue-900/60 hover:border-[#0091FF] text-slate-700 dark:text-slate-200 hover:text-[#0091FF] font-bold py-2.5 rounded-xl text-[10px] sm:text-xs transition-colors cursor-pointer"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>اتصال تلفني</span>
+                    </a>
+                    <a 
+                      href={buildWhatsAppUrl(finalTech.phone, `مرحباً، أود الاستفسار بخصوص الحجز رقم ${finalBookingId}`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-bold py-2.5 rounded-xl text-[10px] sm:text-xs transition-colors cursor-pointer"
+                    >
+                      <span>واتساب الفني</span>
+                    </a>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Order Info Summary */}
               {booking && (
