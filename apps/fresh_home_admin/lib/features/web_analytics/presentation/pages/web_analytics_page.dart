@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:shared/shared.dart';
 import '../../domain/entities/page_stat_entity.dart';
 import '../../domain/entities/web_analytics_entity.dart';
+import '../cubit/booking_funnel_cubit.dart';
 import '../cubit/web_analytics_cubit.dart';
 import '../cubit/web_analytics_state.dart';
+import '../widgets/booking_funnel_view.dart';
 
 class WebAnalyticsPage extends StatefulWidget {
   const WebAnalyticsPage({super.key});
@@ -19,36 +21,88 @@ class _WebAnalyticsPageState extends State<WebAnalyticsPage> {
   Widget build(BuildContext context) {
     final themeColor = context.themeColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor:
+            isDark ? const Color(0xFF070F26) : const Color(0xFFF7F9FC),
+        appBar: AppBar(
+          title: Text(
+            isArabic ? 'التحليلات والمؤشرات' : 'Analytics',
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+              fontFamily: 'Cairo',
+              letterSpacing: 0.5,
+            ),
+          ),
+          centerTitle: true,
+          backgroundColor: isDark ? const Color(0xFF0B1739) : Colors.white,
+          foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
+          elevation: 0.5,
+          actions: [
+            Builder(
+              builder: (innerContext) => IconButton(
+                tooltip: isArabic ? 'تحديث البيانات' : 'Refresh Data',
+                icon: const Icon(Icons.refresh_rounded),
+                onPressed: () {
+                  final tabIndex = DefaultTabController.of(innerContext).index;
+                  if (tabIndex == 0) {
+                    context.read<WebAnalyticsCubit>().loadTodayAnalytics();
+                  } else {
+                    context.read<BookingFunnelCubit>().loadFunnelStats();
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          bottom: TabBar(
+            indicatorColor: themeColor.primary,
+            indicatorWeight: 3,
+            labelColor: themeColor.primary,
+            unselectedLabelColor:
+                isDark ? Colors.white60 : const Color(0xFF64748B),
+            labelStyle: const TextStyle(
+              fontFamily: 'Cairo',
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+            tabs: [
+              Tab(
+                icon: const Icon(Icons.language_rounded, size: 20),
+                text: isArabic
+                    ? 'زوار الموقع (Google Analytics)'
+                    : 'Website Visitors (GA4)',
+              ),
+              Tab(
+                icon: const Icon(Icons.filter_alt_rounded, size: 20),
+                text: isArabic ? 'مسار الحجز (Funnel)' : 'Booking Funnel',
+              ),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            // Tab 1: Preserved Google Analytics / Visitors Screen
+            _buildVisitorsTab(context),
+
+            // Tab 2: New Booking Funnel Screen
+            const BookingFunnelView(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVisitorsTab(BuildContext context) {
+    final themeColor = context.themeColor;
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth < 600 ? 16.0 : 28.0;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF070F26) : const Color(0xFFF7F9FC),
-      appBar: AppBar(
-        title: const Text(
-          'Analytics',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 22,
-            fontFamily: 'Cairo',
-            letterSpacing: 0.5,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: isDark ? const Color(0xFF0B1739) : Colors.white,
-        foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
-        elevation: 0.5,
-        actions: [
-          IconButton(
-            tooltip: 'تحديث البيانات',
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () =>
-                context.read<WebAnalyticsCubit>().loadTodayAnalytics(),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: BlocBuilder<WebAnalyticsCubit, WebAnalyticsState>(
+    return BlocBuilder<WebAnalyticsCubit, WebAnalyticsState>(
         builder: (context, state) {
           if (state is WebAnalyticsLoading || state is WebAnalyticsInitial) {
             return Center(
@@ -120,8 +174,7 @@ class _WebAnalyticsPageState extends State<WebAnalyticsPage> {
 
           return const SizedBox.shrink();
         },
-      ),
-    );
+      );
   }
 
   // ---------------------------------------------------------------------------

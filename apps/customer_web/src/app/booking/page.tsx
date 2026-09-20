@@ -16,6 +16,7 @@ import { supabase } from "@/lib/supabase";
 import { GEOGRAPHIC_HIERARCHY, isCoverageSupported, ALLOWED_GOVERNORATES } from "@/lib/geo";
 import ExpansionModal from "@/components/ExpansionModal";
 import { trackCalculatePrice, trackBeginCheckout, trackCheckoutProgress } from "@/lib/gtm";
+import { recordFunnelStep, clearFunnelSession } from "@/lib/funnel";
 import { getOrCreateBrowserId } from "@/lib/device";
 
 // Step titles
@@ -35,6 +36,13 @@ const formatDateLocal = (date: Date): string => {
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
+};
+
+const safeServiceTitle = (item: any): string => {
+  if (!item) return "خدمة فريش هوم";
+  if (typeof item.title === "object" && item.title?.ar) return String(item.title.ar);
+  if (typeof item.title === "string") return item.title;
+  return "خدمة فريش هوم";
 };
 
 // Helper fallback icon
@@ -538,6 +546,12 @@ function BookingFlowContent() {
             setSubServiceId(target.id);
             const path = buildPathForNode(target.id, nodes);
             setSelectedPath(path.slice(0, -1));
+            recordFunnelStep({
+              step: 1,
+              event: "service_selected",
+              serviceId: target.id,
+              serviceName: safeServiceTitle(target),
+            });
           }
         } else if (initialServiceId) {
           const rootTarget = nodes.find((n: any) => n.id === initialServiceId);
@@ -554,6 +568,12 @@ function BookingFlowContent() {
             setSubServiceId(target.id);
             const path = buildPathForNode(target.id, FALLBACK_SERVICES_TREE);
             setSelectedPath(path.slice(0, -1));
+            recordFunnelStep({
+              step: 1,
+              event: "service_selected",
+              serviceId: target.id,
+              serviceName: safeServiceTitle(target),
+            });
           }
         } else if (initialServiceId) {
           const rootTarget = FALLBACK_SERVICES_TREE.find((n: any) => n.id === initialServiceId);
@@ -811,6 +831,18 @@ function BookingFlowContent() {
           },
         });
 
+        // Booking Funnel: Step 2 Price Calculated
+        recordFunnelStep({
+          step: 2,
+          event: "price_calculated",
+          serviceId: subServiceId,
+          serviceName: safeServiceTitle(selectedSubService),
+          metadata: {
+            calculated_total: calculatedTotal,
+            base_price: calculatedBase,
+          },
+        });
+
         setTimeout(() => {
           setAnimatePrice(true);
           const target = document.getElementById("calculated-price-banner") || document.getElementById("next-step-btn");
@@ -1036,6 +1068,17 @@ function BookingFlowContent() {
             scheduled_date: scheduledDate,
           },
         });
+        // Booking Funnel: Step 3 Schedule Selected
+        recordFunnelStep({
+          step: 3,
+          event: "schedule_selected",
+          serviceId: subServiceId,
+          serviceName: safeServiceTitle(selectedSubService),
+          metadata: {
+            scheduled_date: scheduledDate,
+            scheduled_slot: scheduledTime,
+          },
+        });
       } else if (currentStep === 2) {
         trackCheckoutProgress({
           step_name: "order_review",
@@ -1043,6 +1086,18 @@ function BookingFlowContent() {
           step_data: {
             governorate: address.governorate,
             city: address.city,
+          },
+        });
+        // Booking Funnel: Step 4 Address Confirmed
+        recordFunnelStep({
+          step: 4,
+          event: "address_confirmed",
+          serviceId: subServiceId,
+          serviceName: safeServiceTitle(selectedSubService),
+          metadata: {
+            governorate: address.governorate,
+            city: address.city,
+            district: address.district === "أخرى" ? customDistrict.trim() : address.district.trim(),
           },
         });
       }
@@ -1192,6 +1247,24 @@ function BookingFlowContent() {
       if (bookingError) throw bookingError;
 
       if (bookingId) {
+        // Booking Funnel: Step 5 Booking Created
+        recordFunnelStep({
+          step: 5,
+          event: "booking_created",
+          bookingId: bookingId,
+          serviceId: subServiceId,
+          serviceName: safeServiceTitle(selectedSubService),
+          metadata: {
+            scheduled_date: scheduledDate,
+            governorate: address.governorate,
+            city: address.city,
+            total_price: priceDetails.total,
+          },
+        });
+
+        // Clear funnel session so a new booking starts fresh
+        clearFunnelSession();
+
         if (typeof window !== "undefined") {
           localStorage.setItem(`booking_created_${bookingId}`, new Date().toISOString());
           localStorage.setItem(`booking_phone_${bookingId}`, phone.trim());
@@ -1214,6 +1287,13 @@ function BookingFlowContent() {
     if (isBookableLeaf) {
       setSelectedSubService(node);
       setSubServiceId(node.id);
+      // Booking Funnel: Step 1 Service Selected
+      recordFunnelStep({
+        step: 1,
+        event: "service_selected",
+        serviceId: node.id,
+        serviceName: safeServiceTitle(node),
+      });
     } else {
       setSelectedPath(prev => [...prev, node]);
     }
