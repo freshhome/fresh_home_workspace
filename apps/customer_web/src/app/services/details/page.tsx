@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
-  ArrowRight, ArrowLeft, Calendar, Check, X, Star, 
+  ArrowRight, ArrowLeft, Check, X, Star, 
   Sparkles, ShieldCheck, Heart, User, ChevronLeft,
   Layers, Zap, Home, ChevronRight, MessageCircle, Info,
   ChevronDown, CheckCircle2, FileText
@@ -877,8 +877,7 @@ function ServiceDetailsContent() {
                       href={`/booking?serviceId=${rootAncestorId}&subServiceId=${currentService.id}`}
                       className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#0091FF] to-[#0077E6] text-white text-xs sm:text-sm font-black shadow-lg shadow-blue-500/25 glow-button transition-all"
                     >
-                      <Calendar className="w-4 h-4" />
-                      <span>احجز الخدمة الآن</span>
+                      <span>احسب السعر واحجز</span>
                     </Link>
 
                     {/* WhatsApp Support CTA */}
@@ -939,8 +938,7 @@ function ServiceDetailsContent() {
             href={`/booking?serviceId=${rootAncestorId}&subServiceId=${currentService.id}`}
             className="flex-1 flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-[#0091FF] hover:bg-[#0080E5] text-white text-xs sm:text-sm font-black shadow-md shadow-blue-500/25 transition-all"
           >
-            <Calendar className="w-4 h-4" />
-            <span>احجز الآن</span>
+            <span>احسب السعر واحجز</span>
           </Link>
         )}
       </div>
