@@ -4,6 +4,7 @@ export 'entities/sub_service_entity.dart';
 export 'entities/service_entity.dart';
 export 'entities/sub_entities/service_details.dart';
 export 'entities/sub_entities/service_price.dart';
+export 'entities/sub_entities/service_gallery_item.dart';
 export 'repositories/service_repository.dart';
 export 'use_cases/service/add_main_service_use_case.dart';
 export 'use_cases/service/add_sub_service_use_case.dart';

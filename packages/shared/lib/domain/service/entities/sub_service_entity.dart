@@ -3,6 +3,7 @@ import 'package:shared/domain/service/enums/service_status.dart';
 import 'sub_entities/service_price.dart';
 import 'sub_entities/service_details.dart';
 import 'sub_entities/computed_field.dart';
+import 'sub_entities/service_gallery_item.dart';
 
 class SubServiceEntity extends ServiceEntity {
   @override
@@ -20,6 +21,7 @@ class SubServiceEntity extends ServiceEntity {
     required super.description,
     super.instructions,
     super.image,
+    super.gallery,
     required super.status,
     required super.order,
     required super.updatedAt,
@@ -39,6 +41,7 @@ class SubServiceEntity extends ServiceEntity {
     Map<String, String>? description,
     Map<String, String>? instructions,
     String? image,
+    List<ServiceGalleryItemEntity>? gallery,
     ServiceStatus? status,
     int? order,
     DateTime? updatedAt,
@@ -56,6 +59,7 @@ class SubServiceEntity extends ServiceEntity {
       description: description ?? this.description,
       instructions: instructions ?? this.instructions,
       image: image ?? this.image,
+      gallery: gallery ?? this.gallery,
       status: status ?? this.status,
       order: order ?? this.order,
       updatedAt: updatedAt ?? this.updatedAt,

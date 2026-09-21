@@ -32,13 +32,14 @@ class ServiceHiveModelAdapter extends TypeAdapter<ServiceHiveModel> {
       notIncluded: fields[12] as NotIncludedHiveModel?,
       computedFields: (fields[13] as List?)?.cast<dynamic>(),
       commissionRate: fields[14] as double?,
+      gallery: (fields[15] as List?)?.cast<ServiceGalleryItemHiveModel>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, ServiceHiveModel obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -68,7 +69,9 @@ class ServiceHiveModelAdapter extends TypeAdapter<ServiceHiveModel> {
       ..writeByte(13)
       ..write(obj.computedFields)
       ..writeByte(14)
-      ..write(obj.commissionRate);
+      ..write(obj.commissionRate)
+      ..writeByte(15)
+      ..write(obj.gallery);
   }
 
   @override

@@ -8,6 +8,7 @@ import 'package:shared/data/service/models/local/service_hive_model.dart';
 import 'package:shared/data/service/models/local/services_updated_hive_model.dart';
 import 'package:shared/data/service/models/local/sub_models/service_details_hive_model.dart';
 import 'package:shared/data/service/models/local/sub_models/service_price_hive_model.dart';
+import 'package:shared/data/service/models/local/sub_models/service_gallery_item_hive_model.dart';
 import 'package:shared/data/service/models/local/pending_action_hive_model.dart';
 import 'package:shared/data/user/models/address_model.dart';
 import 'package:shared/data/user/models/remote/phone_model.dart';
@@ -18,7 +19,7 @@ import 'package:shared/domain/service/enums/pricing_method.dart';
 import 'package:shared/domain/service/enums/service_status.dart';
 
 class HiveInitializer {
-  static const int SERVICES_CACHE_VERSION = 2; // Incremented cache version for unified Services Tree model
+  static const int SERVICES_CACHE_VERSION = 3; // Incremented cache version for Service Gallery addition
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -31,6 +32,7 @@ class HiveInitializer {
     Hive.registerAdapter(PriceOptionHiveModelAdapter());
     Hive.registerAdapter(PriceHiveModelAdapter());
     Hive.registerAdapter(DetailHiveModelAdapter());
+    Hive.registerAdapter(ServiceGalleryItemHiveModelAdapter()); // Gallery item adapter
     Hive.registerAdapter(ServiceHiveModelAdapter()); // Registered unified Service tree adapter
     Hive.registerAdapter(PendingActionHiveModelAdapter());
     Hive.registerAdapter(ServiceStatusAdapter());

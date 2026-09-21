@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { trackViewItem, trackContactWhatsApp } from "@/lib/gtm";
+import ServiceGallery from "@/components/services/ServiceGallery";
 
 function resolveServiceImage(imageStr?: string | null): string | null {
   if (!imageStr || typeof imageStr !== "string") return null;
@@ -465,6 +466,12 @@ function ServiceDetailsContent() {
                 </div>
               ))}
             </div>
+
+            {/* Branch Service Gallery (if available) */}
+            <ServiceGallery 
+              gallery={currentService.gallery} 
+              serviceTitle={arTitle} 
+            />
           </div>
         </main>
 
@@ -600,6 +607,12 @@ function ServiceDetailsContent() {
                 </div>
               </div>
 
+              {/* Service Gallery / Portfolio */}
+              <ServiceGallery 
+                gallery={currentService.gallery} 
+                serviceTitle={arTitle} 
+              />
+
               {/* What's Included */}
               {inclusions.length > 0 && (
                 <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-100/90 dark:border-blue-900/40 p-[clamp(1.25rem,3vw,2rem)] shadow-sm text-right space-y-4">
@@ -609,7 +622,7 @@ function ServiceDetailsContent() {
                       <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs">
                         <Check className="w-5 h-5 stroke-[2.5]" />
                       </div>
-                      <h3 className="text-[clamp(1.125rem,2.2vw,1.375rem)] font-black text-slate-900 dark:text-white tracking-tight">ما تشمله الخدمة</h3>
+                      <h3 className="text-[clamp(1.125rem,2.2vw,1.375rem)] font-black text-slate-900 dark:text-white tracking-tight">تفاصيل الخدمة</h3>
                     </div>
                     <p className="text-[clamp(0.8125rem,1.4vw,0.875rem)] text-slate-500 dark:text-slate-400 font-medium leading-relaxed pr-1 sm:pr-2">
                       اقرأ تفاصيل الخدمة بعناية لتتعرف على ما يتم تنفيذه بدقة واحترافية في منزلك.

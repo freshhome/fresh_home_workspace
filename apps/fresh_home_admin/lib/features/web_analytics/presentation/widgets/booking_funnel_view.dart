@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:shared/shared.dart';
 import '../../domain/entities/booking_funnel_entity.dart';
 import '../cubit/booking_funnel_cubit.dart';
@@ -17,192 +18,277 @@ class BookingFunnelView extends StatelessWidget {
 
     return BlocBuilder<BookingFunnelCubit, BookingFunnelState>(
       builder: (context, state) {
-        if (state is BookingFunnelLoading || state is BookingFunnelInitial) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(
-                  color: themeColor.primary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  isArabic
-                      ? 'جاري جلب بيانات مسار الحجز...'
-                      : 'Loading booking funnel data...',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    color: themeColor.secondaryText,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        if (state is BookingFunnelError) {
-          return _buildErrorState(context, state.message, isArabic, isDark);
-        }
-
-        if (state is BookingFunnelEmpty) {
-          return _buildEmptyState(context, isArabic, isDark);
-        }
-
+        BookingFunnelEntity? funnel;
         if (state is BookingFunnelLoaded) {
-          final funnel = state.funnel;
-          return RefreshIndicator(
-            color: themeColor.primary,
-            backgroundColor: themeColor.cardBackground,
-            onRefresh: () =>
-                context.read<BookingFunnelCubit>().loadFunnelStats(),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 850),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 20.0,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 1. Header with description & overall conversion badge
-                        _buildFunnelHeader(context, funnel, isArabic, isDark),
-                        const SizedBox(height: 20),
+          funnel = state.funnel;
+        }
 
-                        // 2. Summary KPI Cards (5 milestones)
+        return RefreshIndicator(
+          color: themeColor.primary,
+          backgroundColor: themeColor.cardBackground,
+          onRefresh: () =>
+              context.read<BookingFunnelCubit>().loadFunnelStats(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 850),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 20.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 1. Horizontal Filter Cards (Today, All, Last 7 Days, Pick Date)
+                      _buildFilterCards(context, state, isArabic, isDark),
+                      const SizedBox(height: 20),
+
+                      // 2. Dynamic content based on state
+                      if (state is BookingFunnelLoading ||
+                          state is BookingFunnelInitial)
+                        _buildLoadingContent(context, isArabic)
+                      else if (state is BookingFunnelError)
+                        _buildErrorContent(
+                            context, state.message, isArabic, isDark)
+                      else if (state is BookingFunnelEmpty)
+                        _buildEmptyContent(context, isArabic, isDark)
+                      else if (funnel != null) ...[
+                        // 3. Summary KPI Cards (5 milestones)
                         _buildKpiGrid(context, funnel, isArabic, isDark),
                         const SizedBox(height: 28),
 
-                        // 3. Funnel Flow Visualization with Drop-offs
+                        // 4. Funnel Flow Visualization with Drop-offs
                         _buildFunnelProgressionSection(
                             context, funnel, isArabic, isDark),
                         const SizedBox(height: 28),
 
-                        // 4. Drop-off Summary Table / Insights
+                        // 5. Drop-off Summary Table / Insights
                         _buildDropOffSummarySection(
                             context, funnel, isArabic, isDark),
                         const SizedBox(height: 36),
                       ],
-                    ),
+                    ],
                   ),
                 ),
               ),
             ),
-          );
-        }
-
-        return const SizedBox.shrink();
+          ),
+        );
       },
     );
   }
 
   // ---------------------------------------------------------------------------
-  // 1. Header Section
+  // Horizontal Filter Cards (Today, All, Last 7 Days, Pick Date)
   // ---------------------------------------------------------------------------
-  Widget _buildFunnelHeader(
+  Widget _buildFilterCards(
     BuildContext context,
-    BookingFunnelEntity funnel,
+    BookingFunnelState state,
     bool isArabic,
     bool isDark,
   ) {
     final themeColor = context.themeColor;
-    final conversion = funnel.summary.overallConversionRate.toStringAsFixed(1);
+    final cubit = context.read<BookingFunnelCubit>();
+    final activeFilter = state.filter;
+    final now = DateTime.now();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF131F3F) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
-        ),
-      ),
+    final todayFormatted = DateFormat('d MMM', isArabic ? 'ar' : 'en').format(now);
+    final customDateFormatted = state.customDate != null
+        ? DateFormat('d MMM yyyy', isArabic ? 'ar' : 'en').format(state.customDate!)
+        : (isArabic ? 'اختيار يوم معين' : 'Pick a Date');
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: themeColor.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.filter_alt_rounded,
-              color: themeColor.primary,
-              size: 28,
-            ),
+          // 1. اليوم (Today)
+          _buildFilterCardItem(
+            context: context,
+            title: isArabic ? 'اليوم' : 'Today',
+            subtitle: todayFormatted,
+            icon: Icons.today_rounded,
+            isSelected: activeFilter == FunnelDateFilter.today,
+            onTap: () => cubit.applyDateFilter(FunnelDateFilter.today),
+            isDark: isDark,
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isArabic ? 'مسار خطوات الحجز' : 'Booking Funnel',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  isArabic
-                      ? 'يمثل تدفق رحلات الحجز الفريدة (Unique Sessions) عبر الموقع خطوة بخطوة'
-                      : 'Tracks unique customer booking journeys through the website step-by-step',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 12,
-                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(width: 10),
+
+          // 2. الكل (All)
+          _buildFilterCardItem(
+            context: context,
+            title: isArabic ? 'الكل' : 'All',
+            subtitle: isArabic ? 'كافة الفترات' : 'All time',
+            icon: Icons.all_inclusive_rounded,
+            isSelected: activeFilter == FunnelDateFilter.all,
+            onTap: () => cubit.applyDateFilter(FunnelDateFilter.all),
+            isDark: isDark,
           ),
-          const SizedBox(width: 8),
-          // Overall Conversion Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFF10B981).withValues(alpha: 0.3),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  isArabic ? 'معدل الإتمام الكلي' : 'Overall Conversion',
-                  style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF10B981),
-                  ),
-                ),
-                Text(
-                  '$conversion%',
-                  style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF10B981),
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(width: 10),
+
+          // 3. آخر 7 أيام (Last 7 Days)
+          _buildFilterCardItem(
+            context: context,
+            title: isArabic ? 'آخر 7 أيام' : 'Last 7 Days',
+            subtitle: isArabic ? 'أسبوع' : 'Past week',
+            icon: Icons.date_range_rounded,
+            isSelected: activeFilter == FunnelDateFilter.last7Days,
+            onTap: () => cubit.applyDateFilter(FunnelDateFilter.last7Days),
+            isDark: isDark,
+          ),
+          const SizedBox(width: 10),
+
+          // 4. اختيار يوم معين (Pick Specific Day)
+          _buildFilterCardItem(
+            context: context,
+            title: customDateFormatted,
+            subtitle: state.customDate != null
+                ? (isArabic ? 'اضغط للتغيير' : 'Tap to change')
+                : (isArabic ? 'تحديد تاريخ' : 'Select date'),
+            icon: Icons.calendar_month_rounded,
+            isSelected: activeFilter == FunnelDateFilter.custom,
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: state.customDate ?? DateTime.now(),
+                firstDate: DateTime(2023, 1, 1),
+                lastDate: DateTime.now(),
+                locale: isArabic ? const Locale('ar', 'SA') : const Locale('en', 'US'),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: ColorScheme.light(
+                        primary: themeColor.primary,
+                        onPrimary: Colors.white,
+                        surface: isDark ? const Color(0xFF131F3F) : Colors.white,
+                        onSurface: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (picked != null && context.mounted) {
+                cubit.applyDateFilter(FunnelDateFilter.custom, customDate: picked);
+              }
+            },
+            isDark: isDark,
+            isCustomDate: true,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFilterCardItem({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required bool isDark,
+    bool isCustomDate = false,
+  }) {
+    final themeColor = context.themeColor;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? themeColor.primary
+                : (isDark ? const Color(0xFF131F3F) : Colors.white),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected
+                  ? themeColor.primary
+                  : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+              width: isSelected ? 1.8 : 1.0,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: themeColor.primary.withValues(alpha: 0.28),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : themeColor.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: isSelected ? Colors.white : themeColor.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected
+                          ? Colors.white.withValues(alpha: 0.85)
+                          : (isDark ? Colors.white54 : const Color(0xFF64748B)),
+                    ),
+                  ),
+                ],
+              ),
+              if (isSelected) ...[
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  size: 16,
+                  color: Colors.white,
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -257,7 +343,7 @@ class BookingFunnelView extends StatelessWidget {
             SizedBox(
               width: cardWidth,
               child: _buildSmallKpiCard(
-                title: isArabic ? 'بدء الحجز (اختيار الخدمة)' : 'Service Selected',
+                title: isArabic ? 'شاشة التفاصيل' : 'Details Screen',
                 value: '$countS1',
                 stepNum: 1,
                 icon: Icons.touch_app_rounded,
@@ -405,12 +491,23 @@ class BookingFunnelView extends StatelessWidget {
                 color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
             ),
-            Text(
-              isArabic ? 'نسبة الإتمام من البداية' : 'Completion Rate from Started',
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: 11,
-                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                ),
+              ),
+              child: Text(
+                '${isArabic ? 'معدل الإتمام: ' : 'Conversion: '}${funnel.summary.overallConversionRate.toStringAsFixed(1)}%',
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF10B981),
+                ),
               ),
             ),
           ],
@@ -456,7 +553,7 @@ class BookingFunnelView extends StatelessWidget {
     final color = colors[(step.stepNumber - 1).clamp(0, colors.length - 1)];
 
     final stepTitlesAr = [
-      'اختيار الخدمة',
+      'شاشة التفاصيل',
       'حساب السعر',
       'اختيار الموعد',
       'تأكيد العنوان والبيانات',
@@ -464,7 +561,7 @@ class BookingFunnelView extends StatelessWidget {
     ];
 
     final stepTitlesEn = [
-      'Service Selected',
+      'Details Screen',
       'Price Calculated',
       'Schedule Selected',
       'Address Confirmed',
@@ -706,8 +803,8 @@ class BookingFunnelView extends StatelessWidget {
     String biggestStepTitle = isArabic ? 'غير محدد' : 'None';
     if (biggestStep == 1) {
       biggestStepTitle = isArabic
-          ? 'اختيار الخدمة ← حساب السعر'
-          : 'Service Selected → Price Calculated';
+          ? 'شاشة التفاصيل ← حساب السعر'
+          : 'Details Screen → Price Calculated';
     } else if (biggestStep == 2) {
       biggestStepTitle = isArabic
           ? 'حساب السعر ← اختيار الموعد'
@@ -825,16 +922,46 @@ class BookingFunnelView extends StatelessWidget {
   }
 
   // ---------------------------------------------------------------------------
-  // Empty State Widget
+  // Loading, Empty, and Error States (Embedded under persistent filter bar)
   // ---------------------------------------------------------------------------
-  Widget _buildEmptyState(BuildContext context, bool isArabic, bool isDark) {
+  Widget _buildLoadingContent(BuildContext context, bool isArabic) {
+    final themeColor = context.themeColor;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 60),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              color: themeColor.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isArabic
+                  ? 'جاري جلب بيانات مسار الحجز...'
+                  : 'Loading booking funnel data...',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                color: themeColor.secondaryText,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyContent(BuildContext context, bool isArabic, bool isDark) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.symmetric(vertical: 24),
         child: Container(
           width: double.infinity,
           constraints: const BoxConstraints(maxWidth: 550),
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF131F3F) : Colors.white,
             borderRadius: BorderRadius.circular(20),
@@ -847,14 +974,14 @@ class BookingFunnelView extends StatelessWidget {
             children: [
               const Icon(
                 Icons.filter_alt_off_rounded,
-                size: 52,
+                size: 48,
                 color: Color(0xFF94A3B8),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Text(
                 isArabic
-                    ? 'لا توجد بيانات لمسار الحجز حتى الآن'
-                    : 'No booking funnel data yet',
+                    ? 'لا توجد بيانات لمسار الحجز في هذه الفترة'
+                    : 'No booking funnel data in this period',
                 style: TextStyle(
                   fontFamily: 'Cairo',
                   fontSize: 16,
@@ -865,8 +992,8 @@ class BookingFunnelView extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 isArabic
-                    ? 'ستظهر إحصائيات خطوات الحجز ومعدلات التحويل تلقائياً بمجرد قيام الزوار ببدء رحلة الحجز عبر الموقع.'
-                    : 'Funnel progression and drop-off rates will appear automatically once customers begin booking journeys.',
+                    ? 'لم يتم تسجيل خطوات حجز في النطاق الزمني المحدد. يمكنك تجربة "الكل" أو اختيار يوم آخر.'
+                    : 'No booking steps recorded in the selected timeframe. Try selecting "All" or another date.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Cairo',
@@ -874,7 +1001,7 @@ class BookingFunnelView extends StatelessWidget {
                   color: isDark ? Colors.white54 : const Color(0xFF64748B),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.themeColor.primary,
@@ -883,11 +1010,12 @@ class BookingFunnelView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () =>
-                    context.read<BookingFunnelCubit>().loadFunnelStats(),
-                icon: const Icon(Icons.refresh_rounded, size: 18),
+                onPressed: () => context
+                    .read<BookingFunnelCubit>()
+                    .applyDateFilter(FunnelDateFilter.all),
+                icon: const Icon(Icons.all_inclusive_rounded, size: 18),
                 label: Text(
-                  isArabic ? 'تحديث' : 'Refresh',
+                  isArabic ? 'عرض كافة الفترات (الكل)' : 'Show All Time',
                   style: const TextStyle(fontFamily: 'Cairo'),
                 ),
               ),
@@ -898,10 +1026,7 @@ class BookingFunnelView extends StatelessWidget {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Error State Widget
-  // ---------------------------------------------------------------------------
-  Widget _buildErrorState(
+  Widget _buildErrorContent(
     BuildContext context,
     String message,
     bool isArabic,
@@ -911,81 +1036,82 @@ class BookingFunnelView extends StatelessWidget {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                color: Colors.red,
-                size: 48,
-              ),
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 550),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF131F3F) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.red.withValues(alpha: 0.2),
             ),
-            const SizedBox(height: 16),
-            Text(
-              isArabic
-                  ? 'تعذر تحميل بيانات مسار الحجز'
-                  : 'Failed to load booking funnel data',
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: themeColor.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              constraints: const BoxConstraints(maxWidth: 550),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: themeColor.cardBackground,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Colors.red.withValues(alpha: 0.2),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.error_outline_rounded,
+                  color: Colors.red,
+                  size: 36,
                 ),
               ),
-              child: Text(
+              const SizedBox(height: 14),
+              Text(
+                isArabic
+                    ? 'تعذر تحميل بيانات مسار الحجز'
+                    : 'Failed to load booking funnel data',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: themeColor.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
                 message,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontFamily: 'Cairo',
-                  fontSize: 13,
+                  fontSize: 12,
                   color: Colors.red,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: themeColor.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+              const SizedBox(height: 18),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: themeColor.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                onPressed: () =>
+                    context.read<BookingFunnelCubit>().loadFunnelStats(),
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text(
+                  isArabic ? 'إعادة المحاولة' : 'Retry',
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              onPressed: () =>
-                  context.read<BookingFunnelCubit>().loadFunnelStats(),
-              icon: const Icon(Icons.refresh_rounded),
-              label: Text(
-                isArabic ? 'إعادة المحاولة' : 'Retry',
-                style: const TextStyle(
-                  fontFamily: 'Cairo',
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

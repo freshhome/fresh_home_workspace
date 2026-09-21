@@ -4,6 +4,7 @@ import 'package:shared/domain/service/enums/service_status.dart';
 import 'sub_models/service_details_remote_model.dart';
 import 'sub_models/service_price_remote_model.dart';
 import 'sub_models/computed_field_remote_model.dart';
+import 'sub_models/service_gallery_item_remote_model.dart';
 
 part 'service_remote_model.g.dart';
 
@@ -19,6 +20,7 @@ class ServiceRemoteModel {
   final Map<String, String> description;
   final Map<String, String>? instructions;
   final String? image;
+  final List<ServiceGalleryItemRemoteModel>? gallery;
   final ServiceStatus status;
   @JsonKey(name: 'sort_order')
   final int order;
@@ -42,6 +44,7 @@ class ServiceRemoteModel {
     required this.description,
     this.instructions,
     this.image,
+    this.gallery,
     required this.status,
     required this.order,
     required this.updatedAt,
@@ -65,6 +68,7 @@ class ServiceRemoteModel {
     Map<String, String>? description,
     Map<String, String>? instructions,
     String? image,
+    List<ServiceGalleryItemRemoteModel>? gallery,
     ServiceStatus? status,
     int? order,
     DateTime? updatedAt,
@@ -82,6 +86,7 @@ class ServiceRemoteModel {
       description: description ?? this.description,
       instructions: instructions ?? this.instructions,
       image: image ?? this.image,
+      gallery: gallery ?? this.gallery,
       status: status ?? this.status,
       order: order ?? this.order,
       updatedAt: updatedAt ?? this.updatedAt,

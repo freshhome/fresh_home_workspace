@@ -3,6 +3,7 @@ import 'package:shared/core/constants/hive_constants.dart';
 import 'package:shared/domain/service/enums/service_status.dart';
 import 'sub_models/service_details_hive_model.dart';
 import 'sub_models/service_price_hive_model.dart';
+import 'sub_models/service_gallery_item_hive_model.dart';
 
 part 'service_hive_model.g.dart';
 
@@ -53,6 +54,9 @@ class ServiceHiveModel extends HiveObject {
   @HiveField(14)
   final double? commissionRate;
 
+  @HiveField(15)
+  final List<ServiceGalleryItemHiveModel>? gallery;
+
   ServiceHiveModel({
     required this.id,
     this.parentId,
@@ -69,5 +73,6 @@ class ServiceHiveModel extends HiveObject {
     this.notIncluded,
     this.computedFields,
     this.commissionRate,
+    this.gallery,
   });
 }

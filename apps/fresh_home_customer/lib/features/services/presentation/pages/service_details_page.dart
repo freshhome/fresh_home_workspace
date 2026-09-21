@@ -10,6 +10,7 @@ import 'package:fresh_home_customer/features/services/presentation/cubit/service
 import 'package:fresh_home_customer/features/services/presentation/widgets/details_options_section.dart';
 import 'package:fresh_home_customer/features/services/presentation/widgets/inclusion_exclusion_section.dart';
 import 'package:fresh_home_customer/features/services/presentation/widgets/instructions_section.dart';
+import 'package:fresh_home_customer/features/services/presentation/widgets/service_gallery_section.dart';
 import 'package:shared/shared.dart';
 import 'package:shared_features/shared_features.dart';
 
@@ -425,6 +426,12 @@ class _ServiceDetailsPageState extends State<ServiceDetailsPage> {
                             themeText,
                           ),
                           const SizedBox(height: 24),
+
+                          // Service Gallery Section (Samples & Portfolio)
+                          if (service.gallery != null && service.gallery!.isNotEmpty) ...[
+                            ServiceGallerySection(gallery: service.gallery),
+                            const SizedBox(height: 24),
+                          ],
 
                           // Service detail tiles (what's included)
                           DetailsOptionsSection(details: service.details),

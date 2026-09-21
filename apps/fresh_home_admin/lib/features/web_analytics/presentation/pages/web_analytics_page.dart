@@ -33,20 +33,21 @@ class _WebAnalyticsPageState extends State<WebAnalyticsPage> {
             isArabic ? 'التحليلات والمؤشرات' : 'Analytics',
             style: const TextStyle(
               fontWeight: FontWeight.w900,
-              fontSize: 22,
+              fontSize: 20,
               fontFamily: 'Cairo',
+              color: Colors.white,
               letterSpacing: 0.5,
             ),
           ),
           centerTitle: true,
-          backgroundColor: isDark ? const Color(0xFF0B1739) : Colors.white,
-          foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
-          elevation: 0.5,
+          backgroundColor: themeColor.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
           actions: [
             Builder(
               builder: (innerContext) => IconButton(
                 tooltip: isArabic ? 'تحديث البيانات' : 'Refresh Data',
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
                 onPressed: () {
                   final tabIndex = DefaultTabController.of(innerContext).index;
                   if (tabIndex == 0) {
@@ -60,14 +61,17 @@ class _WebAnalyticsPageState extends State<WebAnalyticsPage> {
             const SizedBox(width: 8),
           ],
           bottom: TabBar(
-            indicatorColor: themeColor.primary,
+            indicatorColor: Colors.white,
             indicatorWeight: 3,
-            labelColor: themeColor.primary,
-            unselectedLabelColor:
-                isDark ? Colors.white60 : const Color(0xFF64748B),
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
             labelStyle: const TextStyle(
               fontFamily: 'Cairo',
               fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontFamily: 'Cairo',
               fontSize: 14,
             ),
             tabs: [

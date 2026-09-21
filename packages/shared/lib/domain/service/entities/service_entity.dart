@@ -3,6 +3,7 @@ import 'base_service_entity.dart';
 import 'sub_entities/service_price.dart';
 import 'sub_entities/service_details.dart';
 import 'sub_entities/computed_field.dart';
+import 'sub_entities/service_gallery_item.dart';
 
 class ServiceEntity extends BaseServiceEntity {
   final String? parentId;
@@ -22,6 +23,7 @@ class ServiceEntity extends BaseServiceEntity {
     required super.description,
     this.instructions,
     super.image,
+    super.gallery,
     required super.status,
     required super.order,
     required super.updatedAt,
@@ -41,6 +43,7 @@ class ServiceEntity extends BaseServiceEntity {
     Map<String, String>? description,
     Map<String, String>? instructions,
     String? image,
+    List<ServiceGalleryItemEntity>? gallery,
     ServiceStatus? status,
     int? order,
     DateTime? updatedAt,
@@ -58,6 +61,7 @@ class ServiceEntity extends BaseServiceEntity {
       description: description ?? this.description,
       instructions: instructions ?? this.instructions,
       image: image ?? this.image,
+      gallery: gallery ?? this.gallery,
       status: status ?? this.status,
       order: order ?? this.order,
       updatedAt: updatedAt ?? this.updatedAt,

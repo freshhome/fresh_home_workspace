@@ -17,6 +17,10 @@ ServiceRemoteModel _$ServiceRemoteModelFromJson(Map<String, dynamic> json) =>
         (k, e) => MapEntry(k, e as String),
       ),
       image: json['image'] as String?,
+      gallery: (json['gallery'] as List<dynamic>?)
+          ?.map((e) =>
+              ServiceGalleryItemRemoteModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
       status: $enumDecode(_$ServiceStatusEnumMap, json['status']),
       order: (json['sort_order'] as num).toInt(),
       updatedAt: const TimestampConverter().fromJson(json['updated_at']),
@@ -47,6 +51,7 @@ Map<String, dynamic> _$ServiceRemoteModelToJson(ServiceRemoteModel instance) =>
       'description': instance.description,
       'instructions': instance.instructions,
       'image': instance.image,
+      'gallery': instance.gallery?.map((e) => e.toJson()).toList(),
       'status': _$ServiceStatusEnumMap[instance.status]!,
       'sort_order': instance.order,
       'updated_at': const TimestampConverter().toJson(instance.updatedAt),

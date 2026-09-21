@@ -1,19 +1,21 @@
 import 'package:shared/data/service/models/local/service_hive_model.dart';
 import 'package:shared/data/service/models/local/sub_models/service_details_hive_model.dart';
 import 'package:shared/data/service/models/local/sub_models/service_price_hive_model.dart';
+import 'package:shared/data/service/models/local/sub_models/service_gallery_item_hive_model.dart';
 import 'package:shared/data/service/models/remote/service_remote_model.dart';
 import 'package:shared/data/service/models/remote/sub_models/service_details_remote_model.dart';
 import 'package:shared/data/service/models/remote/sub_models/service_price_remote_model.dart';
 import 'package:shared/data/service/models/remote/sub_models/computed_field_remote_model.dart';
+import 'package:shared/data/service/models/remote/sub_models/service_gallery_item_remote_model.dart';
 import 'package:shared/domain/booking/entities/booking/sub_entities/dynamic_field.dart';
 import 'package:shared/domain/service/entities/service_entity.dart';
 import 'package:shared/domain/service/entities/sub_entities/service_details.dart';
 import 'package:shared/domain/service/entities/sub_entities/service_price.dart';
 import 'package:shared/domain/service/entities/sub_entities/computed_field.dart';
+import 'package:shared/domain/service/entities/sub_entities/service_gallery_item.dart';
 import 'package:shared/domain/service/entities/main_service_entity.dart';
 import 'package:shared/domain/service/entities/sub_service_entity.dart';
 import 'package:shared/domain/service/enums/pricing_method.dart';
-
 
 class ServiceMapper {
   // --- LanguageContent ---
@@ -231,10 +233,7 @@ class ServiceMapper {
       value: model.value,
       unit: model.unit,
       options: model.options.map(priceOptionHiveToEntity).toList(),
-      fields: model.fields
-              ?.map((e) => dynamicFieldMapToEntity(e as Map))
-              .toList() ??
-          const [],
+      fields: model.fields?.map((e) => dynamicFieldMapToEntity(e as Map)).toList() ?? [],
       basePriceFormula: model.basePriceFormula,
       minPrice: model.minPrice,
     );
@@ -292,7 +291,7 @@ class ServiceMapper {
     );
   }
 
-    static NotIncludedHiveModel notIncludedToHive(NotIncludedEntity entity) {
+  static NotIncludedHiveModel notIncludedToHive(NotIncludedEntity entity) {
     return NotIncludedHiveModel(
       ar: languageContentToHive(entity.ar),
       en: languageContentToHive(entity.en),
@@ -334,6 +333,47 @@ class ServiceMapper {
     };
   }
 
+  // --- Gallery Mappings ---
+  static ServiceGalleryItemEntity galleryItemRemoteToEntity(
+    ServiceGalleryItemRemoteModel model,
+  ) {
+    return ServiceGalleryItemEntity(
+      url: model.url,
+      id: model.id,
+      caption: model.caption,
+    );
+  }
+
+  static ServiceGalleryItemEntity galleryItemHiveToEntity(
+    ServiceGalleryItemHiveModel model,
+  ) {
+    return ServiceGalleryItemEntity(
+      url: model.url,
+      id: model.id,
+      caption: model.caption,
+    );
+  }
+
+  static ServiceGalleryItemRemoteModel galleryItemToRemote(
+    ServiceGalleryItemEntity entity,
+  ) {
+    return ServiceGalleryItemRemoteModel(
+      url: entity.url,
+      id: entity.id,
+      caption: entity.caption,
+    );
+  }
+
+  static ServiceGalleryItemHiveModel galleryItemToHive(
+    ServiceGalleryItemEntity entity,
+  ) {
+    return ServiceGalleryItemHiveModel(
+      url: entity.url,
+      id: entity.id,
+      caption: entity.caption,
+    );
+  }
+
   // --- Unified Service Mappings ---
 
   static ServiceEntity remoteToEntity(ServiceRemoteModel model) {
@@ -345,6 +385,7 @@ class ServiceMapper {
       description: model.description,
       instructions: model.instructions,
       image: model.image,
+      gallery: model.gallery?.map(galleryItemRemoteToEntity).toList() ?? const [],
       status: model.status,
       order: model.order,
       updatedAt: model.updatedAt,
@@ -365,6 +406,7 @@ class ServiceMapper {
       description: model.description,
       instructions: model.instructions,
       image: model.image,
+      gallery: model.gallery?.map(galleryItemHiveToEntity).toList() ?? const [],
       status: model.status,
       order: model.order,
       updatedAt: model.updatedAt,
@@ -385,6 +427,7 @@ class ServiceMapper {
       description: entity.description,
       instructions: entity.instructions,
       image: entity.image,
+      gallery: entity.gallery?.map(galleryItemToRemote).toList(),
       status: entity.status,
       order: entity.order,
       updatedAt: entity.updatedAt,
@@ -405,6 +448,7 @@ class ServiceMapper {
       description: entity.description,
       instructions: entity.instructions,
       image: entity.image,
+      gallery: entity.gallery?.map(galleryItemToHive).toList(),
       status: entity.status,
       order: entity.order,
       updatedAt: entity.updatedAt,
@@ -425,6 +469,7 @@ class ServiceMapper {
       description: model.description,
       instructions: model.instructions,
       image: model.image,
+      gallery: model.gallery?.map((e) => galleryItemToHive(galleryItemRemoteToEntity(e))).toList(),
       status: model.status,
       order: model.order,
       updatedAt: model.updatedAt,
@@ -445,6 +490,7 @@ class ServiceMapper {
       description: service.description,
       instructions: service.instructions,
       image: service.image,
+      gallery: service.gallery,
       status: service.status,
       order: service.order,
       updatedAt: service.updatedAt,
@@ -461,6 +507,7 @@ class ServiceMapper {
       description: service.description,
       instructions: service.instructions,
       image: service.image,
+      gallery: service.gallery,
       status: service.status,
       order: service.order,
       updatedAt: service.updatedAt,

@@ -40,4 +40,5 @@ class HiveTypeIds {
   static const technicianProfile = 23;
   static const phoneModel = 24;
   static const pendingAction = 25;
+  static const serviceGalleryItem = 26;
 }

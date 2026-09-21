@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../widgets/tree_helpers.dart';
 import '../widgets/shared_icon_picker_dialog.dart';
+import '../widgets/service_gallery_uploader.dart';
+import '../widgets/service_customer_preview.dart';
 import '../../../../core/di/injection_container.dart' as di;
 
 class ServiceConfiguratorWizardPage extends StatefulWidget {
@@ -56,6 +58,9 @@ class _ServiceConfiguratorWizardPageState
   late TextEditingController _instructionsArController;
   late TextEditingController _instructionsEnController;
 
+  // Step 4: Gallery State
+  late List<ServiceGalleryItemEntity> _gallery;
+
   @override
   void initState() {
     super.initState();
@@ -94,6 +99,9 @@ class _ServiceConfiguratorWizardPageState
     _instructionsEnController = TextEditingController(
       text: data?.instructions?['en'] ?? '',
     );
+
+    // Step 4 Gallery Initialization
+    _gallery = data?.gallery != null ? List.from(data!.gallery!) : [];
 
     _loadTreeData();
   }
@@ -277,6 +285,7 @@ class _ServiceConfiguratorWizardPageState
           title: title,
           description: description,
           image: image,
+          gallery: _gallery,
           status: _status,
           order: order,
           updatedAt: DateTime.now(),
@@ -302,6 +311,7 @@ class _ServiceConfiguratorWizardPageState
           title: title,
           description: description,
           image: image,
+          gallery: _gallery,
           status: _status,
           order: order,
           updatedAt: DateTime.now(),
@@ -315,7 +325,7 @@ class _ServiceConfiguratorWizardPageState
   @override
   Widget build(BuildContext context) {
     final themeColor = context.themeColor;
-    final totalSteps = _isBookable ? 3 : 1;
+    final totalSteps = _isBookable ? 5 : 3;
 
     return Scaffold(
       backgroundColor: themeColor.background,
@@ -328,14 +338,16 @@ class _ServiceConfiguratorWizardPageState
             fontFamily: 'Cairo',
             fontWeight: FontWeight.bold,
             fontSize: 18,
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
-        backgroundColor: themeColor.cardBackground,
+        backgroundColor: themeColor.primary,
         elevation: 0,
-        foregroundColor: themeColor.textPrimary,
+        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
+          icon: const Icon(Icons.close_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -357,6 +369,10 @@ class _ServiceConfiguratorWizardPageState
                       if (_currentStep == 0) _buildBasicInfoStep(themeColor),
                       if (_currentStep == 1 && _isBookable) _buildDetailsStep(themeColor),
                       if (_currentStep == 2 && _isBookable) _buildInstructionsStep(themeColor),
+                      if ((_currentStep == 3 && _isBookable) || (_currentStep == 1 && !_isBookable))
+                        _buildGalleryStep(themeColor),
+                      if ((_currentStep == 4 && _isBookable) || (_currentStep == 2 && !_isBookable))
+                        _buildReviewStep(themeColor),
                     ],
                   ),
                 ),
@@ -2445,9 +2461,103 @@ class _ServiceConfiguratorWizardPageState
     );
   }
 
+  // --- Step 4: Service Gallery UI ---
+  Widget _buildGalleryStep(ThemeColorExtension themeColor) {
+    return ServiceGalleryUploader(
+      serviceId: _idController.text.trim(),
+      initialGallery: _gallery,
+      onGalleryChanged: (updated) {
+        setState(() {
+          _gallery = updated;
+        });
+      },
+    );
+  }
+
+  // --- Step 5: Review & Customer Preview UI ---
+  Widget _buildReviewStep(ThemeColorExtension themeColor) {
+    final title = {
+      'en': _titleEnController.text.trim(),
+      'ar': _titleArController.text.trim(),
+    };
+    final description = {
+      'en': _descEnController.text.trim(),
+      'ar': _descArController.text.trim(),
+    };
+    final image = _imageController.text.trim();
+    final order = int.tryParse(_orderController.text.trim()) ?? 0;
+    final instructions = {
+      'ar': _instructionsArController.text.trim(),
+      'en': _instructionsEnController.text.trim(),
+    };
+
+    String? parentTitle;
+    if (_selectedParentId != null) {
+      try {
+        final parent = _categoriesList.firstWhere((c) => c.id == _selectedParentId);
+        parentTitle = parent.title['ar'] ?? parent.title['en'];
+      } catch (_) {
+        parentTitle = null;
+      }
+    }
+
+    final ServiceEntity previewEntity;
+    if (_isBookable) {
+      const defaultPrice = PriceEntity(
+        type: PricingMethod.unknown,
+        value: 0,
+        unit: '',
+        options: [],
+      );
+
+      previewEntity = SubServiceEntity(
+        id: _idController.text.trim(),
+        parentId: _selectedParentId,
+        isBookable: true,
+        title: title,
+        description: description,
+        image: image,
+        gallery: _gallery,
+        status: _status,
+        order: order,
+        updatedAt: DateTime.now(),
+        price: widget.initialData?.price ?? defaultPrice,
+        details: _details,
+        notIncluded: _hasExclusions
+            ? _notIncluded
+            : const NotIncludedEntity(
+                ar: LanguageContentEntity(title: '', icon: '', points: []),
+                en: LanguageContentEntity(title: '', icon: '', points: []),
+              ),
+        instructions: instructions,
+      );
+    } else {
+      previewEntity = ServiceEntity(
+        id: _idController.text.trim(),
+        parentId: _selectedParentId,
+        isBookable: false,
+        title: title,
+        description: description,
+        image: image,
+        gallery: _gallery,
+        status: _status,
+        order: order,
+        updatedAt: DateTime.now(),
+        instructions: instructions,
+      );
+    }
+
+    return ServiceCustomerPreview(
+      service: previewEntity,
+      parentCategoryTitle: parentTitle,
+    );
+  }
+
   // --- Custom Stepper Header Widget ---
   Widget _buildStepperHeader(ThemeColorExtension themeColor, int totalSteps) {
-    final stepTitles = ["البيانات الأساسية", "تفاصيل البنود", "تعليمات الحجز"];
+    final stepTitles = _isBookable
+        ? ["البيانات الأساسية", "تفاصيل البنود", "تعليمات الحجز", "معرض الصور", "المراجعة والنشر"]
+        : ["البيانات الأساسية", "معرض الصور", "المراجعة والنشر"];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       color: themeColor.cardBackground,
@@ -2533,6 +2643,7 @@ class _ServiceConfiguratorWizardPageState
 
   // --- Bottom Navigation Actions Bar ---
   Widget _buildBottomNavigation(ThemeColorExtension themeColor, int totalSteps) {
+    final isLastStep = _currentStep == totalSteps - 1;
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       decoration: BoxDecoration(
@@ -2551,9 +2662,12 @@ class _ServiceConfiguratorWizardPageState
           // Next / Save Button
           Expanded(
             child: MyCustomButton(
-              text: _currentStep == totalSteps - 1 ? "حفظ التغييرات" : "التالي",
+              text: isLastStep ? "اعتماد ونشر الخدمة" : "التالي",
+              leadingIcon: isLastStep
+                  ? const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 20)
+                  : null,
               onPressed: () {
-                if (_currentStep == totalSteps - 1) {
+                if (isLastStep) {
                   _submit();
                 } else {
                   if (_formKey.currentState!.validate()) {
@@ -2563,7 +2677,7 @@ class _ServiceConfiguratorWizardPageState
                   }
                 }
               },
-              backgroundColor: themeColor.primary,
+              backgroundColor: isLastStep ? const Color(0xFF059669) : themeColor.primary,
               textStyle: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo', color: Colors.white),
             ),
           ),
