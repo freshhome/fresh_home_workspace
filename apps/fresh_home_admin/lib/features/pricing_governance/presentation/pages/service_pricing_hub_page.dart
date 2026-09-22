@@ -5166,6 +5166,8 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
   late final TextEditingController _idController;
   late final TextEditingController _labelArController;
   late final TextEditingController _labelEnController;
+  late final TextEditingController _hintArController;
+  late final TextEditingController _hintEnController;
   late final TextEditingController _minController;
   late final TextEditingController _unitController;
   late final TextEditingController _priceModifierController;
@@ -5194,6 +5196,8 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     _idController = TextEditingController(text: f.id);
     _labelArController = TextEditingController(text: f.label['ar'] ?? '');
     _labelEnController = TextEditingController(text: f.label['en'] ?? '');
+    _hintArController = TextEditingController(text: f.hint?['ar'] ?? '');
+    _hintEnController = TextEditingController(text: f.hint?['en'] ?? '');
     _minController = TextEditingController(text: f.min?.toString() ?? '');
     _unitController = TextEditingController(text: f.unit ?? '');
     _priceModifierController = TextEditingController(
@@ -5235,6 +5239,14 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     if ((f.label['en'] ?? '') != (old.label['en'] ?? '') &&
         (f.label['en'] ?? '') != _labelEnController.text) {
       _labelEnController.text = f.label['en'] ?? '';
+    }
+    if ((f.hint?['ar'] ?? '') != (old.hint?['ar'] ?? '') &&
+        (f.hint?['ar'] ?? '') != _hintArController.text) {
+      _hintArController.text = f.hint?['ar'] ?? '';
+    }
+    if ((f.hint?['en'] ?? '') != (old.hint?['en'] ?? '') &&
+        (f.hint?['en'] ?? '') != _hintEnController.text) {
+      _hintEnController.text = f.hint?['en'] ?? '';
     }
     // عند تغيير النوع، نصفّر الحقول الرقمية
     if (f.type != old.type) {
@@ -5284,6 +5296,8 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     _idController.dispose();
     _labelArController.dispose();
     _labelEnController.dispose();
+    _hintArController.dispose();
+    _hintEnController.dispose();
     _minController.dispose();
     _unitController.dispose();
     _priceModifierController.dispose();
@@ -5304,6 +5318,7 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     String? id,
     DynamicFieldType? type,
     Map<String, String>? label,
+    Map<String, String>? hint,
     bool? required,
     double? min,
     String? unit,
@@ -5312,6 +5327,7 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
     Map<String, String>? description,
     String? icon,
     String? displayType,
+    bool clearHint = false,
     bool clearDescription = false,
     bool clearIcon = false,
     bool clearDisplayType = false,
@@ -5321,6 +5337,7 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
       id: id ?? f.id,
       type: type ?? f.type,
       label: label ?? f.label,
+      hint: clearHint ? null : (hint ?? f.hint),
       required: required ?? f.required,
       min: min ?? f.min,
       unit: unit ?? f.unit,
@@ -5719,6 +5736,74 @@ class _FieldCardWidgetState extends State<_FieldCardWidget> {
                                 labels['en'] = val;
                                 widget.onFieldChanged(_copyWith(label: labels));
                               },
+                            ),
+                            const SizedBox(height: 12),
+                            // Arabic Hint (Universal)
+                            TextFormField(
+                              controller: _hintArController,
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 12,
+                                color: t.textPrimary,
+                              ),
+                              decoration: _inputDec(
+                                label: 'تلميح الحقل بالعربية (Placeholder - AR)',
+                                icon: Icons.lightbulb_outline_rounded,
+                              ),
+                              onChanged: (val) {
+                                final hints = Map<String, String>.from(field.hint ?? {});
+                                final trimmed = val.trim();
+                                if (trimmed.isEmpty) {
+                                  hints.remove('ar');
+                                } else {
+                                  hints['ar'] = trimmed;
+                                }
+                                if (hints.isEmpty) {
+                                  widget.onFieldChanged(_copyWith(clearHint: true));
+                                } else {
+                                  widget.onFieldChanged(_copyWith(hint: hints));
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            // English Hint (Universal)
+                            TextFormField(
+                              controller: _hintEnController,
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 12,
+                                color: t.textPrimary,
+                              ),
+                              decoration: _inputDec(
+                                label: 'تلميح الحقل بالإنجليزية (Placeholder - EN)',
+                                icon: Icons.translate_rounded,
+                              ),
+                              onChanged: (val) {
+                                final hints = Map<String, String>.from(field.hint ?? {});
+                                final trimmed = val.trim();
+                                if (trimmed.isEmpty) {
+                                  hints.remove('en');
+                                } else {
+                                  hints['en'] = trimmed;
+                                }
+                                if (hints.isEmpty) {
+                                  widget.onFieldChanged(_copyWith(clearHint: true));
+                                } else {
+                                  widget.onFieldChanged(_copyWith(hint: hints));
+                                }
+                              },
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2, bottom: 4, right: 4),
+                              child: Text(
+                                '* تلميح يظهر داخل خانة الإدخال للمستخدم. اختياري (إذا تُرِك فارغاً سيتم استخدام عنوان الحقل افتراضياً).',
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 10,
+                                  color: t.unselectedItem.withValues(alpha: 0.8),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 12),
                             // Required switch

@@ -7,6 +7,7 @@ class PricingSummaryBarWidget extends StatelessWidget {
   final double? originalPrice;
   final bool isPriceCalculated;
   final VoidCallback onCalculate;
+  final VoidCallback? onContinue;
 
   const PricingSummaryBarWidget({
     super.key,
@@ -14,6 +15,7 @@ class PricingSummaryBarWidget extends StatelessWidget {
     this.originalPrice,
     required this.isPriceCalculated,
     required this.onCalculate,
+    this.onContinue,
   });
 
   @override
@@ -41,10 +43,11 @@ class PricingSummaryBarWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'إجمالي التكلفة التقديرية',
-                style: TextStyle(
+              Text(
+                isPriceCalculated ? 'التكلفة المعتمدة' : 'إجمالي التكلفة التقديرية',
+                style: const TextStyle(
                   fontSize: 12,
+                  fontWeight: FontWeight.w600,
                   color: Color(0xFF64748B),
                 ),
               ),
@@ -56,7 +59,7 @@ class PricingSummaryBarWidget extends StatelessWidget {
                   Text(
                     totalPrice.toStringAsFixed(0),
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: primaryColor,
                     ),
@@ -92,7 +95,7 @@ class PricingSummaryBarWidget extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -100,7 +103,31 @@ class PricingSummaryBarWidget extends StatelessWidget {
               ),
               child: const Text(
                 'احسب السعر',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+            )
+          else if (onContinue != null)
+            ElevatedButton(
+              onPressed: onContinue,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'متابعة الحجز',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(width: 6),
+                  Icon(Icons.arrow_forward_rounded, size: 16),
+                ],
               ),
             ),
         ],

@@ -149,7 +149,7 @@ class _PricingPageState extends State<PricingPage> {
 
           return SingleChildScrollView(
             controller: _scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -219,6 +219,10 @@ class _PricingPageState extends State<PricingPage> {
                   originalPrice: state.price?.basePrice,
                   isPriceCalculated: state.isPriceCalculated,
                   onCalculate: () => context.read<BookingFlowCubit>().calculatePrice(),
+                  onContinue: () {
+                    FocusScope.of(context).unfocus();
+                    context.read<BookingFlowCubit>().nextStep();
+                  },
                 ),
               ],
             ),
@@ -238,176 +242,49 @@ class _PricingPageState extends State<PricingPage> {
     ThemeColorExtension themeColor,
     BookingFlowState state,
   ) {
-    final currentArea = state.area ?? 100.0;
+    final locale = Localizations.localeOf(context).languageCode;
+    final areaField = state.servicePrice?.fields.where((f) => f.id == 'area').firstOrNull;
+    final String areaHint = areaField?.resolveHint(locale) ?? l10n.pricing_area_label;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              l10n.pricing_area_label,
-              style: themeText.titleSectionSmall.copyWith(
-                color: themeColor.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: themeColor.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '${currentArea.toStringAsFixed(0)} ${l10n.pricing_area_unit}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: themeColor.primary,
-                ),
-              ),
-            ),
-          ],
+        Text(
+          l10n.pricing_area_label,
+          style: themeText.titleSectionSmall.copyWith(
+            color: themeColor.textPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+          ),
         ),
-        const SizedBox(height: 16),
-        // Interactive Stepper Card
+        const SizedBox(height: 10),
         Container(
-          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: themeColor.cardBackground,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.fromBorderSide(themeColor.cardBorder),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: themeColor.unselectedItem.withValues(alpha: 0.15),
+              width: 1.5,
+            ),
             boxShadow: [themeColor.cardShadow],
           ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton.filledTonal(
-                    onPressed: currentArea > 50
-                        ? () {
-                            final newVal = (currentArea - 10).clamp(50, 1000).toDouble();
-                            _areaController.text = newVal.toStringAsFixed(0);
-                            context.read<BookingFlowCubit>().updateArea(newVal);
-                          }
-                        : null,
-                    icon: const Icon(Icons.remove, size: 20),
-                    style: IconButton.styleFrom(
-                      padding: const EdgeInsets.all(12),
-                    ),
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        currentArea.toStringAsFixed(0),
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          color: themeColor.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        l10n.pricing_area_unit,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: themeColor.secondaryText,
-                        ),
-                      ),
-                    ],
-                  ),
-                  IconButton.filledTonal(
-                    onPressed: () {
-                      final newVal = (currentArea + 10).clamp(50, 1000).toDouble();
-                      _areaController.text = newVal.toStringAsFixed(0);
-                      context.read<BookingFlowCubit>().updateArea(newVal);
-                    },
-                    icon: const Icon(Icons.add, size: 20),
-                    style: IconButton.styleFrom(
-                      padding: const EdgeInsets.all(12),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Slider(
-                value: currentArea.clamp(50, 500).toDouble(),
-                min: 50,
-                max: 500,
-                divisions: 45,
-                activeColor: themeColor.primary,
-                inactiveColor: themeColor.primary.withValues(alpha: 0.15),
-                onChanged: (val) {
-                  setState(() {
-                    _areaController.text = val.toStringAsFixed(0);
-                  });
-                  context.read<BookingFlowCubit>().updateArea(val.roundToDouble());
-                },
-              ),
-            ],
+          child: BaseTextFormField(
+            controller: _areaController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (val) {
+              if (val.isEmpty) {
+                context.read<BookingFlowCubit>().updateArea(null);
+              } else {
+                context.read<BookingFlowCubit>().updateArea(double.tryParse(val));
+              }
+            },
+            hint: areaHint,
+            suffixText: l10n.pricing_area_unit,
+            fillColor: Colors.transparent,
           ),
-        ),
-        const SizedBox(height: 16),
-        // Preset Chips
-        SizedBox(
-          height: 38,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [100, 150, 200, 250, 300, 400].map((preset) {
-              final isSelected = currentArea.round() == preset;
-              return Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: ChoiceChip(
-                  label: Text('$preset ${l10n.pricing_unit_meter_short}²'),
-                  labelStyle: TextStyle(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? themeColor.onPrimary : themeColor.secondaryText,
-                  ),
-                  selected: isSelected,
-                  selectedColor: themeColor.primary,
-                  backgroundColor: themeColor.nestedCardBackground,
-                  onSelected: (selected) {
-                    if (selected) {
-                      _areaController.text = preset.toString();
-                      context.read<BookingFlowCubit>().updateArea(preset.toDouble());
-                    }
-                  },
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ExpansionTile(
-          title: Text(
-            l10n.pricing_manual_area_override,
-            style: themeText.textCaption.copyWith(color: themeColor.secondaryText, fontSize: 12),
-          ),
-          childrenPadding: EdgeInsets.zero,
-          tilePadding: EdgeInsets.zero,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: _buildInputField(
-                controller: _areaController,
-                unit: l10n.pricing_area_unit,
-                onChanged: (val) {
-                  if (val.isEmpty) {
-                    context.read<BookingFlowCubit>().updateArea(null);
-                  } else {
-                    context.read<BookingFlowCubit>().updateArea(double.tryParse(val));
-                  }
-                },
-                themeText: themeText,
-                themeColor: themeColor,
-              ),
-            ),
-          ],
         ),
         Padding(
-          padding: const EdgeInsets.only(top: 12),
+          padding: const EdgeInsets.only(top: 10),
           child: Row(
             children: [
               Icon(
@@ -416,11 +293,13 @@ class _PricingPageState extends State<PricingPage> {
                 color: themeColor.primary.withValues(alpha: 0.6),
               ),
               const SizedBox(width: 8),
-              Text(
-                l10n.pricing_min_billing_notice,
-                style: themeText.textCaption.copyWith(
-                  color: themeColor.primary.withValues(alpha: 0.7),
-                  fontStyle: FontStyle.italic,
+              Expanded(
+                child: Text(
+                  l10n.pricing_min_billing_notice,
+                  style: themeText.textCaption.copyWith(
+                    color: themeColor.primary.withValues(alpha: 0.7),
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
             ],

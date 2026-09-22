@@ -190,7 +190,16 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
     final hasError = widget.errorText != null;
+
+    final String unitText = (widget.field.unit != null && widget.field.unit!.isNotEmpty)
+        ? (widget.field.unit!.toLowerCase() == 'sqm' ||
+                widget.field.unit!.toLowerCase() == 'm2' ||
+                widget.field.unit == 'م²'
+            ? (locale == 'ar' ? 'م²' : 'm²')
+            : widget.field.unit!)
+        : '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,7 +246,7 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
             },
             child: BaseTextFormField(
               controller: _controller,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (val) {
                 if (val.isEmpty) {
                   widget.onChanged(null);
@@ -245,8 +254,8 @@ class _DynamicNumberFieldState extends State<DynamicNumberField> {
                   widget.onChanged(double.tryParse(val));
                 }
               },
-              hint: '0.0',
-              suffixText: widget.field.unit,
+              hint: widget.field.resolveHint(locale),
+              suffixText: unitText.isNotEmpty ? unitText : null,
               fillColor: Colors.transparent,
             ),
           ),
@@ -390,12 +399,12 @@ class DynamicToggleField extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
-                    vertical: 14,
-                    horizontal: 12,
+                    vertical: 16,
+                    horizontal: 16,
                   ),
                   decoration: BoxDecoration(
                     color: isTrueSelected
-                        ? themeColor.primary.withValues(alpha: 0.05)
+                        ? themeColor.primary.withValues(alpha: 0.08)
                         : themeColor.cardBackground,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
@@ -404,14 +413,14 @@ class DynamicToggleField extends StatelessWidget {
                           : (hasError
                                 ? themeColor.error
                                 : themeColor.unselectedItem.withValues(
-                                    alpha: 0.2,
+                                    alpha: 0.18,
                                   )),
                       width: isTrueSelected ? 2.0 : 1.5,
                     ),
                     boxShadow: isTrueSelected
                         ? [
                             BoxShadow(
-                              color: themeColor.primary.withValues(alpha: 0.15),
+                              color: themeColor.primary.withValues(alpha: 0.12),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -429,8 +438,8 @@ class DynamicToggleField extends StatelessWidget {
                             ? themeColor.primary
                             : (hasError
                                   ? themeColor.error
-                                  : themeColor.unselectedItem),
-                        size: 20,
+                                  : themeColor.unselectedItem.withValues(alpha: 0.5)),
+                        size: 22,
                       ),
                       const SizedBox(width: 10),
                       Flexible(
@@ -438,12 +447,12 @@ class DynamicToggleField extends StatelessWidget {
                           trueLabel,
                           style: themeText.textBodyPrimary.copyWith(
                             fontWeight: isTrueSelected
-                                ? FontWeight.bold
+                                ? FontWeight.w800
                                 : FontWeight.w600,
                             color: isTrueSelected
                                 ? themeColor.primary
                                 : themeColor.textPrimary,
-                            fontSize: 13,
+                            fontSize: 14,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -461,12 +470,12 @@ class DynamicToggleField extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
-                    vertical: 14,
-                    horizontal: 12,
+                    vertical: 16,
+                    horizontal: 16,
                   ),
                   decoration: BoxDecoration(
                     color: isFalseSelected
-                        ? themeColor.primary.withValues(alpha: 0.05)
+                        ? themeColor.primary.withValues(alpha: 0.08)
                         : themeColor.cardBackground,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
@@ -475,14 +484,14 @@ class DynamicToggleField extends StatelessWidget {
                           : (hasError
                                 ? themeColor.error
                                 : themeColor.unselectedItem.withValues(
-                                    alpha: 0.2,
+                                    alpha: 0.18,
                                   )),
                       width: isFalseSelected ? 2.0 : 1.5,
                     ),
                     boxShadow: isFalseSelected
                         ? [
                             BoxShadow(
-                              color: themeColor.primary.withValues(alpha: 0.15),
+                              color: themeColor.primary.withValues(alpha: 0.12),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -500,8 +509,8 @@ class DynamicToggleField extends StatelessWidget {
                             ? themeColor.primary
                             : (hasError
                                   ? themeColor.error
-                                  : themeColor.unselectedItem),
-                        size: 20,
+                                  : themeColor.unselectedItem.withValues(alpha: 0.5)),
+                        size: 22,
                       ),
                       const SizedBox(width: 10),
                       Flexible(
@@ -509,12 +518,12 @@ class DynamicToggleField extends StatelessWidget {
                           falseLabel,
                           style: themeText.textBodyPrimary.copyWith(
                             fontWeight: isFalseSelected
-                                ? FontWeight.bold
+                                ? FontWeight.w800
                                 : FontWeight.w600,
                             color: isFalseSelected
                                 ? themeColor.primary
                                 : themeColor.textPrimary,
-                            fontSize: 13,
+                            fontSize: 14,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -1119,7 +1128,7 @@ class DynamicCardToggle extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: value
-                ? themeColor.primary.withValues(alpha: 0.03)
+                ? themeColor.primary.withValues(alpha: 0.08)
                 : themeColor.cardBackground,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
@@ -1127,10 +1136,18 @@ class DynamicCardToggle extends StatelessWidget {
                   ? themeColor.error
                   : (value
                         ? themeColor.primary
-                        : themeColor.unselectedItem.withValues(alpha: 0.15)),
-              width: hasError ? 2.0 : 1.5,
+                        : themeColor.unselectedItem.withValues(alpha: 0.18)),
+              width: value ? 2.0 : 1.5,
             ),
-            boxShadow: [themeColor.cardShadow],
+            boxShadow: value
+                ? [
+                    BoxShadow(
+                      color: themeColor.primary.withValues(alpha: 0.12),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [themeColor.cardShadow],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

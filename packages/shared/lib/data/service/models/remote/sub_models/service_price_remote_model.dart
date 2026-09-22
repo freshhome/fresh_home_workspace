@@ -56,6 +56,7 @@ class DynamicFieldRemoteModel {
   final String id;
   final String type;
   final Map<String, String> label;
+  final Map<String, String>? hint;
   final bool required;
   final double? min;
   final String? unit;
@@ -71,6 +72,7 @@ class DynamicFieldRemoteModel {
     required this.id,
     required this.type,
     required this.label,
+    this.hint,
     this.required = false,
     this.min,
     this.unit,
@@ -86,6 +88,9 @@ class DynamicFieldRemoteModel {
       id: json['id'] as String? ?? '',
       type: json['type'] as String? ?? 'number',
       label: Map<String, String>.from(json['label'] as Map? ?? {}),
+      hint: json['hint'] != null
+          ? Map<String, String>.from(json['hint'] as Map)
+          : null,
       required: json['required'] as bool? ?? false,
       min: (json['min'] as num?)?.toDouble(),
       unit: json['unit'] as String?,
@@ -102,7 +107,7 @@ class DynamicFieldRemoteModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final data = <String, dynamic>{
       'id': id,
       'type': type,
       'label': label,
@@ -115,6 +120,19 @@ class DynamicFieldRemoteModel {
       'icon': icon,
       'display_type': displayType,
     };
+    if (hint != null && hint!.isNotEmpty) {
+      final cleanHint = <String, String>{};
+      hint!.forEach((k, v) {
+        final trimmed = v.trim();
+        if (trimmed.isNotEmpty) {
+          cleanHint[k] = trimmed;
+        }
+      });
+      if (cleanHint.isNotEmpty) {
+        data['hint'] = cleanHint;
+      }
+    }
+    return data;
   }
 }
 

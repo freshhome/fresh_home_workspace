@@ -126,6 +126,21 @@ class ServiceMapper {
   }
 
   // --- DynamicField Mapping Helpers ---
+  static Map<String, String>? _sanitizeLocalizedMap(Map<dynamic, dynamic>? map) {
+    if (map == null) return null;
+    final clean = <String, String>{};
+    map.forEach((k, v) {
+      if (k != null && v != null) {
+        final strKey = k.toString().trim();
+        final strVal = v.toString().trim();
+        if (strKey.isNotEmpty && strVal.isNotEmpty) {
+          clean[strKey] = strVal;
+        }
+      }
+    });
+    return clean.isEmpty ? null : clean;
+  }
+
   static DynamicFieldEntity dynamicFieldRemoteToEntity(
     DynamicFieldRemoteModel model,
   ) {
@@ -133,6 +148,7 @@ class ServiceMapper {
       id: model.id,
       type: DynamicFieldType.fromString(model.type),
       label: model.label,
+      hint: _sanitizeLocalizedMap(model.hint),
       required: model.required,
       min: model.min,
       unit: model.unit,
@@ -154,6 +170,7 @@ class ServiceMapper {
       id: map['id'] as String? ?? '',
       type: DynamicFieldType.fromString(map['type'] as String? ?? ''),
       label: Map<String, String>.from(map['label'] as Map? ?? {}),
+      hint: _sanitizeLocalizedMap(map['hint'] as Map?),
       required: map['required'] as bool? ?? false,
       min: map['min'] as num?,
       unit: map['unit'] as String?,
@@ -177,6 +194,7 @@ class ServiceMapper {
       id: entity.id,
       type: entity.type.name,
       label: entity.label,
+      hint: _sanitizeLocalizedMap(entity.hint),
       required: entity.required,
       min: entity.min?.toDouble(),
       unit: entity.unit,
@@ -194,7 +212,8 @@ class ServiceMapper {
   }
 
   static Map<String, dynamic> dynamicFieldToMap(DynamicFieldEntity entity) {
-    return {
+    final cleanHint = _sanitizeLocalizedMap(entity.hint);
+    final data = <String, dynamic>{
       'id': entity.id,
       'type': entity.type.name,
       'label': entity.label,
@@ -212,6 +231,10 @@ class ServiceMapper {
       'icon': entity.icon,
       'display_type': entity.displayType,
     };
+    if (cleanHint != null) {
+      data['hint'] = cleanHint;
+    }
+    return data;
   }
 
   // --- Price ---

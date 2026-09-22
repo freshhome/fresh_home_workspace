@@ -43,6 +43,7 @@ class DynamicFieldEntity extends Equatable {
   final String id;
   final DynamicFieldType type;
   final Map<String, String> label;
+  final Map<String, String>? hint;
   final bool required;
   final num? min;
   final String? unit;
@@ -56,6 +57,7 @@ class DynamicFieldEntity extends Equatable {
     required this.id,
     required this.type,
     required this.label,
+    this.hint,
     this.required = false,
     this.min,
     this.unit,
@@ -66,11 +68,30 @@ class DynamicFieldEntity extends Equatable {
     this.displayType,
   });
 
+  /// Returns localized hint if present and non-empty;
+  /// otherwise cleanly falls back to the localized label.
+  String resolveHint(String locale) {
+    final locHint = hint?[locale]?.trim();
+    if (locHint != null && locHint.isNotEmpty) return locHint;
+
+    final arHint = hint?['ar']?.trim();
+    if (arHint != null && arHint.isNotEmpty) return arHint;
+
+    final locLabel = label[locale]?.trim();
+    if (locLabel != null && locLabel.isNotEmpty) return locLabel;
+
+    final arLabel = label['ar']?.trim();
+    if (arLabel != null && arLabel.isNotEmpty) return arLabel;
+
+    return id;
+  }
+
   @override
   List<Object?> get props => [
         id,
         type,
         label,
+        hint,
         required,
         min,
         unit,

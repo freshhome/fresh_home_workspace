@@ -8,7 +8,8 @@ import {
   ShieldCheck, ArrowLeft, ArrowRight, CheckCircle2, 
   MapPin, Calendar, CreditCard, Clock, Check, ShieldAlert, Sparkles,
   Layers, Zap, ChevronLeft, ChevronRight, Home, Wrench, Wind, Armchair, 
-  AppWindow, Bug, RefreshCw, Plus, Building, Navigation, Eye, X, Info, AlertCircle, Trash2
+  AppWindow, Bug, RefreshCw, Plus, Building, Navigation, Eye, X, Info, AlertCircle, Trash2,
+  Star
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -18,6 +19,7 @@ import ExpansionModal from "@/components/ExpansionModal";
 import { trackCalculatePrice, trackBeginCheckout, trackCheckoutProgress } from "@/lib/gtm";
 import { recordFunnelStep, clearFunnelSession } from "@/lib/funnel";
 import { getOrCreateBrowserId } from "@/lib/device";
+import { resolveFieldHint } from "@/lib/pricing-types";
 
 // Step titles
 const STEPS = ["حساب السعر", "اختيار الموعد", "العنوان", "المراجعة والتأكيد"];
@@ -1554,55 +1556,56 @@ function BookingFlowContent() {
                     ) : (
                       /* 2. DYNAMIC PRICING FORM MODE (Leaf Bookable Service Selected) */
                       <div className="space-y-6">
-                        {/* Selected Service Banner with Full Path, Details and Change Button */}
+                        {/* Compact Service Header */}
                         <motion.div 
                           layout
                           layoutId={`service-node-${selectedSubService.id}`}
                           transition={springTransition}
-                          className="bg-gradient-to-r from-blue-50/95 via-sky-50/60 to-indigo-50/70 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] p-4 sm:p-5 rounded-2xl border border-blue-200/90 dark:border-blue-900/60 shadow-xs flex flex-col gap-3.5"
+                          className="bg-gradient-to-r from-blue-50/90 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:via-[#071739] dark:to-[#091E4A] py-2.5 px-3.5 sm:py-3 sm:px-4 rounded-2xl border border-blue-200/80 dark:border-blue-900/50 shadow-xs flex flex-wrap sm:flex-nowrap items-center justify-between gap-3"
                         >
-                          {/* Top Row: Service Icon & Full Path & Service Title */}
-                          <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+                          {/* Service Icon & Title */}
+                          <div className="flex items-center gap-3 min-w-0">
                             <motion.div 
                               layout="position"
                               layoutId={`service-icon-${selectedSubService.id}`}
-                              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-[#071739] border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#21A5FB] shrink-0 shadow-2xs p-2.5 mt-0.5"
+                              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#071739] border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#21A5FB] shrink-0 shadow-2xs p-2"
                             >
                               {selectedSubService.image ? (
                                 <img src={resolveIconUrl(selectedSubService.image) || ""} alt="" className="w-full h-full object-contain" />
                               ) : (
-                                <Sparkles className="w-6 h-6 sm:w-7 sm:h-7" />
+                                <Sparkles className="w-5 h-5 text-[#0091FF]" />
                               )}
                             </motion.div>
-                            <div className="min-w-0 flex-1">
-                              <div className="text-[10px] sm:text-xs font-black text-[#21A5FB] dark:text-[#21A5FB] flex items-center gap-1 flex-wrap leading-snug">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <motion.h3 
+                                  layout="position"
+                                  layoutId={`service-title-${selectedSubService.id}`}
+                                  className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-tight truncate"
+                                >
+                                  {selectedSubService.title?.ar || selectedSubService.title}
+                                </motion.h3>
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 text-[10px] font-black border border-amber-200/60 dark:border-amber-900/40 shrink-0">
+                                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                  <span>4.9</span>
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1 truncate mt-0.5">
                                 {buildPathForNode(selectedSubService.id, allTreeServices).map((p, i, arr) => (
                                   <span key={p.id}>{p.title?.ar || p.title}{i < arr.length - 1 ? " / " : ""}</span>
                                 ))}
                               </div>
-                              <motion.h3 
-                                layout="position"
-                                layoutId={`service-title-${selectedSubService.id}`}
-                                className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-1 leading-snug break-words"
-                              >
-                                {selectedSubService.title?.ar || selectedSubService.title}
-                              </motion.h3>
-                              {(selectedSubService.description?.ar || selectedSubService.description) && (
-                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 line-clamp-2 leading-relaxed">
-                                  {selectedSubService.description?.ar || selectedSubService.description}
-                                </p>
-                              )}
                             </div>
                           </div>
 
-                          {/* Actions Bar: View Details & Change Service */}
-                          <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-blue-100/80 dark:border-blue-900/40">
+                          {/* Compact Action Buttons */}
+                          <div className="flex items-center gap-2 shrink-0 mr-auto sm:mr-0">
                             <Link
                               href={`/services/details?subServiceId=${selectedSubService.id}`}
-                              className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white dark:bg-[#071739] border border-blue-200 dark:border-blue-900/60 text-[#21A5FB] hover:bg-blue-50 dark:hover:bg-blue-950/50 text-xs font-black transition-all shrink-0 cursor-pointer shadow-2xs flex items-center gap-1.5 active:scale-95"
+                              className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#071739] border border-blue-200 dark:border-blue-900/60 text-[#21A5FB] hover:bg-blue-50 dark:hover:bg-blue-950/50 text-[11px] font-black transition-all shrink-0 cursor-pointer shadow-2xs flex items-center gap-1 active:scale-95"
                             >
                               <Eye className="w-3.5 h-3.5" />
-                              <span>تفاصيل الخدمة</span>
+                              <span>التفاصيل</span>
                             </Link>
 
                             <button
@@ -1613,10 +1616,10 @@ function BookingFlowContent() {
                                 setHasCalculated(false);
                                 setAnimatePrice(false);
                               }}
-                              className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 text-slate-700 dark:text-slate-200 hover:text-red-500 hover:border-red-300 text-xs font-black transition-all shrink-0 cursor-pointer shadow-2xs flex items-center gap-1.5 active:scale-95"
+                              className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#071739] border border-slate-200 dark:border-blue-900/60 text-slate-600 dark:text-slate-300 hover:text-red-500 hover:border-red-300 text-[11px] font-black transition-all shrink-0 cursor-pointer shadow-2xs flex items-center gap-1 active:scale-95"
                             >
                               <RefreshCw className="w-3.5 h-3.5" />
-                              <span>تغيير الخدمة</span>
+                              <span>تغيير</span>
                             </button>
                           </div>
                         </motion.div>
@@ -1631,10 +1634,10 @@ function BookingFlowContent() {
                           {/* Header */}
                           <div>
                             <h2 className="text-xl font-black text-slate-900 dark:text-white">
-                              تحديد مواصفات وتفاصيل الخدمة
+                              احسب تكلفة خدمتك
                             </h2>
                             <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">
-                              يرجى إدخال المقاسات والخيارات المناسبة لمكانك لحساب التكلفة الدقيقة فوراً.
+                              أكمل البيانات التالية لمعرفة السعر الدقيق
                             </p>
                           </div>
 
@@ -1884,12 +1887,6 @@ function BookingFlowContent() {
                                           {field.label?.ar || field.label} {field.unit ? `(${field.unit})` : ""}
                                           {!field.required && <span className="text-[9px] text-slate-400 font-bold mr-1.5">(اختياري)</span>}
                                         </label>
-                                        
-                                        {field.type === "number" && field.id === "area" && (
-                                          <span className="text-xs font-black text-[#0091FF] bg-blue-50 dark:bg-blue-950/80 px-2 py-0.5 rounded-lg border border-blue-100 dark:border-blue-900/50">
-                                            {val !== "" && val !== undefined && val !== null ? val : "0"} {field.unit || "م²"}
-                                          </span>
-                                        )}
                                       </div>
                                       {field.description?.ar && (
                                         <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
@@ -1902,58 +1899,39 @@ function BookingFlowContent() {
                                     <div className="pt-1">
                                       {field.type === "number" && (
                                         field.id === "area" ? (
-                                          <div className="flex items-center gap-2">
-                                            <button 
-                                              type="button"
-                                              onClick={() => {
-                                                const currentVal = (val === "" || val === undefined || val === null) ? (field.min || 50) : Number(val);
-                                                handleFieldChange(field.id, Math.max(field.min || 50, currentVal - 10));
+                                          <div className="relative flex items-center w-full max-w-sm">
+                                            <input 
+                                              type="number" 
+                                              min={field.min || 1} 
+                                              max={field.max || 5000} 
+                                              placeholder={resolveFieldHint(field, 'ar')}
+                                              value={val ?? ""}
+                                              onChange={(e) => {
+                                                const text = e.target.value;
+                                                if (text === "") {
+                                                  handleFieldChange(field.id, "");
+                                                } else {
+                                                  const parsed = parseFloat(text);
+                                                  handleFieldChange(field.id, isNaN(parsed) ? "" : parsed);
+                                                }
                                               }}
-                                              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-blue-900/50 font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 transition-colors cursor-pointer"
-                                            >
-                                              -
-                                            </button>
-                                            <div className="relative flex items-center max-w-[120px]">
-                                              <input 
-                                                type="number" 
-                                                min={field.min || 50} 
-                                                max={field.max || 400} 
-                                                value={val ?? ""}
-                                                onChange={(e) => {
-                                                  const text = e.target.value;
-                                                  if (text === "") {
-                                                    handleFieldChange(field.id, "");
-                                                  } else {
-                                                    const parsed = parseInt(text);
-                                                    handleFieldChange(field.id, isNaN(parsed) ? "" : parsed);
+                                              onBlur={() => {
+                                                if (val !== "" && val !== undefined && val !== null) {
+                                                  const num = Number(val);
+                                                  if (field.min !== undefined && num < field.min) {
+                                                    handleFieldChange(field.id, field.min);
                                                   }
-                                                }}
-                                                onBlur={() => {
-                                                  if (val !== "" && val !== undefined && val !== null) {
-                                                    const num = Number(val);
-                                                    if (field.min !== undefined && num < field.min) {
-                                                      handleFieldChange(field.id, field.min);
-                                                    }
-                                                  }
-                                                }}
-                                                className={`w-full p-1.5 pl-7 rounded-xl border text-center text-xs font-black focus:outline-none bg-white dark:bg-[#071739] text-slate-900 dark:text-white font-sans [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
-                                                  hasError ? 'border-red-500 focus:border-red-500 bg-red-50/15' : 'border-slate-200 dark:border-blue-900/60 focus:border-[#0091FF]'
-                                                }`}
-                                              />
-                                              <span className="absolute left-2 text-[8px] font-extrabold text-slate-400 pointer-events-none">
-                                                {field.unit || "م²"}
-                                              </span>
-                                            </div>
-                                            <button 
-                                              type="button"
-                                              onClick={() => {
-                                                const currentVal = (val === "" || val === undefined || val === null) ? (field.min || 50) : Number(val);
-                                                handleFieldChange(field.id, Math.min(field.max || 400, currentVal + 10));
+                                                }
                                               }}
-                                              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-blue-900/50 font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 transition-colors cursor-pointer"
-                                            >
-                                              +
-                                            </button>
+                                              className={`w-full py-2.5 px-3.5 pl-10 rounded-xl border text-sm font-black focus:outline-none bg-white dark:bg-[#071739] text-slate-900 dark:text-white font-sans transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                                                hasError 
+                                                  ? 'border-red-500 focus:border-red-500 bg-red-50/15' 
+                                                  : 'border-slate-200 dark:border-blue-900/60 focus:border-[#0091FF] focus:ring-2 focus:ring-[#0091FF]/20'
+                                              }`}
+                                            />
+                                            <span className="absolute left-3 text-xs font-black text-slate-400 pointer-events-none select-none">
+                                              {field.unit || "م²"}
+                                            </span>
                                           </div>
                                         ) : (
                                           <div className="flex items-center gap-3">
@@ -1993,45 +1971,55 @@ function BookingFlowContent() {
                                           ? field.options.find((o: any) => o.id === "false" || o.id === "no")
                                           : null;
                                         
-                                        const trueLabel = optTrue?.label?.ar || optTrue?.label || "نعم";
-                                        const falseLabel = optFalse?.label?.ar || optFalse?.label || "لا";
+                                        const trueLabel = optTrue?.label?.ar || optTrue?.label || "نعم، يوجد أثاث";
+                                        const falseLabel = optFalse?.label?.ar || optFalse?.label || "المنزل فارغ (بدون أثاث)";
                                         
                                         const isTrueSelected = val === true;
                                         const isFalseSelected = val === false;
                                         
                                         return (
-                                          <div className="grid grid-cols-2 gap-3 max-w-[280px]">
-                                            <div 
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-xl">
+                                            <button 
+                                              type="button"
                                               onClick={() => handleFieldChange(field.id, true)}
-                                              className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                                              className={`p-3.5 sm:p-4 rounded-xl border-2 flex items-center justify-between gap-3 cursor-pointer transition-all duration-200 text-right ${
                                                 isTrueSelected 
-                                                  ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/60 text-[#0091FF] font-bold shadow-xs" 
-                                                  : `bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300 hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200 dark:border-blue-900/50"}`
+                                                  ? "border-[#0091FF] bg-blue-50/80 dark:bg-blue-950/60 text-[#0091FF] shadow-xs" 
+                                                  : `bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-blue-800 ${hasError ? "border-red-300" : "border-slate-200 dark:border-blue-900/50"}`
                                               }`}
                                             >
-                                              <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
-                                                isTrueSelected ? "border-[#0091FF] bg-[#0091FF]" : "border-slate-300 bg-white"
-                                              }`}>
-                                                {isTrueSelected && <div className="w-1 h-1 rounded-full bg-white" />}
+                                              <span className={`text-xs sm:text-sm ${isTrueSelected ? "font-extrabold" : "font-semibold"}`}>
+                                                {trueLabel}
+                                              </span>
+                                              <div className="shrink-0">
+                                                {isTrueSelected ? (
+                                                  <CheckCircle2 className="w-5 h-5 text-[#0091FF]" />
+                                                ) : (
+                                                  <div className="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-slate-600" />
+                                                )}
                                               </div>
-                                              <span className="text-xs font-bold">{trueLabel}</span>
-                                            </div>
+                                            </button>
 
-                                            <div 
+                                            <button 
+                                              type="button"
                                               onClick={() => handleFieldChange(field.id, false)}
-                                              className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                                              className={`p-3.5 sm:p-4 rounded-xl border-2 flex items-center justify-between gap-3 cursor-pointer transition-all duration-200 text-right ${
                                                 isFalseSelected 
-                                                  ? "border-[#0091FF] bg-blue-50 dark:bg-blue-950/60 text-[#0091FF] font-bold shadow-xs" 
-                                                  : `bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300 hover:border-slate-350 ${hasError ? "border-red-300" : "border-slate-200 dark:border-blue-900/50"}`
+                                                  ? "border-[#0091FF] bg-blue-50/80 dark:bg-blue-950/60 text-[#0091FF] shadow-xs" 
+                                                  : `bg-white dark:bg-[#071739] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-blue-800 ${hasError ? "border-red-300" : "border-slate-200 dark:border-blue-900/50"}`
                                               }`}
                                             >
-                                              <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
-                                                isFalseSelected ? "border-[#0091FF] bg-[#0091FF]" : "border-slate-300 bg-white"
-                                              }`}>
-                                                {isFalseSelected && <div className="w-1 h-1 rounded-full bg-white" />}
+                                              <span className={`text-xs sm:text-sm ${isFalseSelected ? "font-extrabold" : "font-semibold"}`}>
+                                                {falseLabel}
+                                              </span>
+                                              <div className="shrink-0">
+                                                {isFalseSelected ? (
+                                                  <CheckCircle2 className="w-5 h-5 text-[#0091FF]" />
+                                                ) : (
+                                                  <div className="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-slate-600" />
+                                                )}
                                               </div>
-                                              <span className="text-xs font-bold">{falseLabel}</span>
-                                            </div>
+                                            </button>
                                           </div>
                                         );
                                       })()}
@@ -2669,30 +2657,37 @@ function BookingFlowContent() {
                         type="button"
                         onClick={handleCalculate}
                         disabled={isCalculating}
-                        className="flex items-center gap-1.5 bg-[#21A5FB] hover:bg-[#0091FF] text-white font-extrabold px-5 sm:px-6 py-2.5 rounded-xl text-xs shadow-md shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
+                        className="flex items-center gap-2 bg-[#0091FF] hover:bg-[#0077D6] disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white disabled:text-slate-400 font-black px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
                       >
                         <span>{isCalculating ? "جاري الحساب..." : "احسب السعر"}</span>
                         <ArrowLeft className="w-4 h-4 rotate-180" />
                       </button>
                     ) : (
-                      <motion.button 
-                        id="next-step-btn"
-                        type="button"
-                        onClick={handleNext}
-                        animate={{ 
-                          scale: [1, 1.03, 1],
-                          boxShadow: [
-                            "0 4px 14px 0 rgba(16, 185, 129, 0.35)",
-                            "0 6px 24px 0 rgba(16, 185, 129, 0.65)",
-                            "0 4px 14px 0 rgba(16, 185, 129, 0.35)"
-                          ]
-                        }}
-                        transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm transition-all active:scale-95 cursor-pointer ring-2 ring-emerald-400/50"
-                      >
-                        <span>الخطوة التالية (الموعد)</span>
-                        <ArrowLeft className="w-4 h-4 rotate-180 animate-pulse" />
-                      </motion.button>
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="flex items-baseline gap-1 bg-blue-50/80 dark:bg-blue-950/60 px-3.5 py-2 rounded-xl border border-blue-200/60 dark:border-blue-900/40">
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">السعر:</span>
+                          <span className="text-xl sm:text-2xl font-black text-[#0091FF] tracking-tight">{priceDetails.total}</span>
+                          <span className="text-xs font-black text-slate-600 dark:text-slate-300">ج.م</span>
+                        </div>
+                        <motion.button 
+                          id="next-step-btn"
+                          type="button"
+                          onClick={handleNext}
+                          animate={{ 
+                            scale: [1, 1.02, 1],
+                            boxShadow: [
+                              "0 4px 14px 0 rgba(0, 145, 255, 0.25)",
+                              "0 6px 20px 0 rgba(0, 145, 255, 0.45)",
+                              "0 4px 14px 0 rgba(0, 145, 255, 0.25)"
+                            ]
+                          }}
+                          transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                          className="flex items-center gap-2 bg-[#0091FF] hover:bg-[#0077D6] text-white font-black px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm transition-all active:scale-95 cursor-pointer ring-2 ring-blue-400/40"
+                        >
+                          <span>متابعة الحجز</span>
+                          <ArrowLeft className="w-4 h-4 rotate-180 animate-pulse" />
+                        </motion.button>
+                      </div>
                     )
                   ) : currentStep === 2 ? (
                     <button 
@@ -2872,18 +2867,18 @@ function BookingFlowContent() {
                     </div>
 
                     {/* Total Price Card */}
-                    <div className="bg-gradient-to-br from-blue-50 via-sky-50/50 to-indigo-50/60 dark:from-[#050D24] dark:to-[#071739] p-4 sm:p-5 rounded-2xl border border-blue-100 dark:border-blue-900/50 space-y-2.5">
+                    <div className="bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-indigo-50/50 dark:from-[#050D24] dark:to-[#071739] p-4 sm:p-5 rounded-2xl border-2 border-[#0091FF]/20 dark:border-blue-900/50 space-y-2">
                       <div className="flex justify-between items-baseline">
                         <span className="text-xs font-black text-slate-700 dark:text-slate-200">المبلغ الإجمالي</span>
-                        <div className="text-left">
+                        <div className="text-left flex items-baseline gap-1">
                           <motion.span 
-                            animate={{ scale: [1, 1.05, 1] }} 
+                            animate={{ scale: [1, 1.04, 1] }} 
                             transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                            className="text-2xl sm:text-3xl font-black text-[#21A5FB] dark:text-[#21A5FB] inline-block tracking-tight"
+                            className="text-3xl sm:text-4xl font-black text-[#0091FF] inline-block tracking-tight"
                           >
                             {priceDetails.total}
                           </motion.span>
-                          <span className="text-xs font-black text-slate-500 dark:text-slate-400 mr-1">ج.م</span>
+                          <span className="text-sm font-black text-slate-600 dark:text-slate-300">ج.م</span>
                         </div>
                       </div>
                       <p className="text-[10px] text-slate-400 font-bold">شامل المعاينة والمعدات وضمان الخدمة</p>
