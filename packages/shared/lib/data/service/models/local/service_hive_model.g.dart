@@ -22,7 +22,9 @@ class ServiceHiveModelAdapter extends TypeAdapter<ServiceHiveModel> {
       isBookable: fields[2] as bool,
       title: (fields[3] as Map).cast<String, String>(),
       description: (fields[4] as Map).cast<String, String>(),
-      instructions: (fields[5] as Map?)?.cast<String, String>(),
+      instructions: (fields[5] as Map?)?.map(
+        (k, e) => MapEntry(k as String, (e as List).cast<String>()),
+      ),
       image: fields[6] as String?,
       status: fields[7] as ServiceStatus,
       order: fields[8] as int,

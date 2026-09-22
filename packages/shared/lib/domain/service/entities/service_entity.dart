@@ -8,7 +8,7 @@ import 'sub_entities/service_gallery_item.dart';
 class ServiceEntity extends BaseServiceEntity {
   final String? parentId;
   final bool isBookable;
-  final Map<String, String>? instructions;
+  final Map<String, List<String>>? instructions;
   final PriceEntity? price;
   final List<DetailEntity>? details;
   final NotIncludedEntity? notIncluded;
@@ -41,7 +41,7 @@ class ServiceEntity extends BaseServiceEntity {
     bool? isBookable,
     Map<String, String>? title,
     Map<String, String>? description,
-    Map<String, String>? instructions,
+    Map<String, List<String>>? instructions,
     String? image,
     List<ServiceGalleryItemEntity>? gallery,
     ServiceStatus? status,

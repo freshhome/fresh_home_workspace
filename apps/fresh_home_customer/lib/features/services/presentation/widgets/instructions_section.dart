@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared/presentation/theme/components/text_theme/app_text_theme_extension.dart';
 
 class InstructionsSection extends StatelessWidget {
-  final Map<String, String>? instructions;
+  final Map<String, List<String>>? instructions;
 
   const InstructionsSection({
     super.key,
@@ -14,8 +14,9 @@ class InstructionsSection extends StatelessWidget {
     if (instructions == null) return const SizedBox.shrink();
 
     final langCode = Localizations.localeOf(context).languageCode;
-    final text = instructions![langCode]?.trim() ?? '';
-    if (text.isEmpty) return const SizedBox.shrink();
+    final points = instructions?[langCode] ?? instructions?['ar'] ?? instructions?['en'] ?? [];
+    final validPoints = points.where((p) => p.trim().isNotEmpty).toList();
+    if (validPoints.isEmpty) return const SizedBox.shrink();
 
     final themeText = Theme.of(context).extension<AppTextThemeExtension>()!;
 
@@ -55,15 +56,48 @@ class InstructionsSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            text,
-            style: themeText.textBodyPrimary.copyWith(
-              fontSize: 14,
-              color: Colors.black87,
-              height: 1.5,
-            ),
-          ),
+          const SizedBox(height: 14),
+          ...validPoints.asMap().entries.map((entry) {
+            final idx = entry.key + 1;
+            final point = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    width: 18,
+                    height: 18,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade200.withValues(alpha: 0.7),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$idx',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber.shade900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      point,
+                      style: themeText.textBodyPrimary.copyWith(
+                        fontSize: 14,
+                        color: Colors.black87,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );

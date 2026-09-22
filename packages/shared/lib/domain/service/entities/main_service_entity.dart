@@ -33,7 +33,7 @@ class MainServiceEntity extends ServiceEntity {
     bool? isBookable,
     Map<String, String>? title,
     Map<String, String>? description,
-    Map<String, String>? instructions,
+    Map<String, List<String>>? instructions,
     String? image,
     List<ServiceGalleryItemEntity>? gallery,
     ServiceStatus? status,

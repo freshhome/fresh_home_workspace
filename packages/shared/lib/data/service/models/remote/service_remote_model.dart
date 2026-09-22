@@ -8,6 +8,28 @@ import 'sub_models/service_gallery_item_remote_model.dart';
 
 part 'service_remote_model.g.dart';
 
+Map<String, List<String>>? _instructionsFromJson(dynamic json) {
+  if (json == null) return null;
+  if (json is! Map) return null;
+  final result = <String, List<String>>{};
+  json.forEach((k, v) {
+    if (k != null) {
+      final key = k.toString();
+      if (v is List) {
+        result[key] = v.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+      } else if (v is String && v.trim().isNotEmpty) {
+        result[key] = [v.trim()];
+      } else {
+        result[key] = [];
+      }
+    }
+  });
+  return result;
+}
+
+Map<String, dynamic>? _instructionsToJson(Map<String, List<String>>? instructions) =>
+    instructions;
+
 @JsonSerializable(explicitToJson: true)
 @TimestampConverter()
 class ServiceRemoteModel {
@@ -18,7 +40,8 @@ class ServiceRemoteModel {
   final bool isBookable;
   final Map<String, String> title;
   final Map<String, String> description;
-  final Map<String, String>? instructions;
+  @JsonKey(fromJson: _instructionsFromJson, toJson: _instructionsToJson)
+  final Map<String, List<String>>? instructions;
   final String? image;
   final List<ServiceGalleryItemRemoteModel>? gallery;
   final ServiceStatus status;
@@ -66,7 +89,7 @@ class ServiceRemoteModel {
     bool? isBookable,
     Map<String, String>? title,
     Map<String, String>? description,
-    Map<String, String>? instructions,
+    Map<String, List<String>>? instructions,
     String? image,
     List<ServiceGalleryItemRemoteModel>? gallery,
     ServiceStatus? status,

@@ -25,7 +25,7 @@ class ServiceHiveModel extends HiveObject {
   final Map<String, String> description;
 
   @HiveField(5)
-  final Map<String, String>? instructions;
+  final Map<String, List<String>>? instructions;
 
   @HiveField(6)
   final String? image;

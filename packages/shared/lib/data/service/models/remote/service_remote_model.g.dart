@@ -13,9 +13,7 @@ ServiceRemoteModel _$ServiceRemoteModelFromJson(Map<String, dynamic> json) =>
       isBookable: json['is_bookable'] as bool,
       title: Map<String, String>.from(json['title'] as Map),
       description: Map<String, String>.from(json['description'] as Map),
-      instructions: (json['instructions'] as Map<String, dynamic>?)?.map(
-        (k, e) => MapEntry(k, e as String),
-      ),
+      instructions: _instructionsFromJson(json['instructions']),
       image: json['image'] as String?,
       gallery: (json['gallery'] as List<dynamic>?)
           ?.map((e) =>
@@ -49,7 +47,7 @@ Map<String, dynamic> _$ServiceRemoteModelToJson(ServiceRemoteModel instance) =>
       'is_bookable': instance.isBookable,
       'title': instance.title,
       'description': instance.description,
-      'instructions': instance.instructions,
+      'instructions': _instructionsToJson(instance.instructions),
       'image': instance.image,
       'gallery': instance.gallery?.map((e) => e.toJson()).toList(),
       'status': _$ServiceStatusEnumMap[instance.status]!,

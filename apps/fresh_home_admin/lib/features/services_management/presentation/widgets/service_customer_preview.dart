@@ -40,7 +40,7 @@ class _ServiceCustomerPreviewState extends State<ServiceCustomerPreview> {
     final exclusions = _isArabic
         ? (s.notIncluded?.ar.points ?? [])
         : (s.notIncluded?.en.points ?? []);
-    final instructions = (s.instructions?[_isArabic ? 'ar' : 'en'] ?? '').trim();
+    final instructions = s.instructions?[_isArabic ? 'ar' : 'en'] ?? [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -767,7 +767,7 @@ class _ServiceCustomerPreviewState extends State<ServiceCustomerPreview> {
     );
   }
 
-  Widget _buildInstructionsSection(String instructions, ThemeColorExtension themeColor) {
+  Widget _buildInstructionsSection(List<String> instructions, ThemeColorExtension themeColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -783,7 +783,7 @@ class _ServiceCustomerPreviewState extends State<ServiceCustomerPreview> {
               Icon(Icons.assignment_outlined, color: themeColor.primary, size: 18),
               const SizedBox(width: 8),
               Text(
-                _isArabic ? "تعليمات الحجز والتحضير" : "Booking Instructions",
+                _isArabic ? "تعليمات وإرشادات الخدمة" : "Booking Instructions",
                 style: TextStyle(
                   fontFamily: 'Cairo',
                   fontWeight: FontWeight.bold,
@@ -793,16 +793,36 @@ class _ServiceCustomerPreviewState extends State<ServiceCustomerPreview> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            instructions,
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 11.5,
-              color: themeColor.textPrimary,
-              height: 1.45,
-            ),
-          ),
+          const SizedBox(height: 10),
+          ...instructions.map((point) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 5),
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: themeColor.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        point,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 11.5,
+                          color: themeColor.textPrimary,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
         ],
       ),
     );

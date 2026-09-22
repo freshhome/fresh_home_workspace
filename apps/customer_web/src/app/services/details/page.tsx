@@ -510,9 +510,12 @@ function ServiceDetailsContent() {
     ? currentService.not_included
     : currentService.not_included?.ar?.points || currentService.not_included?.en?.points || [];
 
-  const arInstructions = typeof currentService.instructions === "string"
-    ? currentService.instructions
-    : currentService.instructions?.ar || currentService.instructions?.en || "";
+  const rawInstructions = currentService.instructions?.ar ?? currentService.instructions?.en ?? currentService.instructions;
+  const instructionPoints: string[] = Array.isArray(rawInstructions)
+    ? rawInstructions.map((p: any) => String(p).trim()).filter(Boolean)
+    : typeof rawInstructions === "string"
+    ? rawInstructions.split("\n").map((line: string) => line.trim()).filter(Boolean)
+    : [];
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#040A1C] flex flex-col font-sans transition-colors duration-300">
@@ -758,7 +761,7 @@ function ServiceDetailsContent() {
               )}
 
               {/* Instructions */}
-              {arInstructions && (
+              {instructionPoints.length > 0 && (
                 <div className="bg-white dark:bg-[#071739] rounded-3xl border border-slate-200/80 dark:border-blue-900/50 p-[clamp(1.25rem,3vw,2rem)] shadow-sm text-right space-y-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
@@ -773,26 +776,22 @@ function ServiceDetailsContent() {
                   </div>
 
                   <div className="space-y-3 pt-1">
-                    {arInstructions
-                      .split("\n")
-                      .map((line: string) => line.trim())
-                      .filter((line: string) => line.length > 0)
-                      .map((instruction: string, iIdx: number) => {
-                        const cleanText = instruction.replace(/^([0-9]+[-.)\s]+|[-•*]\s*)/, "").trim();
-                        return (
-                          <div 
-                            key={iIdx}
-                            className="flex items-start gap-3 p-[clamp(0.75rem,2vw,1rem)] rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] text-slate-700 dark:text-slate-200"
-                          >
-                            <span className="w-[clamp(1.375rem,3vw,1.75rem)] h-[clamp(1.375rem,3vw,1.75rem)] rounded-lg bg-[#0091FF]/10 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200/50 dark:border-blue-900/40 text-[clamp(0.7rem,1.5vw,0.875rem)] font-black flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                              {iIdx + 1}
-                            </span>
-                            <span className="text-[clamp(0.875rem,2vw,1rem)] leading-[1.75] font-medium whitespace-pre-line flex-1">
-                              {cleanText || instruction}
-                            </span>
-                          </div>
-                        );
-                      })}
+                    {instructionPoints.map((instruction: string, iIdx: number) => {
+                      const cleanText = instruction.replace(/^([0-9]+[-.)\s]+|[-•*]\s*)/, "").trim();
+                      return (
+                        <div 
+                          key={iIdx}
+                          className="flex items-start gap-3 p-[clamp(0.75rem,2vw,1rem)] rounded-2xl bg-[#F8FAFC] dark:bg-[#050D24] border border-slate-100/90 dark:border-blue-900/25 shadow-[0_1px_3px_rgba(0,0,0,0.02)] text-slate-700 dark:text-slate-200"
+                        >
+                          <span className="w-[clamp(1.375rem,3vw,1.75rem)] h-[clamp(1.375rem,3vw,1.75rem)] rounded-lg bg-[#0091FF]/10 text-[#0091FF] dark:text-[#22A5FC] border border-blue-200/50 dark:border-blue-900/40 text-[clamp(0.7rem,1.5vw,0.875rem)] font-black flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                            {iIdx + 1}
+                          </span>
+                          <span className="text-[clamp(0.875rem,2vw,1rem)] leading-[1.75] font-medium whitespace-pre-line flex-1">
+                            {cleanText || instruction}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

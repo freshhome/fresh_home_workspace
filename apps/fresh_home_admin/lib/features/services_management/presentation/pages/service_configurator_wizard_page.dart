@@ -54,9 +54,9 @@ class _ServiceConfiguratorWizardPageState
   late NotIncludedEntity _notIncluded;
   bool _hasExclusions = false;
 
-  // Step 3: Instructions State
-  late TextEditingController _instructionsArController;
-  late TextEditingController _instructionsEnController;
+  // Step 3: Instructions State (Points)
+  late List<String> _instructionsArPoints;
+  late List<String> _instructionsEnPoints;
 
   // Step 4: Gallery State
   late List<ServiceGalleryItemEntity> _gallery;
@@ -92,13 +92,17 @@ class _ServiceConfiguratorWizardPageState
         _notIncluded.en.title?.isNotEmpty == true ||
         (_notIncluded.en.points?.isNotEmpty == true && _notIncluded.en.points!.any((p) => p.trim().isNotEmpty)));
 
-    // Step 3 Instructions Initialization
-    _instructionsArController = TextEditingController(
-      text: data?.instructions?['ar'] ?? '',
-    );
-    _instructionsEnController = TextEditingController(
-      text: data?.instructions?['en'] ?? '',
-    );
+    // Step 3 Instructions Initialization (Points)
+    final rawAr = data?.instructions?['ar'];
+    final rawEn = data?.instructions?['en'];
+    _instructionsArPoints = rawAr != null ? List<String>.from(rawAr) : [];
+    _instructionsEnPoints = rawEn != null ? List<String>.from(rawEn) : [];
+    while (_instructionsArPoints.length < _instructionsEnPoints.length) {
+      _instructionsArPoints.add('');
+    }
+    while (_instructionsEnPoints.length < _instructionsArPoints.length) {
+      _instructionsEnPoints.add('');
+    }
 
     // Step 4 Gallery Initialization
     _gallery = data?.gallery != null ? List.from(data!.gallery!) : [];
@@ -145,8 +149,6 @@ class _ServiceConfiguratorWizardPageState
     _descArController.dispose();
     _imageController.dispose();
     _orderController.dispose();
-    _instructionsArController.dispose();
-    _instructionsEnController.dispose();
     super.dispose();
   }
 
@@ -264,8 +266,8 @@ class _ServiceConfiguratorWizardPageState
     final image = _imageController.text.trim();
     final order = int.tryParse(_orderController.text.trim()) ?? 0;
     final instructions = {
-      'ar': _instructionsArController.text.trim(),
-      'en': _instructionsEnController.text.trim(),
+      'ar': _instructionsArPoints.map((p) => p.trim()).where((p) => p.isNotEmpty).toList(),
+      'en': _instructionsEnPoints.map((p) => p.trim()).where((p) => p.isNotEmpty).toList(),
     };
 
     if (_isBookable) {
@@ -646,32 +648,288 @@ class _ServiceConfiguratorWizardPageState
 
   // --- Step 3: Instructions UI ---
   Widget _buildInstructionsStep(ThemeColorExtension themeColor) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isWide = screenWidth >= 850;
+    final totalPoints = _instructionsArPoints.length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle("تعليمات العميل وإرشادات الحجز"),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: _buildSectionTitle("تعليمات العميل وإرشادات الحجز (نقاط تفصيلية)"),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              onPressed: _addInstructionPoint,
+              icon: const Icon(Icons.add_rounded, size: 16),
+              label: const Text(
+                "إضافة نقطة تعليمات / Add Point",
+                style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: themeColor.primary.withValues(alpha: 0.1),
+                foregroundColor: themeColor.primary,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
         const Padding(
           padding: EdgeInsets.only(bottom: 16.0),
           child: Text(
-            "تظهر هذه التعليمات للعميل قبل تأكيد الحجز مباشرة، لتوضيح المتطلبات المسبقة أو الشروط.",
+            "تظهر هذه التعليمات للعميل قبل تأكيد الحجز مباشرة، لتوضيح المتطلبات المسبقة أو الشروط على شكل نقاط منظمة ومباشرة باللغتين العربية والإنجليزية.",
             style: TextStyle(fontSize: 13, color: Colors.grey, fontFamily: 'Cairo'),
           ),
         ),
-        BaseTextFormField(
-          controller: _instructionsArController,
-          hint: "التعليمات بالعربية...",
-          maxLines: 5,
-          fillColor: themeColor.cardBackground,
-        ),
-        const SizedBox(height: 16),
-        BaseTextFormField(
-          controller: _instructionsEnController,
-          hint: "التعليمات بالإنجليزية...",
-          maxLines: 5,
-          fillColor: themeColor.cardBackground,
-        ),
+        if (totalPoints == 0)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+            decoration: BoxDecoration(
+              color: themeColor.background,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: themeColor.unselectedItem.withValues(alpha: 0.05)),
+            ),
+            alignment: Alignment.center,
+            child: Column(
+              children: [
+                Icon(Icons.assignment_outlined, size: 40, color: themeColor.unselectedItem.withValues(alpha: 0.3)),
+                const SizedBox(height: 12),
+                Text(
+                  "لم يتم إضافة أي نقاط تعليمات أو إرشادات للخدمة بعد.\nاضغط على الزر لإضافة أول نقطة.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: themeColor.textPrimary.withValues(alpha: 0.5)),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _addInstructionPoint,
+                  icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                  label: const Text("إضافة نقطة أولى", style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeColor.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: totalPoints,
+            itemBuilder: (context, idx) {
+              return _buildInstructionPointEditCard(
+                themeColor: themeColor,
+                pointIdx: idx,
+                arValue: _instructionsArPoints[idx],
+                enValue: _instructionsEnPoints[idx],
+                isWide: isWide,
+                totalPoints: totalPoints,
+              );
+            },
+          ),
         const SizedBox(height: 30),
       ],
+    );
+  }
+
+  void _addInstructionPoint() {
+    setState(() {
+      _instructionsArPoints.add('');
+      _instructionsEnPoints.add('');
+    });
+  }
+
+  void _removeInstructionPoint(int index) {
+    setState(() {
+      if (index < _instructionsArPoints.length) _instructionsArPoints.removeAt(index);
+      if (index < _instructionsEnPoints.length) _instructionsEnPoints.removeAt(index);
+    });
+  }
+
+  void _moveInstructionPointUp(int index) {
+    if (index > 0) {
+      setState(() {
+        final arItem = _instructionsArPoints.removeAt(index);
+        _instructionsArPoints.insert(index - 1, arItem);
+        final enItem = _instructionsEnPoints.removeAt(index);
+        _instructionsEnPoints.insert(index - 1, enItem);
+      });
+    }
+  }
+
+  void _moveInstructionPointDown(int index) {
+    if (index < _instructionsArPoints.length - 1) {
+      setState(() {
+        final arItem = _instructionsArPoints.removeAt(index);
+        _instructionsArPoints.insert(index + 1, arItem);
+        final enItem = _instructionsEnPoints.removeAt(index);
+        _instructionsEnPoints.insert(index + 1, enItem);
+      });
+    }
+  }
+
+  Widget _buildInstructionPointEditCard({
+    required ThemeColorExtension themeColor,
+    required int pointIdx,
+    required String arValue,
+    required String enValue,
+    required bool isWide,
+    required int totalPoints,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: themeColor.background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: themeColor.unselectedItem.withValues(alpha: 0.08),
+        ),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 11,
+                backgroundColor: themeColor.primary.withValues(alpha: 0.1),
+                child: Text(
+                  "${pointIdx + 1}",
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: themeColor.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "نقطة التعليمات ${pointIdx + 1}",
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              if (pointIdx > 0)
+                IconButton(
+                  icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+                  onPressed: () => _moveInstructionPointUp(pointIdx),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: "تحريك لأعلى",
+                ),
+              if (pointIdx > 0 && pointIdx < totalPoints - 1)
+                const SizedBox(width: 8),
+              if (pointIdx < totalPoints - 1)
+                IconButton(
+                  icon: const Icon(Icons.arrow_downward_rounded, size: 16),
+                  onPressed: () => _moveInstructionPointDown(pointIdx),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: "تحريك لأسفل",
+                ),
+              const SizedBox(width: 12),
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+                onPressed: () => _removeInstructionPoint(pointIdx),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                visualDensity: VisualDensity.compact,
+                tooltip: "حذف النقطة",
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          isWide
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _buildInstructionPointField(
+                        themeColor: themeColor,
+                        isArabic: true,
+                        pointIdx: pointIdx,
+                        value: arValue,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildInstructionPointField(
+                        themeColor: themeColor,
+                        isArabic: false,
+                        pointIdx: pointIdx,
+                        value: enValue,
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildInstructionPointField(
+                      themeColor: themeColor,
+                      isArabic: true,
+                      pointIdx: pointIdx,
+                      value: arValue,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildInstructionPointField(
+                      themeColor: themeColor,
+                      isArabic: false,
+                      pointIdx: pointIdx,
+                      value: enValue,
+                    ),
+                  ],
+                ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInstructionPointField({
+    required ThemeColorExtension themeColor,
+    required bool isArabic,
+    required int pointIdx,
+    required String value,
+  }) {
+    final accentColor = isArabic ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
+    return BaseTextFormField(
+      key: ValueKey('${isArabic ? "ar" : "en"}_instruction_point_${pointIdx}_field'),
+      hint: isArabic ? "نص التعليمات بالعربية..." : "Instruction in English...",
+      initialValue: value,
+      fillColor: themeColor.cardBackground,
+      prefixIcon: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: accentColor,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+      onChanged: (val) {
+        setState(() {
+          if (isArabic) {
+            _instructionsArPoints[pointIdx] = val;
+          } else {
+            _instructionsEnPoints[pointIdx] = val;
+          }
+        });
+      },
     );
   }
 
@@ -2487,8 +2745,8 @@ class _ServiceConfiguratorWizardPageState
     final image = _imageController.text.trim();
     final order = int.tryParse(_orderController.text.trim()) ?? 0;
     final instructions = {
-      'ar': _instructionsArController.text.trim(),
-      'en': _instructionsEnController.text.trim(),
+      'ar': _instructionsArPoints.map((p) => p.trim()).where((p) => p.isNotEmpty).toList(),
+      'en': _instructionsEnPoints.map((p) => p.trim()).where((p) => p.isNotEmpty).toList(),
     };
 
     String? parentTitle;
